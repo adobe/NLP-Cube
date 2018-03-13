@@ -18,6 +18,7 @@ cube/.idea/**/dataSources.local.xml
 cube/.idea/**/sqlDataSources.xml
 cube/.idea/**/dynamic.xml
 cube/.idea/**/uiDesigner.xml
+cube/venv/*
 
 # Gradle:
 cube/.idea/**/gradle.xml
