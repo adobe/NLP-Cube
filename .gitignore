@@ -6,29 +6,29 @@ mlpla/misc/conll17_ud_eval.py
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # User-specific stuff:
-.idea/**/workspace.xml
-.idea/**/tasks.xml
-.idea/dictionaries
+cube/.idea/**/workspace.xml
+cube/.idea/**/tasks.xml
+cube/.idea/dictionaries
 
 # Sensitive or high-churn files:
-.idea/**/dataSources/
-.idea/**/dataSources.ids
-.idea/**/dataSources.xml
-.idea/**/dataSources.local.xml
-.idea/**/sqlDataSources.xml
-.idea/**/dynamic.xml
-.idea/**/uiDesigner.xml
+cube/.idea/**/dataSources/
+cube/.idea/**/dataSources.ids
+cube/.idea/**/dataSources.xml
+cube/.idea/**/dataSources.local.xml
+cube/.idea/**/sqlDataSources.xml
+cube/.idea/**/dynamic.xml
+cube/.idea/**/uiDesigner.xml
 
 # Gradle:
-.idea/**/gradle.xml
-.idea/**/libraries
+cube/.idea/**/gradle.xml
+cube/.idea/**/libraries
 
 # CMake
 cmake-build-debug/
 cmake-build-release/
 
 # Mongo Explorer plugin:
-.idea/**/mongoSettings.xml
+cube/.idea/**/mongoSettings.xml
 
 ## File-based project format:
 *.iws
@@ -36,16 +36,16 @@ cmake-build-release/
 ## Plugin-specific files:
 
 # IntelliJ
-out/
+cube/out/
 
 # mpeltonen/sbt-idea plugin
-.idea_modules/
+cube/.idea_modules/
 
 # JIRA plugin
 atlassian-ide-plugin.xml
 
 # Cursive Clojure plugin
-.idea/replstate.xml
+cube/.idea/replstate.xml
 
 # Crashlytics plugin (for Android Studio and IntelliJ)
 com_crashlytics_export_strings.xml
