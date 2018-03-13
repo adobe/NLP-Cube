@@ -1,4 +1,5 @@
 *.pyc
+logs/*
 corpus/*
 mlpla/misc/conll17_ud_eval.py
 
