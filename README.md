@@ -81,7 +81,7 @@
 # Output #
 This output is generated for Romanian XPOS tagging using UD (currently we got 97.44% on the test set :D). The best results are obtained by Stanford (96.96)
 
-`Found 364 unique features, 470 unique labels and 212897 word embeddings of size 64
+```Found 364 unique features, 470 unique labels and 212897 word embeddings of size 64
 Maximum sequence len is 1630
 Train: 193156 examples in 8044 sequences
 Dev: 17826 examples in 753 sequences
@@ -124,4 +124,4 @@ Creating model/xpos.bestSerr
 Epoch 11 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 evaluating (train loss=0 sacc=0.49564893088 tacc=0.967544368283 dev sacc=0.444887118194 tacc=0.962919331314)
 Creating model/xpos.last
 Creating model/xpos.bestTerr
-Creating model/xpos.bestSerr`
+Creating model/xpos.bestSerr```
