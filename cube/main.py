@@ -243,7 +243,7 @@ def parse_train(params):
         else:
             testset = None
         config = TaggerConfig(params.config)
-        if not config.valid:
+        if not config._valid:
             return
 
         encodings = Encodings()
@@ -277,7 +277,7 @@ def parse_train(params):
         else:
             testset = None
         config = ParserConfig(params.config)
-        if not config.valid:
+        if not config._valid:
             return
         # PARAM INJECTION 
         if params.params != None:
@@ -354,7 +354,7 @@ def parse_train(params):
         config.raw_test_file = params.raw_test_file
         config.base = params.output_base
         config.patience = params.itters
-        if not config.valid:
+        if not config._valid:
             return
 
         encodings = Encodings()

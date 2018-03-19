@@ -17,25 +17,51 @@
 #
 
 import sys
-import json
-import os.path
+import ast
 from builtins import object, super
+import collections
+import ConfigParser
         
 class Config(object):
+    """Generic base class that implements load/save utilities."""
+    
     def __init__ (self):
+        """Call to set config object name."""    
         self.__config__ = self.__class__.__name__
-        
-    def save (self, filename):            
-        # TODO hide fields like "valid", etc
-        json.dump(self.__dict__, open(filename, 'w'), sort_keys=True, indent=4)          
-        
-    def load (self, filename):
-        if not os.path.isfile(filename):
-            raise IOError("Configuration file \""+filename+"\" not found.")         
-        # TODO check that __config__ == self.__class__.__name__ so we don't load another config
-        self.__dict__ = json.load(open(filename, 'r'))
-        #print(self.__dict__)    
+   
+    def _auto_cast(self, s):
+        """Autocasts string s to its original type."""
+        try:
+            return ast.literal_eval(s)
+        except: 
+            return s 
+       
+    def save (self, filename):
+        """Save configuration to file."""    
+        sorted_dict = collections.OrderedDict(sorted(self.__dict__.items())) # sort dictionary        
+        config = ConfigParser.ConfigParser() 
+        config.add_section(self.__config__) # write header
+        for k, v in sorted_dict.iteritems(): # for python3 use .items()            
+            if not k.startswith("_"): # write only non-private properties  
+                if isinstance(v,float): # if we are dealing with a float 
+                    str_v = str(v)
+                    if "e" not in str_v and "." not in str_v: # stop possible confusion with an int by appending a ".0"
+                        v = str_v + ".0"
+                config.set(self.__config__,k,v)        
+        with open(filename,'w') as cfgfile:
+            config.write(cfgfile)
 
+    def load (self, filename):
+        """Load configuration from file."""    
+        config = ConfigParser.ConfigParser() 
+        config.read(filename)        
+        # check to see if the config file has the appropriate section
+        if not config.has_section(self.__config__):
+            sys.stderr.write("ERROR: File \""+filename+"\" is not a valid configuration file for the selected task: Missing section ["+self.__config__+"]!\n")
+            sys.exit(1)
+        for k, v in config.items(self.__config__):            
+            self.__dict__[k] = self._auto_cast(v)                             
+            
 class TokenizerConfig (Config):
     def __init__(self, filename=None):
         super().__init__()
@@ -48,9 +74,7 @@ class TokenizerConfig (Config):
         self.char_generic_feature_vocabulary_size = 2
         self.char_generic_feature_embedding_size = 5
 
-        self.encoder_char_input_attribute_dropout = 0.
-        self.encoder_char_input_noise = 0.
-        self.encoder_char_blstm_size = 100
+        self.encoder_char_input_attribute_dropout = 0.                
         self.encoder_char_lstm_size = 200
 
         # next-chars
@@ -77,7 +101,7 @@ class TokenizerConfig (Config):
             sys.stdout.write("reading configuration file ["+filename+"]\n")
             self.load(filename)
             
-        self.valid = True
+        self._valid = True
 
 
 class TaggerConfig (Config):
@@ -87,7 +111,7 @@ class TaggerConfig (Config):
         self.layers = [200, 200]
         self.layer_dropouts = [0.5, 0.5]
         self.aux_softmax_layer = 1
-        self.valid = True
+        self._valid = True
         self.input_dropout_prob = 0.33
         self.presoftmax_mlp_layers = [500]
         self.presoftmax_mlp_dropouts = [0.5]
@@ -109,7 +133,7 @@ class TaggerConfig (Config):
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
             print "Configuration error: aux softmax layer must be placed after the first layer and before the final one"
-            self.valid = False
+            self._valid = False
 
 
 class ParserConfig (Config):
@@ -119,7 +143,7 @@ class ParserConfig (Config):
         self.layers = [300, 300, 50, 50, 50]
         self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
         self.aux_softmax_layer = 2
-        self.valid = True
+        self._valid = True
         self.input_dropout_prob = 0.33
         self.arc_proj_size = 100
         self.label_proj_size = 400
@@ -147,11 +171,11 @@ class ParserConfig (Config):
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
             print "Configuration error: aux softmax layer must be placed after the first layer and before the final one"
-            self.valid = False
+            self._valid = False
 
         if self.use_morphology and self.predict_morphology:
             print "Configuration error: you are using morphology to predict morphology."
-            self.valid = False
+            self._valid = False
 
     
 class LemmatizerConfig (Config):
