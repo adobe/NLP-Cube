@@ -655,6 +655,7 @@ class TokenizerTrainer:
         self.patience = patience
         self.encodings = encodings
 
+
     # creates from a Dataset.sequences (which is a list of lists of Conll entries)
     # a two lists of lists of chars and gold labels
     def _create_Xy_sequences(self, sequence_set):
@@ -736,7 +737,7 @@ class TokenizerTrainer:
 
         return X_mixed_set, y_mixed_set
 
-    def start_training(self, output_base):
+    def start_training(self, output_base, batch_size=0):
         epoch = 0
         itt_no_improve = self.patience
         best_dev_tok = 0.
@@ -787,17 +788,28 @@ class TokenizerTrainer:
             sys.stdout.flush()
             total_loss = 0
             start_time = time.time()
+            current_batch_size=0
+            self.tokenizer.start_batch()
             for iSeq in xrange(len(X_train)):
                 # print("TRAIN SEQ: "+str(iSeq))
                 X = X_train[iSeq]
                 y = y_train[iSeq]
+                current_batch_size+=len(X)
                 proc = (iSeq + 1) * 100 / len(X_train)
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
 
-                total_loss += self.tokenizer.learn_ss(X, y)
+                self.tokenizer.learn_ss(X, y)
+                if current_batch_size>=batch_size:
+                    current_batch_size=0
+                    total_loss+=self.tokenizer.end_batch()
+                    self.tokenizer.start_batch()
+            if current_batch_size!=0:
+                current_batch_size = 0
+                total_loss += self.tokenizer.end_batch()
+                self.tokenizer.start_batch()
 
             stop_time = time.time()
             sys.stdout.write(" avg_loss=" + str(total_loss / len(X_train)) + " execution_time=" + str(

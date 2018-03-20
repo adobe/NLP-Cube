@@ -36,7 +36,7 @@ class TieredTokenizer:
         self.modelSS = dy.Model()
         self.modelTok = dy.Model()
         self.modelCompound = dy.Model()
-        self.trainerSS = dy.AdamTrainer(self.modelSS)
+        self.trainerSS = dy.AdamTrainer(self.modelSS, alpha=2e-3, beta_1=0.9, beta_2=0.9)
         self.trainerTok = dy.AdamTrainer(self.modelTok)
         self.trainerCompound = dy.AdamTrainer(self.modelCompound)
 
@@ -47,19 +47,20 @@ class TieredTokenizer:
             (len(self.encodings.char2int), self.config.ss_char_embeddings_size))
         self.SS_char_lookup_casing = self.modelSS.add_lookup_parameters((3, 5))  # lower, upper N/A
         self.SS_char_lookup_special = self.modelSS.add_lookup_parameters((2, self.config.ss_char_embeddings_size + 5))
-        # character-level CNN
-        self.SS_cnn = CNN(self.modelSS)
-        self.SS_cnn.add_layer_conv(1, self.config.ss_char_window_size, self.config.ss_char_embeddings_size + 5, 1,
-                                   self.config.ss_char_cnn_filters,
-                                   same=False)
-        # character-level LSTM
-        layer_is = self.config.ss_char_cnn_filters  # * (self.config.ss_char_embeddings_size + 5)
-        self.SS_lstm = dy.VanillaLSTMBuilder(self.config.ss_lstm_layers, layer_is, self.config.ss_lstm_size,
+        # lstm-peek network
+        self.SS_peek_lstm = dy.VanillaLSTMBuilder(self.config.ss_peek_lstm_layers,
+                                                  self.config.ss_char_embeddings_size + 5,
+                                                  self.config.ss_peek_lstm_size, self.modelSS)
+        layer_is = self.config.ss_peek_lstm_size
+        self.SS_aux_softmax_w = self.modelSS.add_parameters((2, layer_is))
+        self.SS_aux_softmax_b = self.modelSS.add_parameters((2))
+        self.SS_lstm = dy.VanillaLSTMBuilder(self.config.ss_lstm_layers, self.config.ss_char_embeddings_size + 5,
+                                             self.config.ss_lstm_size,
                                              self.modelSS)
         # post MLP and softmax
         self.SS_mlp_w = []
         self.SS_mlp_b = []
-        layer_is = self.config.ss_lstm_size
+        layer_is = self.config.ss_lstm_size + self.config.ss_peek_lstm_size
         for layer in self.config.ss_mlp_layers:
             self.SS_mlp_w.append(self.modelSS.add_parameters((layer, layer_is)))
             self.SS_mlp_b.append(self.modelSS.add_parameters((layer)))
@@ -67,44 +68,65 @@ class TieredTokenizer:
 
         self.SS_mlp_softmax_w = self.modelSS.add_parameters((2, layer_is))
         self.SS_mlp_softmax_b = self.modelSS.add_parameters((2))
+        self.losses = []
 
-    def learn_ss(self, x, y):
+    def start_batch(self):
+        self.losses = []
         dy.renew_cg()
+
+    def end_batch(self):
+        total_loss = dy.esum(self.losses)
+        total_loss_val = total_loss.value()
+        total_loss.backward()
+        self.trainerSS.update()
+        return total_loss_val
+
+    def learn_ss(self, x, y, aux_softmax_weight=0.2):
         losses = []
-        y_prediction = self._predict_ss(x, runtime=False)
-        for y_real, y_pred in zip(y, y_prediction):
+        y_prediction, y_prediction_aux = self._predict_ss(x, runtime=False)
+        for y_real, y_pred, y_aux in zip(y, y_prediction, y_prediction_aux):
             if y_real == "SX":
                 losses.append(-dy.log(dy.pick(y_pred, 1)))
+                losses.append(-dy.log(dy.pick(y_aux, 1)) * aux_softmax_weight)
             else:
                 losses.append(-dy.log(dy.pick(y_pred, 0)))
+                losses.append(-dy.log(dy.pick(y_aux, 0)) * aux_softmax_weight)
 
         loss = dy.esum(losses)
-        loss_val = loss.value()
-        loss.backward()
-        self.trainerSS.update()
-        return loss_val
+        self.losses.append(loss)
 
     def tokenize_ss(self, input_string):
         input_string = unicode(input_string, 'utf-8')
-        dy.renew_cg()
-        y_pred = self._predict_ss(input_string)
-        w = ""
+
         sequences = []
         seq = []
-        for x, y_pred in zip(input_string, y_pred):
-            if np.argmax(y_pred.npvalue()) == 1:
-                w += x
-                entry = ConllEntry(1, w.strip().encode('utf-8'), "_", "_", "_", "_", "0", "_", "_", "")
+        num_chars = 0
+        last_proc = 0
+        sz = len(input_string)
+        while len(input_string) > 0:
+
+            proc = num_chars * 100 / sz
+            if proc % 5 == 0 and proc != last_proc:
+                last_proc = proc
+                sys.stdout.write(" " + str(proc))
+                sys.stdout.flush()
+            dy.renew_cg()
+            y_pred, _ = self._predict_ss(input_string)
+            w=input_string[0:len(y_pred) + 1].strip()
+            if w!="":
+                entry = ConllEntry(1, w.encode('utf-8'), "_", "_", "_", "_", "0", "_",
+                               "_", "")
                 seq.append(entry)
                 sequences.append(seq)
-                w = ""
-                seq = []
+            seq = []
+            cnt = len(y_pred)
+            num_chars += cnt
+            # print "seq:"+ sequences[-1][0].word
+
+            if cnt == len(input_string):
+                input_string = ""
             else:
-                w += x
-        if w.strip() != u'':
-            entry = ConllEntry(1, w.strip().encode('utf-8'), "_", "_", "_", "_", "0", "_", "_", "")
-            seq.append(entry)
-            sequences.append(seq)
+                input_string = input_string[cnt:]
 
         return sequences
 
@@ -112,11 +134,8 @@ class TieredTokenizer:
         x = 0
 
     def _predict_ss(self, seq, runtime=True):
-        flat_cnn_output_size = self.config.ss_char_cnn_filters  # (self.config.ss_char_embeddings_size + 5) * self.config.ss_char_cnn_filters
         x_list = []
-        offset = self.config.ss_char_window_size / 2
-        for _ in xrange(offset):
-            x_list.append(self.SS_char_lookup_special[0])
+        offset = self.config.ss_char_peek_count
 
         for char in seq:
             lookup_char = char.lower()
@@ -140,38 +159,39 @@ class TieredTokenizer:
         for _ in xrange(offset):
             x_list.append(self.SS_char_lookup_special[1])
 
-        conv_output = self.SS_cnn.apply(dy.concatenate_cols(x_list))[0]
-        # print conv_output.npvalue().shape
-        # conv_output = [x for x in conv_output]
-        c_out = []
-        for cIndex in xrange(len(seq)):
-            if runtime:
-                c_out.append(conv_output[cIndex])
-            else:
-                c_out.append(dy.dropout(conv_output[cIndex], self.config.ss_char_cnn_dropout))
-        conv_output = c_out
-        # for index in xrange(offset, len(x_list) - offset):
-        #     conv_input = x_list[index - offset:index + offset + 1]
-        #     conv_input = dy.concatenate_cols(conv_input)
-        #     c_out = self.SS_cnn.apply(conv_input)
-        #     conv_output.append(c_out[0][0])
+        aux_softmax_output = []
+        softmax_output = []
+
+        # forward pass should not be a problem
         if runtime:
             self.SS_lstm.set_dropouts(0, 0)
+            self.SS_peek_lstm.set_dropouts(0, 0)
         else:
             self.SS_lstm.set_dropouts(self.config.ss_lstm_dropout, self.config.ss_lstm_dropout)
-        lstm_output = self.SS_lstm.initial_state().transduce(conv_output)
-        mlp_output = []
-        softmax_output = []
-        for x in lstm_output:
-            hidden = x
+            self.SS_peek_lstm.set_dropouts(self.config.ss_peek_lstm_dropout, self.config.ss_peek_lstm_dropout)
+        lstm_fw = self.SS_lstm.initial_state()
+
+        for cIndex in xrange(len(seq)):
+            peek_chars = x_list[cIndex:cIndex + self.config.ss_char_peek_count + 1]
+            peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
+
+            aux_softmax_output.append(
+                dy.softmax(self.SS_aux_softmax_w.expr() * peek_out + self.SS_aux_softmax_b.expr()))
+
+            lstm_fw = lstm_fw.add_input(x_list[cIndex])
+            lstm_out = lstm_fw.output()
+            hidden = dy.concatenate([lstm_out, peek_out])
             for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
                 hidden = dy.tanh(w.expr() * hidden + b.expr())
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
-            mlp_output.append(hidden)
             softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr() * hidden + self.SS_mlp_softmax_b.expr()))
+            if runtime:
+                if np.argmax(softmax_output[
+                                 -1].npvalue()) == 1:  # early break to reset computational graph for the next sequence
+                    return softmax_output, aux_softmax_output
 
-        return softmax_output
+        return softmax_output, aux_softmax_output
 
 
 class BDRNNTokenizer:

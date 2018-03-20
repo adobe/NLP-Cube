@@ -373,7 +373,7 @@ def parse_train(params):
                                    raw_train_file=params.raw_train_file, raw_dev_file=params.raw_dev_file,
                                    raw_test_file=params.raw_test_file, gold_train_file=params.train_file,
                                    gold_dev_file=params.dev_file, gold_test_file=params.test_file)
-        trainer.start_training(params.output_base)
+        trainer.start_training(params.output_base, batch_size=params.batch_size)
 
 
 if params.train:

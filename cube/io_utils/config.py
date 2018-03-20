@@ -220,13 +220,14 @@ class NMTConfig(Config):
 class TokenizerConfig2(Config):
     def __init__(self, filename=None):
         super().__init__()
-        self.ss_char_embeddings_size = 100
-        self.ss_char_window_size = 11
-        self.ss_char_cnn_filters = 64
-        self.ss_char_cnn_dropout = 0.33
+        self.ss_char_embeddings_size = 32
+        self.ss_char_peek_count = 5
         self.ss_mlp_layers = [32]
         self.ss_mlp_dropouts = [0.33]
-        self.ss_lstm_size = 100
+        self.ss_lstm_size = 64
         self.ss_lstm_layers = 1
         self.ss_lstm_dropout = 0.33
+        self.ss_peek_lstm_size = 64
+        self.ss_peek_lstm_layers = 1
+        self.ss_peek_lstm_dropout = 0.33
         self._valid = True
