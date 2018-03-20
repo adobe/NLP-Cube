@@ -145,21 +145,29 @@ class TieredTokenizer:
         # conv_output = [x for x in conv_output]
         c_out = []
         for cIndex in xrange(len(seq)):
-            c_out.append(conv_output[cIndex])
+            if runtime:
+                c_out.append(conv_output[cIndex])
+            else:
+                c_out.append(dy.dropout(conv_output[cIndex], self.config.ss_char_cnn_dropout))
         conv_output = c_out
         # for index in xrange(offset, len(x_list) - offset):
         #     conv_input = x_list[index - offset:index + offset + 1]
         #     conv_input = dy.concatenate_cols(conv_input)
         #     c_out = self.SS_cnn.apply(conv_input)
         #     conv_output.append(c_out[0][0])
-
+        if runtime:
+            self.SS_lstm.set_dropouts(0, 0)
+        else:
+            self.SS_lstm.set_dropouts(self.config.ss_lstm_dropout, self.config.ss_lstm_dropout)
         lstm_output = self.SS_lstm.initial_state().transduce(conv_output)
         mlp_output = []
         softmax_output = []
         for x in lstm_output:
             hidden = x
-            for w, b in zip(self.SS_mlp_w, self.SS_mlp_b):
+            for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
                 hidden = dy.tanh(w.expr() * hidden + b.expr())
+                if not runtime:
+                    hidden = dy.dropout(hidden, dropout)
             mlp_output.append(hidden)
             softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr() * hidden + self.SS_mlp_softmax_b.expr()))
 
