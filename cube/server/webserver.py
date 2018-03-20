@@ -49,10 +49,10 @@ def nlp():
         query = request.args.get('q')
     else:
         query = request.form.get('q')
-    #from ipdb import set_trace
-    #set_trace()
+    # from ipdb import set_trace
+    # set_trace()
     query += u' '
-    #if
+    # if
     query = query.encode('utf-8')
     global singletonServer
     seqs = singletonServer.tokenizer.tokenize(query)
@@ -75,16 +75,19 @@ def nlp():
                 iTags += 1
                 iOrig += 1
             if singletonServer.lemmatizer is not None:
-                lemmatized=singletonServer.lemmatizer.tag(seq)
+                lemmatized = singletonServer.lemmatizer.tag(seq)
             else:
-                lemmatized=[entry.word for entry in seq]
+                lemmatized = [entry.word for entry in seq]
 
-            for entry, lemma in zip (seq, lemmatized):
+            for entry, lemma in zip(seq, lemmatized):
                 if not entry.is_compound_entry:
-                    entry.lemma=lemma
+                    entry.lemma = lemma
 
             for entry in seq:
-                result += str(entry.index) + "\t" + str(entry.word) + "\t" + str(entry.lemma.encode('utf-8')) + "\t" + str(
+                if entry.lemma is None:
+                    entry.lemma = ""
+                result += str(entry.index) + "\t" + str(entry.word) + "\t" + str(
+                    entry.lemma) + "\t" + str(
                     entry.upos) + "\t" + str(entry.xpos) + "\t" + str(entry.attrs) + "\t" + str(
                     entry.head) + "\t" + str(entry.label) + "\t" + str(entry.deps) + "\t" + entry.space_after + "\n"
             result += "\n"
@@ -133,7 +136,7 @@ class EmbeddedWebserver:
             self.lemmatizer = BDRNNLemmatizer(lemma_config, lemma_encodings, embeddings, runtime=True)
             self.lemmatizer.load(lemma + ".bestACC")
         else:
-            self.lemmatizer=None
+            self.lemmatizer = None
 
         global app
         app.run(port=port)

@@ -27,6 +27,20 @@ from misc.misc import get_eta, pretty_time, log_progress, line_count
 from io_utils.conll import ConllEntry
 
 
+class TieredTokenizer:
+    def __init__(config, encodings, embeddings, runtime=False):
+        self.config = config
+        self.word_embeddings = embeddings
+        self.encodings = encodings
+
+        self.modelSS = dy.Model()
+        self.modelTok = dy.Model()
+        self.modelCompound = dy.Model()
+        self.trainerSS = dy.AdamTrainer(self.modelSS)
+        self.trainerTok = dy.AdamTrainer(self.modelTok)
+        self.trainerCompound = dy.AdamTrainer(self.modelCompound)
+
+
 class BDRNNTokenizer:
 
     def __init__(self, config, encodings, embeddings, runtime=False):
@@ -69,26 +83,29 @@ class BDRNNTokenizer:
         self.encoder_char_input_size = self.config.char_embedding_size + 3 * self.config.char_generic_feature_embedding_size
         if runtime:
             self.encoder_char_lstm1_fw_builder = dy.VanillaLSTMBuilder(1, self.encoder_char_input_size,
-                                                                   self.config.encoder_char_lstm_size, self.model)
+                                                                       self.config.encoder_char_lstm_size, self.model)
 
             self.encoder_char_lstm2_bw_builder = dy.VanillaLSTMBuilder(1,
-                                                                   self.config.next_chars_embedding_size + 3 * self.config.char_generic_feature_embedding_size,
-                                                                   self.config.encoder_char_lstm_size, self.model)
+                                                                       self.config.next_chars_embedding_size + 3 * self.config.char_generic_feature_embedding_size,
+                                                                       self.config.encoder_char_lstm_size, self.model)
             self.encoder_word_lstm_builder = dy.VanillaLSTMBuilder(1, self.word_embeddings.word_embeddings_size,
                                                                    self.config.encoder_word_lstm_size, self.model)
         else:
             from utils import orthonormal_VanillaLSTMBuilder
             self.encoder_char_lstm1_fw_builder = orthonormal_VanillaLSTMBuilder(1, self.encoder_char_input_size,
-                                                                       self.config.encoder_char_lstm_size, self.model)
+                                                                                self.config.encoder_char_lstm_size,
+                                                                                self.model)
 
             self.encoder_char_lstm2_bw_builder = orthonormal_VanillaLSTMBuilder(1,
-                                                                       self.config.next_chars_embedding_size + 3 * self.config.char_generic_feature_embedding_size,
-                                                                       self.config.encoder_char_lstm_size, self.model)
-            self.encoder_word_lstm_builder = orthonormal_VanillaLSTMBuilder(1, self.word_embeddings.word_embeddings_size,
-                                                                   self.config.encoder_word_lstm_size, self.model)
+                                                                                self.config.next_chars_embedding_size + 3 * self.config.char_generic_feature_embedding_size,
+                                                                                self.config.encoder_char_lstm_size,
+                                                                                self.model)
+            self.encoder_word_lstm_builder = orthonormal_VanillaLSTMBuilder(1,
+                                                                            self.word_embeddings.word_embeddings_size,
+                                                                            self.config.encoder_word_lstm_size,
+                                                                            self.model)
 
         # ENCODER-WORD
-
 
         # self.att_w1 = self.model.add_parameters((
         #     self.config.next_chars_embedding_size + self.config.char_generic_feature_embedding_size * 3,
@@ -197,7 +214,8 @@ class BDRNNTokenizer:
                     if i < len(X) - 1:
                         if X[i + 1] in string.whitespace:
                             space_after = "_"
-                    entry = ConllEntry(index=cnt, word=word.encode('utf-8'), lemma="_", upos="_", xpos="_", attrs="_", head="0",
+                    entry = ConllEntry(index=cnt, word=word.encode('utf-8'), lemma="_", upos="_", xpos="_", attrs="_",
+                                       head="0",
                                        label="_", deps="_", space_after=space_after)
                     # log.write("   New entry ["+word.encode('utf-8')+"]\n")
                     sentence.append(entry)
@@ -338,7 +356,7 @@ class BDRNNTokenizer:
 
     def _encoder_word_encode_input(self, word):
         embedding, _ = self.word_embeddings.get_word_embeddings(word)
-        word=word.lower()
+        word = word.lower()
         if word in self.encodings.word2int:
             hol_we = self.holisticWE[self.encodings.word2int[word]]
         else:
