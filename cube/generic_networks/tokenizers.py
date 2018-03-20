@@ -28,7 +28,7 @@ from io_utils.conll import ConllEntry
 
 
 class TieredTokenizer:
-    def __init__(config, encodings, embeddings, runtime=False):
+    def __init__(self, config, encodings, embeddings, runtime=False):
         self.config = config
         self.word_embeddings = embeddings
         self.encodings = encodings
@@ -39,6 +39,131 @@ class TieredTokenizer:
         self.trainerSS = dy.AdamTrainer(self.modelSS)
         self.trainerTok = dy.AdamTrainer(self.modelTok)
         self.trainerCompound = dy.AdamTrainer(self.modelCompound)
+
+        # sentence split model
+        from wrappers import CNN, CNNConvLayer, CNNPoolingLayer
+        # character-level-embeddings
+        self.SS_char_lookup = self.modelSS.add_lookup_parameters(
+            (len(self.encodings.char2int), self.config.ss_char_embeddings_size))
+        self.SS_char_lookup_casing = self.modelSS.add_lookup_parameters((3, 5))  # lower, upper N/A
+        self.SS_char_lookup_special = self.modelSS.add_lookup_parameters((2, self.config.ss_char_embeddings_size + 5))
+        # character-level CNN
+        self.SS_cnn = CNN(self.modelSS)
+        self.SS_cnn.add_layer_conv(1, self.config.ss_char_window_size, self.config.ss_char_embeddings_size + 5, 1,
+                                   self.config.ss_char_cnn_filters,
+                                   same=False)
+        # character-level LSTM
+        layer_is = self.config.ss_char_cnn_filters  # * (self.config.ss_char_embeddings_size + 5)
+        self.SS_lstm = dy.VanillaLSTMBuilder(self.config.ss_lstm_layers, layer_is, self.config.ss_lstm_size,
+                                             self.modelSS)
+        # post MLP and softmax
+        self.SS_mlp_w = []
+        self.SS_mlp_b = []
+        layer_is = self.config.ss_lstm_size
+        for layer in self.config.ss_mlp_layers:
+            self.SS_mlp_w.append(self.modelSS.add_parameters((layer, layer_is)))
+            self.SS_mlp_b.append(self.modelSS.add_parameters((layer)))
+            layer_is = layer
+
+        self.SS_mlp_softmax_w = self.modelSS.add_parameters((2, layer_is))
+        self.SS_mlp_softmax_b = self.modelSS.add_parameters((2))
+
+    def learn_ss(self, x, y):
+        dy.renew_cg()
+        losses = []
+        y_prediction = self._predict_ss(x, runtime=False)
+        for y_real, y_pred in zip(y, y_prediction):
+            if y_real == "SX":
+                losses.append(-dy.log(dy.pick(y_pred, 1)))
+            else:
+                losses.append(-dy.log(dy.pick(y_pred, 0)))
+
+        loss = dy.esum(losses)
+        loss_val = loss.value()
+        loss.backward()
+        self.trainerSS.update()
+        return loss_val
+
+    def tokenize_ss(self, input_string):
+        input_string = unicode(input_string, 'utf-8')
+        dy.renew_cg()
+        y_pred = self._predict_ss(input_string)
+        w = ""
+        sequences = []
+        seq = []
+        for x, y_pred in zip(input_string, y_pred):
+            if np.argmax(y_pred.npvalue()) == 1:
+                w += x
+                entry = ConllEntry(1, w.strip().encode('utf-8'), "_", "_", "_", "_", "0", "_", "_", "")
+                seq.append(entry)
+                sequences.append(seq)
+                w = ""
+                seq = []
+            else:
+                w += x
+        if w.strip() != u'':
+            entry = ConllEntry(1, w.strip().encode('utf-8'), "_", "_", "_", "_", "0", "_", "_", "")
+            seq.append(entry)
+            sequences.append(seq)
+
+        return sequences
+
+    def save_ss(self, filename):
+        x = 0
+
+    def _predict_ss(self, seq, runtime=True):
+        flat_cnn_output_size = self.config.ss_char_cnn_filters  # (self.config.ss_char_embeddings_size + 5) * self.config.ss_char_cnn_filters
+        x_list = []
+        offset = self.config.ss_char_window_size / 2
+        for _ in xrange(offset):
+            x_list.append(self.SS_char_lookup_special[0])
+
+        for char in seq:
+            lookup_char = char.lower()
+            import re
+            lookup_char = re.sub('\d', '0', lookup_char)
+            if lookup_char in self.encodings.char2int:
+                char_emb = self.SS_char_lookup[self.encodings.char2int[lookup_char]]
+            else:
+                char_emb = self.SS_char_lookup[self.encodings.char2int['<UNK>']]
+
+            if char.lower() == char and char.upper() == char:
+                casing_emb = self.SS_char_lookup_casing[0]  # does not support casing
+            elif char.lower() == char:
+                casing_emb = self.SS_char_lookup_casing[1]  # is lowercased
+            else:
+                casing_emb = self.SS_char_lookup_casing[2]  # is uppercased
+
+            x = dy.concatenate([char_emb, casing_emb])
+            x_list.append(x)
+
+        for _ in xrange(offset):
+            x_list.append(self.SS_char_lookup_special[1])
+
+        conv_output = self.SS_cnn.apply(dy.concatenate_cols(x_list))[0]
+        # print conv_output.npvalue().shape
+        # conv_output = [x for x in conv_output]
+        c_out = []
+        for cIndex in xrange(len(seq)):
+            c_out.append(conv_output[cIndex])
+        conv_output = c_out
+        # for index in xrange(offset, len(x_list) - offset):
+        #     conv_input = x_list[index - offset:index + offset + 1]
+        #     conv_input = dy.concatenate_cols(conv_input)
+        #     c_out = self.SS_cnn.apply(conv_input)
+        #     conv_output.append(c_out[0][0])
+
+        lstm_output = self.SS_lstm.initial_state().transduce(conv_output)
+        mlp_output = []
+        softmax_output = []
+        for x in lstm_output:
+            hidden = x
+            for w, b in zip(self.SS_mlp_w, self.SS_mlp_b):
+                hidden = dy.tanh(w.expr() * hidden + b.expr())
+            mlp_output.append(hidden)
+            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr() * hidden + self.SS_mlp_softmax_b.expr()))
+
+        return softmax_output
 
 
 class BDRNNTokenizer:

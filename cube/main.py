@@ -104,6 +104,7 @@ from io_utils.config import TaggerConfig
 from io_utils.config import ParserConfig
 from io_utils.config import LemmatizerConfig
 from io_utils.config import NMTConfig
+from io_utils.config import TokenizerConfig2
 from io_utils.embeddings import WordEmbeddings
 from io_utils.encodings import Encodings
 from io_utils.trainers import TokenizerTrainer
@@ -116,6 +117,7 @@ from generic_networks.taggers import BDRNNTagger
 from generic_networks.parsers import BDRNNParser
 from generic_networks.lemmatizers import BDRNNLemmatizer
 from generic_networks.translators import BRNNMT
+from generic_networks.tokenizers import TieredTokenizer
 
 
 def parse_test(params):
@@ -350,7 +352,8 @@ def parse_train(params):
             testset = Dataset(params.test_file)
         else:
             testset = None
-        config = TokenizerConfig(params.config)
+        from generic_networks.tokenizers import TieredTokenizer
+        config = TokenizerConfig2(params.config)
         config.raw_test_file = params.raw_test_file
         config.base = params.output_base
         config.patience = params.itters
@@ -363,9 +366,9 @@ def parse_train(params):
         if params.test_file:
             encodings.update_wordlist(testset)
         embeddings = WordEmbeddings()
-        embeddings.read_from_file(params.embeddings,
-                                  None)  # setting wordlist to None triggers Word Embeddings to act as cache-only and load offsets for all words
-        tokenizer = BDRNNTokenizer(config, encodings, embeddings)
+        #embeddings.read_from_file(params.embeddings,
+        #                          None)  # setting wordlist to None triggers Word Embeddings to act as cache-only and load offsets for all words
+        tokenizer = TieredTokenizer(config, encodings, embeddings)
         trainer = TokenizerTrainer(tokenizer, encodings, params.itters, trainset, devset, testset,
                                    raw_train_file=params.raw_train_file, raw_dev_file=params.raw_dev_file,
                                    raw_test_file=params.raw_test_file, gold_train_file=params.train_file,

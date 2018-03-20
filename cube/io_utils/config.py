@@ -21,48 +21,51 @@ import ast
 from builtins import object, super
 import collections
 import ConfigParser
-        
+
+
 class Config(object):
     """Generic base class that implements load/save utilities."""
-    
-    def __init__ (self):
-        """Call to set config object name."""    
+
+    def __init__(self):
+        """Call to set config object name."""
         self.__config__ = self.__class__.__name__
-   
+
     def _auto_cast(self, s):
         """Autocasts string s to its original type."""
         try:
             return ast.literal_eval(s)
-        except: 
-            return s 
-       
-    def save (self, filename):
-        """Save configuration to file."""    
-        sorted_dict = collections.OrderedDict(sorted(self.__dict__.items())) # sort dictionary        
-        config = ConfigParser.ConfigParser() 
-        config.add_section(self.__config__) # write header
-        for k, v in sorted_dict.iteritems(): # for python3 use .items()            
-            if not k.startswith("_"): # write only non-private properties  
-                if isinstance(v,float): # if we are dealing with a float 
+        except:
+            return s
+
+    def save(self, filename):
+        """Save configuration to file."""
+        sorted_dict = collections.OrderedDict(sorted(self.__dict__.items()))  # sort dictionary
+        config = ConfigParser.ConfigParser()
+        config.add_section(self.__config__)  # write header
+        for k, v in sorted_dict.iteritems():  # for python3 use .items()
+            if not k.startswith("_"):  # write only non-private properties
+                if isinstance(v, float):  # if we are dealing with a float
                     str_v = str(v)
-                    if "e" not in str_v and "." not in str_v: # stop possible confusion with an int by appending a ".0"
+                    if "e" not in str_v and "." not in str_v:  # stop possible confusion with an int by appending a ".0"
                         v = str_v + ".0"
-                config.set(self.__config__,k,v)        
-        with open(filename,'w') as cfgfile:
+                config.set(self.__config__, k, v)
+        with open(filename, 'w') as cfgfile:
             config.write(cfgfile)
 
-    def load (self, filename):
-        """Load configuration from file."""    
-        config = ConfigParser.ConfigParser() 
-        config.read(filename)        
+    def load(self, filename):
+        """Load configuration from file."""
+        config = ConfigParser.ConfigParser()
+        config.read(filename)
         # check to see if the config file has the appropriate section
         if not config.has_section(self.__config__):
-            sys.stderr.write("ERROR: File \""+filename+"\" is not a valid configuration file for the selected task: Missing section ["+self.__config__+"]!\n")
+            sys.stderr.write(
+                "ERROR: File \"" + filename + "\" is not a valid configuration file for the selected task: Missing section [" + self.__config__ + "]!\n")
             sys.exit(1)
-        for k, v in config.items(self.__config__):            
-            self.__dict__[k] = self._auto_cast(v)                             
-            
-class TokenizerConfig (Config):
+        for k, v in config.items(self.__config__):
+            self.__dict__[k] = self._auto_cast(v)
+
+
+class TokenizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         sys.stdout.write("Reading configuration file... ")
@@ -74,7 +77,7 @@ class TokenizerConfig (Config):
         self.char_generic_feature_vocabulary_size = 2
         self.char_generic_feature_embedding_size = 5
 
-        self.encoder_char_input_attribute_dropout = 0.                
+        self.encoder_char_input_attribute_dropout = 0.
         self.encoder_char_lstm_size = 200
 
         # next-chars
@@ -97,14 +100,14 @@ class TokenizerConfig (Config):
 
         if filename == None:
             sys.stdout.write("no configuration file supplied. Using default values\n")
-        else: 
-            sys.stdout.write("reading configuration file ["+filename+"]\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
             self.load(filename)
-            
+
         self._valid = True
 
 
-class TaggerConfig (Config):
+class TaggerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         sys.stdout.write("Reading configuration file... ")
@@ -119,10 +122,10 @@ class TaggerConfig (Config):
 
         if filename == None:
             sys.stdout.write("no configuration file supplied. Using default values\n")
-        else: 
-            sys.stdout.write("reading configuration file ["+filename+"]\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
             self.load(filename)
-            
+
         print "INPUT SIZE:", self.input_size
         print "LAYERS:", self.layers
         print "LAYER DROPOUTS:", self.layer_dropouts
@@ -136,9 +139,9 @@ class TaggerConfig (Config):
             self._valid = False
 
 
-class ParserConfig (Config):
+class ParserConfig(Config):
     def __init__(self, filename=None):
-        super().__init__()    
+        super().__init__()
         sys.stdout.write("Reading configuration file... ")
         self.layers = [300, 300, 50, 50, 50]
         self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
@@ -154,10 +157,10 @@ class ParserConfig (Config):
 
         if filename == None:
             sys.stdout.write("no configuration file supplied. Using default values\n")
-        else: 
-            sys.stdout.write("reading configuration file ["+filename+"]\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
             self.load(filename)
-            
+
         print "LAYERS:", self.layers
         print "LAYER DROPOUTS:", self.layer_dropouts
         print "AUX SOFTMAX POSITION:", self.aux_softmax_layer
@@ -177,8 +180,8 @@ class ParserConfig (Config):
             print "Configuration error: you are using morphology to predict morphology."
             self._valid = False
 
-    
-class LemmatizerConfig (Config):
+
+class LemmatizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         self.rnn_size = 500
@@ -187,28 +190,42 @@ class LemmatizerConfig (Config):
         self.char_rnn_size = 200
         self.char_rnn_layers = 1
         self.tag_embeddings_size = 100
-        
+
         if filename == None:
             sys.stdout.write("no configuration file supplied. Using default values\n")
-        else: 
-            sys.stdout.write("reading configuration file ["+filename+"]\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
             self.load(filename)
 
 
-class NMTConfig (Config):
+class NMTConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         self.encoder_layers = [300, 300]
         self.encoder_layer_dropouts = [0.33, 0.33]
         self.decoder_layers = 2
         self.decoder_size = 300
-        self.decoder_dropout=0.33
+        self.decoder_dropout = 0.33
         self.input_size = 100
         self.aux_we_layer_size = 100
         self.input_dropout_prob = 0.33
-        
+
         if filename == None:
             sys.stdout.write("no configuration file supplied. Using default values\n")
-        else: 
-            sys.stdout.write("reading configuration file ["+filename+"]\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
             self.load(filename)
+
+
+class TokenizerConfig2(Config):
+    def __init__(self, filename=None):
+        super().__init__()
+        self.ss_char_embeddings_size = 32
+        self.ss_char_window_size = 5
+        self.ss_char_cnn_filters = 16
+        self.ss_char_cnn_dropout = 0.33
+        self.ss_mlp_layers = [100]
+        self.ss_mlp_dropouts = [0.33]
+        self.ss_lstm_size = 64
+        self.ss_lstm_layers = 1
+        self._valid = True

@@ -796,7 +796,9 @@ class TokenizerTrainer:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
-                total_loss += self.tokenizer.learn(X, y)
+
+                total_loss += self.tokenizer.learn_ss(X, y)
+
             stop_time = time.time()
             sys.stdout.write(" avg_loss=" + str(total_loss / len(X_train)) + " execution_time=" + str(
                 stop_time - start_time) + "\n")
@@ -824,7 +826,7 @@ class TokenizerTrainer:
                 path = output_base + ".bestSS"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.tokenizer.save(path)
+                self.tokenizer.save_ss(path)
                 itt_no_improve = self.patience
             if dev_tok > best_dev_tok:
                 best_dev_tok = dev_tok
@@ -833,12 +835,12 @@ class TokenizerTrainer:
                 path = output_base + ".bestTok"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.tokenizer.save(path)
+                self.tokenizer.save_ss(path)
                 itt_no_improve = self.patience
             path = output_base + ".last"
             sys.stdout.write("\tStoring " + path + "\n")
             sys.stdout.flush()
-            self.tokenizer.save(path)
+            self.tokenizer.save_ss(path)
 
         sys.stdout.write(
             "Training is done with devset sentence tok = " + str(best_dev_tok) + " and sentence = " + str(best_dev_ss))
@@ -872,7 +874,7 @@ class TokenizerTrainer:
         for i in range(len(lines)):
             input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-        sentences = self.tokenizer.tokenize(input_string)
+        sentences = self.tokenizer.tokenize_ss(input_string)
 
         # with open(output_conllu_file, 'w', encoding='utf-8') as file:
         with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:
