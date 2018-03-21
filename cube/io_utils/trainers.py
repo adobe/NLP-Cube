@@ -655,7 +655,6 @@ class TokenizerTrainer:
         self.patience = patience
         self.encodings = encodings
 
-
     # creates from a Dataset.sequences (which is a list of lists of Conll entries)
     # a two lists of lists of chars and gold labels
     def _create_Xy_sequences(self, sequence_set):
@@ -788,13 +787,13 @@ class TokenizerTrainer:
             sys.stdout.flush()
             total_loss = 0
             start_time = time.time()
-            current_batch_size=0
+            current_batch_size = 0
             self.tokenizer.start_batch()
             for iSeq in xrange(len(X_train)):
                 # print("TRAIN SEQ: "+str(iSeq))
                 X = X_train[iSeq]
                 y = y_train[iSeq]
-                current_batch_size+=len(X)
+                current_batch_size += len(X)
                 proc = (iSeq + 1) * 100 / len(X_train)
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
@@ -802,11 +801,12 @@ class TokenizerTrainer:
                     sys.stdout.flush()
 
                 self.tokenizer.learn_ss(X, y)
-                if current_batch_size>=batch_size:
-                    current_batch_size=0
-                    total_loss+=self.tokenizer.end_batch()
+                self.tokenizer.learn_tok(X, y)
+                if current_batch_size >= batch_size:
+                    current_batch_size = 0
+                    total_loss += self.tokenizer.end_batch()
                     self.tokenizer.start_batch()
-            if current_batch_size!=0:
+            if current_batch_size != 0:
                 current_batch_size = 0
                 total_loss += self.tokenizer.end_batch()
                 self.tokenizer.start_batch()
@@ -886,7 +886,7 @@ class TokenizerTrainer:
         for i in range(len(lines)):
             input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-        sentences = self.tokenizer.tokenize_ss(input_string)
+        sentences = self.tokenizer.tokenize(input_string)
 
         # with open(output_conllu_file, 'w', encoding='utf-8') as file:
         with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:

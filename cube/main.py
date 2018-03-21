@@ -366,8 +366,8 @@ def parse_train(params):
         if params.test_file:
             encodings.update_wordlist(testset)
         embeddings = WordEmbeddings()
-        #embeddings.read_from_file(params.embeddings,
-        #                          None)  # setting wordlist to None triggers Word Embeddings to act as cache-only and load offsets for all words
+        embeddings.read_from_file(params.embeddings,
+                                  None)  # setting wordlist to None triggers Word Embeddings to act as cache-only and load offsets for all words
         tokenizer = TieredTokenizer(config, encodings, embeddings)
         trainer = TokenizerTrainer(tokenizer, encodings, params.itters, trainset, devset, testset,
                                    raw_train_file=params.raw_train_file, raw_dev_file=params.raw_dev_file,
