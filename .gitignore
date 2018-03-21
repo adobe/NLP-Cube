@@ -55,5 +55,8 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-# Remove .idea folder
+# Do not track .idea folder
 .idea/*
+
+# Do not track virtualenv folder
+venv/*
