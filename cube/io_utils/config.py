@@ -221,29 +221,29 @@ class TokenizerConfig2(Config):
     def __init__(self, filename=None):
         super().__init__()
         # sentece splitting
-        self.ss_char_embeddings_size = 32
+        self.ss_char_embeddings_size = 100
         self.ss_char_peek_count = 5
-        self.ss_mlp_layers = [32]
+        self.ss_mlp_layers = [100]
         self.ss_mlp_dropouts = [0.33]
-        self.ss_lstm_size = 64
+        self.ss_lstm_size = 100
         self.ss_lstm_layers = 1
         self.ss_lstm_dropout = 0.33
-        self.ss_peek_lstm_size = 64
+        self.ss_peek_lstm_size = 100
         self.ss_peek_lstm_layers = 1
         self.ss_peek_lstm_dropout = 0.33
         # tokenization
-        self.tok_char_embeddings_size = 32
+        self.tok_char_embeddings_size = 100
         self.tok_word_embeddings_size = 100
-        self.tok_mlp_layers = [32]
+        self.tok_mlp_layers = [100]
         self.tok_mlp_dropouts = [0.33]
-        self.tok_char_lstm_layers = 1
-        self.tok_char_lstm_size = 64
+        self.tok_char_lstm_layers = 2
+        self.tok_char_lstm_size = 200
         self.tok_char_lstm_dropout = 0.33
         self.tok_word_lstm_layers = 1
-        self.tok_word_lstm_size = 100
+        self.tok_word_lstm_size = 200
         self.tok_word_lstm_dropout = 0.33
         self.tok_char_peek_lstm_layers = 1
-        self.tok_char_peek_lstm_size = 64
+        self.tok_char_peek_lstm_size = 200
         self.tok_char_peek_lstm_dropout = 0.33
 
         self._valid = True
