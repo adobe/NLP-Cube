@@ -3,7 +3,7 @@
 # Setup:
 
 Before running the server, you need the model's weights, and you can follow two approaches to get them:
-* Download data and train the model yourself
+* Download data in order to train the model yourself
 * Download already existing model weights 
 
 
