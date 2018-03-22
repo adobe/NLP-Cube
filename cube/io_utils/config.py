@@ -217,7 +217,7 @@ class NMTConfig(Config):
             self.load(filename)
 
 
-class TokenizerConfig2(Config):
+class TieredTokenizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         # sentece splitting

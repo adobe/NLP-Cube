@@ -104,7 +104,7 @@ from io_utils.config import TaggerConfig
 from io_utils.config import ParserConfig
 from io_utils.config import LemmatizerConfig
 from io_utils.config import NMTConfig
-from io_utils.config import TokenizerConfig2
+from io_utils.config import TieredTokenizerConfig
 from io_utils.config import CompoundWordConfig
 from io_utils.embeddings import WordEmbeddings
 from io_utils.encodings import Encodings
@@ -387,7 +387,7 @@ def parse_train(params):
         else:
             testset = None
         from generic_networks.tokenizers import TieredTokenizer
-        config = TokenizerConfig2(params.config)
+        config = TieredTokenizerConfig(params.config)
         config.raw_test_file = params.raw_test_file
         config.base = params.output_base
         config.patience = params.itters

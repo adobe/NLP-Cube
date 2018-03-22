@@ -366,6 +366,10 @@ class TieredTokenizer:
     def save_tok(self, filename):
         self.modelTok.save(filename)
 
+    def load(self, filename):
+        self.modelTok.populate(filename + "-tok.bestAcc")
+        self.modelSS.populate(filename + "-ss.bestAcc")
+
     def _predict_ss(self, seq, runtime=True):
         x_list = []
         offset = self.config.ss_char_peek_count
