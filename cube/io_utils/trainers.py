@@ -279,6 +279,130 @@ class LemmatizerTrainer:
 
         return float(correct) / total
 
+class CompoundWordTrainer:
+    def __init__(self, cw, encodings, patience, trainset, devset, testset=None):
+        self.tagger = cw
+        self.trainset = trainset
+        self.devset = devset
+        self.testset = testset
+        self.patience = patience
+        self.encodings = encodings
+
+    def start_training(self, output_base, batch_size=1):
+        epoch = 0
+        itt_no_improve = self.patience
+        selected_test_acc = 0
+        selected_dev_acc = 0
+        path = output_base + ".encodings"
+        sys.stdout.write("Storing encodings in " + path + "\n")
+        self.encodings.save(path)
+        path = output_base + ".conf"
+        sys.stdout.write("Storing config in " + path + "\n")
+        self.tagger.config.save(path)
+        sys.stdout.write("\tevaluating on devset...")
+        sys.stdout.flush()
+        dev_acc = 0  # self.eval(self.devset)
+        sys.stdout.write(" accuracy=" + str(dev_acc) + "\n")
+        if self.testset is not None:
+            sys.stdout.write("\tevaluating on testset...")
+            sys.stdout.flush()
+            test_acc = 0  # self.eval(self.testset)
+            sys.stdout.write(" accuracy=" + str(test_acc) + "\n")
+        best_dev_acc = dev_acc
+
+        while itt_no_improve > 0:
+            itt_no_improve -= 1
+            epoch += 1
+            sys.stdout.write("Starting epoch " + str(epoch) + "\n")
+            sys.stdout.flush()
+            sys.stdout.write("\tshuffling training data... ")
+            sys.stdout.flush()
+            shuffle(self.trainset.sequences)
+            sys.stdout.write("done\n")
+            sys.stdout.flush()
+            last_proc = 0
+            sys.stdout.write("\ttraining...")
+            sys.stdout.flush()
+            total_loss = 0
+            start_time = time.time()
+            current_batch_size = 0
+            self.tagger.start_batch()
+            for iSeq in xrange(len(self.trainset.sequences)):
+                seq = self.trainset.sequences[iSeq]
+                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                if proc % 5 == 0 and proc != last_proc:
+                    last_proc = proc
+                    sys.stdout.write(" " + str(proc))
+                    sys.stdout.flush()
+
+                self.tagger.learn(seq)
+                current_batch_size += len(seq)
+                if current_batch_size >= batch_size:
+                    total_loss += self.tagger.end_batch()
+                    self.tagger.start_batch()
+                    current_batch_size = 0
+            total_loss += self.tagger.end_batch()
+            stop_time = time.time()
+            sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
+                stop_time - start_time) + "\n")
+
+            sys.stdout.write("\tevaluating on devset...")
+            sys.stdout.flush()
+            dev_acc = self.eval(self.devset)
+            sys.stdout.write(" accuracy=" + str(dev_acc) + "\n")
+            if self.testset is not None:
+                sys.stdout.write("\tevaluating on testset...")
+                sys.stdout.flush()
+                test_acc = self.eval(self.testset)
+                sys.stdout.write(" accuracy=" + str(test_acc) + ")\n")
+
+            if dev_acc > best_dev_acc:
+                best_dev_acc = dev_acc
+                selected_dev_acc = dev_acc
+                if self.testset is not None:
+                    selected_test_acc = test_acc
+                path = output_base + ".bestACC"
+                sys.stdout.write("\tStoring " + path + "\n")
+                sys.stdout.flush()
+                self.tagger.save(path)
+                itt_no_improve = self.patience
+
+            path = output_base + ".last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.tagger.save(path)
+
+        sys.stdout.write("Training is done with devset_accuracy=" + str(selected_dev_acc) + "\n")
+        if self.testset is not None:
+            sys.stdout.write(" and testset_accuracy=" + str(
+                selected_test_acc) + " (for the selected epoch, based on best devset accuracy)")
+        sys.stdout.write("\n")
+
+    def eval(self, dataset):
+        last_proc = 0
+        correct = 0
+        total = 0
+
+        for iSeq in xrange(len(dataset.sequences)):
+            seq = dataset.sequences[iSeq]
+
+            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            if proc % 5 == 0 and proc != last_proc:
+                last_proc = proc
+                sys.stdout.write(" " + str(proc))
+                sys.stdout.flush()
+
+            pred_lemmas = self.tagger.tag(seq)
+
+            for entry, pred_lemma in zip(seq, pred_lemmas):
+                if entry.upos != 'NUM' and entry.upos != 'PROPN':
+                    total += 1
+                    # from pdb import set_trace
+                    # set_trace()
+                    if unicode(entry.lemma, 'utf-8') == pred_lemma:
+                        correct += 1
+
+        return float(correct) / total
 
 class TaggerTrainer:
     def __init__(self, tagger, encodings, patience, trainset, devset, testset=None):
@@ -835,7 +959,7 @@ class TokenizerTrainer:
                 best_dev_ss = dev_ss
                 if self.testset is not None:
                     selected_test_ss = test_ss
-                path = output_base + ".bestSS"
+                path = output_base + "-ss.bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
                 self.tokenizer.save_ss(path)
@@ -844,12 +968,17 @@ class TokenizerTrainer:
                 best_dev_tok = dev_tok
                 if self.testset is not None:
                     selected_test_tok = test_tok
-                path = output_base + ".bestTok"
+                path = output_base + "-tok.bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.tokenizer.save_ss(path)
+                self.tokenizer.save_tok(path)
                 itt_no_improve = self.patience
-            path = output_base + ".last"
+
+            path = output_base + "-ss.last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.tokenizer.save_ss(path)
+            path = output_base + "-tok.last"
             sys.stdout.write("\tStoring " + path + "\n")
             sys.stdout.flush()
             self.tokenizer.save_ss(path)

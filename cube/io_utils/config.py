@@ -237,13 +237,23 @@ class TokenizerConfig2(Config):
         self.tok_mlp_layers = [100]
         self.tok_mlp_dropouts = [0.33]
         self.tok_char_lstm_layers = 2
-        self.tok_char_lstm_size = 200
+        self.tok_char_lstm_size = 300
         self.tok_char_lstm_dropout = 0.33
         self.tok_word_lstm_layers = 1
         self.tok_word_lstm_size = 200
         self.tok_word_lstm_dropout = 0.33
-        self.tok_char_peek_lstm_layers = 1
-        self.tok_char_peek_lstm_size = 200
+        self.tok_char_peek_lstm_layers = 2
+        self.tok_char_peek_lstm_size = 300
         self.tok_char_peek_lstm_dropout = 0.33
 
         self._valid = True
+
+
+class CompoundWordConfig(Config):
+    def __init__(self, filename=None):
+        super().__init__()
+        self.character_embeddings_size = 100
+        self.encoder_size = 200
+        self.encoder_layers = 2
+        self.decoder_size = 200
+        self.decoder_layers = 2

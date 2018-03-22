@@ -35,10 +35,8 @@ class TieredTokenizer:
 
         self.modelSS = dy.Model()
         self.modelTok = dy.Model()
-        self.modelCompound = dy.Model()
         self.trainerSS = dy.AdamTrainer(self.modelSS, alpha=2e-3, beta_1=0.9, beta_2=0.9)
         self.trainerTok = dy.AdamTrainer(self.modelTok, alpha=2e-3, beta_1=0.9, beta_2=0.9)
-        self.trainerCompound = dy.AdamTrainer(self.modelCompound, alpha=2e-3, beta_1=0.9, beta_2=0.9)
 
         # sentence split model
         from wrappers import CNN, CNNConvLayer, CNNPoolingLayer
@@ -108,23 +106,24 @@ class TieredTokenizer:
                                                           self.config.tok_char_embeddings_size + 5,
                                                           self.config.tok_char_lstm_size, self.modelTok)
             self.TOK_word_lstm = dy.VanillaLSTMBuilder(self.config.tok_word_lstm_layers,
-                                                       self.config.tok_word_embeddings_size, self.config.tok_word_lstm_size,
-                                                       self.modelTok)
-        else:
-            self.TOK_backward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_peek_lstm_layers,
-                                                           self.config.tok_char_embeddings_size + 5,
-                                                           self.config.tok_char_peek_lstm_size, self.modelTok)
-            self.TOK_forward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_lstm_layers,
-                                                          self.config.tok_char_embeddings_size + 5,
-                                                          self.config.tok_char_lstm_size, self.modelTok)
-            self.TOK_word_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_word_lstm_layers,
                                                        self.config.tok_word_embeddings_size,
                                                        self.config.tok_word_lstm_size,
                                                        self.modelTok)
+        else:
+            self.TOK_backward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_peek_lstm_layers,
+                                                                    self.config.tok_char_embeddings_size + 5,
+                                                                    self.config.tok_char_peek_lstm_size, self.modelTok)
+            self.TOK_forward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_lstm_layers,
+                                                                   self.config.tok_char_embeddings_size + 5,
+                                                                   self.config.tok_char_lstm_size, self.modelTok)
+            self.TOK_word_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_word_lstm_layers,
+                                                                self.config.tok_word_embeddings_size,
+                                                                self.config.tok_word_lstm_size,
+                                                                self.modelTok)
 
         self.TOK_mlp_w = []
         self.TOK_mlp_b = []
-        layer_input = self.config.tok_word_lstm_size + self.config.tok_char_lstm_size + self.config.tok_char_peek_lstm_size + 2
+        layer_input = self.config.tok_word_lstm_size + self.config.tok_char_lstm_size + self.config.tok_char_peek_lstm_size + 2 + self.config.tok_word_embeddings_size
         for layer_size in self.config.tok_mlp_layers:
             self.TOK_mlp_w.append(self.modelTok.add_parameters((layer_size, layer_input)))
             self.TOK_mlp_b.append(self.modelTok.add_parameters((layer_size)))
@@ -211,12 +210,20 @@ class TieredTokenizer:
                 dy.softmax(self.TOK_softmax_peek_w.expr() * bw_out[index] + self.TOK_softmax_peek_b.expr()))
 
             word_state = word_is_unknown
-            _, found = self.word_embeddings.get_word_embeddings(word.strip())
+            peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
             if found:
                 word_state = word_is_known
+                peek_emb = dy.tanh(self.TOK_word_proj_w.expr() * dy.inputVector(peek_emb))
+            else:
+                peek_emb = dy.tanh(self.TOK_word_proj_w.expr() * self.TOK_word_embeddings_special[0])
+
             if word.strip().lower() in self.encodings.word2int:
                 word_state = word_is_known
-            hidden = dy.concatenate([fw_out[index], bw_out[index], word_lstm.output(), word_state])
+                peek_hol = self.TOK_word_lookup[self.encodings.word2int[word.strip().lower()]]
+            else:
+                peek_hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
+
+            hidden = dy.concatenate([fw_out[index], bw_out[index], word_lstm.output(), word_state, peek_hol + peek_emb])
             for w, b, dropout in zip(self.TOK_mlp_w, self.TOK_mlp_b, self.config.tok_mlp_dropouts):
                 hidden = dy.tanh(w.expr() * hidden + b.expr())
                 if not runtime:
@@ -354,7 +361,10 @@ class TieredTokenizer:
         return sequences
 
     def save_ss(self, filename):
-        x = 0
+        self.modelSS.save(filename)
+
+    def save_tok(self, filename):
+        self.modelTok.save(filename)
 
     def _predict_ss(self, seq, runtime=True):
         x_list = []
