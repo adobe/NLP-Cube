@@ -32,6 +32,19 @@ Before running the server, you need the model's weights, and you can follow two 
     cd python
     python2 ../../setup.py build --build-dir=.. --skip-build install
     ```
+    
+
+#### Training the lemmatizer:
+
+Use the following command to train your lemmatizer:
+
+```python2 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000```
+
+#### Running the server:
+
+Use the following command to run the server locally:
+
+```python2 cube/main.py --start-server --model-tokenization=corpus/trained_models/ro/tokenizer --model-parsing=corpus/trained_models/ro/parser --model-lemmatization=corpus/trained_models/ro/lemma --embeddings=corpus/wiki.ro.vec --server-port=8080```
 
 
 # Current status
