@@ -81,7 +81,7 @@ def nlp():
 
             for entry, lemma in zip(seq, lemmatized):
                 if not entry.is_compound_entry:
-                    entry.lemma = lemma
+                    entry.lemma = lemma.encode('utf-8')
 
             for entry in seq:
                 if entry.lemma is None:
