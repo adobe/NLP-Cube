@@ -102,15 +102,15 @@ class EmbeddedWebserver:
         if tokenization is not None:
             sys.stdout.write("Loading tokenization model from " + tokenization)
             sys.stdout.flush()
-            from generic_networks.tokenizers import BDRNNTokenizer
-            from io_utils.config import TokenizerConfig
+            from generic_networks.tokenizers import TieredTokenizer
+            from io_utils.config import TieredTokenizerConfig
             from io_utils.encodings import Encodings
             tok_encodings = Encodings()
             tok_encodings.load(tokenization + ".encodings")
-            tok_config = TokenizerConfig()
+            tok_config = TieredTokenizerConfig()
             tok_config.load(tokenization + ".conf")
-            self.tokenizer = BDRNNTokenizer(tok_config, tok_encodings, embeddings, runtime=True)
-            self.tokenizer.load(tokenization + ".bestSS")
+            self.tokenizer = TieredTokenizer(tok_config, tok_encodings, embeddings, runtime=True)
+            self.tokenizer.load(tokenization)
 
         if parsing is not None:
             sys.stdout.write("Loading parsing model from " + parsing)

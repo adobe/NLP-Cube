@@ -28,17 +28,407 @@ from io_utils.conll import ConllEntry
 
 
 class TieredTokenizer:
-    def __init__(config, encodings, embeddings, runtime=False):
+    def __init__(self, config, encodings, embeddings, runtime=False):
         self.config = config
         self.word_embeddings = embeddings
         self.encodings = encodings
 
         self.modelSS = dy.Model()
         self.modelTok = dy.Model()
-        self.modelCompound = dy.Model()
-        self.trainerSS = dy.AdamTrainer(self.modelSS)
-        self.trainerTok = dy.AdamTrainer(self.modelTok)
-        self.trainerCompound = dy.AdamTrainer(self.modelCompound)
+        self.trainerSS = dy.AdamTrainer(self.modelSS, alpha=2e-3, beta_1=0.9, beta_2=0.9)
+        self.trainerTok = dy.AdamTrainer(self.modelTok, alpha=2e-3, beta_1=0.9, beta_2=0.9)
+
+        # sentence split model
+        from wrappers import CNN, CNNConvLayer, CNNPoolingLayer
+        from utils import orthonormal_VanillaLSTMBuilder
+        # character-level-embeddings
+        self.SS_char_lookup = self.modelSS.add_lookup_parameters(
+            (len(self.encodings.char2int), self.config.ss_char_embeddings_size))
+        self.SS_char_lookup_casing = self.modelSS.add_lookup_parameters((3, 5))  # lower, upper N/A
+        self.SS_char_lookup_special = self.modelSS.add_lookup_parameters((2, self.config.ss_char_embeddings_size + 5))
+        # lstm-peek network
+        if runtime:
+            self.SS_peek_lstm = dy.VanillaLSTMBuilder(self.config.ss_peek_lstm_layers,
+                                                      self.config.ss_char_embeddings_size + 5,
+                                                      self.config.ss_peek_lstm_size, self.modelSS)
+        else:
+            self.SS_peek_lstm = orthonormal_VanillaLSTMBuilder(self.config.ss_peek_lstm_layers,
+                                                               self.config.ss_char_embeddings_size + 5,
+                                                               self.config.ss_peek_lstm_size, self.modelSS)
+        layer_is = self.config.ss_peek_lstm_size
+        self.SS_aux_softmax_peek_w = self.modelSS.add_parameters((2, layer_is))
+        self.SS_aux_softmax_peek_b = self.modelSS.add_parameters((2))
+        if runtime:
+            self.SS_lstm = dy.VanillaLSTMBuilder(self.config.ss_lstm_layers, self.config.ss_char_embeddings_size + 5,
+                                                 self.config.ss_lstm_size,
+                                                 self.modelSS)
+        else:
+            self.SS_lstm = orthonormal_VanillaLSTMBuilder(self.config.ss_lstm_layers,
+                                                          self.config.ss_char_embeddings_size + 5,
+                                                          self.config.ss_lstm_size,
+                                                          self.modelSS)
+
+        self.SS_aux_softmax_prev_w = self.modelSS.add_parameters((2, self.config.ss_lstm_size))
+        self.SS_aux_softmax_prev_b = self.modelSS.add_parameters((2))
+
+        # post MLP and softmax
+        self.SS_mlp_w = []
+        self.SS_mlp_b = []
+        layer_is = self.config.ss_lstm_size + self.config.ss_peek_lstm_size
+        for layer in self.config.ss_mlp_layers:
+            self.SS_mlp_w.append(self.modelSS.add_parameters((layer, layer_is)))
+            self.SS_mlp_b.append(self.modelSS.add_parameters((layer)))
+            layer_is = layer
+
+        self.SS_mlp_softmax_w = self.modelSS.add_parameters((2, layer_is))
+        self.SS_mlp_softmax_b = self.modelSS.add_parameters((2))
+
+        # tokenization model
+        self.TOK_char_lookup = self.modelTok.add_lookup_parameters(
+            (len(self.encodings.char2int), self.config.tok_char_embeddings_size))
+        self.TOK_char_lookup_casing = self.modelTok.add_lookup_parameters((3, 5))  # lower, upper N/A
+        self.TOK_char_lookup_special = self.modelTok.add_lookup_parameters(
+            (2, self.config.tok_char_embeddings_size + 5))
+        self.TOK_word_lookup = self.modelTok.add_lookup_parameters(
+            (len(self.encodings.word2int), self.config.tok_word_embeddings_size))
+
+        self.TOK_word_embeddings_special = self.modelTok.add_lookup_parameters(
+            (2, self.word_embeddings.word_embeddings_size))
+
+        self.TOK_word_proj_w = self.modelTok.add_parameters(
+            (self.config.tok_word_embeddings_size, self.word_embeddings.word_embeddings_size))
+        # lstm networks
+        if runtime:
+            self.TOK_backward_lstm = dy.VanillaLSTMBuilder(self.config.tok_char_peek_lstm_layers,
+                                                           self.config.tok_char_embeddings_size + 5,
+                                                           self.config.tok_char_peek_lstm_size, self.modelTok)
+            self.TOK_forward_lstm = dy.VanillaLSTMBuilder(self.config.tok_char_lstm_layers,
+                                                          self.config.tok_char_embeddings_size + 5,
+                                                          self.config.tok_char_lstm_size, self.modelTok)
+            self.TOK_word_lstm = dy.VanillaLSTMBuilder(self.config.tok_word_lstm_layers,
+                                                       self.config.tok_word_embeddings_size,
+                                                       self.config.tok_word_lstm_size,
+                                                       self.modelTok)
+        else:
+            self.TOK_backward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_peek_lstm_layers,
+                                                                    self.config.tok_char_embeddings_size + 5,
+                                                                    self.config.tok_char_peek_lstm_size, self.modelTok)
+            self.TOK_forward_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_char_lstm_layers,
+                                                                   self.config.tok_char_embeddings_size + 5,
+                                                                   self.config.tok_char_lstm_size, self.modelTok)
+            self.TOK_word_lstm = orthonormal_VanillaLSTMBuilder(self.config.tok_word_lstm_layers,
+                                                                self.config.tok_word_embeddings_size,
+                                                                self.config.tok_word_lstm_size,
+                                                                self.modelTok)
+
+        self.TOK_mlp_w = []
+        self.TOK_mlp_b = []
+        layer_input = self.config.tok_word_lstm_size + self.config.tok_char_lstm_size + self.config.tok_char_peek_lstm_size + 2 + self.config.tok_word_embeddings_size
+        for layer_size in self.config.tok_mlp_layers:
+            self.TOK_mlp_w.append(self.modelTok.add_parameters((layer_size, layer_input)))
+            self.TOK_mlp_b.append(self.modelTok.add_parameters((layer_size)))
+            layer_input = layer_size
+
+        self.TOK_softmax_w = self.modelTok.add_parameters((2, layer_input))
+        self.TOK_softmax_b = self.modelTok.add_parameters((2))
+        self.TOK_softmax_peek_w = self.modelTok.add_parameters((2, self.config.tok_char_peek_lstm_size))
+        self.TOK_softmax_peek_b = self.modelTok.add_parameters((2))
+        self.TOK_softmax_prev_w = self.modelTok.add_parameters((2, self.config.tok_char_lstm_size))
+        self.TOK_softmax_prev_b = self.modelTok.add_parameters((2))
+
+        self.losses = []
+        self.losses_tok = []
+
+    def start_batch(self):
+        self.losses = []
+        self.losses_tok = []
+        dy.renew_cg()
+
+    def end_batch(self):
+        total_loss_ss = dy.esum(self.losses)
+        total_loss_tok = dy.esum(self.losses_tok)
+        total_loss_val = total_loss_ss.value() + total_loss_tok.value()
+        total_loss_ss.backward()
+        total_loss_tok.backward()
+        self.trainerSS.update()
+        self.trainerTok.update()
+        return total_loss_val
+
+    def _predict_tok(self, seq, y_gold=None, runtime=False):
+        x_list = []
+        offset = 1
+
+        word_is_known = dy.inputVector([1.0, 0.0])
+        word_is_unknown = dy.inputVector([0.0, 1.0])
+
+        for char in seq:
+            lookup_char = char.lower()
+            import re
+            lookup_char = re.sub('\d', '0', lookup_char)
+            if lookup_char in self.encodings.char2int:
+                char_emb = self.TOK_char_lookup[self.encodings.char2int[lookup_char]]
+            else:
+                char_emb = self.TOK_char_lookup[self.encodings.char2int['<UNK>']]
+
+            if char.lower() == char and char.upper() == char:
+                casing_emb = self.TOK_char_lookup_casing[0]  # does not support casing
+            elif char.lower() == char:
+                casing_emb = self.TOK_char_lookup_casing[1]  # is lowercased
+            else:
+                casing_emb = self.TOK_char_lookup_casing[2]  # is uppercased
+
+            x = dy.concatenate([char_emb, casing_emb])
+            x_list.append(x)
+
+        for _ in xrange(offset):
+            x_list.append(self.TOK_char_lookup_special[1])
+
+        aux_softmax_output_peek = []
+        aux_softmax_output_prev = []
+        softmax_output = []
+
+        if runtime:
+            self.TOK_forward_lstm.set_dropouts(0, 0)
+            self.TOK_backward_lstm.set_dropouts(0, 0)
+            self.TOK_word_lstm.set_dropouts(0, 0)
+        else:
+            self.TOK_forward_lstm.set_dropouts(self.config.tok_char_lstm_dropout, self.config.tok_char_lstm_dropout)
+            self.TOK_backward_lstm.set_dropouts(self.config.tok_char_peek_lstm_dropout,
+                                                self.config.tok_char_peek_lstm_dropout)
+            self.TOK_word_lstm.set_dropouts(self.config.tok_word_lstm_dropout, self.config.tok_word_lstm_dropout)
+
+        fw_out = self.TOK_forward_lstm.initial_state().transduce(x_list)
+        bw_out = list(reversed(self.TOK_backward_lstm.initial_state().transduce(reversed(x_list))))
+        word_lstm = self.TOK_word_lstm.initial_state().add_input(
+            dy.inputVector([0] * self.config.tok_word_embeddings_size))
+        word = ""
+        for index in xrange(len(seq)):
+            word += seq[index]
+            aux_softmax_output_prev.append(
+                dy.softmax(self.TOK_softmax_prev_w.expr() * fw_out[index] + self.TOK_softmax_prev_b.expr()))
+            aux_softmax_output_peek.append(
+                dy.softmax(self.TOK_softmax_peek_w.expr() * bw_out[index] + self.TOK_softmax_peek_b.expr()))
+
+            word_state = word_is_unknown
+            peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
+            if found:
+                word_state = word_is_known
+                peek_emb = self.TOK_word_proj_w.expr() * dy.inputVector(peek_emb)
+            else:
+                peek_emb = self.TOK_word_proj_w.expr() * self.TOK_word_embeddings_special[0]
+
+            if word.strip().lower() in self.encodings.word2int:
+                word_state = word_is_known
+                peek_hol = self.TOK_word_lookup[self.encodings.word2int[word.strip().lower()]]
+            else:
+                peek_hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
+
+            hidden = dy.concatenate(
+                [fw_out[index], bw_out[index], word_lstm.output(), word_state, dy.tanh(peek_hol + peek_emb)])
+            for w, b, dropout in zip(self.TOK_mlp_w, self.TOK_mlp_b, self.config.tok_mlp_dropouts):
+                hidden = dy.tanh(w.expr() * hidden + b.expr())
+                if not runtime:
+                    hidden = dy.dropout(hidden, dropout)
+
+            softmax_output.append(dy.softmax(self.TOK_softmax_w.expr() * hidden + self.TOK_softmax_b.expr()))
+            must_split = False
+            if not runtime:
+                if y_gold[index] == "S" or y_gold[index] == "SX":
+                    must_split = True
+            elif np.argmax(softmax_output[-1].npvalue()) == 1:
+                must_split = True
+
+            if must_split:
+                emb, found = self.word_embeddings.get_word_embeddings(word.strip())
+                if not found:
+                    emb = self.TOK_word_embeddings_special[1]
+                else:
+                    emb = dy.inputVector(emb)
+
+                word = word.lower().strip()
+                if word in self.encodings.word2int:
+                    hol = self.TOK_word_lookup[self.encodings.word2int[word]]
+                else:
+                    hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
+
+                emb = dy.tanh(self.TOK_word_proj_w.expr() * emb)
+
+                word_lstm = word_lstm.add_input(emb + hol)
+                word = ""
+
+        return softmax_output, aux_softmax_output_prev, aux_softmax_output_peek
+
+    def learn_tok(self, x, y, aux_softmax_weight=0.2):
+        losses = []
+        y_prediction, y_prediction_aux1, y_prediction_aux2 = self._predict_tok(x, y_gold=y, runtime=False)
+        for y_real, y_pred, y_aux1, y_aux2 in zip(y, y_prediction, y_prediction_aux1, y_prediction_aux2):
+            if y_real == "SX" or y_real == "S":
+                losses.append(-dy.log(dy.pick(y_pred, 1)))
+                losses.append(-dy.log(dy.pick(y_aux1, 1)) * aux_softmax_weight)
+                losses.append(-dy.log(dy.pick(y_aux2, 1)) * aux_softmax_weight)
+            else:
+                losses.append(-dy.log(dy.pick(y_pred, 0)))
+                losses.append(-dy.log(dy.pick(y_aux1, 0)) * aux_softmax_weight)
+                losses.append(-dy.log(dy.pick(y_aux2, 0)) * aux_softmax_weight)
+
+        loss = dy.esum(losses)
+        self.losses_tok.append(loss)
+
+    def learn_ss(self, x, y, aux_softmax_weight=0.2):
+        losses = []
+        y_prediction, y_prediction_aux1, y_prediction_aux2 = self._predict_ss(x, runtime=False)
+        for y_real, y_pred, y_aux1, y_aux2 in zip(y, y_prediction, y_prediction_aux1, y_prediction_aux2):
+            if y_real == "SX":
+                losses.append(-dy.log(dy.pick(y_pred, 1)))
+                losses.append(-dy.log(dy.pick(y_aux1, 1)) * aux_softmax_weight)
+                losses.append(-dy.log(dy.pick(y_aux2, 1)) * aux_softmax_weight)
+            else:
+                losses.append(-dy.log(dy.pick(y_pred, 0)))
+                losses.append(-dy.log(dy.pick(y_aux1, 0)) * aux_softmax_weight)
+                losses.append(-dy.log(dy.pick(y_aux2, 0)) * aux_softmax_weight)
+
+        loss = dy.esum(losses)
+        self.losses.append(loss)
+
+    def _get_tokens(self, input_string):
+        tokens = []
+        y_pred, _, _ = self._predict_tok(input_string, runtime=True)
+        index = 0
+        w = ""
+        for char, y in zip(input_string, y_pred):
+            w += char
+            if np.argmax(y.npvalue()) == 1:
+                if w.strip() != "":
+                    index += 1
+                    entry = ConllEntry(index, w.strip().encode('utf-8'), w.strip().encode('utf-8'), "_", "_", "_", 0,
+                                       "_", "_", "")
+                    tokens.append(entry)
+                    w = ""
+        if w.strip() != "":
+            index += 1
+            entry = ConllEntry(index, w.strip().encode('utf-8'), w.strip().encode('utf-8'), "_", "_", "_", 0, "_", "_",
+                               "")
+            tokens.append(entry)
+
+        return tokens
+
+    def tokenize(self, input_string):
+        batch_size = 1000
+        input_string = unicode(input_string, 'utf-8')
+
+        sequences = []
+        num_chars = 0
+        last_proc = 0
+        sz = len(input_string)
+
+        w = ""
+        while len(input_string) > 0:
+            current_string = input_string[:min(len(input_string), batch_size + 1)]
+            proc = num_chars * 100 / sz
+            while last_proc + 5 < proc:
+                last_proc += 5
+                sys.stdout.write(" " + str(last_proc))
+                sys.stdout.flush()
+            dy.renew_cg()
+            y_pred, _, _ = self._predict_ss(current_string)
+
+            last_ss_break = -1
+            last_checked_index = -1
+            if len(current_string) == batch_size:
+                current_string = current_string[:-100]
+
+            for y, char, index in zip(y_pred, current_string, xrange(len(current_string))):
+                w += char
+                if np.argmax(y.npvalue()) == 1:
+                    seq = self._get_tokens(w.strip())
+                    sequences.append(seq)
+                    w = ""
+                    last_ss_break = index
+                last_checked_index = index
+
+            if last_ss_break == -1:  # no sentence break applied
+                last_ss_break = last_checked_index
+            else:
+                w = ""
+
+            input_string = input_string[last_ss_break + 1:]
+
+            num_chars += last_ss_break
+
+        if w.strip() != "":
+            seq = self._get_tokens(w.strip())
+            sequences.append(seq)
+
+        return sequences
+
+    def save_ss(self, filename):
+        self.modelSS.save(filename)
+
+    def save_tok(self, filename):
+        self.modelTok.save(filename)
+
+    def load(self, filename):
+        self.modelTok.populate(filename + "-tok.bestAcc")
+        self.modelSS.populate(filename + "-ss.bestAcc")
+
+    def _predict_ss(self, seq, runtime=True):
+        x_list = []
+        offset = self.config.ss_char_peek_count
+
+        for char in seq:
+            lookup_char = char.lower()
+            import re
+            lookup_char = re.sub('\d', '0', lookup_char)
+            if lookup_char in self.encodings.char2int:
+                char_emb = self.SS_char_lookup[self.encodings.char2int[lookup_char]]
+            else:
+                char_emb = self.SS_char_lookup[self.encodings.char2int['<UNK>']]
+
+            if char.lower() == char and char.upper() == char:
+                casing_emb = self.SS_char_lookup_casing[0]  # does not support casing
+            elif char.lower() == char:
+                casing_emb = self.SS_char_lookup_casing[1]  # is lowercased
+            else:
+                casing_emb = self.SS_char_lookup_casing[2]  # is uppercased
+
+            x = dy.concatenate([char_emb, casing_emb])
+            x_list.append(x)
+
+        for _ in xrange(offset):
+            x_list.append(self.SS_char_lookup_special[1])
+
+        aux_softmax_output_peek = []
+        aux_softmax_output_prev = []
+        softmax_output = []
+
+        # forward pass should not be a problem
+        if runtime:
+            self.SS_lstm.set_dropouts(0, 0)
+            self.SS_peek_lstm.set_dropouts(0, 0)
+        else:
+            self.SS_lstm.set_dropouts(self.config.ss_lstm_dropout, self.config.ss_lstm_dropout)
+            self.SS_peek_lstm.set_dropouts(self.config.ss_peek_lstm_dropout, self.config.ss_peek_lstm_dropout)
+        lstm_fw = self.SS_lstm.initial_state()
+
+        for cIndex in xrange(len(seq)):
+            peek_chars = x_list[cIndex:cIndex + self.config.ss_char_peek_count + 1]
+            peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
+
+            aux_softmax_output_peek.append(
+                dy.softmax(self.SS_aux_softmax_peek_w.expr() * peek_out + self.SS_aux_softmax_peek_b.expr()))
+
+            lstm_fw = lstm_fw.add_input(x_list[cIndex])
+            lstm_out = lstm_fw.output()
+            aux_softmax_output_prev.append(
+                dy.softmax(self.SS_aux_softmax_prev_w.expr() * lstm_out + self.SS_aux_softmax_prev_b.expr()))
+            hidden = dy.concatenate([lstm_out, peek_out])
+            for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
+                hidden = dy.tanh(w.expr() * hidden + b.expr())
+                if not runtime:
+                    hidden = dy.dropout(hidden, dropout)
+            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr() * hidden + self.SS_mlp_softmax_b.expr()))
+
+        return softmax_output, aux_softmax_output_peek, aux_softmax_output_prev
 
 
 class BDRNNTokenizer:
