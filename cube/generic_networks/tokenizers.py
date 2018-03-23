@@ -300,13 +300,13 @@ class TieredTokenizer:
             if np.argmax(y.npvalue()) == 1:
                 if w.strip() != "":
                     index += 1
-                    entry = ConllEntry(index, w.strip().encode('utf-8'), w.strip().encode('utf-8'), "_", "_", "_", 0,
+                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0,
                                        "_", "_", "")
                     tokens.append(entry)
                     w = ""
         if w.strip() != "":
             index += 1
-            entry = ConllEntry(index, w.strip().encode('utf-8'), w.strip().encode('utf-8'), "_", "_", "_", 0, "_", "_",
+            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_",
                                "")
             tokens.append(entry)
 
