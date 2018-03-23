@@ -1,0 +1,5 @@
+Cython==0.28.1
+future==0.16.0
+scipy==1.0.0
+nltk==3.2.5
+requests==2.18.4
