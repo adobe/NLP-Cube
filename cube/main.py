@@ -23,7 +23,7 @@ import sys
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store', dest='train',
-                      choices=['tagger', 'parser', 'lemmatizer', 'tokenizer', 'mt'],
+                      choices=['tagger', 'parser', 'lemmatizer', 'tokenizer', 'mt', 'compound'],
                       help='select which model to train: tagger, parser, lemmatizer, tokenizer')
     parser.add_option('--train-file', action='store', dest='train_file', help='location of the train dataset')
     parser.add_option('--dev-file', action='store', dest='dev_file', help='location of the dev dataset')
@@ -104,6 +104,8 @@ from io_utils.config import TaggerConfig
 from io_utils.config import ParserConfig
 from io_utils.config import LemmatizerConfig
 from io_utils.config import NMTConfig
+from io_utils.config import TieredTokenizerConfig
+from io_utils.config import CompoundWordConfig
 from io_utils.embeddings import WordEmbeddings
 from io_utils.encodings import Encodings
 from io_utils.trainers import TokenizerTrainer
@@ -111,11 +113,14 @@ from io_utils.trainers import TaggerTrainer
 from io_utils.trainers import ParserTrainer
 from io_utils.trainers import LemmatizerTrainer
 from io_utils.trainers import MTTrainer
+from io_utils.trainers import CompoundWordTrainer
 from generic_networks.tokenizers import BDRNNTokenizer
 from generic_networks.taggers import BDRNNTagger
 from generic_networks.parsers import BDRNNParser
 from generic_networks.lemmatizers import BDRNNLemmatizer
 from generic_networks.translators import BRNNMT
+from generic_networks.tokenizers import TieredTokenizer
+from generic_networks.token_expanders import CompoundWordExpander
 
 
 def parse_test(params):
@@ -330,6 +335,37 @@ def parse_train(params):
         trainer = LemmatizerTrainer(lemmatizer, encodings, params.itters, trainset, devset, testset)
         trainer.start_training(params.output_base, batch_size=params.batch_size)
 
+    elif params.train == "compound":
+        print "Starting training for " + params.train
+        print "==PARAMETERS=="
+        print "TRAIN FILE: " + params.train_file
+        print "DEV FILE: " + params.dev_file
+        print "TEST FILE: " + params.test_file
+        print "EMBEDDINGS FILE: " + params.embeddings
+        print "STOPPING CONDITION: " + str(params.itters)
+        print "OUTPUT BASE: " + params.output_base
+        print "AUX SOFTMAX WEIGHT: " + str(params.aux_softmax_weight)
+        print "CONFIG FILE: " + str(params.config)
+        print "==============\n"
+
+        trainset = Dataset(params.train_file)
+        devset = Dataset(params.dev_file)
+        if params.test_file:
+            testset = Dataset(params.test_file)
+        else:
+            testset = None
+        config = CompoundWordConfig(params.config)
+        encodings = Encodings()
+        encodings.compute(trainset, devset, 'label')
+        # update wordlist if testset was provided
+        if params.test_file:
+            encodings.update_wordlist(testset)
+
+        embeddings = None
+        expander = CompoundWordExpander(config, encodings, embeddings)
+        trainer = CompoundWordTrainer(expander, encodings, params.itters, trainset, devset, testset)
+        trainer.start_training(params.output_base, batch_size=params.batch_size)
+
     elif params.train == "tokenizer":
         print "Starting training for " + params.train
         print "==PARAMETERS=="
@@ -350,7 +386,8 @@ def parse_train(params):
             testset = Dataset(params.test_file)
         else:
             testset = None
-        config = TokenizerConfig(params.config)
+        from generic_networks.tokenizers import TieredTokenizer
+        config = TieredTokenizerConfig(params.config)
         config.raw_test_file = params.raw_test_file
         config.base = params.output_base
         config.patience = params.itters
@@ -365,12 +402,12 @@ def parse_train(params):
         embeddings = WordEmbeddings()
         embeddings.read_from_file(params.embeddings,
                                   None)  # setting wordlist to None triggers Word Embeddings to act as cache-only and load offsets for all words
-        tokenizer = BDRNNTokenizer(config, encodings, embeddings)
+        tokenizer = TieredTokenizer(config, encodings, embeddings)
         trainer = TokenizerTrainer(tokenizer, encodings, params.itters, trainset, devset, testset,
                                    raw_train_file=params.raw_train_file, raw_dev_file=params.raw_dev_file,
                                    raw_test_file=params.raw_test_file, gold_train_file=params.train_file,
                                    gold_dev_file=params.dev_file, gold_test_file=params.test_file)
-        trainer.start_training(params.output_base)
+        trainer.start_training(params.output_base, batch_size=params.batch_size)
 
 
 if params.train:

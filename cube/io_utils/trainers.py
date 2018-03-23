@@ -280,6 +280,173 @@ class LemmatizerTrainer:
         return float(correct) / total
 
 
+class CompoundWordTrainer:
+    def __init__(self, cw, encodings, patience, trainset, devset, testset=None):
+        self.tagger = cw
+        self.trainset = trainset
+        self.devset = devset
+        self.testset = testset
+        self.patience = patience
+        self.encodings = encodings
+
+    def start_training(self, output_base, batch_size=1):
+        epoch = 0
+        itt_no_improve = self.patience
+        selected_test_acc = 0
+        selected_dev_acc = 0
+        path = output_base + ".encodings"
+        sys.stdout.write("Storing encodings in " + path + "\n")
+        self.encodings.save(path)
+        path = output_base + ".conf"
+        sys.stdout.write("Storing config in " + path + "\n")
+        self.tagger.config.save(path)
+        sys.stdout.write("\tevaluating on devset...")
+        sys.stdout.flush()
+        dev_fscore = 0  # self.eval(self.devset)
+        dev_acc = 0
+        sys.stdout.write(" accuracy=" + str(dev_acc) + "\n")
+        if self.testset is not None:
+            sys.stdout.write("\tevaluating on testset...")
+            sys.stdout.flush()
+            test_fscore = 0
+            test_acc = 0  # self.eval(self.testset)
+            sys.stdout.write(" accuracy=" + str(test_acc) + "\n")
+        best_dev_acc = dev_acc
+
+        while itt_no_improve > 0:
+            itt_no_improve -= 1
+            epoch += 1
+            sys.stdout.write("Starting epoch " + str(epoch) + "\n")
+            sys.stdout.flush()
+            sys.stdout.write("\tshuffling training data... ")
+            sys.stdout.flush()
+            shuffle(self.trainset.sequences)
+            sys.stdout.write("done\n")
+            sys.stdout.flush()
+            last_proc = 0
+            sys.stdout.write("\ttraining...")
+            sys.stdout.flush()
+            total_loss = 0
+            start_time = time.time()
+            current_batch_size = 0
+            self.tagger.start_batch()
+            for iSeq in xrange(len(self.trainset.sequences)):
+                seq = self.trainset.sequences[iSeq]
+                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                if proc % 5 == 0 and proc != last_proc:
+                    last_proc = proc
+                    sys.stdout.write(" " + str(proc))
+                    sys.stdout.flush()
+
+                self.tagger.learn(seq)
+                current_batch_size += len(seq)
+                if current_batch_size >= batch_size:
+                    total_loss += self.tagger.end_batch()
+                    self.tagger.start_batch()
+                    current_batch_size = 0
+            total_loss += self.tagger.end_batch()
+            stop_time = time.time()
+            sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
+                stop_time - start_time) + "\n")
+
+            sys.stdout.write("\tevaluating on devset...")
+            sys.stdout.flush()
+            dev_fscore, dev_acc = self.eval(self.devset)
+            sys.stdout.write(" fscore=" + str(dev_fscore) + " accuracy=" + str(dev_acc) + "\n")
+            if self.testset is not None:
+                sys.stdout.write("\tevaluating on testset...")
+                sys.stdout.flush()
+                test_fscore, test_acc = self.eval(self.testset)
+                sys.stdout.write(" fscore=" + str(test_fscore) + " accuracy=" + str(test_acc) + ")\n")
+
+            if dev_acc > best_dev_acc:
+                best_dev_acc = dev_acc
+                selected_dev_acc = dev_acc
+                selected_dev_fscore = dev_fscore
+                if self.testset is not None:
+                    selected_test_acc = test_acc
+                    selected_test_fscore = test_fscore
+                path = output_base + ".bestAcc"
+                sys.stdout.write("\tStoring " + path + "\n")
+                sys.stdout.flush()
+                self.tagger.save(path)
+                itt_no_improve = self.patience
+
+            path = output_base + ".last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.tagger.save(path)
+
+        sys.stdout.write(
+            "Training is done with devset fscore=" + str(selected_dev_fscore) + " acc=" + str(selected_dev_acc) + "\n")
+        if self.testset is not None:
+            sys.stdout.write(" and testset fscore=" + str(
+                selected_test_fscore) + " acc=" + str(
+                selected_test_acc) + " (for the selected epoch, based on best devset accuracy)")
+        sys.stdout.write("\n")
+
+    def eval(self, dataset):
+        detection_correct = 0
+        detection_incorrect = 0
+        detection_total = 0
+        detection_real = 0
+
+        tokens_correct = 0
+        tokens_total = 0
+
+        last_proc = 0
+
+        for iSeq in xrange(len(dataset.sequences)):
+            seq = dataset.sequences[iSeq]
+
+            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            if proc % 5 == 0 and proc != last_proc:
+                last_proc = proc
+                sys.stdout.write(" " + str(proc))
+                sys.stdout.flush()
+
+            i_entry = 0
+            while i_entry < len(seq):
+                entry = seq[i_entry]
+                if entry.is_compound_entry:
+                    detection_real += 1
+                    compound, tokens = self.tagger.tag_token(entry.word)
+                    if compound:
+                        detection_correct += 1
+                        detection_total += 1
+                    interval = entry.index.split("-")
+                    interval = int(interval[1]) - int(interval[0]) + 1
+                    real_tokens = []
+                    for _ in xrange(interval):
+                        i_entry += 1
+                        real_tokens.append(seq[i_entry].word)
+                    i_entry += 1
+                    tokens_total += len(real_tokens)
+                    if len(tokens) == len(real_tokens):
+                        for pt, rt in zip(tokens, real_tokens):
+                            if pt.encode('utf-8') == rt:
+                                tokens_correct += 1
+                else:
+                    compound, _ = self.tagger.tag_token(entry.word)
+                    if compound:
+                        detection_incorrect += 1
+                        detection_total += 1
+                i_entry += 1
+        if detection_total == 0:
+            detection_total += 1
+        if detection_real == 0:
+            detection_real += 1
+        p = float(detection_correct) / detection_total
+        r = float(detection_correct) / detection_real
+        if p == 0 or r == 0:
+            f = 0
+        else:
+            f = 2 * p * r / (p + r)
+
+        acc = float(tokens_correct) / tokens_total
+        return f, acc
+
+
 class TaggerTrainer:
     def __init__(self, tagger, encodings, patience, trainset, devset, testset=None):
         self.tagger = tagger
@@ -736,7 +903,7 @@ class TokenizerTrainer:
 
         return X_mixed_set, y_mixed_set
 
-    def start_training(self, output_base):
+    def start_training(self, output_base, batch_size=0):
         epoch = 0
         itt_no_improve = self.patience
         best_dev_tok = 0.
@@ -787,16 +954,30 @@ class TokenizerTrainer:
             sys.stdout.flush()
             total_loss = 0
             start_time = time.time()
+            current_batch_size = 0
+            self.tokenizer.start_batch()
             for iSeq in xrange(len(X_train)):
                 # print("TRAIN SEQ: "+str(iSeq))
                 X = X_train[iSeq]
                 y = y_train[iSeq]
+                current_batch_size += len(X)
                 proc = (iSeq + 1) * 100 / len(X_train)
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
-                total_loss += self.tokenizer.learn(X, y)
+
+                self.tokenizer.learn_ss(X, y)
+                self.tokenizer.learn_tok(X, y)
+                if current_batch_size >= batch_size:
+                    current_batch_size = 0
+                    total_loss += self.tokenizer.end_batch()
+                    self.tokenizer.start_batch()
+            if current_batch_size != 0:
+                current_batch_size = 0
+                total_loss += self.tokenizer.end_batch()
+                self.tokenizer.start_batch()
+
             stop_time = time.time()
             sys.stdout.write(" avg_loss=" + str(total_loss / len(X_train)) + " execution_time=" + str(
                 stop_time - start_time) + "\n")
@@ -821,24 +1002,29 @@ class TokenizerTrainer:
                 best_dev_ss = dev_ss
                 if self.testset is not None:
                     selected_test_ss = test_ss
-                path = output_base + ".bestSS"
+                path = output_base + "-ss.bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.tokenizer.save(path)
+                self.tokenizer.save_ss(path)
                 itt_no_improve = self.patience
             if dev_tok > best_dev_tok:
                 best_dev_tok = dev_tok
                 if self.testset is not None:
                     selected_test_tok = test_tok
-                path = output_base + ".bestTok"
+                path = output_base + "-tok.bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.tokenizer.save(path)
+                self.tokenizer.save_tok(path)
                 itt_no_improve = self.patience
-            path = output_base + ".last"
+
+            path = output_base + "-ss.last"
             sys.stdout.write("\tStoring " + path + "\n")
             sys.stdout.flush()
-            self.tokenizer.save(path)
+            self.tokenizer.save_ss(path)
+            path = output_base + "-tok.last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.tokenizer.save_ss(path)
 
         sys.stdout.write(
             "Training is done with devset sentence tok = " + str(best_dev_tok) + " and sentence = " + str(best_dev_ss))

@@ -2,6 +2,10 @@
 logs/*
 corpus/*
 cube/misc/conll17_ud_eval.py
+cube/.idea/*
+cube/venv/*
+.idea/*
+venv/*
 
 # CMake
 cmake-build-debug/
@@ -32,9 +36,3 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
-
-# Do not track .idea folder
-.idea/*
-
-# Do not track virtualenv folder
-venv/*
