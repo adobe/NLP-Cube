@@ -279,6 +279,7 @@ class LemmatizerTrainer:
 
         return float(correct) / total
 
+
 class CompoundWordTrainer:
     def __init__(self, cw, encodings, patience, trainset, devset, testset=None):
         self.tagger = cw
@@ -301,11 +302,13 @@ class CompoundWordTrainer:
         self.tagger.config.save(path)
         sys.stdout.write("\tevaluating on devset...")
         sys.stdout.flush()
-        dev_acc = 0  # self.eval(self.devset)
+        dev_fscore = 0  # self.eval(self.devset)
+        dev_acc = 0
         sys.stdout.write(" accuracy=" + str(dev_acc) + "\n")
         if self.testset is not None:
             sys.stdout.write("\tevaluating on testset...")
             sys.stdout.flush()
+            test_fscore = 0
             test_acc = 0  # self.eval(self.testset)
             sys.stdout.write(" accuracy=" + str(test_acc) + "\n")
         best_dev_acc = dev_acc
@@ -348,20 +351,22 @@ class CompoundWordTrainer:
 
             sys.stdout.write("\tevaluating on devset...")
             sys.stdout.flush()
-            dev_acc = self.eval(self.devset)
-            sys.stdout.write(" accuracy=" + str(dev_acc) + "\n")
+            dev_fscore, dev_acc = self.eval(self.devset)
+            sys.stdout.write(" fscore=" + str(dev_fscore) + " accuracy=" + str(dev_acc) + "\n")
             if self.testset is not None:
                 sys.stdout.write("\tevaluating on testset...")
                 sys.stdout.flush()
-                test_acc = self.eval(self.testset)
-                sys.stdout.write(" accuracy=" + str(test_acc) + ")\n")
+                test_fscore, test_acc = self.eval(self.testset)
+                sys.stdout.write(" fscore=" + str(test_fscore) + " accuracy=" + str(test_acc) + ")\n")
 
             if dev_acc > best_dev_acc:
                 best_dev_acc = dev_acc
                 selected_dev_acc = dev_acc
+                selected_dev_fscore = dev_fscore
                 if self.testset is not None:
                     selected_test_acc = test_acc
-                path = output_base + ".bestACC"
+                    selected_test_fscore = test_fscore
+                path = output_base + ".bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
                 self.tagger.save(path)
@@ -372,16 +377,24 @@ class CompoundWordTrainer:
             sys.stdout.flush()
             self.tagger.save(path)
 
-        sys.stdout.write("Training is done with devset_accuracy=" + str(selected_dev_acc) + "\n")
+        sys.stdout.write(
+            "Training is done with devset fscore=" + str(selected_dev_fscore) + " acc=" + str(selected_dev_acc) + "\n")
         if self.testset is not None:
-            sys.stdout.write(" and testset_accuracy=" + str(
+            sys.stdout.write(" and testset fscore=" + str(
+                selected_test_fscore) + " acc=" + str(
                 selected_test_acc) + " (for the selected epoch, based on best devset accuracy)")
         sys.stdout.write("\n")
 
     def eval(self, dataset):
+        detection_correct = 0
+        detection_incorrect = 0
+        detection_total = 0
+        detection_real = 0
+
+        tokens_correct = 0
+        tokens_total = 0
+
         last_proc = 0
-        correct = 0
-        total = 0
 
         for iSeq in xrange(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
@@ -392,17 +405,47 @@ class CompoundWordTrainer:
                 sys.stdout.write(" " + str(proc))
                 sys.stdout.flush()
 
-            pred_lemmas = self.tagger.tag(seq)
+            i_entry = 0
+            while i_entry < len(seq):
+                entry = seq[i_entry]
+                if entry.is_compound_entry:
+                    detection_real += 1
+                    compound, tokens = self.tagger.tag_token(entry.word)
+                    if compound:
+                        detection_correct += 1
+                        detection_total += 1
+                    interval = entry.index.split("-")
+                    interval = int(interval[1]) - int(interval[0]) + 1
+                    real_tokens = []
+                    for _ in xrange(interval):
+                        i_entry += 1
+                        real_tokens.append(seq[i_entry].word)
+                    i_entry += 1
+                    tokens_total += len(real_tokens)
+                    if len(tokens) == len(real_tokens):
+                        for pt, rt in zip(tokens, real_tokens):
+                            if pt.encode('utf-8') == rt:
+                                tokens_correct += 1
+                else:
+                    compound, _ = self.tagger.tag_token(entry.word)
+                    if compound:
+                        detection_incorrect += 1
+                        detection_total += 1
+                i_entry += 1
+        if detection_total == 0:
+            detection_total += 1
+        if detection_real == 0:
+            detection_real += 1
+        p = float(detection_correct) / detection_total
+        r = float(detection_correct) / detection_real
+        if p == 0 or r == 0:
+            f = 0
+        else:
+            f = 2 * p * r / (p + r)
 
-            for entry, pred_lemma in zip(seq, pred_lemmas):
-                if entry.upos != 'NUM' and entry.upos != 'PROPN':
-                    total += 1
-                    # from pdb import set_trace
-                    # set_trace()
-                    if unicode(entry.lemma, 'utf-8') == pred_lemma:
-                        correct += 1
+        acc = float(tokens_correct) / tokens_total
+        return f, acc
 
-        return float(correct) / total
 
 class TaggerTrainer:
     def __init__(self, tagger, encodings, patience, trainset, devset, testset=None):

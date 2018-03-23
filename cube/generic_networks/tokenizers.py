@@ -213,9 +213,9 @@ class TieredTokenizer:
             peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
             if found:
                 word_state = word_is_known
-                peek_emb = dy.tanh(self.TOK_word_proj_w.expr() * dy.inputVector(peek_emb))
+                peek_emb = self.TOK_word_proj_w.expr() * dy.inputVector(peek_emb)
             else:
-                peek_emb = dy.tanh(self.TOK_word_proj_w.expr() * self.TOK_word_embeddings_special[0])
+                peek_emb = self.TOK_word_proj_w.expr() * self.TOK_word_embeddings_special[0]
 
             if word.strip().lower() in self.encodings.word2int:
                 word_state = word_is_known
@@ -223,7 +223,8 @@ class TieredTokenizer:
             else:
                 peek_hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
 
-            hidden = dy.concatenate([fw_out[index], bw_out[index], word_lstm.output(), word_state, peek_hol + peek_emb])
+            hidden = dy.concatenate(
+                [fw_out[index], bw_out[index], word_lstm.output(), word_state, dy.tanh(peek_hol + peek_emb)])
             for w, b, dropout in zip(self.TOK_mlp_w, self.TOK_mlp_b, self.config.tok_mlp_dropouts):
                 hidden = dy.tanh(w.expr() * hidden + b.expr())
                 if not runtime:
