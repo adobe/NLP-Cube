@@ -276,6 +276,9 @@ class LemmatizerTrainer:
                     # set_trace()
                     if unicode(entry.lemma, 'utf-8') == pred_lemma:
                         correct += 1
+                else:
+                    correct+=1
+                    total+=1
 
         return float(correct) / total
 
