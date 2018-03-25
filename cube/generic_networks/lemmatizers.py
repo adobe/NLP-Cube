@@ -43,21 +43,22 @@ class FSTLemmatizer:
         self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), self.config.char_embeddings))
         if runtime:
             self.rnn = dy.LSTMBuilder(self.config.rnn_layers,
-                                      self.config.char_rnn_size * 2, self.config.rnn_size,
+                                      self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size,
+                                      self.config.rnn_size,
                                       self.model)
         else:
             from utils import orthonormal_VanillaLSTMBuilder
             self.rnn = orthonormal_VanillaLSTMBuilder(self.config.rnn_layers,
-                                                      self.config.char_rnn_size * 2,
+                                                      self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size,
                                                       self.config.rnn_size,
                                                       self.model)
 
-        self.att_w1 = self.model.add_parameters((200, self.config.char_rnn_size * 2))
-        self.att_w2 = self.model.add_parameters((200, self.config.rnn_size + self.config.tag_embeddings_size))
-        self.att_v = self.model.add_parameters((1, 200))
+        #self.att_w1 = self.model.add_parameters((200, self.config.char_rnn_size * 2))
+        #self.att_w2 = self.model.add_parameters((200, self.config.rnn_size + self.config.tag_embeddings_size))
+        #self.att_v = self.model.add_parameters((1, 200))
 
         self.start_lookup = self.model.add_lookup_parameters(
-            (1, self.config.char_rnn_size * 2))
+            (1, self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size))
 
         self.softmax_w = self.model.add_parameters((len(self.encodings.char2int) + 3, self.config.rnn_size))
         self.softmax_b = self.model.add_parameters((len(self.encodings.char2int) + 3))
@@ -86,10 +87,9 @@ class FSTLemmatizer:
 
         return output_vectors
 
-    def _predict(self, word, upos, xpos, attrs, max_predictions=0, runtime=True):
+    def _predict(self, word, upos, xpos, attrs, max_predictions=0, runtime=True, gs_labels=None):
         char_emb, states = self.character_network.compute_embeddings(word, runtime=runtime)
 
-        num_predictions = 0
         softmax_list = []
         m1, m2, m3 = 0, 0, 0
         zero_vec = dy.vecInput(self.config.tag_embeddings_size)
@@ -116,20 +116,28 @@ class FSTLemmatizer:
         scale = dy.scalarInput(scale)
         tag_emb = (upos_emb + xpos_emb + attrs_emb + char_emb) * scale
         rnn = self.rnn.initial_state().add_input(self.start_lookup[0])
-        char_emb = dy.inputVector([0] * self.config.char_embeddings)
         num_predictions = 0
+        i_src = 0
+        i_labels = 0
         while num_predictions < max_predictions:
-            attention = self._attend(states, rnn, tag_emb)
+            # attention = self._attend(states, rnn, tag_emb)
 
-            input = attention
+            input = dy.concatenate([char_emb, states[i_src], tag_emb])
             rnn = rnn.add_input(input)
 
             softmax = dy.softmax(self.softmax_w.expr() * rnn.output() + self.softmax_b.expr())
             softmax_list.append(softmax)
             num_predictions += 1
             if runtime:
-                if np.argmax(softmax.npvalue())==self.label2int['<EOS>']:
+                l_index = np.argmax(softmax.npvalue())
+                if l_index == self.label2int['<EOS>']:
                     break
+                elif l_index == self.label2int['<INC>'] and i_src < len(states) - 1:
+                    i_src += 1
+            else:
+                if gs_labels[i_labels] == '<INC>' and i_src < len(states) - 1:
+                    i_src += 1
+            i_labels+=1
 
         return softmax_list
 
@@ -150,21 +158,24 @@ class FSTLemmatizer:
     def learn(self, seq):
         for entry in seq:
             if entry.upos != 'NUM' and entry.upos != 'PROPN':
-                #print entry.word+"\t"+entry.lemma
-                y_real = self._compute_transduction_states(unicode(entry.word, 'utf-8').lower(), unicode(entry.lemma, 'utf-8').lower())
-                #print y_real
+                # print entry.word+"\t"+entry.lemma
+                y_real = self._compute_transduction_states(unicode(entry.word, 'utf-8').lower(),
+                                                           unicode(entry.lemma, 'utf-8').lower())
+                # print y_real
                 losses = []
                 n_chars = len(y_real)
+                # print entry.word, entry.lemma
+                # print y_real
                 softmax_output_list = self._predict(entry.word, entry.upos, entry.xpos, entry.attrs,
-                                                    max_predictions=n_chars, runtime=False)
+                                                    max_predictions=n_chars, runtime=False, gs_labels=y_real)
                 # print unilemma.encode('utf-8')#, softmax_output_list
-                for softmax, y_target in zip(softmax_output_list[:-1], y_real):
+                for softmax, y_target in zip(softmax_output_list, y_real):
                     if y_target in self.label2int:
                         losses.append(-dy.log(dy.pick(softmax, self.label2int[y_target])))
                     elif y_target in self.encodings.char2int:
                         losses.append(-dy.log(dy.pick(softmax, self.encodings.char2int[y_target])))
 
-                if len(losses)>0:
+                if len(losses) > 0:
                     loss = dy.esum(losses)
 
                 self.losses.append(loss)
@@ -235,19 +246,20 @@ class FSTLemmatizer:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
                 lemma = entry.word.decode('utf-8')
             else:
-                uniword=unicode(entry.word, 'utf-8')
-                softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs, max_predictions=len(uniword)+10, runtime=True)
+                uniword = unicode(entry.word, 'utf-8')
+                softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
+                                                    max_predictions=500, runtime=True)
                 lemma = ""
-                src_index=0
+                src_index = 0
                 for softmax in softmax_output_list[:-1]:
                     label_index = np.argmax(softmax.npvalue())
-                    if label_index==self.label2int['<COPY>'] and src_index<len(uniword):
-                        lemma+=uniword[src_index]
-                    elif label_index==self.label2int['<INC>'] or label_index==self.label2int['<EOS>']:
-                        src_index+=1
-                    else:
-                        lemma+=self.encodings.characters[label_index]
-
+                    if label_index == self.label2int['<COPY>'] and src_index < len(uniword):
+                        lemma += uniword[src_index]
+                    elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
+                        src_index += 1
+                    elif label_index < len(self.encodings.characters):
+                        lemma += self.encodings.characters[label_index]
+            # print entry.word+"\t"+lemma.encode('utf-8')
             lemmas.append(lemma.lower())
         return lemmas
 
@@ -403,7 +415,7 @@ class BDRNNLemmatizer:
         return total_loss
 
     def learn(self, seq):
-        total_loss = 0
+
         for entry in seq:
             if entry.upos != 'NUM' and entry.upos != 'PROPN':
                 losses = []
