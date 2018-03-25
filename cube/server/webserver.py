@@ -144,14 +144,14 @@ class EmbeddedWebserver:
 
         if lemma is not None:
             sys.stdout.write("Loading lemma model from " + lemma)
-            from generic_networks.lemmatizers import BDRNNLemmatizer
+            from generic_networks.lemmatizers import FSTLemmatizer
             from io_utils.config import LemmatizerConfig
             from io_utils.encodings import Encodings
             lemma_encodings = Encodings()
             lemma_encodings.load(lemma + ".encodings")
             lemma_config = LemmatizerConfig()
             lemma_config.load(lemma + ".conf")
-            self.lemmatizer = BDRNNLemmatizer(lemma_config, lemma_encodings, embeddings, runtime=True)
+            self.lemmatizer = FSTLemmatizer(lemma_config, lemma_encodings, embeddings, runtime=True)
             self.lemmatizer.load(lemma + ".bestACC")
         else:
             self.lemmatizer = None
