@@ -184,11 +184,11 @@ class ParserConfig(Config):
 class LemmatizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
-        self.rnn_size = 500
+        self.rnn_size = 200
         self.rnn_layers = 2
         self.char_embeddings = 100
         self.char_rnn_size = 200
-        self.char_rnn_layers = 1
+        self.char_rnn_layers = 2
         self.tag_embeddings_size = 100
 
         if filename == None:

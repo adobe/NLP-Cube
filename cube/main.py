@@ -117,7 +117,7 @@ from io_utils.trainers import CompoundWordTrainer
 from generic_networks.tokenizers import BDRNNTokenizer
 from generic_networks.taggers import BDRNNTagger
 from generic_networks.parsers import BDRNNParser
-from generic_networks.lemmatizers import BDRNNLemmatizer
+from generic_networks.lemmatizers import FSTLemmatizer
 from generic_networks.translators import BRNNMT
 from generic_networks.tokenizers import TieredTokenizer
 from generic_networks.token_expanders import CompoundWordExpander
@@ -331,7 +331,7 @@ def parse_train(params):
             encodings.update_wordlist(testset)
 
         embeddings = None
-        lemmatizer = BDRNNLemmatizer(config, encodings, embeddings)
+        lemmatizer = FSTLemmatizer(config, encodings, embeddings)
         trainer = LemmatizerTrainer(lemmatizer, encodings, params.itters, trainset, devset, testset)
         trainer.start_training(params.output_base, batch_size=params.batch_size)
 
