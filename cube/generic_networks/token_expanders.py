@@ -19,11 +19,11 @@ class CompoundWordExpander:
                                              self.config.decoder_size, self.model)
         self.decoder_start_lookup = self.model.add_lookup_parameters((1, self.config.encoder_size * 2))
 
-        self.att_w1 = self.model.add_parameters(
-            (self.config.character_embeddings_size * 2, self.config.encoder_size * 2))
-        self.att_w2 = self.model.add_parameters(
-            (self.config.character_embeddings_size * 2, self.config.decoder_size))
-        self.att_v = self.model.add_parameters((1, self.config.character_embeddings_size * 2))
+        # self.att_w1 = self.model.add_parameters(
+        #     (self.config.character_embeddings_size * 2, self.config.encoder_size * 2))
+        # self.att_w2 = self.model.add_parameters(
+        #     (self.config.character_embeddings_size * 2, self.config.decoder_size))
+        # self.att_v = self.model.add_parameters((1, self.config.character_embeddings_size * 2))
 
         self.softmax_w = self.model.add_parameters(
             (len(self.encodings.char2int) + 4,
@@ -148,25 +148,33 @@ class CompoundWordExpander:
 
         return output_vectors
 
-    def _decode(self, encoder_states, runtime=True, max_preds=-1):
+    def _decode(self, encoder_states, runtime=True, max_preds=-1, gs_labels=None):
         y_pred = []
         num_preds = 0
         lstm = self.decoder.initial_state().add_input(self.decoder_start_lookup[0])
+        i_src=0
         while num_preds < max_preds:
-            input = self._attend(encoder_states, lstm)
+            #input = self._attend(encoder_states, lstm)
+            input=encoder_states[i_src]
             lstm = lstm.add_input(input)
             softmax_out = dy.softmax(self.softmax_w.expr() * lstm.output() + self.softmax_b.expr())
             y_pred.append(softmax_out)
-            num_preds += 1
-            if max_preds == -1 or runtime:
+
+            if runtime:
                 if np.argmax(softmax_out.npvalue()) == self.label2int['<EOS>']:
                     return y_pred
+                elif np.argmax(softmax_out.npvalue())==self.label2int['<INC>'] and i_src<len(encoder_states)-1:
+                    i_src+=1
+            else:
+                if gs_labels[num_preds]=='<INC>' and i_src<len(encoder_states)-1:
+                    i_src+=1
+            num_preds += 1
         return y_pred
 
     def _learn_transduction(self, source, destination, encoder_states):
         losses = []
         y_target = self._compute_transduction_states(source, destination)
-        y_predicted = self._decode(encoder_states, runtime=False, max_preds=len(y_target))
+        y_predicted = self._decode(encoder_states, runtime=False, max_preds=len(y_target), gs_labels=y_target)
         for y_real, y_pred in zip(y_target, y_predicted):
             if y_real in self.label2int:
                 losses.append(-dy.log(dy.pick(y_pred, self.label2int[y_real])))
@@ -191,7 +199,7 @@ class CompoundWordExpander:
         token = ""
         for y in y_pred:
             y = np.argmax(y.npvalue())
-            if y == self.label2int['<INC>']:
+            if y == self.label2int['<INC>'] and i_src<len(encoder_states)-1:
                 i_src += 1
             elif y == self.label2int['<COPY>']:
                 if i_src < len(source):
@@ -200,7 +208,8 @@ class CompoundWordExpander:
                 tokens.append(token)
                 token = ""
             else:
-                token += self.encodings.characters[y]
+                if y < len(self.encodings.characters):
+                    token += self.encodings.characters[y]
 
         return tokens
 

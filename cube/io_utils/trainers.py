@@ -413,6 +413,7 @@ class CompoundWordTrainer:
                 entry = seq[i_entry]
                 if entry.is_compound_entry:
                     detection_real += 1
+
                     compound, tokens = self.tagger.tag_token(entry.word)
                     if compound:
                         detection_correct += 1
@@ -425,10 +426,10 @@ class CompoundWordTrainer:
                         real_tokens.append(seq[i_entry].word)
                     i_entry += 1
                     tokens_total += len(real_tokens)
-                    if len(tokens) == len(real_tokens):
-                        for pt, rt in zip(tokens, real_tokens):
-                            if pt.encode('utf-8') == rt:
-                                tokens_correct += 1
+                    for pt, rt in zip(tokens, real_tokens):
+                        if pt.encode('utf-8') == rt:
+                            tokens_correct += 1
+
                 else:
                     compound, _ = self.tagger.tag_token(entry.word)
                     if compound:
