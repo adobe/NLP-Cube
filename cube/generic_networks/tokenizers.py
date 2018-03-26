@@ -97,6 +97,8 @@ class TieredTokenizer:
 
         self.TOK_word_proj_w = self.modelTok.add_parameters(
             (self.config.tok_word_embeddings_size, self.word_embeddings.word_embeddings_size))
+        self.TOK_word_peek_proj_w = self.modelTok.add_parameters(
+            (self.config.tok_word_embeddings_size, self.word_embeddings.word_embeddings_size))
         # lstm networks
         if runtime:
             self.TOK_backward_lstm = dy.VanillaLSTMBuilder(self.config.tok_char_peek_lstm_layers,
@@ -145,13 +147,18 @@ class TieredTokenizer:
         dy.renew_cg()
 
     def end_batch(self):
-        total_loss_ss = dy.esum(self.losses)
-        total_loss_tok = dy.esum(self.losses_tok)
-        total_loss_val = total_loss_ss.value() + total_loss_tok.value()
-        total_loss_ss.backward()
-        total_loss_tok.backward()
-        self.trainerSS.update()
-        self.trainerTok.update()
+        total_loss_val = 0
+        if len(self.losses) > 0:
+            total_loss_ss = dy.esum(self.losses)
+            total_loss_val += total_loss_ss.value()
+            total_loss_ss.backward()
+            self.trainerSS.update()
+
+        if len(self.losses_tok):
+            total_loss_tok = dy.esum(self.losses_tok)
+            total_loss_val += total_loss_tok.value()
+            total_loss_tok.backward()
+            self.trainerTok.update()
         return total_loss_val
 
     def _predict_tok(self, seq, y_gold=None, runtime=False):
@@ -213,9 +220,9 @@ class TieredTokenizer:
             peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
             if found:
                 word_state = word_is_known
-                peek_emb = self.TOK_word_proj_w.expr() * dy.inputVector(peek_emb)
+                peek_emb = self.TOK_word_peek_proj_w.expr() * dy.inputVector(peek_emb)
             else:
-                peek_emb = self.TOK_word_proj_w.expr() * self.TOK_word_embeddings_special[0]
+                peek_emb = self.TOK_word_peek_proj_w.expr() * self.TOK_word_embeddings_special[0]
 
             if word.strip().lower() in self.encodings.word2int:
                 word_state = word_is_known
@@ -251,9 +258,9 @@ class TieredTokenizer:
                 else:
                     hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
 
-                emb = dy.tanh(self.TOK_word_proj_w.expr() * emb)
+                emb = self.TOK_word_proj_w.expr() * emb
 
-                word_lstm = word_lstm.add_input(emb + hol)
+                word_lstm = word_lstm.add_input(dy.tanh(emb + hol))
                 word = ""
 
         return softmax_output, aux_softmax_output_prev, aux_softmax_output_peek
