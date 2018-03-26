@@ -246,6 +246,12 @@ class TieredTokenizerConfig(Config):
         self.tok_char_peek_lstm_size = 200
         self.tok_char_peek_lstm_dropout = 0.33
 
+        if filename == None:
+            sys.stdout.write("no configuration file supplied. Using default values\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            self.load(filename)
+
         self._valid = True
 
 
@@ -257,3 +263,9 @@ class CompoundWordConfig(Config):
         self.encoder_layers = 2
         self.decoder_size = 200
         self.decoder_layers = 2
+
+        if filename == None:
+            sys.stdout.write("no configuration file supplied. Using default values\n")
+        else:
+            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            self.load(filename)
