@@ -265,18 +265,33 @@ class TieredTokenizer:
 
         return softmax_output, aux_softmax_output_prev, aux_softmax_output_peek
 
-    def learn_tok(self, x, y, aux_softmax_weight=0.2):
+    def learn_tok(self, ix, iy, aux_softmax_weight=0.2):
         losses = []
-        y_prediction, y_prediction_aux1, y_prediction_aux2 = self._predict_tok(x, y_gold=y, runtime=False)
-        for y_real, y_pred, y_aux1, y_aux2 in zip(y, y_prediction, y_prediction_aux1, y_prediction_aux2):
-            if y_real == "SX" or y_real == "S":
-                losses.append(-dy.log(dy.pick(y_pred, 1)))
-                losses.append(-dy.log(dy.pick(y_aux1, 1)) * aux_softmax_weight)
-                losses.append(-dy.log(dy.pick(y_aux2, 1)) * aux_softmax_weight)
+        # we must split into sentences before learning tokenization - otherwise, the data will be inconsistent with the runtime version
+        start = 0
+        import copy
+        x = copy.deepcopy(ix)
+        y = copy.deepcopy(iy)
+        while True:
+            if "SX" in y:
+                index_of_ss = y.index("SX")
             else:
-                losses.append(-dy.log(dy.pick(y_pred, 0)))
-                losses.append(-dy.log(dy.pick(y_aux1, 0)) * aux_softmax_weight)
-                losses.append(-dy.log(dy.pick(y_aux2, 0)) * aux_softmax_weight)
+                break
+
+            y_prediction, y_prediction_aux1, y_prediction_aux2 = self._predict_tok(x[start:index_of_ss + 1],
+                                                                                   y_gold=y[start:index_of_ss + 1],
+                                                                                   runtime=False)
+            for y_real, y_pred, y_aux1, y_aux2 in zip(y, y_prediction, y_prediction_aux1, y_prediction_aux2):
+                if y_real == "SX" or y_real == "S":
+                    losses.append(-dy.log(dy.pick(y_pred, 1)))
+                    losses.append(-dy.log(dy.pick(y_aux1, 1)) * aux_softmax_weight)
+                    losses.append(-dy.log(dy.pick(y_aux2, 1)) * aux_softmax_weight)
+                else:
+                    losses.append(-dy.log(dy.pick(y_pred, 0)))
+                    losses.append(-dy.log(dy.pick(y_aux1, 0)) * aux_softmax_weight)
+                    losses.append(-dy.log(dy.pick(y_aux2, 0)) * aux_softmax_weight)
+            x = x[index_of_ss + 1:]
+            y = y[index_of_ss + 1:]
 
         loss = dy.esum(losses)
         self.losses_tok.append(loss)
