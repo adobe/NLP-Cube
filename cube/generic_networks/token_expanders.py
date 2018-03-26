@@ -152,10 +152,10 @@ class CompoundWordExpander:
         y_pred = []
         num_preds = 0
         lstm = self.decoder.initial_state().add_input(self.decoder_start_lookup[0])
-        i_src=0
+        i_src = 0
         while num_preds < max_preds:
-            #input = self._attend(encoder_states, lstm)
-            input=encoder_states[i_src]
+            # input = self._attend(encoder_states, lstm)
+            input = encoder_states[i_src]
             lstm = lstm.add_input(input)
             softmax_out = dy.softmax(self.softmax_w.expr() * lstm.output() + self.softmax_b.expr())
             y_pred.append(softmax_out)
@@ -163,11 +163,11 @@ class CompoundWordExpander:
             if runtime:
                 if np.argmax(softmax_out.npvalue()) == self.label2int['<EOS>']:
                     return y_pred
-                elif np.argmax(softmax_out.npvalue())==self.label2int['<INC>'] and i_src<len(encoder_states)-1:
-                    i_src+=1
+                elif np.argmax(softmax_out.npvalue()) == self.label2int['<INC>'] and i_src < len(encoder_states) - 1:
+                    i_src += 1
             else:
-                if gs_labels[num_preds]=='<INC>' and i_src<len(encoder_states)-1:
-                    i_src+=1
+                if gs_labels[num_preds] == '<INC>' and i_src < len(encoder_states) - 1:
+                    i_src += 1
             num_preds += 1
         return y_pred
 
@@ -199,7 +199,7 @@ class CompoundWordExpander:
         token = ""
         for y in y_pred:
             y = np.argmax(y.npvalue())
-            if y == self.label2int['<INC>'] and i_src<len(encoder_states)-1:
+            if y == self.label2int['<INC>'] and i_src < len(encoder_states) - 1:
                 i_src += 1
             elif y == self.label2int['<COPY>']:
                 if i_src < len(source):
