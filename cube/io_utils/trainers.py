@@ -992,12 +992,12 @@ class TokenizerTrainer:
 
             sys.stdout.write("\tevaluating on devset...")
             sys.stdout.flush()
-            dev_tok, dev_ss = self.eval(self.raw_dev_file, self.gold_dev_file, space_after_end_of_sentence = space_after_end_of_sentence)
+            dev_tok, dev_ss = self.eval(self.raw_dev_file, self.gold_dev_file)
             sys.stdout.write(" token_accuracy=" + str(dev_tok) + " , sentence_accuracy=" + str(dev_ss) + "\n")
             if self.testset is not None:
                 sys.stdout.write("\tevaluating on testset...")
                 sys.stdout.flush()
-                test_tok, test_ss = self.eval(self.raw_test_file, self.gold_test_file, space_after_end_of_sentence = space_after_end_of_sentence)
+                test_tok, test_ss = self.eval(self.raw_test_file, self.gold_test_file)
                 sys.stdout.write(" token_accuracy=" + str(test_tok) + " , sentence_accuracy=" + str(test_ss) + "\n")
             if dev_ss > best_dev_ss:
                 best_dev_ss = dev_ss
@@ -1035,7 +1035,7 @@ class TokenizerTrainer:
                 "(for the selected epoch, based on best devset tok/ss accuracy)")
         sys.stdout.write("\n")
 
-    def eval(self, raw_text_file, gold_conllu_file, space_after_end_of_sentence = True):  # output_conllu_file):
+    def eval(self, raw_text_file, gold_conllu_file):
         input_string = ""
         useSpaces = " "  # True
         lines = []
@@ -1059,7 +1059,7 @@ class TokenizerTrainer:
         for i in range(len(lines)):
             input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-        sentences = self.tokenizer.tokenize(input_string, space_after_end_of_sentence = space_after_end_of_sentence)
+        sentences = self.tokenizer.tokenize(input_string)
 
         # with open(output_conllu_file, 'w', encoding='utf-8') as file:
         with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:

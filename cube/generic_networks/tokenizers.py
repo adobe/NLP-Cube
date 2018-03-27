@@ -344,14 +344,7 @@ class TieredTokenizer:
         
         return tokens        
 
-    def tokenize(self, input_string, space_after_end_of_sentence = False):
-        """ 
-            Tokenizes a string, returning a list of sentences, each containing tokens (ConllEntry objects)
-                space_after_end_of_sentence is a flag telling the tokenizer that this language has a space 
-                        after each sentence (like English), meaning the last token in each sentence should 
-                        not have a SpaceAfter=No, whereas if you would tokenize Chinese and set this flag
-                        to False, every last token of each sentence will have SpaceAfter=No set.
-        """
+    def tokenize(self, input_string):        
         batch_size = 1000
         input_string = unicode(input_string, 'utf-8')
 
@@ -379,6 +372,10 @@ class TieredTokenizer:
             for y, char, index in zip(y_pred, current_string, xrange(len(current_string))):
                 w += char
                 if np.argmax(y.npvalue()) == 1:
+                    space_after_end_of_sentence = False
+                    if index < len(input_string)-1: # compare with input_string not with current_string for whitespace after current sentence
+                        if input_string[index+1] in string.whitespace:
+                            space_after_end_of_sentence = True
                     seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
                     sequences.append(seq)
                     w = ""
@@ -395,7 +392,10 @@ class TieredTokenizer:
             num_chars += last_ss_break
 
         if w.strip() != "":
-            seq = self._get_tokens(w.strip())
+            space_after_end_of_sentence = False
+            if w[-1] in string.whitespace:            
+                space_after_end_of_sentence = True
+            seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
             sequences.append(seq)
 
         return sequences
