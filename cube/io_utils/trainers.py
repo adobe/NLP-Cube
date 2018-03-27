@@ -938,9 +938,6 @@ class TokenizerTrainer:
             print ("\t NOTE: Training sentences do not end with a space after EOS.")
         # X_dev_raw, y_dev_raw, _ = self._create_Xy_sequences(self.devset)
 
-        # create dev_sequences
-        # X_dev, y_dev = self._create_mixed_sequences(X_dev_raw, y_dev_raw, space_after_end_of_sentence)
-
         while itt_no_improve > 0:
             itt_no_improve -= 1
             epoch += 1
@@ -1038,7 +1035,7 @@ class TokenizerTrainer:
                 "(for the selected epoch, based on best devset tok/ss accuracy)")
         sys.stdout.write("\n")
 
-    def eval(self, raw_text_file, gold_conllu_file):  # output_conllu_file):
+    def eval(self, raw_text_file, gold_conllu_file):
         input_string = ""
         useSpaces = " "  # True
         lines = []

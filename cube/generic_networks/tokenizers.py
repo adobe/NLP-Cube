@@ -312,29 +312,39 @@ class TieredTokenizer:
         loss = dy.esum(losses)
         self.losses.append(loss)
 
-    def _get_tokens(self, input_string):
+    def _get_tokens(self, input_string, space_after_end_of_sentence = True):
+        #print("\n")
+        #print(input_string)
         tokens = []
         y_pred, _, _ = self._predict_tok(input_string, runtime=True)
         index = 0
         w = ""
-        for char, y in zip(input_string, y_pred):
-            w += char
-            if np.argmax(y.npvalue()) == 1:
+        
+        for i in range(len(input_string)):
+            w += input_string[i]
+            if np.argmax(y_pred[i].npvalue()) == 1:
                 if w.strip() != "":
                     index += 1
-                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0,
-                                       "_", "_", "")
+                    space_after = "SpaceAfter=No"
+                    if i < len(input_string) - 1:
+                        if input_string[i + 1] in string.whitespace:
+                            space_after = "_"                    
+                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", space_after=space_after)
                     tokens.append(entry)
                     w = ""
+                    
         if w.strip() != "":
             index += 1
-            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_",
-                               "")
+            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", "")
             tokens.append(entry)
 
-        return tokens
+        # set SpaceAfter=No property of last token
+        if len(tokens)>0:
+            tokens[-1].space_after = "SpaceAfter=No" if space_after_end_of_sentence == False else "_"        
+        
+        return tokens        
 
-    def tokenize(self, input_string):
+    def tokenize(self, input_string):        
         batch_size = 1000
         input_string = unicode(input_string, 'utf-8')
 
@@ -362,7 +372,11 @@ class TieredTokenizer:
             for y, char, index in zip(y_pred, current_string, xrange(len(current_string))):
                 w += char
                 if np.argmax(y.npvalue()) == 1:
-                    seq = self._get_tokens(w.strip())
+                    space_after_end_of_sentence = False
+                    if index < len(input_string)-1: # compare with input_string not with current_string for whitespace after current sentence
+                        if input_string[index+1] in string.whitespace:
+                            space_after_end_of_sentence = True
+                    seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
                     sequences.append(seq)
                     w = ""
                     last_ss_break = index
@@ -378,7 +392,10 @@ class TieredTokenizer:
             num_chars += last_ss_break
 
         if w.strip() != "":
-            seq = self._get_tokens(w.strip())
+            space_after_end_of_sentence = False
+            if w[-1] in string.whitespace:            
+                space_after_end_of_sentence = True
+            seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
             sequences.append(seq)
 
         return sequences
