@@ -95,7 +95,7 @@ def nlp():
             if singletonServer.lemmatizer is not None:
                 lemmatized = singletonServer.lemmatizer.tag(seq)
             else:
-                lemmatized = [entry.word for entry in seq]
+                lemmatized = [entry.word.decode('utf-8') for entry in seq]
 
             for entry, lemma in zip(seq, lemmatized):
                 if not entry.is_compound_entry:
