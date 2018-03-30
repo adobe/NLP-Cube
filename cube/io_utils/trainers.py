@@ -460,7 +460,7 @@ class TaggerTrainer:
         self.patience = patience
         self.encodings = encodings
 
-    def start_training(self, output_base):
+    def start_training(self, output_base, batch_size=0):
         epoch = 0
         itt_no_improve = self.patience
         selected_test_upos, selected_test_xpos, selected_test_attrs = 0, 0, 0
@@ -501,6 +501,8 @@ class TaggerTrainer:
             sys.stdout.flush()
             total_loss = 0
             start_time = time.time()
+            current_batch_size=0
+            self.tagger.start_batch()
             for iSeq in xrange(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
@@ -509,7 +511,16 @@ class TaggerTrainer:
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
 
-                total_loss += self.tagger.learn(seq)
+                self.tagger.learn(seq)
+                current_batch_size+=len(seq)
+                if current_batch_size>batch_size:
+                    total_loss += self.tagger.end_batch()
+                    self.tagger.start_batch()
+                    current_batch_size=0
+            if current_batch_size!=0:
+                total_loss+=self.tagger.end_batch()
+                self.tagger.start_batch()
+
             stop_time = time.time()
             sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
                 stop_time - start_time) + "\n")

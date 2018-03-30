@@ -31,7 +31,8 @@ class BDRNNTagger:
         self.embeddings = embeddings
 
         self.model = dy.Model()
-        self.trainer = dy.AdamTrainer(self.model)  # dy.MomentumSGDTrainer(self.model)
+        self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9,
+                                      beta_2=0.9)  # dy.MomentumSGDTrainer(self.model)
         self.trainer.set_sparse_updates(False)
         self.character_network = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=1,
                                                   embeddings_size=self.embeddings.word_embeddings_size,
@@ -47,7 +48,7 @@ class BDRNNTagger:
 
         self.bdrnn_fw = []
         self.bdrnn_bw = []
-        rnn_input_size = self.config.input_size#self.embeddings.word_embeddings_size
+        rnn_input_size = self.config.input_size  # self.embeddings.word_embeddings_size
 
         aux_softmax_input_size = 0
         index = 0
@@ -90,6 +91,7 @@ class BDRNNTagger:
         self.aux_softmax_attrs_b = self.model.add_parameters((len(self.encodings.attrs2int)))
 
         self.aux_softmax_weight = aux_softmax_weight
+        self.losses = []
 
     def tag(self, seq):
         dy.renew_cg()
@@ -102,7 +104,7 @@ class BDRNNTagger:
         return label_list
 
     def learn(self, seq):
-        dy.renew_cg()
+        # dy.renew_cg()
         softmax_list, aux_softmax_list = self._predict(seq, runtime=False)
         losses = []
         for entry, softmax, aux_softmax in zip(seq, softmax_list, aux_softmax_list):
@@ -123,11 +125,26 @@ class BDRNNTagger:
             losses.append(-dy.log(dy.pick(aux_softmax[1], xpos_index)) * (self.aux_softmax_weight / 3))
             losses.append(-dy.log(dy.pick(aux_softmax[2], attrs_index)) * (self.aux_softmax_weight / 3))
 
-        loss = dy.average(losses)
-        loss_val = loss.value()
-        loss.backward()
-        self.trainer.update()
-        return loss_val
+        # loss = dy.average(losses)
+        # loss_val = loss.value()
+        # loss.backward()
+        # self.trainer.update()
+        # return loss_val
+        self.losses.append(dy.esum(losses))
+
+    def start_batch(self):
+        self.losses = []
+        dy.renew_cg()
+
+    def end_batch(self):
+        total_loss_val = 0
+        if len(self.losses) > 0:
+            total_loss = dy.esum(self.losses)
+            self.losses = []
+            total_loss_val = total_loss.value()
+            total_loss.backward()
+            self.trainer.update()
+        return total_loss_val
 
     def _predict(self, seq, runtime=True):
         softmax_list = []
@@ -151,7 +168,7 @@ class BDRNNTagger:
             proj_emb = self.emb_proj_w.expr() * word_emb
             proj_hol = self.hol_proj_w.expr() * hol_emb
             proj_char = self.char_proj_w.expr() * char_emb
-            #x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
+            # x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
 
             if runtime:
                 x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
@@ -181,14 +198,20 @@ class BDRNNTagger:
         # BDLSTM
         rnn_outputs = []
         for fw, bw, dropout in zip(self.bdrnn_fw, self.bdrnn_bw, self.config.layer_dropouts):
+            if not runtime:
+                fw.set_dropouts(0, dropout)
+                bw.set_dropouts(0, dropout)
+            else:
+                fw.set_dropouts(0, 0)
+                bw.set_dropouts(0, 0)
             fw_list = fw.initial_state().transduce(x_list)
             bw_list = list(reversed(bw.initial_state().transduce(reversed(x_list))))
             x_list = [dy.concatenate([x_fw, x_bw]) for x_fw, x_bw in zip(fw_list, bw_list)]
-            if runtime:
-                x_out = x_list
-            else:
-                x_out = [dy.dropout(x, dropout) for x in x_list]
-            rnn_outputs.append(x_out)
+            # if runtime:
+            #    x_out = x_list
+            # else:
+            #    x_out = [dy.dropout(x, dropout) for x in x_list]
+            rnn_outputs.append(x_list)
 
         # SOFTMAX
         mlp_output = []
