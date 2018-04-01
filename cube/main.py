@@ -260,7 +260,7 @@ def parse_train(params):
         embeddings.read_from_file(params.embeddings, encodings.word_list)
         tagger = BDRNNTagger(config, encodings, embeddings, aux_softmax_weight=params.aux_softmax_weight)
         trainer = TaggerTrainer(tagger, encodings, params.itters, trainset, devset, testset)
-        trainer.start_training(params.output_base)
+        trainer.start_training(params.output_base, batch_size=params.batch_size)
 
     elif params.train == "parser":
         print "Starting training for " + params.train
