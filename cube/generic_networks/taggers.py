@@ -108,12 +108,6 @@ class BDRNNTagger:
         softmax_list, aux_softmax_list = self._predict(seq, runtime=False)
         losses = []
         for entry, softmax, aux_softmax in zip(seq, softmax_list, aux_softmax_list):
-            # if self.tagset == 'upos':
-            #    label_index = self.encodings.label2int[entry.upos]
-            # elif self.tagset == 'xpos':
-            #    label_index = self.encodings.label2int[entry.xpos]
-            # else:
-            #    label_index = self.encodings.label2int[entry.attrs]
             upos_index = self.encodings.upos2int[entry.upos]
             xpos_index = self.encodings.xpos2int[entry.xpos]
             attrs_index = self.encodings.attrs2int[entry.attrs]

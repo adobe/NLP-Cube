@@ -517,6 +517,7 @@ class TaggerTrainer:
                     total_loss += self.tagger.end_batch()
                     self.tagger.start_batch()
                     current_batch_size=0
+
             if current_batch_size!=0:
                 total_loss+=self.tagger.end_batch()
                 self.tagger.start_batch()
