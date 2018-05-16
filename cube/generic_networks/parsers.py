@@ -259,22 +259,27 @@ class BDRNNParser:
                 [self.unknown_word_embedding[1], self.pad_tag_embedding[1]]))
         for entry in seq:
             word = entry.word
-            char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime)
-            encoder_states_list.append(encoder_states)
+            if self.config.use_lexical:
+                char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime)
+                encoder_states_list.append(encoder_states)
 
-            word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
-            if not found:
-                word_emb = self.unknown_word_embedding[0]
+                word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+                if not found:
+                    word_emb = self.unknown_word_embedding[0]
+                else:
+                    word_emb = dy.tanh(
+                        self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
+
+                word = word.decode('utf-8').lower()
+                if word in self.encodings.word2int:
+                    holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
+                else:
+                    holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
             else:
-                word_emb = dy.tanh(
-                    self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
-
-            word = word.decode('utf-8').lower()
-            if word in self.encodings.word2int:
-                holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
-            else:
-                holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
-
+                word_emb = dy.inputVector([0] * self.config.input_embeddings_size)
+                char_emb = dy.inputVector([0] * self.config.input_embeddings_size)
+                holistic_emb = dy.inputVector([0] * self.config.input_embeddings_size)
+                
             if runtime or self.config.use_morphology:
                 w_emb = word_emb + char_emb + holistic_emb
             else:
