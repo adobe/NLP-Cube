@@ -139,7 +139,7 @@ def parse_test(params):
         encodings.load(params.model_base + ".encodings")
         encodings.update_wordlist(testset)
         print "Updated word list: " + str(len(encodings.word_list))
-        config = ParserConfig()
+        config = ParserConfig(filename=params.config)
         embeddings = WordEmbeddings()
         embeddings.read_from_file(params.embeddings, encodings.word_list)
         parser = BDRNNParser(config, encodings, embeddings)
