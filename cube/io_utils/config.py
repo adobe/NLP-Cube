@@ -143,7 +143,7 @@ class ParserConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
         sys.stdout.write("Reading configuration file... ")
-        self.layers = [300, 300, 50, 50, 50]
+        self.layers = [300, 300, 150, 150, 150]
         self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
         self.aux_softmax_layer = 2
         self._valid = True

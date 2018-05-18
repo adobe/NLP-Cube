@@ -233,7 +233,8 @@ def parse_train(params):
         print "==PARAMETERS=="
         print "TRAIN FILE: " + params.train_file
         print "DEV FILE: " + params.dev_file
-        print "TEST FILE: " + str(params.test_file)
+        if params.test_file is not None:
+            print "TEST FILE: " + params.test_file
         print "EMBEDDINGS FILE: " + params.embeddings
         print "STOPPING CONDITION: " + str(params.itters)
         print "OUTPUT BASE: " + params.output_base
@@ -267,7 +268,8 @@ def parse_train(params):
         print "==PARAMETERS=="
         print "TRAIN FILE: " + params.train_file
         print "DEV FILE: " + params.dev_file
-        print "TEST FILE: " + params.test_file
+        if params.test_file is not None:
+            print "TEST FILE: " + params.test_file
         print "EMBEDDINGS FILE: " + params.embeddings
         print "STOPPING CONDITION: " + str(params.itters)
         print "OUTPUT BASE: " + params.output_base
@@ -309,7 +311,8 @@ def parse_train(params):
         print "==PARAMETERS=="
         print "TRAIN FILE: " + params.train_file
         print "DEV FILE: " + params.dev_file
-        print "TEST FILE: " + params.test_file
+        if params.test_file is not None:
+            print "TEST FILE: " + params.test_file
         print "EMBEDDINGS FILE: " + params.embeddings
         print "STOPPING CONDITION: " + str(params.itters)
         print "OUTPUT BASE: " + params.output_base
@@ -340,7 +343,8 @@ def parse_train(params):
         print "==PARAMETERS=="
         print "TRAIN FILE: " + params.train_file
         print "DEV FILE: " + params.dev_file
-        print "TEST FILE: " + params.test_file
+        if params.test_file is not None:
+            print "TEST FILE: " + params.test_file
         print "EMBEDDINGS FILE: " + params.embeddings
         print "STOPPING CONDITION: " + str(params.itters)
         print "OUTPUT BASE: " + params.output_base
