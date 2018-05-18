@@ -1,0 +1,23 @@
+html {
+     -webkit-font-smoothing: antialiased;
+}
+
+body {
+    color: #77797c;
+    font-family: source-sans-pro, sans-serif;
+    font-weight: 500;
+}
+
+#hero-wrapper {
+    background-color: #f0f2f3;
+    margin: 0px 0 0;
+}
+
+#sub-hero-wrapper {
+    padding: 70px 0 0;
+}
+
+#content-wrapper {
+    background-color: #dee9f1;
+    padding-top: 80px;
+}
