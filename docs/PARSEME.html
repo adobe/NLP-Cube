@@ -78,9 +78,9 @@
             </div>
         </div>
         <div id='sub-hero-wrapper' class="text-center">
-            <p>Our Named Entity Recognition (NER) system employs Graph-Based-Decoding (GBD) over hybrid network architecture composed of bidirectional LSTMs for word-level encoding with a MultiLayerPerceptron for detecting links inside entities and a unidirection LSTM for label estimation:</p>
+            <p>Our Named Entity Recognition (NER) system employs Graph-Based-Decoding (GBD) over a hybrid network architecture composed of bidirectional LSTMs for word-level encoding, with a MultiLayerPerceptron for detecting links inside entities and a unidirectional LSTM for label estimation:</p>
             <form class="form-horizontal" role="form">
-                <img src="img/system/gdb-ner.png" style='width:40%'>
+                <img src="img/system/gdb-ner.png" style='width:40%; cursor:pointer'>
                 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
                     <div class="modal-dialog  modal-lg">
                         <div class="modal-content">
@@ -96,8 +96,12 @@
                 </div><!-- /.modal -->
             </form>
 
+            
+            <p>We are currently working on integrating the NER branch into master. Until then, you can check out the source for the GDB-NER system at <a href='https://github.com/adobe/NLP-Cube/tree/dev.gbd-ner/ner'>this repository</a></p>
+
 
             <p id='top-menu'><strong>Note:</strong> During the official PARSEME evaluation our system (GBD-NER) was affected by a bug which caused it to use only delexicalized features as input. After correcting this bug, we have re-trained and evaluated our system. See below for details: </p>
+            
             <style>
 
                 table, th, td { 
