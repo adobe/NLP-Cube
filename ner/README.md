@@ -12,6 +12,8 @@ For each language, we provide corpora (in the `.cupt` format) in which VMWEs are
 
 # Training and testing example for Romanian (RO)
 
+**Note:** To train the system for languages that have single token MWEs, you need to edit tagger/network.py and set `SINGLE_MWE` to `True` on line 12.
+
 ## Train the GBD-NER
 ```bash
 $ wget https://gitlab.com/parseme/sharedtask-data/raw/master/1.1/RO/train.cupt -O corpus/ro/train.cupt
