@@ -1,0 +1,36 @@
+{
+    "title": "Bare",
+    "name": "startbootstrap-bare",
+    "version": "4.1.1",
+    "description": "A basic HTML starter template for Bootstrap",
+    "keywords": [
+        "css",
+        "sass",
+        "html",
+        "responsive",
+        "theme",
+        "template"
+    ],
+    "homepage": "https://startbootstrap.com/template-overviews/bare",
+    "bugs": {
+        "url": "https://github.com/BlackrockDigital/startbootstrap-bare/issues",
+        "email": "feedback@startbootstrap.com"
+    },
+    "license": "MIT",
+    "author": "Start Bootstrap",
+    "contributors": [
+        "David Miller (http://davidmiller.io/)"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/BlackrockDigital/startbootstrap-bare.git"
+    },
+    "dependencies": {
+        "bootstrap": "4.1.1",
+        "jquery": "3.3.1"
+    },
+    "devDependencies": {
+        "browser-sync": "2.24.3",
+        "gulp": "^3.9.1"
+    }
+}

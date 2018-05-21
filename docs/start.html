@@ -44,11 +44,11 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ml-auto">
-                        <li class="nav-item active">
+                        <li class="nav-item">
                             <a class="nav-link" href="index.html">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="start.html">Getting started</a>
+                            <a class="nav-link active" href="start.html">Getting started</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="examples.html">Examples</a>
@@ -77,43 +77,72 @@
             </div>
         </div>
         <div id='sub-hero-wrapper'>
-            <div class="row">
-                <div class='col-sm-4 feature-item'>
-                    <span class="fa fa-universal-access"></span>
-                    <h3>Universal Dependencies</h3>
-                    <p>NLPCube is fully compatible with Universal Dependencies CONLLU format. If interested in building custom models, please consult the <a href='http://universaldependencies.org/'>UD Guidelines</a>. </p>
-                </div>
-                <div class='col-sm-4 feature-item'>
-                    <span class="fa fa-unlock-alt"></span>
-                    <h3>Open and customizable</h3>
-                    <p> You have access to our entire repository, so you can easily integrate your own models and algorithms. Also you can retrain the system at any time, using custom word-embeddings and hyperparameters</p>
-                </div>
-                <div class='col-sm-4 feature-item'>
-                    <span class="fa fa-user-secret"></span>
-                    <h3>State-of-the-art</h3>
-                    <p>We keep NLPCube updated with cutting-age Machine Learning and Natural Language Processing models. You can checkout our <a href='https://github.com/adobe/NLP-Cube'>repository</a> for latest models. </p>
-                </div>
-            </div>
-        </div>
+            <h1>Setup:</h1>
 
-        <div id='content-wrapper'>
-            <div class='row'><glyph class="fa fa-road"></glyph><h2>Roadmap</h2></div>
-            <p>Currently we are working on multiple tasks:</p>
+            <p>Before running the server, you need the model's weights, and you can follow two approaches to get them:</p>
             <ul>
-                <li>Creating pre-trained models for all languages included in the <a href='http://universaldependencies.org/'>Universal Dependencies Corpus</a></li>
-                <li>Enabling NLPCube installation as a standard <a href='https://pypi.org/project/pip/'>PIP package</a></li>
-                <li>Providing a fair evaluation as part of the <a href='http://universaldependencies.org/conll18/'>CONLL Shared Task</a> initiative</li>
+                <li>
+                    Download data in order to train the model yourself
+                </li>
+                <li>
+                    Download already existing model weights 
+                </li>
             </ul>
 
-            <div class='row'><glyph class="fa fa-code-fork"></glyph><h2>Contributing</h2></div>
-            <p>There are several ways to contribute:</p>
-            <ul>
-                <li>Test NLPCube and help us find bugs</li>
-                <li>Notify us about state-of-the-art methods and resutls using via the GIT <a href='https://github.com/adobe/NLP-Cube/issues'>issue tracker</a></li>
-                <li>Train new models and make them available to everybody</li>
-            </ul>
-        </div>
 
+            <h4> Installing dyNET:</h4>
+            <ul style="list-style-type:disc">
+                <li>Make sure you have <a href='https://www.mercurial-scm.org/wiki/Download'>Mercurial</a>, <a href='https://www.python.org/downloads/'>Python</a>, <a href='https://pip.pypa.io/en/stable/installing/'>PIP</a>, <a href='https://cmake.org/install/'>CMAKE</a> installed (you can also check steps documented <a href='http://dynet.readthedocs.io/en/latest/python.html#installing-a-cutting-edge-and-or-gpu-version'>here</a>)</li>
+                <li>Install Intel's <a href='https://software.seek.intel.com/performance-libraries'>MKL library</a></li>
+                <li>Install dyNET by using the installation steps from the <a href='http://dynet.readthedocs.io/en/latest/python.html#manual-installation'>manual installation page</a>. More specifically, you should use:</li>
+            </ul>
+
+            <pre>
+            <code>
+            pip install cython
+            mkdir dynet-base
+            cd dynet-base
+
+            git clone https://github.com/clab/dynet.git
+            hg clone https://bitbucket.org/eigen/eigen -r 2355b22  # -r NUM specified a known working revision
+
+            cd dynet
+            mkdir build
+            cd build
+            cmake .. -DEIGEN3_INCLUDE_DIR=/path/to/eigen -DMKL_ROOT=/opt/intel/mkl -DPYTHON=`which python2`
+
+            make -j 2 # replace 2 with the number of available cores
+            make install
+
+            cd python
+            python2 ../../setup.py build --build-dir=.. --skip-build install
+            </code>
+            </pre>
+
+
+
+
+            <h1>Training the lemmatizer (example):</h1>
+
+            <p>Use the following command to train your lemmatizer:</p>
+
+            <pre>
+            <code>
+            python2 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000
+            </code>
+            </pre>
+
+            <h1> Running the server:</h1>
+
+            <p>Use the following command to run the server locally:</p>
+            
+            <pre>
+            <code>
+            python2 cube/main.py --start-server --model-tokenization=corpus/trained_models/ro/tokenizer --model-parsing=corpus/trained_models/ro/parser --model-lemmatization=corpus/trained_models/ro/lemma --embeddings=corpus/wiki.ro.vec --server-port=8080
+            </code>
+            </pre>
+            
+        </div>
 
 
 
