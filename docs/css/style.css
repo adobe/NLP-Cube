@@ -14,10 +14,39 @@ body {
 }
 
 #sub-hero-wrapper {
-    padding: 70px 0 0;
+    padding: 70px 15% 70px;
 }
 
 #content-wrapper {
     background-color: #dee9f1;
     padding-top: 80px;
+    padding: 70px 25% 70px;
+}
+
+.feature-item {
+    text-align: center;
+}
+
+.feature-item span{
+    font-size: 64px;
+    margin-bottom: 20px;
+    color:bisque    
+}
+
+#content-wrapper glyph{
+    font-size: 40px;
+    padding-right: 12px
+}
+
+#sub-hero-wrapper glyph{
+    font-size: 40px;
+    padding-right: 12px
+}
+
+pre {
+ white-space: pre-wrap;       /* css-3 */
+ white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+ white-space: -pre-wrap;      /* Opera 4-6 */
+ white-space: -o-pre-wrap;    /* Opera 7 */
+ word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
