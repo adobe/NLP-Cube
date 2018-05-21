@@ -8,7 +8,13 @@ from character_embeddings import CharacterNetwork
 def get_link(seq, iSrc, iDst):
     l1 = seq[iSrc].label
     l2 = seq[iDst].label
-
+    
+    SINGLE_MWE=False
+    
+    if not SINGLE_MWE:
+        if iSrc==0 or iDst==0:
+            return 0
+    
     if iSrc == 0 and l2 != '*':
         return 1
     if iDst == 0 and l1 != '*':
