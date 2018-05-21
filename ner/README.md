@@ -21,6 +21,7 @@ python2 scripts/download_data.py --language ro
 # Train the GBD-NER
 ```bash
 $ wget https://gitlab.com/parseme/sharedtask-data/raw/master/1.1/RO/train.cupt -O corpus/ro/train.cupt
+$ wget https://gitlab.com/parseme/sharedtask-data/raw/master/1.1/RO/dev.cupt -O corpus/ro/dev.cupt
 $ wget https://gitlab.com/parseme/sharedtask-data/raw/master/1.1/RO/test.blind.cupt -O corpus/ro/test.blind.cupt
 $ wget https://gitlab.com/parseme/sharedtask-data/raw/master/1.1/RO/test.cupt -O corpus/ro/test.cupt
 $ python2 tagger/main.py --train corpus/ro/train.cupt corpus/ro/dev.cupt models/ro/ner 10
