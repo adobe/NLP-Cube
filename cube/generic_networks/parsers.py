@@ -49,9 +49,19 @@ class BDRNNParser:
             (self.config.input_embeddings_size, self.embeddings.word_embeddings_size))
         self.input_proj_b_word = self.model.add_parameters((self.config.input_embeddings_size))
 
+        self.unknown_word_embedding = self.model.add_lookup_parameters(
+            (3, self.config.input_embeddings_size))  # for padding lexical
+        self.pad_tag_embedding = self.model.add_lookup_parameters(
+            (3, self.config.input_embeddings_size))  # for padding morphology
+
+        
         self.bdrnn_fw = []
         self.bdrnn_bw = []
-        rnn_input_size = self.config.input_embeddings_size
+        
+        rnn_input_size = 0 
+        if self.config.use_lexical:
+            rnn_input_size += self.config.input_embeddings_size
+            
         if self.config.use_morphology:
             rnn_input_size += self.config.input_embeddings_size
             self.upos_lookup = self.model.add_lookup_parameters(
@@ -60,12 +70,7 @@ class BDRNNParser:
                 (len(self.encodings.xpos2int), self.config.input_embeddings_size))
             self.attrs_lookup = self.model.add_lookup_parameters(
                 (len(self.encodings.attrs2int), self.config.input_embeddings_size))
-
-        self.unknown_word_embedding = self.model.add_lookup_parameters(
-            (3, self.config.input_embeddings_size))  # for padding
-        self.pad_tag_embedding = self.model.add_lookup_parameters(
-            (3, self.config.input_embeddings_size))  # for padding
-
+        
         index = 0
         aux_proj_input_size = 0
         for layer_size in self.config.layers:
@@ -253,52 +258,59 @@ class BDRNNParser:
         encoder_states_list = [None]
         # add the root
         if not self.config.use_morphology:
-            x_list.append(self.unknown_word_embedding[1])
-        else:
-            x_list.append(dy.concatenate(
-                [self.unknown_word_embedding[1], self.pad_tag_embedding[1]]))
-        for entry in seq:
+           x_list.append(self.unknown_word_embedding[1])
+        elif not self.config.use_lexical:
+	   	   x_list.append(self.pad_tag_embedding[1])
+        else: # both lexical and morphology are used
+           x_list.append(dy.concatenate(
+               [self.unknown_word_embedding[1], self.pad_tag_embedding[1]]))
+               
+        for entry in seq:        
             word = entry.word
-            char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime)
-            encoder_states_list.append(encoder_states)
+            
+            if self.config.use_lexical:
+                # prepare lexical embeddings
+                char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime)
+                encoder_states_list.append(encoder_states)
 
-            word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
-            if not found:
-                word_emb = self.unknown_word_embedding[0]
-            else:
-                word_emb = dy.tanh(
-                    self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
+                word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+                if not found:
+                    word_emb = self.unknown_word_embedding[0]
+                else:
+                    word_emb = dy.tanh(
+                        self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
 
-            word = word.decode('utf-8').lower()
-            if word in self.encodings.word2int:
-                holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
-            else:
-                holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
+                word = word.decode('utf-8').lower()
+                if word in self.encodings.word2int:
+                    holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
+                else:
+                    holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
+                
+                # dropout lexical embeddings
+                if runtime:
+                    w_emb = word_emb + char_emb + holistic_emb
+                else:
+                    p1 = random.random()
+                    p2 = random.random()
+                    p3 = random.random()
+                    m1 = 1
+                    m2 = 1
+                    m3 = 1
+                    if p1 < self.config.input_dropout_prob:
+                        m1 = 0
+                    if p2 < self.config.input_dropout_prob:
+                        m2 = 0
+                    if p3 < self.config.input_dropout_prob:
+                        m3 = 0
 
-            if runtime or self.config.use_morphology:
-                w_emb = word_emb + char_emb + holistic_emb
-            else:
-                p1 = random.random()
-                p2 = random.random()
-                p3 = random.random()
-                m1 = 1
-                m2 = 1
-                m3 = 1
-                if p1 < self.config.input_dropout_prob:
-                    m1 = 0
-                if p2 < self.config.input_dropout_prob:
-                    m2 = 0
-                if p3 < self.config.input_dropout_prob:
-                    m3 = 0
-
-                scale = 1.0
-                if m1 + m2 + m3 > 0:
-                    scale = float(3) / (m1 + m2 + m3)
-                m1 = dy.scalarInput(m1)
-                m2 = dy.scalarInput(m2)
-                m3 = dy.scalarInput(m3)
-                scale = dy.scalarInput(scale)
-                w_emb = (word_emb * m1 + char_emb * m2 + holistic_emb * m3) * scale
+                    scale = 1.0
+                    if m1 + m2 + m3 > 0:
+                        scale = float(3) / (m1 + m2 + m3)
+                    m1 = dy.scalarInput(m1)
+                    m2 = dy.scalarInput(m2)
+                    m3 = dy.scalarInput(m3)
+                    scale = dy.scalarInput(scale)
+                    w_emb = (word_emb * m1 + char_emb * m2 + holistic_emb * m3) * scale
 
             if self.config.use_morphology:
                 if entry.upos in self.encodings.upos2int:
@@ -316,31 +328,38 @@ class BDRNNParser:
                 # overwrite all dropouts. it will later be handled by "same-mask"
                 t_emb = upos_emb + xpos_emb + attrs_emb
                 # w_emb = word_emb + char_emb + holistic_emb
-
-            if not self.config.use_morphology:
-                x_list.append(w_emb)
-            elif not runtime:
-                p1 = random.random()
-                p2 = random.random()
-                m1 = 1
-                m2 = 1
-                if p1 < self.config.input_dropout_prob:
-                    m1 = 0
-                if p2 < self.config.input_dropout_prob:
-                    m2 = 0
-                if m1 + m2 > 0:
-                    scale = float(2.0) / (m1 + m2)
+            
+            # compose embeddings, if necessary             
+            if self.config.use_lexical and self.config.use_morphology:
+                if not runtime:
+                    p1 = random.random()
+                    p2 = random.random()
+                    m1 = 1
+                    m2 = 1
+                    if p1 < self.config.input_dropout_prob:
+                        m1 = 0
+                    if p2 < self.config.input_dropout_prob:
+                        m2 = 0
+                    if m1 + m2 > 0:
+                        scale = float(2.0) / (m1 + m2)
+                    else:
+                        scale = 1.0
+                    scale = dy.scalarInput(scale)
+                    m1 = dy.scalarInput(m1)
+                    m2 = dy.scalarInput(m2)
+                    x_list.append(dy.concatenate([w_emb * m1 * scale, t_emb * m2 * scale]))
                 else:
-                    scale = 1.0
-                scale = dy.scalarInput(scale)
-                m1 = dy.scalarInput(m1)
-                m2 = dy.scalarInput(m2)
-                x_list.append(dy.concatenate([w_emb * m1 * scale, t_emb * m2 * scale]))
-            else:
-                x_list.append(dy.concatenate([w_emb, t_emb]))
+                    x_list.append(dy.concatenate([w_emb, t_emb]))
+            elif self.config.use_lexical: # just use_lexical == True
+                x_list.append(w_emb)
+            else: # just use_morphology == True
+                x_list.append(t_emb)
 
+        # close sequence
         if not self.config.use_morphology:
             x_list.append(self.unknown_word_embedding[2])
+        elif not self.config.use_lexical:
+            x_list.append(self.pad_tag_embedding[2])
         else:
             x_list.append(
                 dy.concatenate(

@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_option('--store', action='store', dest='output_base', help='output base for model location')
     parser.add_option('--aux-softmax', action='store', dest='aux_softmax_weight',
                       help='weight for the auxiliarly softmax', default='0.2', type='float')
-    parser.add_option("--config", action='store', dest='config', help='configuration file in json format to load')
+    parser.add_option("--config", action='store', dest='config', help='configuration file to load')
     parser.add_option("--test", action='store', dest='test', choices=['tagger', 'parser', 'lemmatizer', 'tokenizer'],
                       help='select what model to test')
     parser.add_option("--model", action='store', dest='model', help='location where model is stored')
@@ -139,7 +139,7 @@ def parse_test(params):
         encodings.load(params.model_base + ".encodings")
         encodings.update_wordlist(testset)
         print "Updated word list: " + str(len(encodings.word_list))
-        config = ParserConfig()
+        config = ParserConfig(filename=params.config)
         embeddings = WordEmbeddings()
         embeddings.read_from_file(params.embeddings, encodings.word_list)
         parser = BDRNNParser(config, encodings, embeddings)
@@ -288,9 +288,9 @@ def parse_train(params):
             return
         # PARAM INJECTION 
         if params.params != None:
-            parts = params.params.replace("@", " ").split("|")
+            parts = params.params.split(":")
             for param in parts:
-                variable = param.split(" ")[0]
+                variable = param.split("=")[0]
                 value = param[len(variable) + 1:]
                 print("External param injection: " + variable + "=" + value)
                 exec ("config.__dict__[\"" + variable + "\"] = " + value)
