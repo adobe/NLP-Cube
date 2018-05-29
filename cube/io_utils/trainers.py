@@ -882,11 +882,10 @@ class TokenizerTrainer:
 
     def _create_mixed_sequences(self, X_set, y_set, space_after_end_of_sentence, shuffle=False):
         assert (len(X_set) == len(y_set))
-        # print(" Set has "+str(len(X_set))+" sequences")
+        #print(" Set has "+str(len(X_set))+" sequences")
         X_mixed_set = []
         y_mixed_set = []
-        for i in range(len(X_set)):
-            # big bada bug
+        for i in range(len(X_set)):            
             import copy
             X_mixed = copy.deepcopy(X_set[i])
             y_mixed = copy.deepcopy(y_set[i])
@@ -901,7 +900,10 @@ class TokenizerTrainer:
                 X_mixed.append(" ")
                 y_mixed.append("S")
                 # add some random chars of another sentence
-            pick = random.randint(0, len(X_set) - 1)
+            while True: # some sequences have only one word, skip them
+                pick = random.randint(0, len(X_set) - 1)            
+                if len(X_set[pick]) > 1:
+                    break 
             char_count = random.randint(1, len(X_set[pick]) - 1)
             X_mixed = X_mixed + copy.deepcopy(X_set[pick][0:char_count])
             y_mixed = y_mixed + copy.deepcopy(y_set[pick][0:char_count])
@@ -1061,9 +1063,10 @@ class TokenizerTrainer:
         while True:
             test = test + lines[cnt]
             # print(lines[cnt])
+            cnt += 1
             if cnt >= len(lines) or cnt > 5:
                 break
-            cnt += 1
+            
         if float(test.count(' ')) / float(len(test)) < 0.02:
             useSpaces = ""
         # print (str(float(test.count(' '))/float(len(test))))
