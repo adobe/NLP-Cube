@@ -19,6 +19,7 @@
 import dynet_config
 import optparse
 import sys
+import os
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
@@ -420,7 +421,7 @@ def parse_train(params):
 def parse_run(params):
     sys.stdout.write("\nINPUT FILE: " + params.input_file)
     sys.stdout.write("\nOUTPUT FILE: " + params.output_file)
-    sys.stdout.write("\nMODELS FILE: " + params.output_file)
+    sys.stdout.write("\nMODELS FILE: " + params.models)
     sys.stdout.flush()
 
     components = params.run.split(",")
@@ -435,7 +436,7 @@ def parse_run(params):
     encodings = None    
     if tokenize == True:
         if not os.path.isfile(os.path.join(params.models,"tokenizer-tok.bestAcc")):
-            sys.stdout.write("\n\tTokenizer model not found!")
+            sys.stdout.write("\n\tTokenizer model not found! ("+os.path.join(params.models,"tokenizer-tok.bestAcc")+")")
             sys.stdout.flush()
             sys.exit(1)
         if encodings != None:
@@ -499,28 +500,15 @@ def parse_run(params):
         for i in range(len(lines)):
             input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-        sentences = self.tokenizer.tokenize(input_string)
-
-        # with open(output_conllu_file, 'w', encoding='utf-8') as file:
-        with open(current_file, 'w') as file:
-            for sentence in sentences:
-                # print ("Sentence has entries: "+str(len(sentence)))
-                for entry in sentence:
-                    line = str(
-                        entry.index) + "\t" + entry.word + "\t" + entry.lemma + "\t" + entry.upos + "\t" + entry.xpos + "\t" + entry.attrs + "\t" + str(
-                        entry.head) + "\t" + entry.label + "\t" + entry.deps + "\t" + entry.space_after + "\n"
-                    file.write(line)
-
-                file.write("\n")
-        
-        sys.stdout.write("done") 
-        sys.stdout.flush()
+        sequences = self.tokenizer.tokenize(input_string)
     else: 
         sys.stdout.write("\n\nLoading input file ... ")
-        sys.stdout.flush()
+        sys.stdout.flush()        
+        sequences = Dataset(params.input_file)
         
-        sequences = 
-        
+    sys.stdout.write("done") 
+    sys.stdout.flush()    
+    
     if compound:            
         from generic_networks.tokenizers import TieredTokenizer
         from io_utils.config import TieredTokenizerConfig        
