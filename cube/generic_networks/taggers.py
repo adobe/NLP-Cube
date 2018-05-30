@@ -18,6 +18,7 @@
 
 import dynet as dy
 import numpy as np
+import copy
 import random
 
 from character_embeddings import CharacterNetwork

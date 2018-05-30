@@ -17,7 +17,7 @@
 #
 
 import sys
-
+import io
 
 class Dataset:
     def __init__(self, file=None):
@@ -53,20 +53,36 @@ class Dataset:
         return sequences
 
     def write(self, filename):
-        with open(filename, 'w') as file:
+        #with io.open(filename,'w',encoding='utf-8') as file:
+        with open(filename,'w') as file:
             for sequence in self.sequences:                
                 for entry in sequence:
-                    line = str(entry.index) + "\t"
-                    + str(entry.word.encode('utf-8')) + "\t"
-                    + str(entry.lemma.encode('utf-8')) + "\t" 
-                    + str(entry.upos) + "\t" 
-                    + str(entry.xpos) + "\t" 
-                    + str(entry.attrs) + "\t"
-                    + str(entry.head) + "\t"
-                    + str(entry.label) + "\t"
-                    + str(entry.deps) + "\t"
-                    entry.space_after + "\n"
-                    file.write(line)
+                    file.write(str(entry.index))
+                    file.write("\t")
+                    if isinstance(entry.word,str):
+                        file.write(entry.word)
+                    else:
+                        file.write(entry.word.encode('utf-8'))
+                    file.write("\t")                    
+                    if isinstance(entry.lemma,str):
+                        file.write(entry.lemma)
+                    else:
+                        file.write(entry.lemma.encode('utf-8'))
+                    file.write("\t")
+                    file.write(entry.upos)
+                    file.write("\t")
+                    file.write(entry.xpos)
+                    file.write("\t")
+                    file.write(entry.attrs)
+                    file.write("\t")
+                    file.write(str(entry.head))
+                    file.write("\t")
+                    file.write(entry.label)
+                    file.write("\t")
+                    file.write(entry.deps)
+                    file.write("\t")
+                    file.write(entry.space_after)
+                    file.write("\n")                    
                 file.write("\n")
 
 class Encodings:

@@ -44,7 +44,7 @@ if __name__ == '__main__':
     parser.add_option("--raw-dev-file", action='store', dest='raw_dev_file', help='location of the raw dev file')
     parser.add_option("--raw-test-file", action='store', dest='raw_test_file', help='location of the raw test file')
     parser.add_option("--test-file", action='store', dest='test_file', help='location of the test dataset')
-    parser.add_option("--run", action='store', dest='run', help='Pipeline components: [all, tokenizer, compound, lemmatizer, tagger, parser <OR> parser_tagger]')
+    parser.add_option("--run", action='store', dest='run', help='Pipeline components: [all, tokenizer, compound, lemmatizer, tagger, parser]')
     parser.add_option("--models", action='store', dest='models', help='Folder path to where the components are stored.')
     
     parser.add_option("--batch-size", action='store', dest='batch_size', default='10', type='int',
@@ -431,8 +431,7 @@ def parse_run(params):
     lemmatize = True if "lemmatizer" in components else False
     tag = True if "tagger" in components else False
     parse = True if "parser" in components else False
-    parse_tag = True if "parser_tagger" in components else False
-    
+        
     # common elements load
     sys.stdout.write("\nLoading embeddings : "+params.embeddings+" ...\n")
     embeddings = WordEmbeddings()
@@ -457,7 +456,7 @@ def parse_run(params):
             encodings = Encodings(verbose = False)
             encodings.load(os.path.join(params.models,"lemmatizer.encodings"))        
     if tag == True:
-        if not os.path.isfile(os.path.join(params.models,"tagger.bestAcc")):
+        if not os.path.isfile(os.path.join(params.models,"tagger.bestOVERALL")):
             sys.stdout.write("\n\tTagger model not found!")
             sys.stdout.flush()
             sys.exit(1)
@@ -465,7 +464,7 @@ def parse_run(params):
         if encodings == None:
             encodings = Encodings(verbose = False)
             encodings.load(os.path.join(params.models,"tagger.encodings"))        
-    if parse == True or parse_tag == True:
+    if parse == True:
         if not os.path.isfile(os.path.join(params.models,"parser.bestUAS")):
             sys.stdout.write("\n\tParser model not found!")
             sys.stdout.flush()
@@ -515,7 +514,7 @@ def parse_run(params):
     sys.stdout.flush()    
    
     if compound:            
-        sys.stdout.write("\Compound word expanding "+params.input_file+" ... \n\t")
+        sys.stdout.write("\nCompound word expanding "+params.input_file+" ... \n\t")
         sys.stdout.flush()
         from generic_networks.token_expanders import CompoundWordExpander
         from io_utils.config import CompoundWordConfig        
@@ -523,7 +522,7 @@ def parse_run(params):
         compoundwordexpander_object = CompoundWordExpander(config, encodings, embeddings, runtime=True)
         compoundwordexpander_object.load(os.path.join(params.models,"compound.bestAcc"))   
         sequences = compoundwordexpander_object.expand_sequences(sequences)        
-        del compound_object # free memory
+        del compoundwordexpander_object # free memory
         sys.stdout.write(" done\n") 
         sys.stdout.flush()        
     
@@ -546,11 +545,29 @@ def parse_run(params):
         from io_utils.config import TaggerConfig
         from generic_networks.taggers import BDRNNTagger                
         config = TaggerConfig(os.path.join(params.models,"tagger.conf"))        
-        tagger_object = BDRNNTagger(config, encodings, embeddings, runtime=True)
-        tagger_object.load(os.path.join(params.models,"tagger.bestOVERALL"))
+        tagger_object_UPOS = BDRNNTagger(config, encodings, embeddings, runtime=True)
+        tagger_object_UPOS.load(os.path.join(params.models,"tagger.bestUPOS"))        
+        tagger_object_XPOS = BDRNNTagger(config, encodings, embeddings, runtime=True)
+        tagger_object_XPOS.load(os.path.join(params.models,"tagger.bestXPOS"))  
+        tagger_object_ATTRS = BDRNNTagger(config, encodings, embeddings, runtime=True)
+        tagger_object_ATTRS.load(os.path.join(params.models,"tagger.bestATTRS"))  
+        
         new_sequences = []
-        sequences = tagger_object.tag_sequences(sequences)
-        del tagger_object # free memory   
+        for sequence in sequences:
+            new_sequence = copy.deepcopy(sequence)
+            predicted_tags_UPOS = tagger_object_UPOS.tag(new_sequence)            
+            predicted_tags_XPOS = tagger_object_XPOS.tag(new_sequence)            
+            predicted_tags_ATTRS = tagger_object_ATTRS.tag(new_sequence)            
+            for entryIndex in range(len(enumerate(predicted_tags_UPOS))):
+                new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
+                new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
+                new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
+            new_sequences.append(new_sequence)
+        sequences = copy.deepcopy(new_sequence)       
+        
+        del tagger_object_UPOS # free memory   
+        del tagger_object_XPOS # free memory   
+        del tagger_object_ATTRS # free memory           
         sys.stdout.write(" done\n") 
         sys.stdout.flush()       
               
@@ -608,7 +625,7 @@ if params.test:
 if params.run:
     valid = True
     if "all" in params.run:
-        params.run = "tokenizer,compound,parser_tagger,lemmatizer"
+        params.run = "tokenizer,compound,parser,tagger,lemmatizer"
     components = params.run.split(",")
     if len(components)==0:
         print "--run needs a list of components"
@@ -626,7 +643,7 @@ if params.run:
         print "--output-file is mandatory"
         valid = False
     if "lemmatizer" in params.run and not "tagger" in params.run:
-        print "--run needs to include a tagger or parser_tagger to be able to lemmatize words"
+        print "--run needs to include a tagger to be able to lemmatize words"
         valid = False
     if valid:
         parse_run(params) 
