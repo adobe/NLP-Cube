@@ -22,6 +22,7 @@ import dynet as dy
 from character_embeddings import CharacterNetwork
 from graph.decoders import GreedyDecoder
 from utils import orthonormal_VanillaLSTMBuilder
+import copy
 import sys
 
 
@@ -465,6 +466,26 @@ class BDRNNParser:
     def load(self, path):
         self.model.populate(path)
 
+    def parse_sequences (self, sequences):    
+        new_sequences = []
+        for sequence in sequences:
+            new_sequence = copy.deepcopy(sequence)
+            predicted_tags = self.tag(new_sequence)                        
+            iOrig, iTags = 0, 0
+            while iOrig < len(new_sequence):
+                while new_sequence[iOrig].is_compound_entry:
+                    iOrig += 1                
+                new_sequence[iOrig].head = predicted_tags[iTags].head
+                new_sequence[iOrig].label = predicted_tags[iTags].label
+                if self.config.predict_morphology == True:
+                    new_sequence[iOrig].upos = predicted_tags[iTags].upos
+                    new_sequence[iOrig].xpos = predicted_tags[iTags].xpos
+                    new_sequence[iOrig].attrs = predicted_tags[iTags].attrs
+                iTags += 1
+                iOrig += 1            
+            
+            new_sequences.append(new_sequence)
+        return new_sequences                
 
 class ParserTag:
     def __init__(self, head, label, upos=None, xpos=None, attrs=None, lemma=None):

@@ -20,15 +20,16 @@ import sys
 
 
 class Dataset:
-    def __init__(self, file):
-        sys.stdout.write("Reading " + file + "... ")
-        sys.stdout.flush()
-        with open(file, "r") as f:
-            lines = f.readlines()
-            f.close()
-            self.sequences = self._make_sequences(lines)
+    def __init__(self, file=None):
+        if file is not None:
+            sys.stdout.write("Reading " + file + "... ")
+            sys.stdout.flush()
+            with open(file, "r") as f:
+                lines = f.readlines()
+                f.close()
+                self.sequences = self._make_sequences(lines)
 
-        sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
+            sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
 
     def _make_sequences(self, lines):
         sequences = []
@@ -51,6 +52,22 @@ class Dataset:
 
         return sequences
 
+    def write(self, filename):
+        with open(filename, 'w') as file:
+            for sequence in self.sequences:                
+                for entry in sequence:
+                    line = str(entry.index) + "\t"
+                    + str(entry.word.encode('utf-8')) + "\t"
+                    + str(entry.lemma.encode('utf-8')) + "\t" 
+                    + str(entry.upos) + "\t" 
+                    + str(entry.xpos) + "\t" 
+                    + str(entry.attrs) + "\t"
+                    + str(entry.head) + "\t"
+                    + str(entry.label) + "\t"
+                    + str(entry.deps) + "\t"
+                    entry.space_after + "\n"
+                    file.write(line)
+                file.write("\n")
 
 class Encodings:
     def __init__(self):

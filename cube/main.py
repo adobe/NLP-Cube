@@ -20,6 +20,7 @@ import dynet_config
 import optparse
 import sys
 import os
+import copy
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     parser.add_option("--raw-dev-file", action='store', dest='raw_dev_file', help='location of the raw dev file')
     parser.add_option("--raw-test-file", action='store', dest='raw_test_file', help='location of the raw test file')
     parser.add_option("--test-file", action='store', dest='test_file', help='location of the test dataset')
-    parser.add_option("--run", action='store', dest='run', help='Pipeline components: [tokenizer, compound, lemmatizer, tagger, parser <OR> parser_tagger]')
+    parser.add_option("--run", action='store', dest='run', help='Pipeline components: [all, tokenizer, compound, lemmatizer, tagger, parser <OR> parser_tagger]')
     parser.add_option("--models", action='store', dest='models', help='Folder path to where the components are stored.')
     
     parser.add_option("--batch-size", action='store', dest='batch_size', default='10', type='int',
@@ -421,7 +422,7 @@ def parse_train(params):
 def parse_run(params):
     sys.stdout.write("\nINPUT FILE: " + params.input_file)
     sys.stdout.write("\nOUTPUT FILE: " + params.output_file)
-    sys.stdout.write("\nMODELS FILE: " + params.models)
+    sys.stdout.write("\nMODELS FILE: " + params.models+"\n")
     sys.stdout.flush()
 
     components = params.run.split(",")
@@ -433,59 +434,63 @@ def parse_run(params):
     parse_tag = True if "parser_tagger" in components else False
     
     # common elements load
+    sys.stdout.write("\nLoading embeddings : "+params.embeddings+" ...\n")
+    embeddings = WordEmbeddings()
+    embeddings.read_from_file(params.embeddings, None)    
+   
     encodings = None    
     if tokenize == True:
         if not os.path.isfile(os.path.join(params.models,"tokenizer-tok.bestAcc")):
             sys.stdout.write("\n\tTokenizer model not found! ("+os.path.join(params.models,"tokenizer-tok.bestAcc")+")")
             sys.stdout.flush()
-            sys.exit(1)
-        if encodings != None:
-            encodings.load(os.path.join(params.models,"tokenizer.encodings"))
-        sys.stdout.write("\n\tTokenization enabled.")
+            sys.exit(1)      
+        sys.stdout.write("\n\tTokenization enabled.\n")
+        tokenizer_encodings = Encodings(verbose = False)
+        tokenizer_encodings.load(os.path.join(params.models,"tokenizer.encodings"))        
     if lemmatize == True:
         if not os.path.isfile(os.path.join(params.models,"lemmatizer.bestACC")):
             sys.stdout.write("\n\tLemmatization model not found!")
             sys.stdout.flush()
             sys.exit(1)
-        if encodings != None:
-            encodings.load(os.path.join(params.models,"lemmatizer.encodings"))
-        sys.stdout.write("\n\tLemmatization enabled.")        
+        sys.stdout.write("\n\tLemmatization enabled.\n")        
+        if encodings == None:
+            encodings = Encodings(verbose = False)
+            encodings.load(os.path.join(params.models,"lemmatizer.encodings"))        
     if tag == True:
         if not os.path.isfile(os.path.join(params.models,"tagger.bestAcc")):
             sys.stdout.write("\n\tTagger model not found!")
             sys.stdout.flush()
             sys.exit(1)
-        if encodings != None:
-            encodings.load(os.path.join(params.models,"tagger.encodings"))
-        sys.stdout.write("\n\tTagger enabled.")        
-    if parser == True:
+        sys.stdout.write("\n\tTagger enabled.\n")        
+        if encodings == None:
+            encodings = Encodings(verbose = False)
+            encodings.load(os.path.join(params.models,"tagger.encodings"))        
+    if parse == True or parse_tag == True:
         if not os.path.isfile(os.path.join(params.models,"parser.bestUAS")):
             sys.stdout.write("\n\tParser model not found!")
             sys.stdout.flush()
             sys.exit(1)
-        if encodings != None:
-            encodings.load(os.path.join(params.models,"parser.encodings"))
-        sys.stdout.write("\n\tParser enabled.")  
-    embeddings = WordEmbeddings()
-    embeddings.read_from_file(params.embeddings, encodings.word_list)
-    embeddings = params.embeddings
+        sys.stdout.write("\n\tParser enabled.\n")  
+        if encodings == None:
+            encodings = Encodings(verbose = False)
+            encodings.load(os.path.join(params.models,"parser.encodings"))        
     
-    current_file = params.output_file+".temporary"
-    
-    if tokenize:            
-        from generic_networks.tokenizers import TieredTokenizer
-        from io_utils.config import TieredTokenizerConfig        
-        config = TieredTokenizerConfig()
-        config.load(os.path.join(params.models,"tokenizer.conf"))
-        tokenizer_object = TieredTokenizer(config, encodings, embeddings, runtime=True)
-        tokenizer_object.load(os.path.join(params.models,"tokenizer-tok.bestAcc"))
-        sys.stdout.write("\n\nTokenizing "+params.input_file+" ... ")
+    sequences = None
+    if tokenize:                    
+        sys.stdout.write("\nTokenizing "+params.input_file+" ... \n\t")
         sys.stdout.flush()
+        
+        from io_utils.config import TieredTokenizerConfig
+        from generic_networks.tokenizers import TieredTokenizer
+        config = TieredTokenizerConfig(os.path.join(params.models,"tokenizer.conf"))        
+        tokenizer_object = TieredTokenizer(config, tokenizer_encodings, embeddings, runtime=True)
+        tokenizer_object.load(os.path.join(params.models,"tokenizer"))
                 
         with open(params.input_file, 'r') as file:
             lines = file.readlines()
         # analyze use of spaces in first part of the file
         test = "";
+        useSpaces = " "
         cnt = 0
         while True:
             test = test + lines[cnt]
@@ -496,47 +501,75 @@ def parse_run(params):
         if float(test.count(' ')) / float(len(test)) < 0.02:
             useSpaces = ""
         # print (str(float(test.count(' '))/float(len(test))))
-
+        input_string = ""
         for i in range(len(lines)):
             input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-        sequences = self.tokenizer.tokenize(input_string)
+        sequences = tokenizer_object.tokenize(input_string)
+        del tokenizer_object # free memory
     else: 
-        sys.stdout.write("\n\nLoading input file ... ")
+        sys.stdout.write("\n\nLoading input file ...")
         sys.stdout.flush()        
-        sequences = Dataset(params.input_file)
-        
-    sys.stdout.write("done") 
+        sequences = Dataset(params.input_file)        
+    sys.stdout.write(" done\n") 
     sys.stdout.flush()    
-    
+   
     if compound:            
-        from generic_networks.tokenizers import TieredTokenizer
-        from io_utils.config import TieredTokenizerConfig        
-        config = TieredTokenizerConfig()
-        config.load(os.path.join(params.models,"compound.conf"))
-        compound_object = TieredTokenizer(config, encodings, embeddings, runtime=True)
-        compound_object.load(os.path.join(params.models,"tokenizer-tok.bestAcc"))
-        
-        
-    if lemmatize:            
+        sys.stdout.write("\Compound word expanding "+params.input_file+" ... \n\t")
+        sys.stdout.flush()
+        from generic_networks.token_expanders import CompoundWordExpander
+        from io_utils.config import CompoundWordConfig        
+        config = CompoundWordConfig(os.path.join(params.models,"compound.conf"))        
+        compoundwordexpander_object = CompoundWordExpander(config, encodings, embeddings, runtime=True)
+        compoundwordexpander_object.load(os.path.join(params.models,"compound.bestAcc"))   
+        sequences = compoundwordexpander_object.expand_sequences(sequences)        
+        del compound_object # free memory
+        sys.stdout.write(" done\n") 
+        sys.stdout.flush()        
+    
+    if parse == True or parse_tag == True:
+        sys.stdout.write("\nParsing "+params.input_file+" ... \n\t")
+        sys.stdout.flush()
+        from io_utils.config import ParserConfig
+        from generic_networks.parsers import BDRNNParser
+        config = ParserConfig(os.path.join(params.models,"parser.conf"))        
+        parser_object = BDRNNParser(config, encodings, embeddings, runtime=True)
+        parser_object.load(os.path.join(params.models,"parser.bestUAS"))        
+        sequences = parser_object.parse_sequences(sequences)
+        del parser_object # free memory
+        sys.stdout.write(" done\n") 
+        sys.stdout.flush()           
+
+    if tag == True:
+        sys.stdout.write("\nTagging "+params.input_file+" ... \n\t")
+        sys.stdout.flush()
+        from io_utils.config import TaggerConfig
+        from generic_networks.taggers import BDRNNTagger                
+        config = TaggerConfig(os.path.join(params.models,"tagger.conf"))        
+        tagger_object = BDRNNTagger(config, encodings, embeddings, runtime=True)
+        tagger_object.load(os.path.join(params.models,"tagger.bestOVERALL"))
+        new_sequences = []
+        sequences = tagger_object.tag_sequences(sequences)
+        del tagger_object # free memory   
+        sys.stdout.write(" done\n") 
+        sys.stdout.flush()       
+              
+    if lemmatize: 
+        sys.stdout.write("\nLemmatizing "+params.input_file+" ... \n\t")
+        sys.stdout.flush()    
         from generic_networks.lemmatizers import FSTLemmatizer
         from io_utils.config import LemmatizerConfig        
-        config = LemmatizerConfig()
-        config.load(os.path.join(params.models,"lemmatizer.conf"))
+        config = LemmatizerConfig(os.path.join(params.models,"lemmatizer.conf"))        
         lemmatizer_object = FSTLemmatizer(config, encodings, embeddings, runtime=True)
         lemmatizer_object.load(os.path.join(params.models,"lemmatizer.bestACC"))
-       
-        
-    if parser: 
-        from generic_networks.parsers import BDRNNParser
-        from io_utils.config import ParserConfig
-        config = ParserConfig()
-        config.load(os.path.join(params.models,"parser.conf"))
-        parser_object = BDRNNParser(config, encodings, embeddings, runtime=True)
-        parser_object.load(os.path.join(params.models,"parser.bestUAS"))
-        
-    
-    
+        sequences = lemmatizer_object.lemmatize_sequences(sequences)       
+        del lemmatizer_object # free memory        
+        sys.stdout.write(" done\n") 
+        sys.stdout.flush()   
+      
+    output_dataset = Dataset()
+    output_dataset.sequences = sequences
+    output_dataset.write(params.output_file)
     
     
 if params.train:
@@ -574,6 +607,8 @@ if params.test:
         
 if params.run:
     valid = True
+    if "all" in params.run:
+        params.run = "tokenizer,compound,parser_tagger,lemmatizer"
     components = params.run.split(",")
     if len(components)==0:
         print "--run needs a list of components"
@@ -589,6 +624,9 @@ if params.run:
         valid = False
     if not params.output_file:
         print "--output-file is mandatory"
+        valid = False
+    if "lemmatizer" in params.run and not "tagger" in params.run:
+        print "--run needs to include a tagger or parser_tagger to be able to lemmatize words"
         valid = False
     if valid:
         parse_run(params) 

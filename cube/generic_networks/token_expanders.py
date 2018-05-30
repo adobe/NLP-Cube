@@ -294,7 +294,21 @@ class CompoundWordExpander:
 
     def save(self, filename):
         self.model.save(filename)
-
+    
+    def load(self, path):
+        self.model.populate(path)
+        
+    def expand_sequences(self, sequences):
+        new_sequences = []
+        for sequence in sequences:
+            new_sequence = copy.deepcopy(sequence)
+            predicted_tags = self.tag(new_sequence)            
+            for entryIndex, pred in enumerate(predicted_tags):                            
+                new_sequence[entryIndex].upos = pred[0]
+                new_sequence[entryIndex].xpos = pred[1]
+                new_sequence[entryIndex].attrs = pred[2]
+            new_sequences.append(new_sequence)
+        return new_sequences              
 
 class ExpandedToken:
     def __init__(self, source=None, destination=None, should_expand=False):

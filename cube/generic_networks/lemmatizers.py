@@ -17,6 +17,7 @@
 #
 import dynet as dy
 import numpy as np
+import copy
 from character_embeddings import CharacterNetwork
 
 
@@ -268,6 +269,22 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
+        
+    def lemmatize_sequences(self, sequences):
+        new_sequences = []
+        for sequence in sequences:
+            new_sequence = copy.deepcopy(sequence)
+            predicted_lemmas = self.tag(new_sequence)
+            
+            for entry, lemma in zip(new_sequence, predicted_lemmas):
+                if not entry.is_compound_entry:
+                    entry.lemma = lemma if lemma is not None else "_" # lemma.encode('utf-8')
+                else:
+                    entry.lemma = "_"
+            #for entryIndex, lemma in enumerate(predicted_lemmas):                            
+            #    new_sequence[entryIndex].lemma = lemma if lemma is not None else "_"
+            new_sequences.append(new_sequence)
+        return new_sequences         
 
 
 class BDRNNLemmatizer:

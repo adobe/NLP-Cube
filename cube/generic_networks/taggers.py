@@ -236,3 +236,18 @@ class BDRNNTagger:
 
     def save(self, path):
         self.model.save(path)
+    
+    def load(self, path):
+        self.model.populate(path)
+        
+    def tag_sequences(self, sequences):
+        new_sequences = []
+        for sequence in sequences:
+            new_sequence = copy.deepcopy(sequence)
+            predicted_tags = self.tag(new_sequence)            
+            for entryIndex, pred in enumerate(predicted_tags):                            
+                new_sequence[entryIndex].upos = pred[0]
+                new_sequence[entryIndex].xpos = pred[1]
+                new_sequence[entryIndex].attrs = pred[2]
+            new_sequences.append(new_sequence)
+        return new_sequences              

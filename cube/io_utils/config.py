@@ -68,8 +68,7 @@ class Config(object):
 class TokenizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
-        sys.stdout.write("Reading configuration file... ")
-
+        
         self.base = ""
         # encoder-char        
         self.char_vocabulary_size = -1  # to be calculated when first training
@@ -99,9 +98,9 @@ class TokenizerConfig(Config):
         self.tokenize_maximum_sequence_length = 500  # how much to run predict on, at a time
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + "\n")
             self.load(filename)
 
         self._valid = True
@@ -109,8 +108,7 @@ class TokenizerConfig(Config):
 
 class TaggerConfig(Config):
     def __init__(self, filename=None):
-        super().__init__()
-        sys.stdout.write("Reading configuration file... ")
+        super().__init__()        
         self.layers = [200, 200]
         self.layer_dropouts = [0.5, 0.5]
         self.aux_softmax_layer = 1
@@ -121,9 +119,9 @@ class TaggerConfig(Config):
         self.input_size = 100
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
         print "INPUT SIZE:", self.input_size
@@ -142,7 +140,6 @@ class TaggerConfig(Config):
 class ParserConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
-        sys.stdout.write("Reading configuration file... ")
         self.layers = [300, 300, 200, 200, 200]
         self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
         self.aux_softmax_layer = 2
@@ -156,9 +153,9 @@ class ParserConfig(Config):
         self.input_embeddings_size = 100
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
         print "LAYERS:", self.layers
@@ -192,9 +189,9 @@ class LemmatizerConfig(Config):
         self.tag_embeddings_size = 100
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
 
@@ -211,9 +208,9 @@ class NMTConfig(Config):
         self.input_dropout_prob = 0.33
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
 
@@ -247,9 +244,9 @@ class TieredTokenizerConfig(Config):
         self.tok_char_peek_lstm_dropout = 0.33
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
         self._valid = True
@@ -265,7 +262,7 @@ class CompoundWordConfig(Config):
         self.decoder_layers = 2
 
         if filename == None:
-            sys.stdout.write("no configuration file supplied. Using default values\n")
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("reading configuration file [" + filename + "]\n")
+            sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)

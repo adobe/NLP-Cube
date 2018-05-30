@@ -21,13 +21,14 @@ from scipy import spatial
 
 
 class WordEmbeddings:
-    def __init__(self):
+    def __init__(self, verbose = True):
         self.word2vec = {}
         self.word2ofs = {}
         self.word_embeddings_size = 0
         self.num_embeddings = 0
         self.cache_only = False
         self.file_pointer = None
+        self.verbose = verbose
 
     def read_from_file(self, word_embeddings_file, word_list, full_load=False):
         self.word2vec = {}
@@ -47,9 +48,10 @@ class WordEmbeddings:
                     first_line = False
                 else:
                     self.num_embeddings += 1
-                    if self.num_embeddings % 10000 == 0:
-                        sys.stdout.write("  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
-                            len(self.word2vec)) + "  \n")
+                    if self.verbose:
+                        if self.num_embeddings % 10000 == 0:
+                            sys.stdout.write("  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
+                                len(self.word2vec)) + "  \n")
                     parts = line.split(" ")
                     word = parts[0].decode('utf-8')
                     if self.cache_only:
