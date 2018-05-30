@@ -558,13 +558,12 @@ def parse_run(params):
             predicted_tags_UPOS = tagger_object_UPOS.tag(new_sequence)            
             predicted_tags_XPOS = tagger_object_XPOS.tag(new_sequence)            
             predicted_tags_ATTRS = tagger_object_ATTRS.tag(new_sequence)            
-            for entryIndex in range(len(enumerate(predicted_tags_UPOS))):
+            for entryIndex in range(len(sequence)):
                 new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
                 new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
                 new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
             new_sequences.append(new_sequence)
-        sequences = copy.deepcopy(new_sequence)       
-        
+        sequences = copy.deepcopy(new_sequences)  
         del tagger_object_UPOS # free memory   
         del tagger_object_XPOS # free memory   
         del tagger_object_ATTRS # free memory           

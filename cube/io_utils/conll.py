@@ -52,8 +52,7 @@ class Dataset:
 
         return sequences
 
-    def write(self, filename):
-        #with io.open(filename,'w',encoding='utf-8') as file:
+    def write(self, filename):        
         with open(filename,'w') as file:
             for sequence in self.sequences:                
                 for entry in sequence:
