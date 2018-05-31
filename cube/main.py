@@ -446,6 +446,15 @@ def parse_run(params):
         sys.stdout.write("\n\tTokenization enabled.\n")
         tokenizer_encodings = Encodings(verbose = False)
         tokenizer_encodings.load(os.path.join(params.models,"tokenizer.encodings"))        
+    if compound == True:
+        if not os.path.isfile(os.path.join(params.models,"compound.bestAcc")):
+            sys.stdout.write("\n\tCompound word expander model not found!")
+            sys.stdout.flush()
+            sys.exit(1)
+        sys.stdout.write("\n\tCompound word expander enabled.\n")        
+        if encodings == None:
+            encodings = Encodings(verbose = False)
+            encodings.load(os.path.join(params.models,"lemmatizer.encodings"))        
     if lemmatize == True:
         if not os.path.isfile(os.path.join(params.models,"lemmatizer.bestACC")):
             sys.stdout.write("\n\tLemmatization model not found!")
@@ -506,10 +515,9 @@ def parse_run(params):
 
         sequences = tokenizer_object.tokenize(input_string)
         del tokenizer_object # free memory
-    else: 
-        sys.stdout.write("\n\nLoading input file ...")
-        sys.stdout.flush()        
-        sequences = Dataset(params.input_file)        
+    else:         
+        ds = Dataset(params.input_file)        
+        sequences = ds.sequences
     sys.stdout.write(" done\n") 
     sys.stdout.flush()    
    
@@ -526,7 +534,7 @@ def parse_run(params):
         sys.stdout.write(" done\n") 
         sys.stdout.flush()        
     
-    if parse == True or parse_tag == True:
+    if parse == True:
         sys.stdout.write("\nParsing "+params.input_file+" ... \n\t")
         sys.stdout.flush()
         from io_utils.config import ParserConfig
@@ -642,7 +650,7 @@ if params.run:
         print "--output-file is mandatory"
         valid = False
     if "lemmatizer" in params.run and not "tagger" in params.run:
-        print "--run needs to include a tagger to be able to lemmatize words"
-        valid = False
+        print "Warning: --run needs to include a tagger to be able to lemmatize words. If not provided ensure the input file is in conllu format and includes POS tags."
+        valid = True
     if valid:
         parse_run(params) 
