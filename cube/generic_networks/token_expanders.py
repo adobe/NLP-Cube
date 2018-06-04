@@ -254,16 +254,24 @@ class CompoundWordExpander:
                     index += 1
                 else:
                     compounds = self._transduce(unicode(entry.word, 'utf-8'), encoder_states)
-                    if len(compounds)<=1:
+                    if len(compounds) <= 1:
                         entry.index = index
                         new_seq.append(entry)
                         index += 1
                     else:
                         entry.index = str(index) + '-' + str(index + len(compounds) - 1)
+                        entry.is_compound_entry = True
+                        entry.upos='_'
+                        entry.xpos = '_'
+                        entry.attrs = '_'
+                        entry.label = '_'
+                        entry.head = '_'
+                        entry.deps = '_'
                         new_seq.append(entry)
                         for word in compounds:
                             from io_utils.conll import ConllEntry
-                            entry = ConllEntry(index, word.encode('utf-8'), word.encode('utf-8'), '_', '_', '_', '0', '_',
+                            entry = ConllEntry(index, word.encode('utf-8'), word.encode('utf-8'), '_', '_', '_', '0',
+                                               '_',
                                                '_',
                                                '')
                             new_seq.append(entry)
