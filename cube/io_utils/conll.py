@@ -17,18 +17,19 @@
 #
 
 import sys
-
+import io
 
 class Dataset:
-    def __init__(self, file):
-        sys.stdout.write("Reading " + file + "... ")
-        sys.stdout.flush()
-        with open(file, "r") as f:
-            lines = f.readlines()
-            f.close()
-            self.sequences = self._make_sequences(lines)
+    def __init__(self, file=None):
+        if file is not None:
+            sys.stdout.write("Reading " + file + "... ")
+            sys.stdout.flush()
+            with open(file, "r") as f:
+                lines = f.readlines()
+                f.close()
+                self.sequences = self._make_sequences(lines)
 
-        sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
+            sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
 
     def _make_sequences(self, lines):
         sequences = []
@@ -51,6 +52,37 @@ class Dataset:
 
         return sequences
 
+    def write(self, filename):        
+        with open(filename,'w') as file:
+            for sequence in self.sequences:                
+                for entry in sequence:
+                    file.write(str(entry.index))
+                    file.write("\t")
+                    if isinstance(entry.word,str):
+                        file.write(entry.word)
+                    else:
+                        file.write(entry.word.encode('utf-8'))
+                    file.write("\t")                    
+                    if isinstance(entry.lemma,str):
+                        file.write(entry.lemma)
+                    else:
+                        file.write(entry.lemma.encode('utf-8'))
+                    file.write("\t")
+                    file.write(entry.upos)
+                    file.write("\t")
+                    file.write(entry.xpos)
+                    file.write("\t")
+                    file.write(entry.attrs)
+                    file.write("\t")
+                    file.write(str(entry.head))
+                    file.write("\t")
+                    file.write(entry.label)
+                    file.write("\t")
+                    file.write(entry.deps)
+                    file.write("\t")
+                    file.write(entry.space_after)
+                    file.write("\n")                    
+                file.write("\n")
 
 class Encodings:
     def __init__(self):

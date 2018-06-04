@@ -20,7 +20,7 @@ import sys
 from random import shuffle
 import time
 import random
-from misc.conll17_ud_eval_wrapper import conll_eval
+from misc.conll18_ud_eval_wrapper import conll_eval
 import nltk
 
 
