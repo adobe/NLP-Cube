@@ -254,7 +254,7 @@ class CompoundWordExpander:
                     index += 1
                 else:
                     compounds = self._transduce(unicode(entry.word, 'utf-8'), encoder_states)
-                    entry.index = str(index) + '-' + str(index + len(compounds))
+                    entry.index = str(index) + '-' + str(index + len(compounds) - 1)
                     new_seq.append(entry)
                     for word in compounds:
                         from io_utils.conll import ConllEntry
@@ -294,16 +294,17 @@ class CompoundWordExpander:
 
     def save(self, filename):
         self.model.save(filename)
-    
+
     def load(self, path):
         self.model.populate(path)
-        
+
     def expand_sequences(self, sequences):
         new_sequences = []
         for sequence in sequences:
-            new_sequence = self.tag(sequence)                            
+            new_sequence = self.tag(sequence)
             new_sequences.append(new_sequence)
-        return new_sequences              
+        return new_sequences
+
 
 class ExpandedToken:
     def __init__(self, source=None, destination=None, should_expand=False):
