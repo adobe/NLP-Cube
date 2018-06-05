@@ -25,11 +25,11 @@
             }
 
         </style>
-        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media='screen'>
-        <link href="css/style.css" rel="stylesheet">
-        <link rel="stylesheet" href="vendor/font-awesome/css/font-awesome.min.css">
-        <script src="vendor/jquery/jquery.min.js"></script>
-        <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+        <link href="../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media='screen'>
+        <link href="../css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="../vendor/font-awesome/css/font-awesome.min.css">
+        <script src="../vendor/jquery/jquery.min.js"></script>
+        <script src="../vendor/bootstrap/js/bootstrap.min.js"></script>
 
     </head>
 
@@ -45,19 +45,19 @@
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ml-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="index.html">Home</a>
+                            <a class="nav-link" href="/index.html">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="start.html">Getting started</a>
+                            <a class="nav-link" href="/start.html">Getting started</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="examples.html">Examples</a>
+                            <a class="nav-link" href="/examples.html">Examples</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="blog/list.html">Blog</a>
+                            <a class="nav-link" href="/blog/list.html">Blog</a>
                         </li>
-                        <li class="nav-item active">
-                            <a class="nav-link" href="contact.html">Contact</a>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/contact.html">Contact</a>
                         </li>
                     </ul>
                 </div>
@@ -80,9 +80,44 @@
             </div>
         </div>
         <div id='sub-hero-wrapper'>
-            <div class='row'><glyph class="fa fa-envelope"></glyph><h2>Contact</h2></div>
-            <p>In order to get in touch with us, just use GitHub at the moment. We will return with more instructions later. </p>
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div class="post-preview">
+                    <a href="posts/2-ud/main.html">
+                        <h2 class="post-title">
+                            Preparing for Universal Dependencies Shared Task
+                        </h2>
+                        <h3 class="post-subtitle">
+                            We are currently working on training our system for UD Shared Task on Multilingual Parsing
+                        </h3>
+                    </a>
+                    <p class="post-meta">Posted by
+                        <a href="https://github.com/dumitrescustefan">Stefan Dumitrescu</a>
+                        on June 5, 2018</p>
+                </div>
+                <hr>
+                <div class="post-preview">
+                    <a href="posts/1-gbd/main.html">
+                        <h2 class="post-title">
+                            Graph-based decoding combined with deeplearning for named entity recongition
+                        </h2>
+                        <h3 class="post-subtitle">
+                            Exploiting the fundamental property of dynamic execution neural networks to determine relations between variable-sized input sequences such as sentences
+                        </h3>
+                    </a>
+                    <p class="post-meta">Posted by
+                        <a href="https://github.com/tiberiu44">Tiberiu Boros</a>
+                        on June 1, 2018</p>
+                </div>
+                <hr>
+                <!-- Pager -->
+<!--
+                <div class="clearfix">
+                    <a class="btn btn-primary float-right" href="#">Older Posts →</a>
+                </div>
+-->
+            </div>
         </div>
+
 
         <!-- Bootstrap core JavaScript -->
         <script src="vendor/jquery/jquery.min.js"></script>

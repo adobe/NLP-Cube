@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <title>NLP Cube</title>
+
+        <!-- Bootstrap core CSS -->
+
+        <!-- Custom styles for this template -->
+        <style>
+            body {
+                padding-top: 54px;
+            }
+            @media (min-width: 992px) {
+                body {
+                    font-family: source-sans-pro, sans-serif ;
+                    padding-top: 56px;
+                }
+            }
+
+        </style>
+        <link href="../../../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media='screen'>
+        <link href="../../../css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="../../../vendor/font-awesome/css/font-awesome.min.css">
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    </head>
+
+    <body>
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="#">NLP Cube</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/start.html">Getting started</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/examples.html">Examples</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/blog/list.html">Blog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/contact.html">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+
+        <div id='hero-wrapper'>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h1 class="mt-5">NLP - Cube</h1>
+                        <p class="lead">Sentence Splitting, Tokenization, Lemmatization, Part-of-speech Tagging, Dependency Parsing and Named Entity Recognition for more than 50 languages</p>
+                        <ul class="list-unstyled">
+                            <li><a href='https://github.com/adobe/NLP-Cube' class="btn btn-primary">Browse the code</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id='sub-hero-wrapper'>
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <h1>Graph-based decoding combined with deeplearning for named entity recongition</h1>
+                <p>
+                    Multi-word expression (MWE) detection is a challenging Natural Language Processing (NLP) task that consists in finding isolated tokens or sequences of tokens that form high-level structures (i.e. multi-word expressions). Naively, this can be regarded as a sequence labeling task, which in fact influenced legacy MWE methods to use this strategy. In fact, this is not far fetched, since this approach has yielded highly accurate results so far. However, we have to point a couple of task-specific details:
+                </p>
+
+                <ul>
+                    <li> <strong>Sparsity:</strong> Inside an utterance there are only a couple of tokens that must be labeled as named entities or multi-word expressions. This actually yields data sparsity and could bias the model towards not identifying any of the tokens as part of a multi-word expression;</li>
+                    <li> <strong>Overlapping:</strong> MWE corpora contains many examples where high-level entities share tokens among each other. There are several ways in which this issue can be mitigated, for instance training several different classifiers for each type of label;</li>
+                    <li><strong>Long spans:</strong> It is often the case that MWE tokens are distantly distributed across a single utterance. Classical classifiers and even modern LSTM-based approaches are unable to detect such long range dependencies (though the later mentioned approach should), mainly because these cases are rare inside the training data and there is insufficient statistical evidence to support them.</li>
+
+                </ul>
+
+                <p>Our Named Entity Recognition (NER) system employs Graph-Based-Decoding (GBD) over a hybrid network architecture composed of bidirectional LSTMs for word-level encoding, with a MultiLayerPerceptron for detecting links inside entities and a unidirectional LSTM for label estimation:</p>
+                <div class="text-center">
+                    <form class="form-horizontal" role="form">
+                        <img src="gdb-ner.png" style='width:40%; cursor:pointer'>
+                        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                            <div class="modal-dialog  modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+
+                                    </div>
+                                    <div class="modal-body">
+                                        <img id="mimg" src="" width="100%">
+                                    </div>
+                                </div><!-- /.modal-content -->
+                            </div><!-- /.modal-dialog -->
+                        </div><!-- /.modal -->
+                    </form>
+                </div>
+
+
+                <p>We are currently working on integrating the NER branch into master. Until then, you can check out the source for the GDB-NER system at <a href='https://github.com/adobe/NLP-Cube/tree/dev.gbd-ner/ner'>this repository</a>, see the results obtained on the <a href="results.html">PARSEME corpus here</a>. If interested, we also encourage you to read our <a href="paper.pdf">paper draft</a></p>
+            </div>
+        </div>
+
+
+        <!-- Bootstrap core JavaScript -->
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script>
+            $('img').on('click',function()
+                        {
+                var sr=$(this).attr('src'); 
+                $('#mimg').attr('src',sr);
+                $('#myModal').modal('show');
+            });
+        </script>
+    </body>
+
+</html>
