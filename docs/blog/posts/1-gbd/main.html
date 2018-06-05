@@ -30,6 +30,7 @@
         <link rel="stylesheet" href="../../../vendor/font-awesome/css/font-awesome.min.css">
         <script src="../../../vendor/jquery/jquery.min.js"></script>
         <script src="../../../vendor/bootstrap/js/bootstrap.min.js"></script>
+        <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/latest.js?config=TeX-MML-AM_CHTML"></script>
 
     </head>
 
@@ -115,6 +116,38 @@
 
 
                 <p>We are currently working on integrating the NER branch into master. Until then, you can check out the source for the GDB-NER system at <a href='https://github.com/adobe/NLP-Cube/tree/dev.gbd-ner/ner'>this repository</a>, see the results obtained on the <a href="results.html">PARSEME corpus here</a>. If interested, we also encourage you to read our <a href="paper.pdf">paper draft</a></p>
+                
+                <p>Our graph-based encoding/decoding strategy is able to cope with overlapping high-level entities and large spans between tokens, by <strong>forcing the model to focus</strong> on the dependencies between tokens that belong to the same expression. We start off with a sequence of words as input, and convert it into a sequence of fixed-sized vectors (by combining lexical and morphological attributes for every word). After this, we use two stacked Bidirectional LSTM (BDLSTM) layers, obtaining a list of vector embeddings for each word inside the original sequence. Next, we take each vector from the internal representation and we split it using three parallel $tanh$ layers into 3 separate "projections". </p>
+
+                <p>As such, for each word \(w_i\), we obtain three vectors which we will refer to as \(v_i^0\), \(v_i^1\) and \(v_i^2\). Finally, for every pair of words \(w_i\) and \(w_j\) with \(i\neq j\) we use single unit sigmoid activation, outputting the probability of the two words being part of the same high-level expression or not. The input for the sigmoid unit is obtained by concatenating the first vector from the split operation for word \(w_i\) (i.e. \(v_i^0\)) with the second vector of the split operation for word \(w_j\) (i.e. \(v_j^1\)). We store the resulting values in an adjacency matrix \(a\).</p>
+                
+                <p>Finally, we use a graph-based algorithm to decode NERs and assign the label using an unidirectional LSTM over the third projection (\(v_i^2\)) of the words contained in each expression (in natural order). Here we have to handle three cases:</p>
+                <div class="text-center">
+                    <form class="form-horizontal" role="form">
+                        <img src="cases.png" style='width:40%; cursor:pointer'>
+                        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                            <div class="modal-dialog  modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+
+                                    </div>
+                                    <div class="modal-body">
+                                        <img id="mimg" src="" width="100%">
+                                    </div>
+                                </div><!-- /.modal-content -->
+                            </div><!-- /.modal-dialog -->
+                        </div><!-- /.modal -->
+                    </form>
+                </div>
+                
+                <ul>
+                    <li>The simplest <strong>Case (A)</strong> shows 5 interconnected graph nodes, which form a single high-level entity. Most of training data contains only this type of example, where we have to mark all the discovered tokens with the same label.</li>
+
+                    <li><strong>Case (B)</strong> is more complex, as we have two overlapping high-level entities which share nodes 2 and 3. As such, the decoding algorithm can still easily spot the two distinct complete subgraphs, [1, 2, 3, 4] and [2, 3, 5] and mark them as two distinct entities (even if they are, or not, of the same type). </li>
+
+                    <li><strong>Case (C)</strong> is by far the hardest. Here we have two distinct entities, with one entity [1, 2, 3, 4, 5] completely including the second entity [2, 3, 5]. We have not encountered this case in any of the training data but we feel obliged to discuss it as well. Obviously, given that the input data is correct, the decoding algorithm will always find a single entity, because all the nodes are adjacent and there is no reason to perform a split into two subgraphs. One solution to this issue is to check if any partial subgraph yields a different label then the full subgraph. This solution is only valid for entities which belong to different classes, but we feel that the two expressions sharing the same label would be highly unlikely to overlap. However, this solution may not always hold, and in the absence of real data to support Case (C).</li>
+                </ul>
             </div>
         </div>
 
@@ -122,6 +155,7 @@
         <!-- Bootstrap core JavaScript -->
         <script src="../../../vendor/jquery/jquery.min.js"></script>
         <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        
         <script>
             $('img').on('click',function()
                         {
