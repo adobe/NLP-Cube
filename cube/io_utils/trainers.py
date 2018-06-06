@@ -844,18 +844,18 @@ class TokenizerTrainer:
         X_set = []
         y_set = []
         space_after_end_of_sentence = True
+        space_after_end_of_sentence_count = 0
         for i in range(len(sequence_set.sequences)):  # for all sequences (sentences)
             X = []
             y = []
-            # print(">> Starting sequence "+str(i))
+            #print(">> Starting sequence "+str(i))
             for j in range(len(sequence_set.sequences[i])):  # for each word in the sentence
                 if sequence_set.sequences[i][j].is_compound_entry:  # skip over compound words
                     pass
                 word = sequence_set.sequences[i][j].word
                 space_after = False if "SpaceAfter=No" in sequence_set.sequences[i][j].space_after else True
                 uniword = unicode(word, 'utf-8')
-                # print("  WORD: "+uniword+" len = "+str(len(uniword))+" space after = "+str(sequence_set.sequences[i][j].space_after))
-
+                #print("  WORD: "+uniword+" len = "+str(len(uniword))+" space after = "+str(sequence_set.sequences[i][j].space_after))
                 # mark all symbols as "O"
                 for char_index in range(len(uniword)):
                     X.append(uniword[char_index])
@@ -867,7 +867,7 @@ class TokenizerTrainer:
                     y[-1] = "SX"
                     # permanently set space_after_end_of_sentence to False if we see just one sentence that does not have a space after
                     if not space_after:
-                        space_after_end_of_sentence = False
+                        space_after_end_of_sentence_count+=1                        
                 else:  # add space after only if not end of sentence
                     if space_after:
                         X.append(" ")
@@ -877,7 +877,11 @@ class TokenizerTrainer:
             # raw_input("Stop")
             X_set.append(X)
             y_set.append(y)
-
+    
+        # if at least 75% of sentences end with space_after="No" then we assume this language does not use spaces after EOSes.
+        if float(space_after_end_of_sentence_count) > 0.75*len(sequence_set.sequences):
+            space_after_end_of_sentence = False
+            
         return X_set, y_set, space_after_end_of_sentence
 
     def _create_mixed_sequences(self, X_set, y_set, space_after_end_of_sentence, shuffle=False):
