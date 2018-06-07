@@ -329,13 +329,13 @@ class TieredTokenizer:
                     if i < len(input_string) - 1:
                         if input_string[i + 1] in string.whitespace:
                             space_after = "_"                    
-                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", "_", "_", "_", space_after=space_after)
+                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", space_after=space_after)
                     tokens.append(entry)
                     w = ""
                     
         if w.strip() != "":
             index += 1
-            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", "_", "_", "_", "")
+            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", "")
             tokens.append(entry)
 
         # set SpaceAfter=No property of last token
