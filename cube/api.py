@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import sys
 import os
 from io_utils.encodings import Encodings
@@ -26,6 +28,7 @@ class Cube:
         self.lemmatizer_enabled = False
         self.parser_enabled = False
         self.tokenizer_enabled = False
+        self.tagger_enabled = False
         self.models = {}
         self.embeddings = None
 
@@ -141,12 +144,72 @@ class Cube:
         @return: A list of sentences, each composed of a list of CONLLEntry items
         """
         if pipeline is None:
-            sys.stdout.write("TODO: process text with all available models\n")
+            pipeline = [PipelineComponents.TOKENIZER, PipelineComponents.PARSER, PipelineComponents.TAGGER,
+                        PipelineComponents.LEMMATIZER, PipelineComponents.COMPOUND]
+
+        if PipelineComponents.TOKENIZER in pipeline and self.tokenizer_enabled:
+            sys.stdout.write("\nTokenizing... \n\t")
+            sys.stdout.flush()
+
+            lines = text.replace("\r", "").split("\n")
+            # analyze use of spaces in first part of the file
+            test = "";
+            useSpaces = " "
+            cnt = 0
+            while True:
+                test = test + lines[cnt]
+                # print(lines[cnt])
+                if cnt + 1 >= len(lines) or cnt > 5:
+                    break
+                cnt += 1
+
+            if float(test.count(' ')) / float(len(test)) < 0.02:
+                useSpaces = ""
+            # print (str(float(test.count(' '))/float(len(test))))
+            input_string = ""
+            for i in range(len(lines)):
+                input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
+
+            sequences = self.models[PipelineComponents.TOKENIZER].tokenize(input_string)
+
+            sys.stdout.write("\n")
         else:
-            sys.stdout.write("TODO: process text with the requested pipeline\n")
+            sequences = text
+
+        if PipelineComponents.COMPOUND in pipeline and self.compound_enabled:
+            sequences = self.models[PipelineComponents.COMPOUND].expand_sequences(sequences)
+
+        if PipelineComponents.PARSER in pipeline and self.parser_enabled:
+            sequences = self.models[PipelineComponents.PARSER].parse_sequences(sequences)
+
+        if PipelineComponents.TAGGER in pipeline and self.tagger_enabled:
+            new_sequences = []
+            for sequence in sequences:
+                new_sequence = copy.deepcopy(sequence)
+                predicted_tags_UPOS = self.models[PipelineComponents.TAGGER][0].tag(new_sequence)
+                predicted_tags_XPOS = self.models[PipelineComponents.TAGGER][1].tag(new_sequence)
+                predicted_tags_ATTRS = self.models[PipelineComponents.TAGGER][2].tag(new_sequence)
+                for entryIndex in range(len(sequence)):
+                    new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
+                    new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
+                    new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
+                new_sequences.append(new_sequence)
+
+            sequences = new_sequences
+
+        if PipelineComponents.LEMMATIZER in pipeline and self.lemmatizer_enabled:
+            sequences = self.models[PipelineComponents.LEMMATIZER].lemmatize_sequences(sequences)
+
+        return sequences
 
 
 if __name__ == "__main__":
     cube = Cube()
     cube.load('ro')
-    cube.process_text(text="ana are mere.")
+    sequences = cube.process_text(text="ana are mere dar nu are pere și mănâncă miere.")
+    sys.stdout.write("\n\n\n")
+    from io_utils.conll import Dataset
+
+    ds = Dataset()
+    ds.sequences = sequences
+    ds.write_stdout()
