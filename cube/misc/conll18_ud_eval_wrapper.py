@@ -24,5 +24,5 @@ from conll18_ud_eval import load_conllu_file, evaluate
 def conll_eval(system_file, gold_file):    
     gold_ud = load_conllu_file(gold_file)
     system_ud = load_conllu_file(system_file)
-    return evaluate(gold_ud, system_ud, None)   
+    return evaluate(gold_ud, system_ud)
     
