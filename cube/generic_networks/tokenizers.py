@@ -356,14 +356,17 @@ class TieredTokenizer:
         w = ""
         while len(input_string) > 0:
             current_string = input_string[:min(len(input_string), batch_size + 1)]
+            """
             proc = num_chars * 100 / sz
             while last_proc + 5 < proc:
                 last_proc += 5
                 sys.stdout.write(" " + str(last_proc))
                 sys.stdout.flush()
+            """    
+                
             dy.renew_cg()
             y_pred, _, _ = self._predict_ss(current_string)
-
+           
             last_ss_break = -1
             last_checked_index = -1
             if len(current_string) == batch_size:

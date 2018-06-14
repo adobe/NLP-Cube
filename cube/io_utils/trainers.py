@@ -1074,12 +1074,18 @@ class TokenizerTrainer:
         if float(test.count(' ')) / float(len(test)) < 0.02:
             useSpaces = ""
         # print (str(float(test.count(' '))/float(len(test))))
-
-        for i in range(len(lines)):
-            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
-
-        sentences = self.tokenizer.tokenize(input_string)
-
+        
+        i = -1
+        input_string = ""
+        sentences = []            
+        while i<len(lines)-1:            
+            i += 1
+            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces            
+            if lines[i].strip() == "" or i == len(lines)-1: # end of block
+                if input_string.strip() != "":
+                    sentences += self.tokenizer.tokenize(input_string)
+                input_string = ""
+                
         # with open(output_conllu_file, 'w', encoding='utf-8') as file:
         with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:
             for sentence in sentences:

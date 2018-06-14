@@ -509,11 +509,17 @@ def parse_run(params):
         if float(test.count(' ')) / float(len(test)) < 0.02:
             useSpaces = ""
         # print (str(float(test.count(' '))/float(len(test))))
+        i = -1
         input_string = ""
-        for i in range(len(lines)):
-            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
-
-        sequences = tokenizer_object.tokenize(input_string)
+        sequences = []            
+        while i<len(lines)-1:            
+            i += 1
+            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces            
+            if lines[i].strip() == "" or i == len(lines)-1: # end of block
+                if input_string.strip() != "":
+                    sequences += tokenizer_object.tokenize(input_string)
+                input_string = ""
+                
         del tokenizer_object # free memory
     else:         
         ds = Dataset(params.input_file)        
