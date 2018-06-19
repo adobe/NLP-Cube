@@ -269,7 +269,10 @@ class FSTLemmatizer:
                             label_index += 1
                         lemma += self.encodings.characters[label_index]
             # print entry.word+"\t"+lemma.encode('utf-8')
-            lemmas.append(lemma.lower())
+            if entry.upos!='PROPN':
+                lemmas.append(lemma.lower())
+            else:
+                lemmas.append(lemma)
         return lemmas
 
     def save(self, path):
