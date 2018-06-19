@@ -254,6 +254,12 @@ class CompoundWordExpander:
                     index += 1
                 else:
                     compounds = self._transduce(unicode(entry.word, 'utf-8'), encoder_states)
+                    # bug because _transduce may return empty tokens
+                    valid_tokens = []
+                    for token in compounds:
+                        if token.strip() != "":
+                            valid_tokens.append(token)
+                    compounds = valid_tokens
                     if len(compounds) <= 1:
                         entry.index = index
                         new_seq.append(entry)
