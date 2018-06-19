@@ -265,8 +265,8 @@ class FSTLemmatizer:
                     elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
                         src_index += 1
                     elif label_index < len(self.encodings.characters):
-                        if self.has_bug and label_index >= self.encodings.char2int[' ']:
-                            label_index += 1
+                        #if self.has_bug and label_index >= self.encodings.char2int[' ']:
+                        #     label_index += 1
                         lemma += self.encodings.characters[label_index]
             # print entry.word+"\t"+lemma.encode('utf-8')
             if entry.upos!='PROPN':
