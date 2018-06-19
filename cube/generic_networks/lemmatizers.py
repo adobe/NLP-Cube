@@ -25,6 +25,12 @@ class FSTLemmatizer:
     def __init__(self, config, encodings, embeddings, runtime=False):
         self.config = config
         self.encodings = encodings
+        # Bug in encodings - will be removed after UD
+        self.has_bug=False
+        if self.encodings.char2int[' ']!=1:
+            self.has_bug=True
+            import sys
+            sys.stdout.write("Detected encodings BUG!")
         self.embeddings = embeddings
         self.losses = []
         self.model = dy.Model()
@@ -54,9 +60,9 @@ class FSTLemmatizer:
                                                       self.config.rnn_size,
                                                       self.model)
 
-        #self.att_w1 = self.model.add_parameters((200, self.config.char_rnn_size * 2))
-        #self.att_w2 = self.model.add_parameters((200, self.config.rnn_size + self.config.tag_embeddings_size))
-        #self.att_v = self.model.add_parameters((1, 200))
+        # self.att_w1 = self.model.add_parameters((200, self.config.char_rnn_size * 2))
+        # self.att_w2 = self.model.add_parameters((200, self.config.rnn_size + self.config.tag_embeddings_size))
+        # self.att_v = self.model.add_parameters((1, 200))
 
         self.start_lookup = self.model.add_lookup_parameters(
             (1, self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size))
@@ -138,7 +144,7 @@ class FSTLemmatizer:
             else:
                 if gs_labels[i_labels] == '<INC>' and i_src < len(states) - 1:
                     i_src += 1
-            i_labels+=1
+            i_labels += 1
 
         return softmax_list
 
@@ -259,6 +265,8 @@ class FSTLemmatizer:
                     elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
                         src_index += 1
                     elif label_index < len(self.encodings.characters):
+                        if self.has_bug and label_index >= self.encodings.char2int[' ']:
+                            label_index += 1
                         lemma += self.encodings.characters[label_index]
             # print entry.word+"\t"+lemma.encode('utf-8')
             lemmas.append(lemma.lower())
@@ -269,28 +277,32 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
-        
+
     def lemmatize_sequences(self, sequences):
         new_sequences = []
         for sequence in sequences:
             new_sequence = copy.deepcopy(sequence)
             predicted_lemmas = self.tag(new_sequence)
-            
+
             for entry, lemma in zip(new_sequence, predicted_lemmas):
                 if not entry.is_compound_entry:
-                    entry.lemma = lemma if lemma is not None else "_" # lemma.encode('utf-8')
+                    entry.lemma = lemma if lemma is not None else "_"  # lemma.encode('utf-8')
                 else:
                     entry.lemma = "_"
-            #for entryIndex, lemma in enumerate(predicted_lemmas):                            
+            # for entryIndex, lemma in enumerate(predicted_lemmas):
             #    new_sequence[entryIndex].lemma = lemma if lemma is not None else "_"
             new_sequences.append(new_sequence)
-        return new_sequences         
+        return new_sequences
 
 
 class BDRNNLemmatizer:
     def __init__(self, lemmatizer_config, encodings, embeddings, runtime=False):
         self.config = lemmatizer_config
         self.encodings = encodings
+        # Bug in encodings - this will be removed after UD Shared Task
+        self.has_bug = False
+        if self.encodings.char2int[' '] != 1:
+            self.has_bug = True
         self.embeddings = embeddings
         self.losses = []
 
