@@ -40,6 +40,7 @@ class FSTLemmatizer:
                                                   rnn_layers=self.config.char_rnn_layers,
                                                   embeddings_size=self.config.char_embeddings,
                                                   model=self.model, runtime=runtime)
+        self.word2lemma={}
 
         self.upos_lookup = self.model.add_lookup_parameters(
             (len(self.encodings.upos2int), self.config.tag_embeddings_size))
@@ -253,21 +254,26 @@ class FSTLemmatizer:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
                 lemma = entry.word.decode('utf-8')
             else:
-                uniword = unicode(entry.word, 'utf-8')
-                softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
-                                                    max_predictions=500, runtime=True)
-                lemma = ""
-                src_index = 0
-                for softmax in softmax_output_list[:-1]:
-                    label_index = np.argmax(softmax.npvalue())
-                    if label_index == self.label2int['<COPY>'] and src_index < len(uniword):
-                        lemma += uniword[src_index]
-                    elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
-                        src_index += 1
-                    elif label_index < len(self.encodings.characters):
-                        #if self.has_bug and label_index >= self.encodings.char2int[' ']:
-                        #     label_index += 1
-                        lemma += self.encodings.characters[label_index]
+                #check dictionary
+                key=entry.word+"\t"+entry.lemma
+                if key in self.word2lemma:
+                    lemma=unicode(self.word2lemma[key],'utf-8')
+                else:
+                    uniword = unicode(entry.word, 'utf-8')
+                    softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
+                                                        max_predictions=500, runtime=True)
+                    lemma = ""
+                    src_index = 0
+                    for softmax in softmax_output_list[:-1]:
+                        label_index = np.argmax(softmax.npvalue())
+                        if label_index == self.label2int['<COPY>'] and src_index < len(uniword):
+                            lemma += uniword[src_index]
+                        elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
+                            src_index += 1
+                        elif label_index < len(self.encodings.characters):
+                            #if self.has_bug and label_index >= self.encodings.char2int[' ']:
+                            #     label_index += 1
+                            lemma += self.encodings.characters[label_index]
             # print entry.word+"\t"+lemma.encode('utf-8')
             if entry.upos!='PROPN':
                 lemmas.append(lemma.lower())
@@ -280,6 +286,24 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
+        dict_path=path.replace(".bestACC", "dict")
+        import os.path
+        if os.path.exists(dict_path):
+            self.load_dict(dict_path)
+
+    def load_dict(self, path):
+        print "Loading lemma dictionary"
+        with open (path, "r") as f:
+            lines=f.readlines()
+            for line in lines:
+                parts=line.strip().split('\t')
+                if len(parts)==5:
+                    word=unicode(parts[0],'utf-8').lower().encode('utf-8')
+                    upos=parts[1]
+                    key=word+'\t'+upos
+                    self.word2lemma[key]=parts[4]
+        print "Loaded "+str(len(self.word2lemma))+" pairs"
+
 
     def lemmatize_sequences(self, sequences):
         new_sequences = []
