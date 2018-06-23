@@ -255,7 +255,7 @@ class FSTLemmatizer:
                 lemma = entry.word.decode('utf-8')
             else:
                 #check dictionary
-                key=entry.word+"\t"+entry.lemma
+                key=entry.word.decode('utf-8').lower().encode('utf-8')+"\t"+entry.lemma
                 if key in self.word2lemma:
                     lemma=unicode(self.word2lemma[key],'utf-8')
                 else:
