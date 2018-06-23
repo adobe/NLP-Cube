@@ -286,7 +286,7 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
-        dict_path=path.replace(".bestACC", "dict")
+        dict_path=path.replace(".bestACC", ".dict")
         import os.path
         if os.path.exists(dict_path):
             self.load_dict(dict_path)
