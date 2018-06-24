@@ -105,7 +105,7 @@ class Encodings(object):
                 self.word2int[word] = len(self.word2int)
                 self.hol_word_list.append(word)
         for char in char_count:
-            if char_count[char] >= char_cutoff:
+            if char_count[char] >= char_cutoff and char not in self.char2int:
                 self.char2int[char] = len(self.char2int)
                 self.characters.append(char)
 
