@@ -1,5 +1,9 @@
 *.pyc
-logs/*
+build/
+dist/
+nlpcube.egg-info/
+package/
+logs/
 corpus/*
 cube/misc/conll17_ud_eval.py
 cube/.idea/*
