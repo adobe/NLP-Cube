@@ -19,6 +19,7 @@
 import sys
 import io
 
+
 class Dataset:
     def __init__(self, file=None):
         if file is not None:
@@ -52,18 +53,18 @@ class Dataset:
 
         return sequences
 
-    def write(self, filename):        
-        with open(filename,'w') as file:
-            for sequence in self.sequences:                
+    def write(self, filename):
+        with open(filename, 'w') as file:
+            for sequence in self.sequences:
                 for entry in sequence:
                     file.write(str(entry.index))
                     file.write("\t")
-                    if isinstance(entry.word,str):
+                    if isinstance(entry.word, str):
                         file.write(entry.word)
                     else:
                         file.write(entry.word.encode('utf-8'))
-                    file.write("\t")                    
-                    if isinstance(entry.lemma,str):
+                    file.write("\t")
+                    if isinstance(entry.lemma, str):
                         file.write(entry.lemma)
                     else:
                         file.write(entry.lemma.encode('utf-8'))
@@ -81,8 +82,42 @@ class Dataset:
                     file.write(entry.deps)
                     file.write("\t")
                     file.write(entry.space_after)
-                    file.write("\n")                    
+                    file.write("\n")
                 file.write("\n")
+
+    def write_stdout(self):
+        import sys
+        file = sys.stdout
+        for sequence in self.sequences:
+            for entry in sequence:
+                file.write(str(entry.index))
+                file.write("\t")
+                if isinstance(entry.word, str):
+                    file.write(entry.word)
+                else:
+                    file.write(entry.word.encode('utf-8'))
+                file.write("\t")
+                if isinstance(entry.lemma, str):
+                    file.write(entry.lemma)
+                else:
+                    file.write(entry.lemma.encode('utf-8'))
+                file.write("\t")
+                file.write(entry.upos)
+                file.write("\t")
+                file.write(entry.xpos)
+                file.write("\t")
+                file.write(entry.attrs)
+                file.write("\t")
+                file.write(str(entry.head))
+                file.write("\t")
+                file.write(entry.label)
+                file.write("\t")
+                file.write(entry.deps)
+                file.write("\t")
+                file.write(entry.space_after)
+                file.write("\n")
+            file.write("\n")
+
 
 class Encodings:
     def __init__(self):
