@@ -99,10 +99,12 @@ class CharacterNetwork:
             rnn_states_fw = []
             rnn_states_bw = []
             for x in rnn_outputs:
-                rnn_states_fw.append(rnn_fw.add_input(x))
+                rnn_fw = rnn_fw.add_input(x)
+                rnn_states_fw.append(rnn_fw)
                 fw.append(rnn_states_fw[-1].output())
             for x in reversed(rnn_outputs):
-                rnn_states_bw.append(rnn_bw.add_input(x))
+                rnn_bw = rnn_bw.add_input(x)
+                rnn_states_bw.append(rnn_bw)
                 bw.append(rnn_states_bw[-1].output())
             rnn_outputs = []
             for x1, x2 in zip(fw, reversed(bw)):
