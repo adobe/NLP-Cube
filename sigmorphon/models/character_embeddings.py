@@ -124,7 +124,7 @@ class CharacterNetwork:
         v = self.att_v.expr()
         attention_weights = []
 
-        w2dt = w2 * dy.concatenate([state_fw.h()[-1], state_bw.h()[-1]])
+        w2dt = w2 * dy.concatenate([state_fw.s()[-1], state_bw.s()[-1]])
         for input_vector in input_vectors:
             attention_weight = v * dy.tanh(w1 * input_vector + w2dt)
             attention_weights.append(attention_weight)
