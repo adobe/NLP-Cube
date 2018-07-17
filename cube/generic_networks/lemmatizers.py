@@ -167,8 +167,13 @@ class FSTLemmatizer:
         for entry in seq:
             if entry.upos != 'NUM' and entry.upos != 'PROPN':
                 # print entry.word+"\t"+entry.lemma
-                y_real = self._compute_transduction_states(unicode(entry.word, 'utf-8').lower(),
+                import sys
+                if sys.version_info[0]==2:
+                    y_real = self._compute_transduction_states(unicode(entry.word, 'utf-8').lower(),
                                                            unicode(entry.lemma, 'utf-8').lower())
+                else:
+                    y_real = self._compute_transduction_states(entry.word.lower(),
+                                                               entry.lemma.lower())
                 # print y_real
                 losses = []
                 n_chars = len(y_real)
