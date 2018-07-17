@@ -265,7 +265,7 @@ class LemmatizerTrainer:
         for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
-            proc = int((iSeq + 1) * 100 / len(dataset.sequences)))
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
