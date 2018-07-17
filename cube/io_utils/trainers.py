@@ -77,7 +77,7 @@ class MTTrainer:
             last_proc = 0
             for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
-                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
@@ -124,7 +124,7 @@ class MTTrainer:
             f = open(filename, "w")
 
         for seq in dataset.sequences:
-            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
@@ -208,7 +208,7 @@ class LemmatizerTrainer:
             self.tagger.start_batch()
             for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
-                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
@@ -265,7 +265,7 @@ class LemmatizerTrainer:
         for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
-            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences)))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
@@ -343,7 +343,7 @@ class CompoundWordTrainer:
             self.tagger.start_batch()
             for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
-                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
@@ -410,7 +410,7 @@ class CompoundWordTrainer:
         for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
-            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
@@ -517,7 +517,7 @@ class TaggerTrainer:
             self.tagger.start_batch()
             for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
-                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
@@ -618,7 +618,7 @@ class TaggerTrainer:
         for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
-            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
@@ -706,7 +706,7 @@ class ParserTrainer:
 
             for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
-                proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
@@ -801,7 +801,7 @@ class ParserTrainer:
                 if not entry.is_compound_entry:
                     tmp.append(entry)
             seq = tmp
-            proc = (iSeq + 1) * 100 / len(dataset.sequences)
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
                 last_proc = proc
                 sys.stdout.write(" " + str(proc))
@@ -996,7 +996,7 @@ class TokenizerTrainer:
                 X = X_train[iSeq]
                 y = y_train[iSeq]
                 current_batch_size += len(X)
-                proc = (iSeq + 1) * 100 / len(X_train)
+                proc = int((iSeq + 1) * 100 / len(X_train))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
