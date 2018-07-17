@@ -20,7 +20,11 @@ import sys
 import ast
 from builtins import object, super
 import collections
-import ConfigParser
+
+if sys.version_info[0] == 2:
+    import ConfigParser
+else:
+    import configparser
 
 
 class Config(object):
@@ -40,21 +44,32 @@ class Config(object):
     def save(self, filename):
         """Save configuration to file."""
         sorted_dict = collections.OrderedDict(sorted(self.__dict__.items()))  # sort dictionary
-        config = ConfigParser.ConfigParser()
+        if sys.version_info[0] == 2:
+            config = ConfigParser.ConfigParser()
+        else:
+            config = configparser.ConfigParser()
         config.add_section(self.__config__)  # write header
-        for k, v in sorted_dict.iteritems():  # for python3 use .items()
+        if sys.version_info[0] == 2:
+            items = sorted_dict.iteritems()
+        else:
+            items = sorted_dict.items()
+        for k, v in items:  # for python3 use .items()
             if not k.startswith("_"):  # write only non-private properties
                 if isinstance(v, float):  # if we are dealing with a float
                     str_v = str(v)
                     if "e" not in str_v and "." not in str_v:  # stop possible confusion with an int by appending a ".0"
                         v = str_v + ".0"
+                v = str(v)
                 config.set(self.__config__, k, v)
         with open(filename, 'w') as cfgfile:
             config.write(cfgfile)
 
     def load(self, filename):
         """Load configuration from file."""
-        config = ConfigParser.ConfigParser()
+        if sys.version_info[0] == 2:
+            config = ConfigParser.ConfigParser()
+        else:
+            config = configparser.ConfigParser()
         config.read(filename)
         # check to see if the config file has the appropriate section
         if not config.has_section(self.__config__):
@@ -68,7 +83,7 @@ class Config(object):
 class TokenizerConfig(Config):
     def __init__(self, filename=None):
         super().__init__()
-        
+
         self.base = ""
         # encoder-char        
         self.char_vocabulary_size = -1  # to be calculated when first training
@@ -108,7 +123,7 @@ class TokenizerConfig(Config):
 
 class TaggerConfig(Config):
     def __init__(self, filename=None):
-        super().__init__()        
+        super().__init__()
         self.layers = [200, 200]
         self.layer_dropouts = [0.5, 0.5]
         self.aux_softmax_layer = 1
@@ -124,16 +139,17 @@ class TaggerConfig(Config):
             sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
-        print "INPUT SIZE:", self.input_size
-        print "LAYERS:", self.layers
-        print "LAYER DROPOUTS:", self.layer_dropouts
-        print "AUX SOFTMAX POSITION:", self.aux_softmax_layer
-        print "INPUT DROPOUT PROB:", self.input_dropout_prob
-        print "PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers
-        print "PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts
+        print ("INPUT SIZE:", self.input_size)
+        print ("LAYERS:", self.layers)
+        print ("LAYER DROPOUTS:", self.layer_dropouts)
+        print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+        print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
+        print ("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
+        print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print "Configuration error: aux softmax layer must be placed after the first layer and before the final one"
+            print (
+                "Configuration error: aux softmax layer must be placed after the first layer and before the final one")
             self._valid = False
 
 
@@ -159,23 +175,24 @@ class ParserConfig(Config):
             sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
-        print "LAYERS:", self.layers
-        print "LAYER DROPOUTS:", self.layer_dropouts
-        print "AUX SOFTMAX POSITION:", self.aux_softmax_layer
-        print "INPUT DROPOUT PROB:", self.input_dropout_prob
-        print "ARC PROJECTION SIZE:", self.arc_proj_size
-        print "LABEL PROJECTION SIZE:", self.label_proj_size
-        print "PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout
-        print "JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology
-        print "USE MORPHOLOGY AS INPUT:", self.use_morphology
-        print "INPUT EMBEDDINGS SIZE:", self.input_embeddings_size
+        print ("LAYERS:", self.layers)
+        print ("LAYER DROPOUTS:", self.layer_dropouts)
+        print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+        print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
+        print ("ARC PROJECTION SIZE:", self.arc_proj_size)
+        print ("LABEL PROJECTION SIZE:", self.label_proj_size)
+        print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
+        print ("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
+        print ("USE MORPHOLOGY AS INPUT:", self.use_morphology)
+        print ("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print "Configuration error: aux softmax layer must be placed after the first layer and before the final one"
+            print (
+                "Configuration error: aux softmax layer must be placed after the first layer and before the final one")
             self._valid = False
 
         if self.use_morphology and self.predict_morphology:
-            print "Configuration error: you are using morphology to predict morphology."
+            print ("Configuration error: you are using morphology to predict morphology.")
             self._valid = False
 
 

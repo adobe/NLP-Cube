@@ -90,14 +90,14 @@ class CompoundWordExpander:
 
     def _compute_transduction_states(self, source, destination):
         a = np.zeros((len(source) + 1, len(destination) + 1))
-        for i in xrange(len(source) + 1):
+        for i in range(len(source) + 1):
             a[i, 0] = i
 
-        for i in xrange(len(destination) + 1):
+        for i in range(len(destination) + 1):
             a[0, i] = i
 
-        for i in xrange(1, len(source) + 1):
-            for j in xrange(1, len(destination) + 1):
+        for i in range(1, len(source) + 1):
+            for j in range(1, len(destination) + 1):
                 cost = 0
                 if source[i - 1] != destination[j - 1]:
                     cost = 1

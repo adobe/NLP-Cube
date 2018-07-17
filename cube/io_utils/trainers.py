@@ -17,11 +17,15 @@
 #
 
 import sys
+
+sys.path.insert(0, '../')
 from random import shuffle
 import time
 import random
 from misc.conll18_ud_eval_wrapper import conll_eval
-import nltk
+
+
+# import nltk
 
 
 class MTTrainer:
@@ -71,7 +75,7 @@ class MTTrainer:
             cbs = 0
             self.translator.start_batch()
             last_proc = 0
-            for iSeq in xrange(len(self.trainset.sequences)):
+            for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
                 if proc % 5 == 0 and proc != last_proc:
@@ -202,7 +206,7 @@ class LemmatizerTrainer:
             start_time = time.time()
             current_batch_size = 0
             self.tagger.start_batch()
-            for iSeq in xrange(len(self.trainset.sequences)):
+            for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
                 if proc % 5 == 0 and proc != last_proc:
@@ -258,7 +262,7 @@ class LemmatizerTrainer:
         correct = 0
         total = 0
 
-        for iSeq in xrange(len(dataset.sequences)):
+        for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
             proc = (iSeq + 1) * 100 / len(dataset.sequences)
@@ -274,11 +278,15 @@ class LemmatizerTrainer:
                     total += 1
                     # from pdb import set_trace
                     # set_trace()
-                    if unicode(entry.lemma, 'utf-8') == pred_lemma:
-                        correct += 1
+                    if sys.version_info[0] == 2:
+                        if unicode(entry.lemma, 'utf-8') == pred_lemma:
+                            correct += 1
+                    else:
+                        if entry.lemma == pred_lemma:
+                            correct += 1
                 else:
-                    correct+=1
-                    total+=1
+                    correct += 1
+                    total += 1
 
         return float(correct) / total
 
@@ -333,7 +341,7 @@ class CompoundWordTrainer:
             start_time = time.time()
             current_batch_size = 0
             self.tagger.start_batch()
-            for iSeq in xrange(len(self.trainset.sequences)):
+            for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
                 if proc % 5 == 0 and proc != last_proc:
@@ -399,7 +407,7 @@ class CompoundWordTrainer:
 
         last_proc = 0
 
-        for iSeq in xrange(len(dataset.sequences)):
+        for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
             proc = (iSeq + 1) * 100 / len(dataset.sequences)
@@ -421,14 +429,18 @@ class CompoundWordTrainer:
                     interval = entry.index.split("-")
                     interval = int(interval[1]) - int(interval[0]) + 1
                     real_tokens = []
-                    for _ in xrange(interval):
+                    for _ in range(interval):
                         i_entry += 1
                         real_tokens.append(seq[i_entry].word)
                     i_entry += 1
                     tokens_total += len(real_tokens)
                     for pt, rt in zip(tokens, real_tokens):
-                        if pt.encode('utf-8') == rt:
-                            tokens_correct += 1
+                        if sys.version_info[0] == 2:
+                            if pt.encode('utf-8') == rt:
+                                tokens_correct += 1
+                        else:
+                            if pt == rt:
+                                tokens_correct += 1
 
                 else:
                     compound, _ = self.tagger.tag_token(entry.word)
@@ -501,9 +513,9 @@ class TaggerTrainer:
             sys.stdout.flush()
             total_loss = 0
             start_time = time.time()
-            current_batch_size=0
+            current_batch_size = 0
             self.tagger.start_batch()
-            for iSeq in xrange(len(self.trainset.sequences)):
+            for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
                 if proc % 5 == 0 and proc != last_proc:
@@ -512,14 +524,14 @@ class TaggerTrainer:
                     sys.stdout.flush()
 
                 self.tagger.learn(seq)
-                current_batch_size+=len(seq)
-                if current_batch_size>batch_size:
+                current_batch_size += len(seq)
+                if current_batch_size > batch_size:
                     total_loss += self.tagger.end_batch()
                     self.tagger.start_batch()
-                    current_batch_size=0
+                    current_batch_size = 0
 
-            if current_batch_size!=0:
-                total_loss+=self.tagger.end_batch()
+            if current_batch_size != 0:
+                total_loss += self.tagger.end_batch()
                 self.tagger.start_batch()
 
             stop_time = time.time()
@@ -603,7 +615,7 @@ class TaggerTrainer:
         correct_attrs = 0
         total = 0
 
-        for iSeq in xrange(len(dataset.sequences)):
+        for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
 
             proc = (iSeq + 1) * 100 / len(dataset.sequences)
@@ -692,7 +704,7 @@ class ParserTrainer:
             total_loss = 0
             start_time = time.time()
 
-            for iSeq in xrange(len(self.trainset.sequences)):
+            for iSeq in range(len(self.trainset.sequences)):
                 seq = self.trainset.sequences[iSeq]
                 proc = (iSeq + 1) * 100 / len(self.trainset.sequences)
                 if proc % 5 == 0 and proc != last_proc:
@@ -781,7 +793,7 @@ class ParserTrainer:
         correct_attrs = 0
 
         total = 0
-        for iSeq in xrange(len(dataset.sequences)):
+        for iSeq in range(len(dataset.sequences)):
             seq = dataset.sequences[iSeq]
             # remove compound words
             tmp = []
@@ -848,14 +860,18 @@ class TokenizerTrainer:
         for i in range(len(sequence_set.sequences)):  # for all sequences (sentences)
             X = []
             y = []
-            #print(">> Starting sequence "+str(i))
+            # print(">> Starting sequence "+str(i))
             for j in range(len(sequence_set.sequences[i])):  # for each word in the sentence
                 if sequence_set.sequences[i][j].is_compound_entry:  # skip over compound words
                     pass
                 word = sequence_set.sequences[i][j].word
                 space_after = False if "SpaceAfter=No" in sequence_set.sequences[i][j].space_after else True
-                uniword = unicode(word, 'utf-8')
-                #print("  WORD: "+uniword+" len = "+str(len(uniword))+" space after = "+str(sequence_set.sequences[i][j].space_after))
+                if sys.version_info[0] == 2:
+                    uniword = unicode(word, 'utf-8')
+                else:
+                    import copy
+                    uniword = copy.deepcopy(word)
+                # print("  WORD: "+uniword+" len = "+str(len(uniword))+" space after = "+str(sequence_set.sequences[i][j].space_after))
                 # mark all symbols as "O"
                 for char_index in range(len(uniword)):
                     X.append(uniword[char_index])
@@ -867,7 +883,7 @@ class TokenizerTrainer:
                     y[-1] = "SX"
                     # permanently set space_after_end_of_sentence to False if we see just one sentence that does not have a space after
                     if not space_after:
-                        space_after_end_of_sentence_count+=1                        
+                        space_after_end_of_sentence_count += 1
                 else:  # add space after only if not end of sentence
                     if space_after:
                         X.append(" ")
@@ -877,19 +893,19 @@ class TokenizerTrainer:
             # raw_input("Stop")
             X_set.append(X)
             y_set.append(y)
-    
+
         # if at least 75% of sentences end with space_after="No" then we assume this language does not use spaces after EOSes.
-        if float(space_after_end_of_sentence_count) > 0.75*len(sequence_set.sequences):
+        if float(space_after_end_of_sentence_count) > 0.75 * len(sequence_set.sequences):
             space_after_end_of_sentence = False
-            
+
         return X_set, y_set, space_after_end_of_sentence
 
     def _create_mixed_sequences(self, X_set, y_set, space_after_end_of_sentence, shuffle=False):
         assert (len(X_set) == len(y_set))
-        #print(" Set has "+str(len(X_set))+" sequences")
+        # print(" Set has "+str(len(X_set))+" sequences")
         X_mixed_set = []
         y_mixed_set = []
-        for i in range(len(X_set)):            
+        for i in range(len(X_set)):
             import copy
             X_mixed = copy.deepcopy(X_set[i])
             y_mixed = copy.deepcopy(y_set[i])
@@ -904,10 +920,10 @@ class TokenizerTrainer:
                 X_mixed.append(" ")
                 y_mixed.append("S")
                 # add some random chars of another sentence
-            while True: # some sequences have only one word, skip them
-                pick = random.randint(0, len(X_set) - 1)            
+            while True:  # some sequences have only one word, skip them
+                pick = random.randint(0, len(X_set) - 1)
                 if len(X_set[pick]) > 1:
-                    break 
+                    break
             char_count = random.randint(1, len(X_set[pick]) - 1)
             X_mixed = X_mixed + copy.deepcopy(X_set[pick][0:char_count])
             y_mixed = y_mixed + copy.deepcopy(y_set[pick][0:char_count])
@@ -975,7 +991,7 @@ class TokenizerTrainer:
             start_time = time.time()
             current_batch_size = 0
             self.tokenizer.start_batch()
-            for iSeq in xrange(len(X_train)):
+            for iSeq in range(len(X_train)):
                 # print("TRAIN SEQ: "+str(iSeq))
                 X = X_train[iSeq]
                 y = y_train[iSeq]
@@ -1070,22 +1086,22 @@ class TokenizerTrainer:
             cnt += 1
             if cnt >= len(lines) or cnt > 5:
                 break
-            
+
         if float(test.count(' ')) / float(len(test)) < 0.02:
             useSpaces = ""
         # print (str(float(test.count(' '))/float(len(test))))
-        
+
         i = -1
         input_string = ""
-        sentences = []            
-        while i<len(lines)-1:            
+        sentences = []
+        while i < len(lines) - 1:
             i += 1
-            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces            
-            if lines[i].strip() == "" or i == len(lines)-1: # end of block
+            input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
+            if lines[i].strip() == "" or i == len(lines) - 1:  # end of block
                 if input_string.strip() != "":
                     sentences += self.tokenizer.tokenize(input_string)
                 input_string = ""
-                
+
         # with open(output_conllu_file, 'w', encoding='utf-8') as file:
         with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:
             for sentence in sentences:

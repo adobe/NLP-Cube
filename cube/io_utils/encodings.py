@@ -22,7 +22,7 @@ import re
 
 class Encodings(object):
 
-    def __init__(self, verbose = True):
+    def __init__(self, verbose=True):
         self.word_list = {}
         self.hol_word_list = []
         self.char2int = {}
@@ -35,7 +35,7 @@ class Encodings(object):
         self.upos_list = []
         self.xpos_list = []
         self.attrs_list = []
-        self.characters = []        
+        self.characters = []
         self.verbose = verbose
 
     def compute(self, train, dev, tag_type=None, word_cutoff=2, char_cutoff=5):
@@ -50,14 +50,20 @@ class Encodings(object):
         word_count = {}
         for seq in train.sequences:
             for entry in seq:
-                word = entry.word.decode('utf-8').lower()
+                if sys.version_info[0] == 2:
+                    word = entry.word.decode('utf-8').lower()
+                else:
+                    word = entry.word.lower()
                 if word not in word_count:
                     word_count[word] = 1
                 else:
                     word_count[word] = word_count[word] + 1
                 if word not in self.word_list:
                     self.word_list[word] = 0  # word is inside trainset
-                uniword = unicode(entry.word, 'utf-8').lower()
+                if sys.version_info[0] == 2:
+                    uniword = unicode(entry.word, 'utf-8').lower()
+                else:
+                    uniword = entry.word.lower()
                 uniword = re.sub('\d', '0', uniword)
                 for i in range(len(uniword)):
                     char = uniword[i].lower()
@@ -94,7 +100,10 @@ class Encodings(object):
 
         for seq in dev.sequences:
             for entry in seq:
-                word = entry.word.decode('utf-8').lower()
+                if sys.version_info[0] == 2:
+                    word = entry.word.decode('utf-8').lower()
+                else:
+                    word = entry.word.lower()
                 if word not in self.word_list:
                     self.word_list[word] = 1  # word is inside devset only
 
@@ -110,7 +119,7 @@ class Encodings(object):
                 self.characters.append(char)
 
         # force add digits
-        for digit in xrange(10):
+        for digit in range(10):
             ds = str(digit)
             if ds not in self.char2int:
                 self.char2int[ds] = len(self.char2int)
@@ -118,13 +127,13 @@ class Encodings(object):
         if self.verbose:
             sys.stdout.write("done\n")
 
-            print "Unique words: " + str(len(self.word_list))
-            print "Unique chars: " + str(len(self.char2int))
-            print "Unique labels: " + str(len(self.label2int))
-            print "Unique UPOS: " + str(len(self.upos2int))
-            print "Unique XPOS: " + str(len(self.xpos2int))
-            print "Unique ATTRS: " + str(len(self.attrs2int))
-            print "Holistic word count: " + str(len(self.word2int))
+            print ("Unique words: " + str(len(self.word_list)))
+            print ("Unique chars: " + str(len(self.char2int)))
+            print ("Unique labels: " + str(len(self.label2int)))
+            print ("Unique UPOS: " + str(len(self.upos2int)))
+            print ("Unique XPOS: " + str(len(self.xpos2int)))
+            print ("Unique ATTRS: " + str(len(self.attrs2int)))
+            print ("Holistic word count: " + str(len(self.word2int)))
 
     def update_wordlist(self, dataset):
         for seq in dataset.sequences:
@@ -141,9 +150,9 @@ class Encodings(object):
 
             num_labels = int(line.split(" ")[1])
             if self.verbose:
-                print "Loading labels " + str(num_labels)
+                print ("Loading labels " + str(num_labels))
             self.labels = [""] * num_labels
-            for _ in xrange(num_labels):
+            for _ in range(num_labels):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0]
@@ -155,8 +164,8 @@ class Encodings(object):
             num_characters = int(line.split(" ")[1])
             self.characters = [""] * num_characters
             if self.verbose:
-                print "Loading characters " + str(num_characters)
-            for _ in xrange(num_characters):
+                print ("Loading characters " + str(num_characters))
+            for _ in range(num_characters):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0].decode('utf-8')
@@ -166,8 +175,8 @@ class Encodings(object):
             line = f.readline()
             num_words = int(line.split(" ")[1])
             if self.verbose:
-                print "Loading words " + str(num_words)
-            for _x in xrange(num_words):
+                print ("Loading words " + str(num_words))
+            for _x in range(num_words):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0].decode('utf-8')
@@ -178,9 +187,9 @@ class Encodings(object):
             line = f.readline()
             num_labels = int(line.split(" ")[1])
             if self.verbose:
-                print "Loading upos " + str(num_labels)
+                print ("Loading upos " + str(num_labels))
             self.upos_list = [""] * num_labels
-            for _ in xrange(num_labels):
+            for _ in range(num_labels):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0]
@@ -192,8 +201,8 @@ class Encodings(object):
             num_labels = int(line.split(" ")[1])
             self.xpos_list = [""] * num_labels
             if self.verbose:
-                print "Loading xpos " + str(num_labels)
-            for _ in xrange(num_labels):
+                print ("Loading xpos " + str(num_labels))
+            for _ in range(num_labels):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0]
@@ -205,8 +214,8 @@ class Encodings(object):
             num_labels = int(line.split(" ")[1])
             self.attrs_list = [""] * num_labels
             if self.verbose:
-                print "Loading attrs " + str(num_labels)
-            for _ in xrange(num_labels):
+                print ("Loading attrs " + str(num_labels))
+            for _ in range(num_labels):
                 line = f.readline()
                 parts = line.split("\t")
                 key = parts[0]
@@ -222,10 +231,16 @@ class Encodings(object):
                 f.write(str(label) + "\t" + str(self.label2int[label]) + "\n")
             f.write("CHARACTERS " + str(len(self.char2int)) + "\n")
             for character in self.char2int:
-                f.write(character.encode('utf-8') + "\t" + str(self.char2int[character]) + "\n")
+                if sys.version_info[0] == 2:
+                    f.write(character.encode('utf-8') + "\t" + str(self.char2int[character]) + "\n")
+                else:
+                    f.write(character + "\t" + str(self.char2int[character]) + "\n")
             f.write("WORDS " + str(len(self.word2int)) + "\n")
             for word in self.word2int:
-                f.write(word.encode('utf-8') + "\t" + str(self.word2int[word]) + "\n")
+                if sys.version_info[0] == 2:
+                    f.write(word.encode('utf-8') + "\t" + str(self.word2int[word]) + "\n")
+                else:
+                    f.write(word + "\t" + str(self.word2int[word]) + "\n")
 
             f.write("UPOS " + str(len(self.upos2int)) + "\n")
             for label in self.upos2int:

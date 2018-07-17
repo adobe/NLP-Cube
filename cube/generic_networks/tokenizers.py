@@ -39,8 +39,8 @@ class TieredTokenizer:
         self.trainerTok = dy.AdamTrainer(self.modelTok, alpha=2e-3, beta_1=0.9, beta_2=0.9)
 
         # sentence split model
-        from wrappers import CNN, CNNConvLayer, CNNPoolingLayer
-        from utils import orthonormal_VanillaLSTMBuilder
+        from generic_networks.wrappers import CNN, CNNConvLayer, CNNPoolingLayer
+        from generic_networks.utils import orthonormal_VanillaLSTMBuilder
         # character-level-embeddings
         self.SS_char_lookup = self.modelSS.add_lookup_parameters(
             (len(self.encodings.char2int), self.config.ss_char_embeddings_size))
@@ -187,7 +187,7 @@ class TieredTokenizer:
             x = dy.concatenate([char_emb, casing_emb])
             x_list.append(x)
 
-        for _ in xrange(offset):
+        for _ in range(offset):
             x_list.append(self.TOK_char_lookup_special[1])
 
         aux_softmax_output_peek = []
@@ -209,7 +209,7 @@ class TieredTokenizer:
         word_lstm = self.TOK_word_lstm.initial_state().add_input(
             dy.inputVector([0] * self.config.tok_word_embeddings_size))
         word = ""
-        for index in xrange(len(seq)):
+        for index in range(len(seq)):
             word += seq[index]
             aux_softmax_output_prev.append(
                 dy.softmax(self.TOK_softmax_prev_w.expr() * fw_out[index] + self.TOK_softmax_prev_b.expr()))
@@ -372,7 +372,7 @@ class TieredTokenizer:
             if len(current_string) == batch_size:
                 current_string = current_string[:-100]
 
-            for y, char, index in zip(y_pred, current_string, xrange(len(current_string))):
+            for y, char, index in zip(y_pred, current_string, range(len(current_string))):
                 w += char
                 if np.argmax(y.npvalue()) == 1:
                     space_after_end_of_sentence = False
@@ -436,7 +436,7 @@ class TieredTokenizer:
             x = dy.concatenate([char_emb, casing_emb])
             x_list.append(x)
 
-        for _ in xrange(offset):
+        for _ in range(offset):
             x_list.append(self.SS_char_lookup_special[1])
 
         aux_softmax_output_peek = []
@@ -452,7 +452,7 @@ class TieredTokenizer:
             self.SS_peek_lstm.set_dropouts(self.config.ss_peek_lstm_dropout, self.config.ss_peek_lstm_dropout)
         lstm_fw = self.SS_lstm.initial_state()
 
-        for cIndex in xrange(len(seq)):
+        for cIndex in range(len(seq)):
             peek_chars = x_list[cIndex:cIndex + self.config.ss_char_peek_count + 1]
             peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
 
@@ -523,7 +523,7 @@ class BDRNNTokenizer:
             self.encoder_word_lstm_builder = dy.VanillaLSTMBuilder(1, self.word_embeddings.word_embeddings_size,
                                                                    self.config.encoder_word_lstm_size, self.model)
         else:
-            from utils import orthonormal_VanillaLSTMBuilder
+            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
             self.encoder_char_lstm1_fw_builder = orthonormal_VanillaLSTMBuilder(1, self.encoder_char_input_size,
                                                                                 self.config.encoder_char_lstm_size,
                                                                                 self.model)

@@ -18,7 +18,7 @@
 import dynet as dy
 import numpy as np
 import copy
-from character_embeddings import CharacterNetwork
+from generic_networks.character_embeddings import CharacterNetwork
 
 
 class FSTLemmatizer:
@@ -26,9 +26,9 @@ class FSTLemmatizer:
         self.config = config
         self.encodings = encodings
         # Bug in encodings - will be removed after UD
-        self.has_bug=False
-        if self.encodings.char2int[' ']!=1:
-            self.has_bug=True
+        self.has_bug = False
+        if self.encodings.char2int[' '] != 1:
+            self.has_bug = True
             import sys
             sys.stdout.write("Detected encodings BUG!")
         self.embeddings = embeddings
@@ -40,7 +40,7 @@ class FSTLemmatizer:
                                                   rnn_layers=self.config.char_rnn_layers,
                                                   embeddings_size=self.config.char_embeddings,
                                                   model=self.model, runtime=runtime)
-        self.word2lemma={}
+        self.word2lemma = {}
 
         self.upos_lookup = self.model.add_lookup_parameters(
             (len(self.encodings.upos2int), self.config.tag_embeddings_size))
@@ -55,7 +55,7 @@ class FSTLemmatizer:
                                       self.config.rnn_size,
                                       self.model)
         else:
-            from utils import orthonormal_VanillaLSTMBuilder
+            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
             self.rnn = orthonormal_VanillaLSTMBuilder(self.config.rnn_layers,
                                                       self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size,
                                                       self.config.rnn_size,
@@ -190,14 +190,14 @@ class FSTLemmatizer:
 
     def _compute_transduction_states(self, source, destination):
         a = np.zeros((len(source) + 1, len(destination) + 1))
-        for i in xrange(len(source) + 1):
+        for i in range(len(source) + 1):
             a[i, 0] = i
 
-        for i in xrange(len(destination) + 1):
+        for i in range(len(destination) + 1):
             a[0, i] = i
 
-        for i in xrange(1, len(source) + 1):
-            for j in xrange(1, len(destination) + 1):
+        for i in range(1, len(source) + 1):
+            for j in range(1, len(destination) + 1):
                 cost = 0
                 if source[i - 1] != destination[j - 1]:
                     cost = 1
@@ -254,10 +254,10 @@ class FSTLemmatizer:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
                 lemma = entry.word.decode('utf-8')
             else:
-                #check dictionary
-                key=entry.word.decode('utf-8').lower().encode('utf-8')+"\t"+entry.lemma
+                # check dictionary
+                key = entry.word.decode('utf-8').lower().encode('utf-8') + "\t" + entry.lemma
                 if key in self.word2lemma:
-                    lemma=unicode(self.word2lemma[key],'utf-8')
+                    lemma = unicode(self.word2lemma[key], 'utf-8')
                 else:
                     uniword = unicode(entry.word, 'utf-8')
                     softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
@@ -271,11 +271,11 @@ class FSTLemmatizer:
                         elif label_index == self.label2int['<INC>'] or label_index == self.label2int['<EOS>']:
                             src_index += 1
                         elif label_index < len(self.encodings.characters):
-                            #if self.has_bug and label_index >= self.encodings.char2int[' ']:
+                            # if self.has_bug and label_index >= self.encodings.char2int[' ']:
                             #     label_index += 1
                             lemma += self.encodings.characters[label_index]
             # print entry.word+"\t"+lemma.encode('utf-8')
-            if entry.upos!='PROPN':
+            if entry.upos != 'PROPN':
                 lemmas.append(lemma.lower())
             else:
                 lemmas.append(lemma)
@@ -286,24 +286,26 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
-        dict_path=path.replace(".bestACC", ".dict")
+        dict_path = path.replace(".bestACC", ".dict")
         import os.path
         if os.path.exists(dict_path):
             self.load_dict(dict_path)
 
     def load_dict(self, path):
-        print "Loading lemma dictionary"
-        with open (path, "r") as f:
-            lines=f.readlines()
+        print ("Loading lemma dictionary")
+        with open(path, "r") as f:
+            lines = f.readlines()
             for line in lines:
-                parts=line.strip().split('\t')
-                if len(parts)==5:
-                    word=unicode(parts[0],'utf-8').lower().encode('utf-8')
-                    upos=parts[1]
-                    key=word+'\t'+upos
-                    self.word2lemma[key]=parts[4]
-        print "Loaded "+str(len(self.word2lemma))+" pairs"
-
+                parts = line.strip().split('\t')
+                if len(parts) == 5:
+                    if sys.version_info[0] == 2:
+                        word = unicode(parts[0], 'utf-8').lower().encode('utf-8')
+                    else:
+                        word = parts[0].lower()
+                    upos = parts[1]
+                    key = word + '\t' + upos
+                    self.word2lemma[key] = parts[4]
+        print ("Loaded " + str(len(self.word2lemma)) + " pairs")
 
     def lemmatize_sequences(self, sequences):
         new_sequences = []
@@ -355,7 +357,7 @@ class BDRNNLemmatizer:
                                       self.config.char_rnn_size * 2 + self.config.char_embeddings, self.config.rnn_size,
                                       self.model)
         else:
-            from utils import orthonormal_VanillaLSTMBuilder
+            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
             self.rnn = orthonormal_VanillaLSTMBuilder(self.config.rnn_layers,
                                                       self.config.char_rnn_size * 2 + self.config.char_embeddings,
                                                       self.config.rnn_size,
@@ -379,7 +381,7 @@ class BDRNNLemmatizer:
         v = self.att_v.expr()
         attention_weights = []
 
-        w2dt = w2 * dy.concatenate([state.h()[-1], embeddings])
+        w2dt = w2 * dy.concatenate([state.s()[-1], embeddings])
         for input_vector in input_vectors:
             attention_weight = v * dy.tanh(w1 * input_vector + w2dt)
             attention_weights.append(attention_weight)
@@ -504,7 +506,10 @@ class BDRNNLemmatizer:
         lemmas = []
         for entry in seq:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
-                lemma = entry.word.decode('utf-8')
+                if sys.version_info[0] == 2:
+                    lemma = entry.word.decode('utf-8')
+                else:
+                    lemma = entry.word
             else:
                 softmax_output_list = self._predict(entry.word, entry.upos, entry.xpos, entry.attrs)
                 lemma = ""
