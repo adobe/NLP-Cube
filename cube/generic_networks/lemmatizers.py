@@ -269,7 +269,7 @@ class FSTLemmatizer:
                     key = entry.word.lower() + "\t" + entry.lemma                    
                 if key in self.word2lemma:
                     if sys.version_info[0]==2:
-                        lemma=unicode(self.word2lemma[key],‘utf-8’)
+                        lemma=unicode(self.word2lemma[key],'utf-8')
                     else:                        
                         lemma=copy.deepcopy(self.word2lemma[key])
                 else:
