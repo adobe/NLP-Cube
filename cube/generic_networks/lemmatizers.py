@@ -18,6 +18,7 @@
 import dynet as dy
 import numpy as np
 import copy
+import sys
 from generic_networks.character_embeddings import CharacterNetwork
 
 
