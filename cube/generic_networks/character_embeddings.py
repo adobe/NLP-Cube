@@ -61,14 +61,16 @@ class CharacterNetwork:
     def compute_embeddings(self, word, runtime=True):
         x_list = []
         import sys
+        import copy
         if sys.version_info[0] == 2:
             if not isinstance(word, unicode):
+
                 uniword = unicode(word, 'utf-8')
             else:
-                uniword = word  # copy.deepcopy(word)
+                uniword = copy.deepcopy(word)
         else:
-            uniword = word
-        #print (uniword)
+            uniword = copy.deepcopy(word)
+        # print (uniword)
         uniword = re.sub('\d', '0', uniword)
         for i in range(len(uniword)):
             char = uniword[i]

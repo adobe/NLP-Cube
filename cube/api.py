@@ -209,7 +209,8 @@ if __name__ == "__main__":
     cube.load('ro')
     sequences = cube.process_text(
         text="Ana are mere, și Maria are pere. Ce mai faci băiatule, deși mi se pare că ai peri deși. "
-             "Și-a făcut casă noaptea și-a plecat acasă. "
+             "Și-a făcut casă noaptea și-a plecat acasă. Ce faci bosule? Ce faci boule? De ce terminația asta nu e de "
+             "substantiv masculin?"
              "Ți-am zădărnicit șerpicoarea maricoasă că să veremești frumos de tot. "
              "Stadioanele sunt ocupate de copii fotbaliști și de copii talentați la sport.")
     sys.stdout.write("\n\n\n")

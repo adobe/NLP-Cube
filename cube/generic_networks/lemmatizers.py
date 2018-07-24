@@ -18,6 +18,7 @@
 import dynet as dy
 import numpy as np
 import copy
+import sys
 from generic_networks.character_embeddings import CharacterNetwork
 
 
@@ -259,17 +260,29 @@ class FSTLemmatizer:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
                 import sys
                 if sys.version_info[0] == 2:
+
                     lemma = entry.word.decode('utf-8')
                 else:
                     lemma = entry.word
             else:
                 # check dictionary
-
-                key = entry.word.lower() + "\t" + entry.lemma
-                if key in self.word2lemma:
-                    lemma = self.word2lemma[key]
+                import sys
+                if sys.version_info[0]==2:
+                    key = entry.word.decode('utf-8').lower().encode('utf-8') + "\t" + entry.lemma
                 else:
-                    uniword = entry.word
+                    key = entry.word.lower() + "\t" + entry.lemma                    
+                if key in self.word2lemma:
+                    if sys.version_info[0]==2:
+                        lemma=unicode(self.word2lemma[key],'utf-8')
+                    else:                        
+                        lemma=copy.deepcopy(self.word2lemma[key])
+                else:
+                    if sys.version_info[0]==2:
+                        uniword = unicode(entry.word, 'utf-8')
+                    else: 
+                        uniword=copy.deepcopy(entry.word)
+                        
+
                     softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
                                                         max_predictions=500, runtime=True)
                     lemma = ""
