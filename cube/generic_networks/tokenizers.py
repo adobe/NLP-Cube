@@ -312,14 +312,14 @@ class TieredTokenizer:
         loss = dy.esum(losses)
         self.losses.append(loss)
 
-    def _get_tokens(self, input_string, space_after_end_of_sentence = True):
-        #print("\n")
-        #print(input_string)
+    def _get_tokens(self, input_string, space_after_end_of_sentence=True):
+        # print("\n")
+        # print(input_string)
         tokens = []
         y_pred, _, _ = self._predict_tok(input_string, runtime=True)
         index = 0
         w = ""
-        
+
         for i in range(len(input_string)):
             w += input_string[i]
             if np.argmax(y_pred[i].npvalue()) == 1:
@@ -328,25 +328,31 @@ class TieredTokenizer:
                     space_after = "SpaceAfter=No"
                     if i < len(input_string) - 1:
                         if input_string[i + 1] in string.whitespace:
-                            space_after = "_"                    
-                    entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", space_after=space_after)
+                            space_after = "_"
+                    entry = ConllEntry(index, str(w).strip(), '_', "_", "_", "_", 0, "_", "_",
+                                       space_after=space_after)
                     tokens.append(entry)
                     w = ""
-                    
+
         if w.strip() != "":
             index += 1
-            entry = ConllEntry(index, w.strip().encode('utf-8'), '_', "_", "_", "_", 0, "_", "_", "")
+            entry = ConllEntry(index, str(w).strip(), '_', "_", "_", "_", 0, "_", "_", "")
             tokens.append(entry)
 
         # set SpaceAfter=No property of last token
-        if len(tokens)>0:
-            tokens[-1].space_after = "SpaceAfter=No" if space_after_end_of_sentence == False else "_"        
-        
-        return tokens        
+        if len(tokens) > 0:
+            tokens[-1].space_after = "SpaceAfter=No" if space_after_end_of_sentence == False else "_"
 
-    def tokenize(self, input_string):        
+        return tokens
+
+    def tokenize(self, input_string):
         batch_size = 1000
-        input_string = unicode(input_string, 'utf-8')
+        import sys
+        if sys.version_info[0] == 2:
+            input_string = unicode(input_string, 'utf-8')
+        else:
+            import copy
+            input_string = copy.deepcopy(input_string)
 
         sequences = []
         num_chars = 0
@@ -362,11 +368,11 @@ class TieredTokenizer:
                 last_proc += 5
                 sys.stdout.write(" " + str(last_proc))
                 sys.stdout.flush()
-            """    
-                
+            """
+
             dy.renew_cg()
             y_pred, _, _ = self._predict_ss(current_string)
-           
+
             last_ss_break = -1
             last_checked_index = -1
             if len(current_string) == batch_size:
@@ -376,8 +382,9 @@ class TieredTokenizer:
                 w += char
                 if np.argmax(y.npvalue()) == 1:
                     space_after_end_of_sentence = False
-                    if index < len(input_string)-1: # compare with input_string not with current_string for whitespace after current sentence
-                        if input_string[index+1] in string.whitespace:
+                    if index < len(
+                            input_string) - 1:  # compare with input_string not with current_string for whitespace after current sentence
+                        if input_string[index + 1] in string.whitespace:
                             space_after_end_of_sentence = True
                     seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
                     sequences.append(seq)
@@ -396,7 +403,7 @@ class TieredTokenizer:
 
         if w.strip() != "":
             space_after_end_of_sentence = False
-            if w[-1] in string.whitespace:            
+            if w[-1] in string.whitespace:
                 space_after_end_of_sentence = True
             seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
             sequences.append(seq)
@@ -590,7 +597,11 @@ class BDRNNTokenizer:
 
     def tokenize(self,
                  input_string):  # input string is a single string that can contain several sentences, output will be conllu-format list of sentences
-        uni_string = unicode(input_string, 'utf-8')  # because reasons
+        import sys
+        if sys.version_info[0] == 2:
+            uni_string = unicode(input_string, 'utf-8')  # because reasons
+        else:
+            uni_string = input_string
         offset = 0
         sentences = []
         last_proc = 0
@@ -634,7 +645,8 @@ class BDRNNTokenizer:
                 if "S" in labels[i]:
                     if X[i] in string.whitespace:  # if whitespace, skip
                         if word != "":
-                            entry = ConllEntry(index=cnt, word=word, lemma="_", upos="_", xpos="_", attrs="_", head="0",
+                            entry = ConllEntry(index=cnt, word=word.decode('utf-8'), lemma="_", upos="_", xpos="_",
+                                               attrs="_", head="0",
                                                label="_", deps="_", space_after="_")
                             # log.write("   New ERROR incomplete entry ["+word.encode('utf-8')+"]\n")
                             sentence.append(entry)
@@ -646,7 +658,7 @@ class BDRNNTokenizer:
                     if i < len(X) - 1:
                         if X[i + 1] in string.whitespace:
                             space_after = "_"
-                    entry = ConllEntry(index=cnt, word=word.encode('utf-8'), lemma="_", upos="_", xpos="_", attrs="_",
+                    entry = ConllEntry(index=cnt, word=word.decode('utf-8'), lemma="_", upos="_", xpos="_", attrs="_",
                                        head="0",
                                        label="_", deps="_", space_after=space_after)
                     # log.write("   New entry ["+word.encode('utf-8')+"]\n")

@@ -65,11 +65,10 @@ class CharacterNetwork:
             if not isinstance(word, unicode):
                 uniword = unicode(word, 'utf-8')
             else:
-                import copy
-                uniword = copy.deepcopy(word)
+                uniword = word  # copy.deepcopy(word)
         else:
-            import copy
-            uniword = copy.deepcopy(word)
+            uniword = word
+        #print (uniword)
         uniword = re.sub('\d', '0', uniword)
         for i in range(len(uniword)):
             char = uniword[i]

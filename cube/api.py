@@ -115,7 +115,7 @@ class Cube:
             tagger_upos_object = BDRNNTagger(config, tagger_encodings, self.embeddings, runtime=True)
             tagger_upos_object.load(os.path.join(base_path, lang_code + "/tagger.bestUPOS"))
             tagger_xpos_object = BDRNNTagger(config, tagger_encodings, self.embeddings, runtime=True)
-            tagger_xpos_object.load(os.path.join(base_path, tagger_encodings + "/tagger.bestXPOS"))
+            tagger_xpos_object.load(os.path.join(base_path, lang_code + "/tagger.bestXPOS"))
             tagger_attrs_object = BDRNNTagger(config, tagger_encodings, self.embeddings, runtime=True)
             tagger_attrs_object.load(os.path.join(base_path, lang_code + "/tagger.bestATTRS"))
 
@@ -185,6 +185,7 @@ class Cube:
         if PipelineComponents.TAGGER in pipeline and self.tagger_enabled:
             new_sequences = []
             for sequence in sequences:
+                import copy
                 new_sequence = copy.deepcopy(sequence)
                 predicted_tags_UPOS = self.models[PipelineComponents.TAGGER][0].tag(new_sequence)
                 predicted_tags_XPOS = self.models[PipelineComponents.TAGGER][1].tag(new_sequence)
@@ -206,7 +207,11 @@ class Cube:
 if __name__ == "__main__":
     cube = Cube()
     cube.load('ro')
-    sequences = cube.process_text(text="ana are mere dar nu are pere și mănâncă miere.")
+    sequences = cube.process_text(
+        text="Ana are mere, și Maria are pere. Ce mai faci băiatule, deși mi se pare că ai peri deși. "
+             "Și-a făcut casă noaptea și-a plecat acasă. "
+             "Ți-am zădărnicit șerpicoarea maricoasă că să veremești frumos de tot. "
+             "Stadioanele sunt ocupate de copii fotbaliști și de copii talentați la sport.")
     sys.stdout.write("\n\n\n")
     from io_utils.conll import Dataset
 

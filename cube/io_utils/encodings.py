@@ -38,7 +38,7 @@ class Encodings(object):
         self.characters = []
         self.verbose = verbose
 
-    def compute(self, train, dev, tag_type=None, word_cutoff=2, char_cutoff=5):
+    def compute(self, train, dev, tag_type=None, word_cutoff=7, char_cutoff=5):
         if self.verbose:
             sys.stdout.write("Computing encoding maps... ")
             sys.stdout.flush()
@@ -138,7 +138,11 @@ class Encodings(object):
     def update_wordlist(self, dataset):
         for seq in dataset.sequences:
             for entry in seq:
-                word = entry.word.decode('utf-8').lower()
+                import sys
+                if sys.version_info[0] == 2:
+                    word = entry.word.decode('utf-8').lower()
+                else:
+                    word = entry.word.lower()
                 if word not in self.word_list:
                     self.word_list[word] = 2  # word is inside an auxiliarly set (probably test)
 
@@ -168,7 +172,11 @@ class Encodings(object):
             for _ in range(num_characters):
                 line = f.readline()
                 parts = line.split("\t")
-                key = parts[0].decode('utf-8')
+                import sys
+                if sys.version_info[0] == 2:
+                    key = parts[0].decode('utf-8')
+                else:
+                    key = parts[0]
                 value = int(parts[1])
                 self.char2int[key] = value
                 self.characters[value] = key
@@ -179,7 +187,11 @@ class Encodings(object):
             for _x in range(num_words):
                 line = f.readline()
                 parts = line.split("\t")
-                key = parts[0].decode('utf-8')
+                import sys
+                if sys.version_info[0] == 2:
+                    key = parts[0].decode('utf-8')
+                else:
+                    key = parts[0]
                 value = int(parts[1])
                 self.word2int[key] = value
 

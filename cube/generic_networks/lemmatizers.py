@@ -168,9 +168,9 @@ class FSTLemmatizer:
             if entry.upos != 'NUM' and entry.upos != 'PROPN':
                 # print entry.word+"\t"+entry.lemma
                 import sys
-                if sys.version_info[0]==2:
+                if sys.version_info[0] == 2:
                     y_real = self._compute_transduction_states(unicode(entry.word, 'utf-8').lower(),
-                                                           unicode(entry.lemma, 'utf-8').lower())
+                                                               unicode(entry.lemma, 'utf-8').lower())
                 else:
                     y_real = self._compute_transduction_states(entry.word.lower(),
                                                                entry.lemma.lower())
@@ -257,14 +257,19 @@ class FSTLemmatizer:
         lemmas = []
         for entry in seq:
             if entry.upos == 'NUM' or entry.upos == 'PROPN':
-                lemma = entry.word.decode('utf-8')
+                import sys
+                if sys.version_info[0] == 2:
+                    lemma = entry.word.decode('utf-8')
+                else:
+                    lemma = entry.word
             else:
                 # check dictionary
-                key = entry.word.decode('utf-8').lower().encode('utf-8') + "\t" + entry.lemma
+
+                key = entry.word.lower() + "\t" + entry.lemma
                 if key in self.word2lemma:
-                    lemma = unicode(self.word2lemma[key], 'utf-8')
+                    lemma = self.word2lemma[key]
                 else:
-                    uniword = unicode(entry.word, 'utf-8')
+                    uniword = entry.word
                     softmax_output_list = self._predict(uniword, entry.upos, entry.xpos, entry.attrs,
                                                         max_predictions=500, runtime=True)
                     lemma = ""

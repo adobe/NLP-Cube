@@ -148,6 +148,7 @@ class BDRNNTagger:
         for entry in seq:
             word = entry.word
             char_emb, _ = self.character_network.compute_embeddings(word, runtime=runtime)
+            import sys
             if sys.version_info[0] == 2:
                 word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
             else:
