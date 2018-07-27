@@ -92,6 +92,9 @@ class ModelStore(object):
         self._load(lang_code)
 
     def _load(self, lang_code):
+        """
+        Load models on the class.
+        """
         sys.stdout.write('Loading models for {}\n'.format(lang_code))
         path_for_language = os.path.join(self.disk_path, lang_code)
 
