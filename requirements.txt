@@ -7,3 +7,6 @@ dyNET>=2.0.3
 
 # Parse XML
 xmltodict==0.11.0
+
+# Testing
+nose2==0.7.3
