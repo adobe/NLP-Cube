@@ -11,6 +11,9 @@ cube/venv/*
 .idea/*
 venv/*
 
+# Jupyter notebooks
+notebooks/.ipynb_checkpoints/*
+
 # CMake
 cmake-build-debug/
 cmake-build-release/
