@@ -18,11 +18,12 @@
 
 import dynet as dy
 import numpy as np
+import sys
 import copy
 import random
 
-from character_embeddings import CharacterNetwork
-from utils import orthonormal_VanillaLSTMBuilder
+from generic_networks.character_embeddings import CharacterNetwork
+from generic_networks.utils import orthonormal_VanillaLSTMBuilder
 
 
 class BDRNNTagger:
@@ -66,7 +67,7 @@ class BDRNNTagger:
                 aux_softmax_input_size = rnn_input_size
 
         self.mlps = []
-        for _ in xrange(3):  # upos, xpos and attrs
+        for _ in range(3):  # upos, xpos and attrs
             mlp_w = []
             mlp_b = []
             input_sz = self.config.layers[-1] * 2
@@ -148,14 +149,19 @@ class BDRNNTagger:
         for entry in seq:
             word = entry.word
             char_emb, _ = self.character_network.compute_embeddings(word, runtime=runtime)
-
-            word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+            import sys
+            if sys.version_info[0] == 2:
+                word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+            else:
+                word_emb, found = self.embeddings.get_word_embeddings(word)
             if not found:
                 word_emb = self.unknown_word_embedding[0]
             else:
                 word_emb = dy.inputVector(word_emb)
-
-            holistic_word = word.decode('utf-8').lower()
+            if sys.version_info[0] == 2:
+                holistic_word = word.decode('utf-8').lower()
+            else:
+                holistic_word = word.lower()
             if holistic_word in self.encodings.word2int:
                 hol_emb = self.holistic_word_embedding[self.encodings.word2int[holistic_word]]
             else:
@@ -212,7 +218,7 @@ class BDRNNTagger:
         mlp_output = []
         for x in rnn_outputs[-1]:
             pre_softmax = []
-            for iMLP in xrange(3):
+            for iMLP in range(3):
                 mlp_w = self.mlps[iMLP][0]
                 mlp_b = self.mlps[iMLP][1]
                 inp = x
@@ -237,18 +243,18 @@ class BDRNNTagger:
 
     def save(self, path):
         self.model.save(path)
-    
+
     def load(self, path):
         self.model.populate(path)
-        
+
     def tag_sequences(self, sequences):
         new_sequences = []
         for sequence in sequences:
             new_sequence = copy.deepcopy(sequence)
-            predicted_tags = self.tag(new_sequence)            
-            for entryIndex, pred in enumerate(predicted_tags):                            
+            predicted_tags = self.tag(new_sequence)
+            for entryIndex, pred in enumerate(predicted_tags):
                 new_sequence[entryIndex].upos = pred[0]
                 new_sequence[entryIndex].xpos = pred[1]
                 new_sequence[entryIndex].attrs = pred[2]
             new_sequences.append(new_sequence)
-        return new_sequences              
+        return new_sequences

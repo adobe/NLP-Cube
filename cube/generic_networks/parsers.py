@@ -19,9 +19,9 @@
 import numpy as np
 import random
 import dynet as dy
-from character_embeddings import CharacterNetwork
+from generic_networks.character_embeddings import CharacterNetwork
 from graph.decoders import GreedyDecoder
-from utils import orthonormal_VanillaLSTMBuilder
+from generic_networks.utils import orthonormal_VanillaLSTMBuilder
 import copy
 import sys
 
@@ -55,14 +55,13 @@ class BDRNNParser:
         self.pad_tag_embedding = self.model.add_lookup_parameters(
             (3, self.config.input_embeddings_size))  # for padding morphology
 
-        
         self.bdrnn_fw = []
         self.bdrnn_bw = []
-        
-        rnn_input_size = 0 
+
+        rnn_input_size = 0
         if self.config.use_lexical:
             rnn_input_size += self.config.input_embeddings_size
-            
+
         if self.config.use_morphology:
             rnn_input_size += self.config.input_embeddings_size
             self.upos_lookup = self.model.add_lookup_parameters(
@@ -71,7 +70,7 @@ class BDRNNParser:
                 (len(self.encodings.xpos2int), self.config.input_embeddings_size))
             self.attrs_lookup = self.model.add_lookup_parameters(
                 (len(self.encodings.attrs2int), self.config.input_embeddings_size))
-        
+
         index = 0
         aux_proj_input_size = 0
         for layer_size in self.config.layers:
@@ -259,34 +258,39 @@ class BDRNNParser:
         encoder_states_list = [None]
         # add the root
         if not self.config.use_morphology:
-           x_list.append(self.unknown_word_embedding[1])
+            x_list.append(self.unknown_word_embedding[1])
         elif not self.config.use_lexical:
-	   	   x_list.append(self.pad_tag_embedding[1])
-        else: # both lexical and morphology are used
-           x_list.append(dy.concatenate(
-               [self.unknown_word_embedding[1], self.pad_tag_embedding[1]]))
-               
-        for entry in seq:        
+            x_list.append(self.pad_tag_embedding[1])
+        else:  # both lexical and morphology are used
+            x_list.append(dy.concatenate(
+                [self.unknown_word_embedding[1], self.pad_tag_embedding[1]]))
+
+        for entry in seq:
             word = entry.word
-            
+
             if self.config.use_lexical:
                 # prepare lexical embeddings
                 char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime)
                 encoder_states_list.append(encoder_states)
-
-                word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+                if sys.version_info[0] == 2:
+                    word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
+                else:
+                    word_emb, found = self.embeddings.get_word_embeddings(word)
                 if not found:
                     word_emb = self.unknown_word_embedding[0]
                 else:
                     word_emb = dy.tanh(
                         self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
+                if sys.version_info[0] == 2:
+                    word = word.decode('utf-8').lower()
+                else:
+                    word = word.lower()
 
-                word = word.decode('utf-8').lower()
                 if word in self.encodings.word2int:
                     holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
                 else:
                     holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
-                
+
                 # dropout lexical embeddings
                 if runtime:
                     w_emb = word_emb + char_emb + holistic_emb
@@ -329,7 +333,7 @@ class BDRNNParser:
                 # overwrite all dropouts. it will later be handled by "same-mask"
                 t_emb = upos_emb + xpos_emb + attrs_emb
                 # w_emb = word_emb + char_emb + holistic_emb
-            
+
             # compose embeddings, if necessary             
             if self.config.use_lexical and self.config.use_morphology:
                 if not runtime:
@@ -351,9 +355,9 @@ class BDRNNParser:
                     x_list.append(dy.concatenate([w_emb * m1 * scale, t_emb * m2 * scale]))
                 else:
                     x_list.append(dy.concatenate([w_emb, t_emb]))
-            elif self.config.use_lexical: # just use_lexical == True
+            elif self.config.use_lexical:  # just use_lexical == True
                 x_list.append(w_emb)
-            else: # just use_morphology == True
+            else:  # just use_morphology == True
                 x_list.append(t_emb)
 
         # close sequence
@@ -430,16 +434,16 @@ class BDRNNParser:
                                   zip(upos_softmax, xpos_softmax, attrs_softmax)]
 
         n = len(seq) + 1
-        arc_matrix = [[None] * n for _ in xrange(n)]
+        arc_matrix = [[None] * n for _ in range(n)]
         if not self.config.predict_morphology:
-            aux_arc_matrix = [[None] * n for _ in xrange(n)]
-        for iDst in xrange(n):
+            aux_arc_matrix = [[None] * n for _ in range(n)]
+        for iDst in range(n):
             term_bias = self.link_b.expr() * arc_projections[iDst][1]
             term_weight = self.link_w.expr() * arc_projections[iDst][1]
             if not self.config.predict_morphology:
                 aux_term_bias = self.aux_link_b.expr() * aux_arc_projections[iDst][1]
                 aux_term_weight = self.aux_link_w.expr() * aux_arc_projections[iDst][1]
-            for iSrc in xrange(n):
+            for iSrc in range(n):
                 if iSrc != iDst:
                     attention = dy.reshape(term_weight, (1, self.config.arc_proj_size)) * arc_projections[iSrc][
                         0] + term_bias
@@ -450,15 +454,15 @@ class BDRNNParser:
                         aux_arc_matrix[iSrc][iDst] = aux_attention
 
         # compute softmax for arcs
-        a_m = [[None] * n for _ in xrange(n)]
+        a_m = [[None] * n for _ in range(n)]
         if not self.config.predict_morphology:
-            aux_a_m = [[None] * n for _ in xrange(n)]
+            aux_a_m = [[None] * n for _ in range(n)]
 
-        for iSrc in xrange(n):
+        for iSrc in range(n):
             s_max = []
             if not self.config.predict_morphology:
                 aux_s_max = []
-            for iDst in xrange(n):
+            for iDst in range(n):
                 if iSrc != iDst:
                     s_max.append(arc_matrix[iSrc][iDst])
                     if not self.config.predict_morphology:
@@ -467,7 +471,7 @@ class BDRNNParser:
             if not self.config.predict_morphology:
                 aux_s_max = dy.softmax(dy.concatenate(aux_s_max))
             ofs = 0
-            for iDst in xrange(n):
+            for iDst in range(n):
                 if iSrc == iDst:
                     ofs = -1
                 else:
@@ -485,15 +489,15 @@ class BDRNNParser:
     def load(self, path):
         self.model.populate(path)
 
-    def parse_sequences (self, sequences):    
+    def parse_sequences(self, sequences):
         new_sequences = []
         for sequence in sequences:
             new_sequence = copy.deepcopy(sequence)
-            predicted_tags = self.tag(new_sequence)                        
+            predicted_tags = self.tag(new_sequence)
             iOrig, iTags = 0, 0
             while iOrig < len(new_sequence):
                 while new_sequence[iOrig].is_compound_entry:
-                    iOrig += 1                
+                    iOrig += 1
                 new_sequence[iOrig].head = predicted_tags[iTags].head
                 new_sequence[iOrig].label = predicted_tags[iTags].label
                 if self.config.predict_morphology == True:
@@ -501,10 +505,11 @@ class BDRNNParser:
                     new_sequence[iOrig].xpos = predicted_tags[iTags].xpos
                     new_sequence[iOrig].attrs = predicted_tags[iTags].attrs
                 iTags += 1
-                iOrig += 1            
-            
+                iOrig += 1
+
             new_sequences.append(new_sequence)
-        return new_sequences                
+        return new_sequences
+
 
 class ParserTag:
     def __init__(self, head, label, upos=None, xpos=None, attrs=None, lemma=None):

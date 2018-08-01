@@ -40,12 +40,12 @@ class CharacterNetwork:
         self.rnn_layers = rnn_layers
         self.rnn_size = rnn_size
         input_size = character_embeddings_size + 3
-        for _ in xrange(rnn_layers):
+        for _ in range(rnn_layers):
             if runtime:
                 self.rnn_fw.append(dy.VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
                 self.rnn_bw.append(dy.VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
             else:
-                from utils import orthonormal_VanillaLSTMBuilder
+                from generic_networks.utils import orthonormal_VanillaLSTMBuilder
                 self.rnn_fw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
                 self.rnn_bw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
 
@@ -60,11 +60,17 @@ class CharacterNetwork:
 
     def compute_embeddings(self, word, runtime=True):
         x_list = []
-        if not isinstance(word, unicode):
-            uniword = unicode(word, 'utf-8')
+        import sys
+        import copy
+        if sys.version_info[0] == 2:
+            if not isinstance(word, unicode):
+
+                uniword = unicode(word, 'utf-8')
+            else:
+                uniword = copy.deepcopy(word)
         else:
-            import copy
             uniword = copy.deepcopy(word)
+        # print (uniword)
         uniword = re.sub('\d', '0', uniword)
         for i in range(len(uniword)):
             char = uniword[i]

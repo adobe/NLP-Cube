@@ -4,3 +4,9 @@ scipy>=1.0.0
 nltk>=3.2.5
 requests>=2.18.4
 dyNET>=2.0.3
+
+# Parse XML
+xmltodict==0.11.0
+
+# Testing
+nose2==0.7.3

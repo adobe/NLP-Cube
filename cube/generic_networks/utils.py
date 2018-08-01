@@ -29,7 +29,7 @@ def orthonormal_initializer(output_size, input_size):
     tries = 0
     while not success and tries < 10:
         Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
-        for i in xrange(100):
+        for i in range(100):
             QTQmI = Q.T.dot(Q) - I
             loss = np.sum(QTQmI ** 2 / 2)
             Q2 = Q ** 2

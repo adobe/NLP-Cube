@@ -21,7 +21,7 @@ from scipy import spatial
 
 
 class WordEmbeddings:
-    def __init__(self, verbose = True):
+    def __init__(self, verbose=True):
         self.word2vec = {}
         self.word2ofs = {}
         self.word_embeddings_size = 0
@@ -39,10 +39,10 @@ class WordEmbeddings:
             first_line = True
             while True:
                 ofs = f.tell()
-                line=f.readline()
-                if line=='':
-                    break                
-                #print ofs
+                line = f.readline()
+                if line == '':
+                    break
+                    # print ofs
                 line = line.replace("\n", "").replace("\r", "")
                 if first_line:
                     first_line = False
@@ -50,10 +50,14 @@ class WordEmbeddings:
                     self.num_embeddings += 1
                     if self.verbose:
                         if self.num_embeddings % 10000 == 0:
-                            sys.stdout.write("  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
-                                len(self.word2vec)) + "  \n")
+                            sys.stdout.write(
+                                "  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
+                                    len(self.word2vec)) + "  \n")
                     parts = line.split(" ")
-                    word = parts[0].decode('utf-8')
+                    if sys.version_info[0] == 2:
+                        word = parts[0].decode('utf-8')
+                    else:
+                        word = parts[0]
                     if self.cache_only:
                         self.word2ofs[word] = ofs
                     elif full_load or word in word_list:
@@ -72,7 +76,7 @@ class WordEmbeddings:
         if self.cache_only:
             if word in self.word2ofs:
                 self.file_pointer.seek(self.word2ofs[word])
-                line=self.file_pointer.readline()
+                line = self.file_pointer.readline()
                 parts = line.split(" ")
                 embeddings = [float(0)] * (len(parts) - 2)
                 for zz in range(len(parts) - 2):
@@ -87,11 +91,11 @@ class WordEmbeddings:
             return None, False
 
     def get_closest_word(self, vector):
-        best_distance=-1.0
-        best_word='<UNK>'
+        best_distance = -1.0
+        best_word = '<UNK>'
         for word in self.word2vec:
-            similarity=1.0-spatial.distance.cosine(vector, self.word2vec[word])
-            if similarity>best_distance:
-                best_distance=similarity
-                best_word=word
+            similarity = 1.0 - spatial.distance.cosine(vector, self.word2vec[word])
+            if similarity > best_distance:
+                best_distance = similarity
+                best_word = word
         return best_word
