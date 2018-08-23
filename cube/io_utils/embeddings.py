@@ -17,6 +17,7 @@
 #
 
 import sys
+from misc.misc import fopen
 from scipy import spatial
 
 
@@ -35,42 +36,43 @@ class WordEmbeddings:
         self.num_embeddings = 0
         if word_list is None and not full_load:
             self.cache_only = True
-        with open(word_embeddings_file, "r") as f:
-            first_line = True
-            while True:
-                ofs = f.tell()
-                line = f.readline()
-                if line == '':
-                    break
-                    # print ofs
-                line = line.replace("\n", "").replace("\r", "")
-                if first_line:
-                    first_line = False
+        f = fopen(word_embeddings_file, "r")
+        first_line = True
+        while True:
+            ofs = f.tell()
+            line = f.readline()
+            if line == '':
+                break
+                # print ofs
+            line = line.replace("\n", "").replace("\r", "")
+            if first_line:
+                first_line = False
+            else:
+                self.num_embeddings += 1
+                if self.verbose:
+                    if self.num_embeddings % 10000 == 0:
+                        sys.stdout.write(
+                            "  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
+                                len(self.word2vec)) + "  \n")
+                parts = line.split(" ")
+                if sys.version_info[0] == 2:
+                    word = parts[0].decode('utf-8')
                 else:
-                    self.num_embeddings += 1
-                    if self.verbose:
-                        if self.num_embeddings % 10000 == 0:
-                            sys.stdout.write(
-                                "  Scanned " + str(self.num_embeddings) + " word embeddings and added " + str(
-                                    len(self.word2vec)) + "  \n")
-                    parts = line.split(" ")
-                    if sys.version_info[0] == 2:
-                        word = parts[0].decode('utf-8')
-                    else:
-                        word = parts[0]
-                    if self.cache_only:
-                        self.word2ofs[word] = ofs
-                    elif full_load or word in word_list:
-                        embeddings = [float(0)] * (len(parts) - 2)
+                    word = parts[0]
+                if self.cache_only:
+                    self.word2ofs[word] = ofs
+                elif full_load or word in word_list:
+                    embeddings = [float(0)] * (len(parts) - 2)
 
-                        for zz in range(len(parts) - 2):
-                            embeddings[zz] = float(parts[zz + 1])
-                        self.word2vec[word] = embeddings
-                    self.word_embeddings_size = len(parts) - 2
-            f.close()
-        if self.cache_only:
-            self.file_pointer = open(word_embeddings_file, "r")
-
+                    for zz in range(len(parts) - 2):
+                        embeddings[zz] = float(parts[zz + 1])
+                    self.word2vec[word] = embeddings
+                self.word_embeddings_size = len(parts) - 2
+        f.close()            
+        if self.cache_only:            
+            self.file_pointer = fopen(word_embeddings_file, "r")
+            
+            
     def get_word_embeddings(self, word):
         word = word.lower()
         if self.cache_only:

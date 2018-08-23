@@ -69,7 +69,7 @@ class CNNConvLayer:
         #output_s = dy.conv2d_bias(x_input, self.kernel_s.expr(), self.bias_s.expr(), (self.s_x, self.s_y), is_valid=self.is_valid)
         #output_t = dy.conv2d_bias(x_input, self.kernel_t.expr(), self.bias_t.expr(), (self.s_x, self.s_y), is_valid=self.is_valid)
         #return dy.cmult(dy.tanh(output_t),dy.logistic(output_s))
-        output=dy.conv2d(x_input, self.kernel.expr(), (self.s_x, self.s_y), is_valid=self.is_valid)
+        output=dy.conv2d(x_input, self.kernel.expr(update=True), (self.s_x, self.s_y), is_valid=self.is_valid)
         return dy.rectify(output)
 
 class CNNPoolingLayer:

@@ -148,9 +148,9 @@ class CompoundWordExpander:
         return y_pred
 
     def _attend(self, input_vectors, state):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * state.h()[-1]
@@ -174,7 +174,7 @@ class CompoundWordExpander:
             # input = self._attend(encoder_states, lstm)
             input = encoder_states[i_src]
             lstm = lstm.add_input(input)
-            softmax_out = dy.softmax(self.softmax_w.expr() * lstm.output() + self.softmax_b.expr())
+            softmax_out = dy.softmax(self.softmax_w.expr(update=True) * lstm.output() + self.softmax_b.expr(update=True))
             y_pred.append(softmax_out)
 
             if runtime:
@@ -205,7 +205,7 @@ class CompoundWordExpander:
 
     def _predict_is_compound_entry(self, word, runtime=True):
         emb, states = self.encoder.compute_embeddings(word, runtime=runtime)
-        output = dy.softmax(self.softmax_comp_w.expr() * emb + self.softmax_comp_b.expr())
+        output = dy.softmax(self.softmax_comp_w.expr(update=True) * emb + self.softmax_comp_b.expr(update=True))
         return output, states
 
     def _transduce(self, source, encoder_states):

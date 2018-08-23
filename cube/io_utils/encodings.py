@@ -18,7 +18,7 @@
 
 import sys
 import re
-
+from misc.misc import fopen
 
 class Encodings(object):
 
@@ -148,8 +148,7 @@ class Encodings(object):
 
     def load(self, filename):
         # We only read character2int, labels, holistic words and label2int here. word_list should be recomputed for every dataset (if deemed necessary)
-
-        with open(filename) as f:
+        with fopen(filename) as f:
             line = f.readline()
 
             num_labels = int(line.split(" ")[1])
@@ -236,31 +235,31 @@ class Encodings(object):
                 self.attrs_list[value] = key
             f.close()
 
-    def save(self, filename):
-        with open(filename, "w") as f:
-            f.write("LABELS " + str(len(self.label2int)) + "\n")
-            for label in self.label2int:
-                f.write(str(label) + "\t" + str(self.label2int[label]) + "\n")
-            f.write("CHARACTERS " + str(len(self.char2int)) + "\n")
-            for character in self.char2int:
-                if sys.version_info[0] == 2:
-                    f.write(character.encode('utf-8') + "\t" + str(self.char2int[character]) + "\n")
-                else:
-                    f.write(character + "\t" + str(self.char2int[character]) + "\n")
-            f.write("WORDS " + str(len(self.word2int)) + "\n")
-            for word in self.word2int:
-                if sys.version_info[0] == 2:
-                    f.write(word.encode('utf-8') + "\t" + str(self.word2int[word]) + "\n")
-                else:
-                    f.write(word + "\t" + str(self.word2int[word]) + "\n")
+    def save(self, filename):    
+        f = fopen(filename, "w")
+        f.write("LABELS " + str(len(self.label2int)) + "\n")
+        for label in self.label2int:
+            f.write(str(label) + "\t" + str(self.label2int[label]) + "\n")
+        f.write("CHARACTERS " + str(len(self.char2int)) + "\n")
+        for character in self.char2int:
+            if sys.version_info[0] == 2:
+                f.write(character.encode('utf-8') + "\t" + str(self.char2int[character]) + "\n")
+            else:
+                f.write(character + "\t" + str(self.char2int[character]) + "\n")
+        f.write("WORDS " + str(len(self.word2int)) + "\n")
+        for word in self.word2int:
+            if sys.version_info[0] == 2:
+                f.write(word.encode('utf-8') + "\t" + str(self.word2int[word]) + "\n")
+            else:
+                f.write(word + "\t" + str(self.word2int[word]) + "\n")
 
-            f.write("UPOS " + str(len(self.upos2int)) + "\n")
-            for label in self.upos2int:
-                f.write(label + "\t" + str(self.upos2int[label]) + "\n")
-            f.write("XPOS " + str(len(self.xpos2int)) + "\n")
-            for label in self.xpos2int:
-                f.write(label + "\t" + str(self.xpos2int[label]) + "\n")
-            f.write("ATTRS " + str(len(self.attrs2int)) + "\n")
-            for label in self.attrs2int:
-                f.write(label + "\t" + str(self.attrs2int[label]) + "\n")
-            f.close()
+        f.write("UPOS " + str(len(self.upos2int)) + "\n")
+        for label in self.upos2int:
+            f.write(label + "\t" + str(self.upos2int[label]) + "\n")
+        f.write("XPOS " + str(len(self.xpos2int)) + "\n")
+        for label in self.xpos2int:
+            f.write(label + "\t" + str(self.xpos2int[label]) + "\n")
+        f.write("ATTRS " + str(len(self.attrs2int)) + "\n")
+        for label in self.attrs2int:
+            f.write(label + "\t" + str(self.attrs2int[label]) + "\n")
+        f.close()

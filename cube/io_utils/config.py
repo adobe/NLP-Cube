@@ -19,6 +19,7 @@
 import sys
 import ast
 from builtins import object, super
+from misc.misc import fopen
 import collections
 
 if sys.version_info[0] == 2:
@@ -61,7 +62,7 @@ class Config(object):
                         v = str_v + ".0"
                 v = str(v)
                 config.set(self.__config__, k, v)
-        with open(filename, 'w') as cfgfile:
+        with fopen(filename, 'w') as cfgfile:
             config.write(cfgfile)
 
     def load(self, filename):

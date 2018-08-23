@@ -18,18 +18,17 @@
 
 import sys
 import io
-
+from misc.misc import fopen
 
 class Dataset:
     def __init__(self, file=None):
         if file is not None:
             sys.stdout.write("Reading " + file + "... ")
             sys.stdout.flush()
-            with open(file, "r") as f:
+            with fopen(file, "r") as f:
                 lines = f.readlines()
-                f.close()
-                self.sequences = self._make_sequences(lines)
-
+                
+            self.sequences = self._make_sequences(lines)
             sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
 
     def _make_sequences(self, lines):
@@ -54,7 +53,7 @@ class Dataset:
         return sequences
 
     def write(self, filename):
-        with open(filename, 'w') as file:
+        with fopen(filename, 'w') as file:
             for sequence in self.sequences:
                 for entry in sequence:
                     file.write(str(entry.index))

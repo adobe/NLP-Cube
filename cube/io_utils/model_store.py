@@ -20,6 +20,7 @@ from collections import defaultdict
 import io
 import os
 import sys
+from misc.misc import fopen
 from zipfile import ZipFile
 
 import requests
@@ -235,7 +236,7 @@ class ModelStore(object):
         embeddings_path = os.path.join(self.disk_path, lang_code, name)
 
         request = requests.get(embeddings_url)
-        with open(embeddings_path, 'wb') as fd:
+        with fopen(embeddings_path, 'wb') as fd:
             fd.write(request.content)
 
     def version_to_donwload(self, lang_code, check_for_latest=True):
@@ -249,7 +250,7 @@ class ModelStore(object):
         # Get current version (if any).
         current_version = None
         if os.path.exists(lang_models):
-            with open(lang_models_version) as fd:
+            with fopen(lang_models_version) as fd:
                 current_version = fd.read().strip('\n')
 
         # Get the latest version.
