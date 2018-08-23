@@ -25,10 +25,16 @@ class Dataset:
         if file is not None:
             sys.stdout.write("Reading " + file + "... ")
             sys.stdout.flush()
-            with open(file, "r") as f:
-                lines = f.readlines()
-                f.close()
-                self.sequences = self._make_sequences(lines)
+            if sys.version_info[0] == 2:                    
+                with open(file, "r") as f:
+                    lines = f.readlines()
+                    f.close()
+            else:
+                with open(file, "r", encoding='utf-8') as f:
+                    lines = f.readlines()
+                    f.close()
+            
+            self.sequences = self._make_sequences(lines)
 
             sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
 
