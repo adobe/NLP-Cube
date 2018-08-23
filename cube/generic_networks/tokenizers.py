@@ -22,6 +22,7 @@ import numpy as np
 import os
 import random
 import string
+from misc.misc import fopen
 
 from misc.misc import get_eta, pretty_time, log_progress, line_count
 from io_utils.conll import ConllEntry
@@ -636,7 +637,7 @@ class BDRNNTokenizer:
             sentence = []
             word = ""
             cnt = 1
-            # with open("log.txt","a") as log:
+            # with fopen("log.txt","a") as log:
             # log.write("\n\n")
             for i in range(len(labels)):
                 # log.write("["+X[i].encode('utf-8')+"] "+labels[i]+" w=["+word.encode('utf-8')+"]\n")

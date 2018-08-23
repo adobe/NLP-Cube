@@ -20,8 +20,11 @@ import sys
 import os
 import time
 
-COLOR_BLUE = "\033[36m"
-
+def fopen (filename, mode):
+    if sys.version_info[0] == 2:                    
+        return open(filename, mode)
+    else:            
+        return open(filename, mode, encoding="utf-8")
 
 # return ETA in seconds
 def get_eta(progress, total, time_delta, granularity=2):
@@ -45,7 +48,7 @@ def pretty_time(seconds, granularity=2):
 
 def log_progress(output_base, task_name, best_epoch, best_training_acc=0., best_dev_acc=0., other=None):
     filename = output_base + ".log"
-    with open(filename, "w") as f:
+    with fopen(filename, "w") as f:
         if other != None:
             if isinstance(other, list):
                 for i in range(len(other)):
@@ -61,7 +64,7 @@ def log_progress(output_base, task_name, best_epoch, best_training_acc=0., best_
 
 
 def line_count(filename):
-    f = open(filename)
+    f = fopen(filename)
     lines = 0
     buf_size = 1024 * 1024
     read_f = f.read  # loop optimization

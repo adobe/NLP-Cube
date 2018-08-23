@@ -21,6 +21,7 @@ import optparse
 import sys
 import os
 import copy
+from misc.misc import fopen
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
@@ -157,7 +158,7 @@ def parse_test(params):
             print ("!!!!!!!!!!!!!!!!!!!!!!!!!USING MST DECODER")
             from graph.decoders import MSTDecoder
             parser.decoder = MSTDecoder()
-        f = open(params.output_file, "w")
+        f = fopen(params.output_file, "w")
         last_proc = 0
         index = 0
         for seq in testset.sequences:
@@ -501,7 +502,7 @@ def parse_run(params):
         tokenizer_object = TieredTokenizer(config, tokenizer_encodings, embeddings, runtime=True)
         tokenizer_object.load(os.path.join(params.models, "tokenizer"))
 
-        with open(params.input_file, 'r') as file:
+        with fopen(params.input_file, 'r') as file:
             lines = file.readlines()
         # analyze use of spaces in first part of the file
         test = "";

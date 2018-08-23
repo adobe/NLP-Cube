@@ -17,13 +17,14 @@
 #
 
 import sys
+from misc.misc import fopen
 
 class MTDataset:
     def __init__(self, src, dst):
         sys.stdout.write("Reading files '"+src+"' and '"+dst+"'")
         sys.stdout.flush()
-        source_lines=open(src, "r").readlines()
-        destination_lines=open(dst,"r").readlines()
+        source_lines=fopen(src, "r").readlines()
+        destination_lines=fopen(dst,"r").readlines()
         self.sequences=self._make_sequences(source_lines, destination_lines)
         sys.stdout.write(" found "+str(len(self.sequences))+" pairs\n")
 

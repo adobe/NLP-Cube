@@ -19,6 +19,7 @@ import dynet as dy
 import numpy as np
 import copy
 import sys
+from misc.misc import fopen
 from generic_networks.character_embeddings import CharacterNetwork
 
 
@@ -316,7 +317,7 @@ class FSTLemmatizer:
 
     def load_dict(self, path):
         print ("Loading lemma dictionary")
-        with open(path, "r") as f:
+        with fopen(path, "r") as f:
             lines = f.readlines()
             for line in lines:
                 parts = line.strip().split('\t')

@@ -17,7 +17,7 @@
 #
 
 import sys
-
+from misc.misc import fopen
 sys.path.insert(0, '../')
 from random import shuffle
 import time
@@ -121,7 +121,7 @@ class MTTrainer:
         last_proc = 0
         iSeq = 0
         if filename is not None:
-            f = open(filename, "w")
+            f = fopen(filename,"w",encoding="utf-8")            
 
         for seq in dataset.sequences:
             proc = int((iSeq + 1) * 100 / len(dataset.sequences))
@@ -1074,9 +1074,9 @@ class TokenizerTrainer:
         useSpaces = " "  # True
         lines = []
 
-        with open(raw_text_file, 'r') as file:
+        with fopen(raw_text_file, "r") as file:
             lines = file.readlines()
-
+            
         # analyze use of spaces in first part of the file
         test = "";
         cnt = 0
@@ -1102,8 +1102,7 @@ class TokenizerTrainer:
                     sentences += self.tokenizer.tokenize(input_string)
                 input_string = ""
 
-        # with open(output_conllu_file, 'w', encoding='utf-8') as file:
-        with open(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:
+        with fopen(self.tokenizer.config.base + "-temporary.conllu", 'w') as file:
             for sentence in sentences:
                 # print ("Sentence has entries: "+str(len(sentence)))
                 for entry in sentence:

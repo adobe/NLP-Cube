@@ -18,7 +18,7 @@
 
 import sys
 import re
-
+from misc.misc import fopen
 
 class Encodings(object):
 
@@ -148,8 +148,7 @@ class Encodings(object):
 
     def load(self, filename):
         # We only read character2int, labels, holistic words and label2int here. word_list should be recomputed for every dataset (if deemed necessary)
-
-        with open(filename) as f:
+        with fopen(filename) as f:
             line = f.readline()
 
             num_labels = int(line.split(" ")[1])
@@ -237,10 +236,7 @@ class Encodings(object):
             f.close()
 
     def save(self, filename):    
-        if sys.version_info[0] == 2:                    
-            f = open(filename, "w")
-        else:
-            f = open(filename, "w", encoding='utf-8')
+        f = fopen(filename, "w")
         f.write("LABELS " + str(len(self.label2int)) + "\n")
         for label in self.label2int:
             f.write(str(label) + "\t" + str(self.label2int[label]) + "\n")

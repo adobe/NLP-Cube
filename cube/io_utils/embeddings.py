@@ -17,6 +17,7 @@
 #
 
 import sys
+from misc.misc import fopen
 from scipy import spatial
 
 
@@ -35,10 +36,7 @@ class WordEmbeddings:
         self.num_embeddings = 0
         if word_list is None and not full_load:
             self.cache_only = True
-        if sys.version_info[0] == 2:                    
-            f = open(word_embeddings_file, "r")
-        else:
-            f = open(word_embeddings_file, "r", encoding='utf-8')        
+        f = fopen(word_embeddings_file, "r")
         first_line = True
         while True:
             ofs = f.tell()
@@ -71,11 +69,9 @@ class WordEmbeddings:
                     self.word2vec[word] = embeddings
                 self.word_embeddings_size = len(parts) - 2
         f.close()            
-        if self.cache_only:
-            if sys.version_info[0] == 2:                    
-                self.file_pointer = open(word_embeddings_file, "r")
-            else:
-                self.file_pointer = open(word_embeddings_file, "r", encoding='utf-8')
+        if self.cache_only:            
+            self.file_pointer = fopen(word_embeddings_file, "r")
+            
             
     def get_word_embeddings(self, word):
         word = word.lower()
