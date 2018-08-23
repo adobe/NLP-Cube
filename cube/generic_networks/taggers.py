@@ -166,9 +166,9 @@ class BDRNNTagger:
                 hol_emb = self.holistic_word_embedding[self.encodings.word2int[holistic_word]]
             else:
                 hol_emb = self.holistic_word_embedding[self.encodings.word2int['<UNK>']]
-            proj_emb = self.emb_proj_w.expr() * word_emb
-            proj_hol = self.hol_proj_w.expr() * hol_emb
-            proj_char = self.char_proj_w.expr() * char_emb
+            proj_emb = self.emb_proj_w.expr(update=True) * word_emb
+            proj_hol = self.hol_proj_w.expr(update=True) * hol_emb
+            proj_char = self.char_proj_w.expr(update=True) * char_emb
             # x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
 
             if runtime:
@@ -223,21 +223,21 @@ class BDRNNTagger:
                 mlp_b = self.mlps[iMLP][1]
                 inp = x
                 for w, b, drop, in zip(mlp_w, mlp_b, self.config.presoftmax_mlp_dropouts):
-                    inp = dy.tanh(w.expr() * inp + b.expr())
+                    inp = dy.tanh(w.expr(update=True) * inp + b.expr(update=True))
                     if not runtime:
                         inp = dy.dropout(inp, drop)
                 pre_softmax.append(inp)
             mlp_output.append(pre_softmax)
 
         for softmax_inp, aux_softmax_inp in zip(mlp_output, rnn_outputs[self.config.aux_softmax_layer - 1]):
-            softmax_list.append([dy.softmax(self.softmax_upos_w.expr() * softmax_inp[0] + self.softmax_upos_b.expr()),
-                                 dy.softmax(self.softmax_xpos_w.expr() * softmax_inp[1] + self.softmax_xpos_b.expr()),
+            softmax_list.append([dy.softmax(self.softmax_upos_w.expr(update=True) * softmax_inp[0] + self.softmax_upos_b.expr(update=True)),
+                                 dy.softmax(self.softmax_xpos_w.expr(update=True) * softmax_inp[1] + self.softmax_xpos_b.expr(update=True)),
                                  dy.softmax(
-                                     self.softmax_attrs_w.expr() * softmax_inp[2] + self.softmax_attrs_b.expr())])
+                                     self.softmax_attrs_w.expr(update=True) * softmax_inp[2] + self.softmax_attrs_b.expr(update=True))])
             aux_softmax_list.append(
-                [dy.softmax(self.aux_softmax_upos_w.expr() * aux_softmax_inp + self.aux_softmax_upos_b.expr()),
-                 dy.softmax(self.aux_softmax_xpos_w.expr() * aux_softmax_inp + self.aux_softmax_xpos_b.expr()),
-                 dy.softmax(self.aux_softmax_attrs_w.expr() * aux_softmax_inp + self.aux_softmax_attrs_b.expr())])
+                [dy.softmax(self.aux_softmax_upos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_upos_b.expr(update=True)),
+                 dy.softmax(self.aux_softmax_xpos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_xpos_b.expr(update=True)),
+                 dy.softmax(self.aux_softmax_attrs_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_attrs_b.expr(update=True))])
 
         return softmax_list, aux_softmax_list
 

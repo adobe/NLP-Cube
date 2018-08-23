@@ -79,9 +79,9 @@ class FSTLemmatizer:
         self.label2int['<INC>'] = ofs + 2
 
     def _attend(self, input_vectors, state, embeddings):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * dy.concatenate([state.h()[-1], embeddings])
@@ -134,7 +134,7 @@ class FSTLemmatizer:
             input = dy.concatenate([char_emb, states[i_src], tag_emb])
             rnn = rnn.add_input(input)
 
-            softmax = dy.softmax(self.softmax_w.expr() * rnn.output() + self.softmax_b.expr())
+            softmax = dy.softmax(self.softmax_w.expr(update=True) * rnn.output() + self.softmax_b.expr(update=True))
             softmax_list.append(softmax)
             num_predictions += 1
             if runtime:
@@ -399,9 +399,9 @@ class BDRNNLemmatizer:
         self.softmax_casing_b = self.model.add_parameters((2))
 
     def _attend(self, input_vectors, state, embeddings):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * dy.concatenate([state.s()[-1], embeddings])
@@ -459,8 +459,8 @@ class BDRNNLemmatizer:
             input = dy.concatenate([attention, char_emb])
             rnn = rnn.add_input(input)
 
-            softmax = dy.softmax(self.softmax_w.expr() * rnn.output() + self.softmax_b.expr())
-            softmax_casing = dy.softmax(self.softmax_casing_w.expr() * rnn.output() + self.softmax_casing_b.expr())
+            softmax = dy.softmax(self.softmax_w.expr(update=True) * rnn.output() + self.softmax_b.expr(update=True))
+            softmax_casing = dy.softmax(self.softmax_casing_w.expr(update=True) * rnn.output() + self.softmax_casing_b.expr(update=True))
             softmax_list.append([softmax, softmax_casing])
             if num_chars == 0:
                 s_index = np.argmax(softmax.npvalue())

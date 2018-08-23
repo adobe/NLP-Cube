@@ -119,14 +119,14 @@ class CharacterNetwork:
         attention = self._attend(rnn_outputs, rnn_states_fw[-1], rnn_states_bw[-1])
 
         pre_linear = dy.concatenate([fw[-1], bw[-1], attention])
-        embedding = dy.tanh(self.linearW.expr() * pre_linear + self.linearB.expr())
+        embedding = dy.tanh(self.linearW.expr(update=True) * pre_linear + self.linearB.expr(update=True))
 
         return embedding, rnn_outputs
 
     def _attend(self, input_vectors, state_fw, state_bw):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * dy.concatenate([state_fw.s()[-1], state_bw.s()[-1]])

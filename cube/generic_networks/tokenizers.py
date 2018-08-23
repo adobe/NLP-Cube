@@ -212,17 +212,17 @@ class TieredTokenizer:
         for index in range(len(seq)):
             word += seq[index]
             aux_softmax_output_prev.append(
-                dy.softmax(self.TOK_softmax_prev_w.expr() * fw_out[index] + self.TOK_softmax_prev_b.expr()))
+                dy.softmax(self.TOK_softmax_prev_w.expr(update=True) * fw_out[index] + self.TOK_softmax_prev_b.expr(update=True)))
             aux_softmax_output_peek.append(
-                dy.softmax(self.TOK_softmax_peek_w.expr() * bw_out[index] + self.TOK_softmax_peek_b.expr()))
+                dy.softmax(self.TOK_softmax_peek_w.expr(update=True) * bw_out[index] + self.TOK_softmax_peek_b.expr(update=True)))
 
             word_state = word_is_unknown
             peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
             if found:
                 word_state = word_is_known
-                peek_emb = self.TOK_word_peek_proj_w.expr() * dy.inputVector(peek_emb)
+                peek_emb = self.TOK_word_peek_proj_w.expr(update=True) * dy.inputVector(peek_emb)
             else:
-                peek_emb = self.TOK_word_peek_proj_w.expr() * self.TOK_word_embeddings_special[0]
+                peek_emb = self.TOK_word_peek_proj_w.expr(update=True) * self.TOK_word_embeddings_special[0]
 
             if word.strip().lower() in self.encodings.word2int:
                 word_state = word_is_known
@@ -233,11 +233,11 @@ class TieredTokenizer:
             hidden = dy.concatenate(
                 [fw_out[index], bw_out[index], word_lstm.output(), word_state, dy.tanh(peek_hol + peek_emb)])
             for w, b, dropout in zip(self.TOK_mlp_w, self.TOK_mlp_b, self.config.tok_mlp_dropouts):
-                hidden = dy.tanh(w.expr() * hidden + b.expr())
+                hidden = dy.tanh(w.expr(update=True) * hidden + b.expr(update=True))
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
 
-            softmax_output.append(dy.softmax(self.TOK_softmax_w.expr() * hidden + self.TOK_softmax_b.expr()))
+            softmax_output.append(dy.softmax(self.TOK_softmax_w.expr(update=True) * hidden + self.TOK_softmax_b.expr(update=True)))
             must_split = False
             if not runtime:
                 if y_gold[index] == "S" or y_gold[index] == "SX":
@@ -258,7 +258,7 @@ class TieredTokenizer:
                 else:
                     hol = self.TOK_word_lookup[self.encodings.word2int['<UNK>']]
 
-                emb = self.TOK_word_proj_w.expr() * emb
+                emb = self.TOK_word_proj_w.expr(update=True) * emb
 
                 word_lstm = word_lstm.add_input(dy.tanh(emb + hol))
                 word = ""
@@ -464,18 +464,18 @@ class TieredTokenizer:
             peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
 
             aux_softmax_output_peek.append(
-                dy.softmax(self.SS_aux_softmax_peek_w.expr() * peek_out + self.SS_aux_softmax_peek_b.expr()))
+                dy.softmax(self.SS_aux_softmax_peek_w.expr(update=True) * peek_out + self.SS_aux_softmax_peek_b.expr(update=True)))
 
             lstm_fw = lstm_fw.add_input(x_list[cIndex])
             lstm_out = lstm_fw.output()
             aux_softmax_output_prev.append(
-                dy.softmax(self.SS_aux_softmax_prev_w.expr() * lstm_out + self.SS_aux_softmax_prev_b.expr()))
+                dy.softmax(self.SS_aux_softmax_prev_w.expr(update=True) * lstm_out + self.SS_aux_softmax_prev_b.expr(update=True)))
             hidden = dy.concatenate([lstm_out, peek_out])
             for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
-                hidden = dy.tanh(w.expr() * hidden + b.expr())
+                hidden = dy.tanh(w.expr(update=True) * hidden + b.expr(update=True))
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
-            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr() * hidden + self.SS_mlp_softmax_b.expr()))
+            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr(update=True) * hidden + self.SS_mlp_softmax_b.expr(update=True)))
 
         return softmax_output, aux_softmax_output_peek, aux_softmax_output_prev
 
@@ -673,9 +673,9 @@ class BDRNNTokenizer:
         return sentences
 
     def _attend(self, input_vectors, state):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * state.h()[-1]
@@ -750,9 +750,9 @@ class BDRNNTokenizer:
             next_chars = next_chars[-1]  # self._attend(next_chars, lstm1_forward)
 
             softmax_aux_peek.append(
-                dy.softmax(self.aux_softmax_char_peek_w.expr() * next_chars + self.aux_softmax_char_peek_b.expr()))
+                dy.softmax(self.aux_softmax_char_peek_w.expr(update=True) * next_chars + self.aux_softmax_char_peek_b.expr(update=True)))
             softmax_aux_hist.append(dy.softmax(
-                self.aux_softmax_char_hist_w.expr() * encoder_char_output + self.aux_softmax_char_hist_b.expr()))
+                self.aux_softmax_char_hist_w.expr(update=True) * encoder_char_output + self.aux_softmax_char_hist_b.expr(update=True)))
 
             # dropout at feature-set level:
             # if runtime:
@@ -762,12 +762,12 @@ class BDRNNTokenizer:
             if not runtime:
                 decoder_input = dy.dropout(decoder_input, self.config.dropout_rate)
 
-            decoder_hidden = dy.tanh(self.decoder_hiddenW.expr() * decoder_input + self.decoder_hiddenB.expr())
+            decoder_hidden = dy.tanh(self.decoder_hiddenW.expr(update=True) * decoder_input + self.decoder_hiddenB.expr(update=True))
             if not runtime:
                 decoder_hidden = dy.dropout(decoder_hidden, self.config.dropout_rate)
 
             softmax_output = dy.softmax(
-                self.decoder_outputW.expr() * decoder_hidden + self.decoder_outputB.expr())
+                self.decoder_outputW.expr(update=True) * decoder_hidden + self.decoder_outputB.expr(update=True))
             softmax_dy.append(softmax_output)
             if runtime:
                 prediction = self.decoder_output_i2c[np.argmax(softmax_output.npvalue())]

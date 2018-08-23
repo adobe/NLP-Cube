@@ -193,9 +193,9 @@ class BDRNNParser:
         self.batch_loss.append(loss)
 
     def _attend(self, input_vectors, state, aux_embeddings):
-        w1 = self.lemma_att_w1.expr()
-        w2 = self.lemma_att_w2.expr()
-        v = self.lemma_att_v.expr()
+        w1 = self.lemma_att_w1.expr(update=True)
+        w2 = self.lemma_att_w2.expr(update=True)
+        v = self.lemma_att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * dy.concatenate([state.h()[-1], aux_embeddings])
@@ -245,10 +245,10 @@ class BDRNNParser:
         s_labels = []
         for iDep, iHead in zip(range(1, len(heads) + 1), heads):
             modw = dy.transpose(
-                dy.reshape(proj_labels[iHead][1], (self.config.label_proj_size, 1)) * self.label_ww.expr())
+                dy.reshape(proj_labels[iHead][1], (self.config.label_proj_size, 1)) * self.label_ww.expr(update=True))
             term1 = modw * proj_labels[iDep][0]
-            term2 = self.label_w.expr() * dy.concatenate([proj_labels[iHead][1], proj_labels[iDep][0]])
-            term3 = self.label_bb.expr()
+            term2 = self.label_w.expr(update=True) * dy.concatenate([proj_labels[iHead][1], proj_labels[iDep][0]])
+            term3 = self.label_bb.expr(update=True)
             s_labels.append(dy.softmax(term1 + term2 + term3))
 
         return s_labels
@@ -280,7 +280,7 @@ class BDRNNParser:
                     word_emb = self.unknown_word_embedding[0]
                 else:
                     word_emb = dy.tanh(
-                        self.input_proj_w_word.expr() * dy.inputVector(word_emb) + self.input_proj_b_word.expr())
+                        self.input_proj_w_word.expr(update=True) * dy.inputVector(word_emb) + self.input_proj_b_word.expr(update=True))
                 if sys.version_info[0] == 2:
                     word = word.decode('utf-8').lower()
                 else:
@@ -393,11 +393,11 @@ class BDRNNParser:
             rnn_outputs.append(x_list)
 
         # projections
-        arc_projections = [[dy.tanh(self.proj_arc_w_dep.expr() * x + self.proj_arc_b_dep.expr()),
-                            dy.tanh(self.proj_arc_w_head.expr() * x + self.proj_arc_b_head.expr())] for x in
+        arc_projections = [[dy.tanh(self.proj_arc_w_dep.expr(update=True) * x + self.proj_arc_b_dep.expr(update=True)),
+                            dy.tanh(self.proj_arc_w_head.expr(update=True) * x + self.proj_arc_b_head.expr(update=True))] for x in
                            rnn_outputs[-1]]
-        label_projections = [[dy.tanh(self.proj_label_w_dep.expr() * x + self.proj_label_b_dep.expr()),
-                              dy.tanh(self.proj_label_w_head.expr() * x + self.proj_label_b_head.expr())] for x in
+        label_projections = [[dy.tanh(self.proj_label_w_dep.expr(update=True) * x + self.proj_label_b_dep.expr(update=True)),
+                              dy.tanh(self.proj_label_w_head.expr(update=True) * x + self.proj_label_b_head.expr(update=True))] for x in
                              rnn_outputs[-1]]
         if not runtime:
             arc_projections = [
@@ -407,8 +407,8 @@ class BDRNNParser:
                 [dy.dropout(x1, self.config.presoftmax_mlp_dropout), dy.dropout(x2, self.config.presoftmax_mlp_dropout)]
                 for x1, x2 in label_projections]
         if not self.config.predict_morphology:
-            aux_arc_projections = [[dy.tanh(self.aux_proj_arc_w_dep.expr() * x + self.aux_proj_arc_b_dep.expr()),
-                                    dy.tanh(self.aux_proj_arc_w_head.expr() * x + self.aux_proj_arc_b_head.expr())]
+            aux_arc_projections = [[dy.tanh(self.aux_proj_arc_w_dep.expr(update=True) * x + self.aux_proj_arc_b_dep.expr(update=True)),
+                                    dy.tanh(self.aux_proj_arc_w_head.expr(update=True) * x + self.aux_proj_arc_b_head.expr(update=True))]
                                    for x in rnn_outputs[self.config.aux_softmax_layer]]
             if not runtime:
                 aux_arc_projections = [[dy.dropout(x1, self.config.presoftmax_mlp_dropout),
@@ -419,14 +419,14 @@ class BDRNNParser:
             drp = self.config.presoftmax_mlp_dropout
             if runtime:
                 drp = 0
-            upos_softmax = [dy.softmax(self.upos_softmax_w.expr() * dy.dropout(dy.tanh(
-                self.upos_proj_w.expr() * x + self.upos_proj_b.expr()), drp) + self.upos_softmax_b.expr()) for x in
+            upos_softmax = [dy.softmax(self.upos_softmax_w.expr(update=True) * dy.dropout(dy.tanh(
+                self.upos_proj_w.expr(update=True) * x + self.upos_proj_b.expr(update=True)), drp) + self.upos_softmax_b.expr(update=True)) for x in
                             rnn_outputs[self.config.aux_softmax_layer]]
-            xpos_softmax = [dy.softmax(self.xpos_softmax_w.expr() * dy.dropout(dy.tanh(
-                self.xpos_proj_w.expr() * x + self.xpos_proj_b.expr()), drp) + self.xpos_softmax_b.expr()) for x in
+            xpos_softmax = [dy.softmax(self.xpos_softmax_w.expr(update=True) * dy.dropout(dy.tanh(
+                self.xpos_proj_w.expr(update=True) * x + self.xpos_proj_b.expr(update=True)), drp) + self.xpos_softmax_b.expr(update=True)) for x in
                             rnn_outputs[self.config.aux_softmax_layer]]
-            attrs_softmax = [dy.softmax(self.attrs_softmax_w.expr() * dy.dropout(dy.tanh(
-                self.attrs_proj_w.expr() * x + self.attrs_proj_b.expr()), drp) + self.attrs_softmax_b.expr()) for x in
+            attrs_softmax = [dy.softmax(self.attrs_softmax_w.expr(update=True) * dy.dropout(dy.tanh(
+                self.attrs_proj_w.expr(update=True) * x + self.attrs_proj_b.expr(update=True)), drp) + self.attrs_softmax_b.expr(update=True)) for x in
                              rnn_outputs[self.config.aux_softmax_layer]]
 
             morphology_softmax = [[upos, xpos, attrs] for
@@ -438,11 +438,11 @@ class BDRNNParser:
         if not self.config.predict_morphology:
             aux_arc_matrix = [[None] * n for _ in range(n)]
         for iDst in range(n):
-            term_bias = self.link_b.expr() * arc_projections[iDst][1]
-            term_weight = self.link_w.expr() * arc_projections[iDst][1]
+            term_bias = self.link_b.expr(update=True) * arc_projections[iDst][1]
+            term_weight = self.link_w.expr(update=True) * arc_projections[iDst][1]
             if not self.config.predict_morphology:
-                aux_term_bias = self.aux_link_b.expr() * aux_arc_projections[iDst][1]
-                aux_term_weight = self.aux_link_w.expr() * aux_arc_projections[iDst][1]
+                aux_term_bias = self.aux_link_b.expr(update=True) * aux_arc_projections[iDst][1]
+                aux_term_weight = self.aux_link_w.expr(update=True) * aux_arc_projections[iDst][1]
             for iSrc in range(n):
                 if iSrc != iDst:
                     attention = dy.reshape(term_weight, (1, self.config.arc_proj_size)) * arc_projections[iSrc][

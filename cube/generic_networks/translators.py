@@ -73,9 +73,9 @@ class BRNNMT:
         self.att_v = self.model.add_parameters((1, self.config.encoder_layers[-1] * 2))
 
     def _attend(self, input_vectors, state):
-        w1 = self.att_w1.expr()
-        w2 = self.att_w2.expr()
-        v = self.att_v.expr()
+        w1 = self.att_w1.expr(update=True)
+        w2 = self.att_w2.expr(update=True)
+        v = self.att_v.expr(update=True)
         attention_weights = []
 
         w2dt = w2 * state.h()[-1]
@@ -155,7 +155,7 @@ class BRNNMT:
             else:
                 hol_emb = self.hol_we_src[self.input_encodings.word2int["<UNK>"]]
 
-            proj_emb = self.word_proj_w.expr() * w_emb + self.word_proj_b.expr()
+            proj_emb = self.word_proj_w.expr(update=True) * w_emb + self.word_proj_b.expr(update=True)
             if runtime:
                 x = dy.tanh(proj_emb + hol_emb)
             else:
@@ -210,11 +210,11 @@ class BRNNMT:
             input = dy.concatenate([self._attend(x_list, decoder),last_dst_we])
 
             decoder = decoder.add_input(input)
-            softmax = dy.softmax(self.output_softmax_w.expr() * decoder.output() + self.output_softmax_b.expr())
+            softmax = dy.softmax(self.output_softmax_w.expr(update=True) * decoder.output() + self.output_softmax_b.expr(update=True))
             softmax_output.append(softmax)
 
-            proj = dy.tanh(self.aux_layer_w.expr() * decoder.output() + self.aux_layer_b.expr())
-            aux = self.aux_layer_proj_w.expr() * proj + self.aux_layer_proj_b.expr()
+            proj = dy.tanh(self.aux_layer_w.expr(update=True) * decoder.output() + self.aux_layer_b.expr(update=True))
+            aux = self.aux_layer_proj_w.expr(update=True) * proj + self.aux_layer_proj_b.expr(update=True)
             aux_output.append(aux)
             if runtime:
                 out_we_index=np.argmax(softmax.npvalue())
