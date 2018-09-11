@@ -20,21 +20,21 @@ class Cube(object):
         self.parser_enabled = False
         self.tokenizer_enabled = False
         self.tagger_enabled = False
-        self.models = {}
+        self.model = {}
         self.embeddings = None
         self.model_store = ModelStore()
 
-    def load(self, lang_code, check_for_latest=True):
+    def load(self, lang_code, version="latest"):
         """
         Loads the pipeline with all available models for the target language.
 
         @param lang_code: Target language code. See http://opensource.adobe.com/NLP-Cube/ for available languages and their codes
-        @param check_for_latest: True if we always want the latest model.
+        @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
         """
-        self.model_store.load(lang_code, check_for_latest)
+        self.model_store.load(lang_code, version=version)
 
         # Load models from the ModelStore.
-        self.models = self.model_store.models
+        self.model = self.model_store.model
 
     def process_text(self, text="", pipeline=None):
         """
@@ -70,26 +70,26 @@ class Cube(object):
             for i in range(len(lines)):
                 input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
 
-            sequences = self.models[PipelineComponents.TOKENIZER].tokenize(input_string)
+            sequences = self.model[PipelineComponents.TOKENIZER].tokenize(input_string)
 
             sys.stdout.write("\n")
         else:
             sequences = text
 
         if PipelineComponents.COMPOUND in pipeline and self.compound_enabled:
-            sequences = self.models[PipelineComponents.COMPOUND].expand_sequences(sequences)
+            sequences = self.model[PipelineComponents.COMPOUND].expand_sequences(sequences)
 
         if PipelineComponents.PARSER in pipeline and self.parser_enabled:
-            sequences = self.models[PipelineComponents.PARSER].parse_sequences(sequences)
+            sequences = self.model[PipelineComponents.PARSER].parse_sequences(sequences)
 
         if PipelineComponents.TAGGER in pipeline and self.tagger_enabled:
             new_sequences = []
             for sequence in sequences:
                 import copy
                 new_sequence = copy.deepcopy(sequence)
-                predicted_tags_UPOS = self.models[PipelineComponents.TAGGER][0].tag(new_sequence)
-                predicted_tags_XPOS = self.models[PipelineComponents.TAGGER][1].tag(new_sequence)
-                predicted_tags_ATTRS = self.models[PipelineComponents.TAGGER][2].tag(new_sequence)
+                predicted_tags_UPOS = self.model[PipelineComponents.TAGGER][0].tag(new_sequence)
+                predicted_tags_XPOS = self.model[PipelineComponents.TAGGER][1].tag(new_sequence)
+                predicted_tags_ATTRS = self.model[PipelineComponents.TAGGER][2].tag(new_sequence)
                 for entryIndex in range(len(sequence)):
                     new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
                     new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
@@ -99,7 +99,7 @@ class Cube(object):
             sequences = new_sequences
 
         if PipelineComponents.LEMMATIZER in pipeline and self.lemmatizer_enabled:
-            sequences = self.models[PipelineComponents.LEMMATIZER].lemmatize_sequences(sequences)
+            sequences = self.model[PipelineComponents.LEMMATIZER].lemmatize_sequences(sequences)
 
         return sequences
 
