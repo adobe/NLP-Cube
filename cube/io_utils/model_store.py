@@ -40,16 +40,7 @@ from generic_networks.token_expanders import CompoundWordExpander
 from generic_networks.lemmatizers import FSTLemmatizer
 from generic_networks.taggers import BDRNNTagger
 from generic_networks.parsers import BDRNNParser
-
-
-class PipelineComponents(object):
-    TOKENIZER = 'tokenizer'
-    COMPOUND = 'compound'
-    TAGGER = 'tagger'
-    PARSER = 'parser'
-    LEMMATIZER = 'lemmatizer'
-
-    
+   
 class ModelMetadata(object):
     def __init__(self):
         # language of model: English, Spanish
@@ -135,7 +126,7 @@ class ModelStore(object):
             output = [dI for dI in output if lang_code in dI]        
         return output        
         
-    def load(self, lang_code, version="latest"):
+    def find(self, lang_code, version="latest", verbose=True):
         """
         Contains logic for loading or downloading and loading models for the target language.
         
@@ -159,9 +150,10 @@ class ModelStore(object):
                 local_versions = [x[1] for x in local_models]
                 local_versions.sort()
                 latest_version = local_versions[-1]
-                print("Loading latest local model: "+lang_code+"-"+str(latest_version))
-                self._load(lang_code,latest_version)                
-                return
+                if verbose:
+                    print("Loading latest local model: "+lang_code+"-"+str(latest_version))
+                #self._load(lang_code,latest_version)                
+                return os.path.join(self.disk_path,lang_code+"-"+str(latest_version))
             else: # no models found, check online according to version parameter
                 if version=="latest":
                     version = self._version_to_download(lang_code, version=version)
@@ -170,18 +162,18 @@ class ModelStore(object):
                     else: # nothing was found online
                         raise Exception("No model version for language ["+lang_code+"] was found in the online repository!")                       
                 self._download_model(lang_code, version)                
-                self._load(lang_code,version)
+                return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
                 
         else: # check for a specific local version, according to version parameter
             version = float(version)
             if os.path.isdir(os.path.join(self.disk_path, lang_code, version)):
-                self._load(lang_code,version)
+                return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
             else: # version not found, trying to download it from the cloud
                 version = self._version_to_download(lang_code, version=version)                
                 if version == None:                
-                    raise Exception("Version ["+str(version)+"] for language ["+lang_code+"] was not found in the online repository. Maybe try using load(version='latest') to auto-download the latest model?")
+                    raise Exception("Version ["+str(version)+"] for language ["+lang_code+"] was not found in the online repository. Maybe try using .find(version='latest') to auto-download the latest model?")
                 self._download_model(lang_code, str(version))                
-                self._load(lang_code,version)
+                return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
         
 
     def _load(self, lang_code, version):

@@ -4,124 +4,192 @@ import sys
 import os
 from io_utils.encodings import Encodings
 from io_utils.embeddings import WordEmbeddings
-from io_utils.model_store import ModelMetadata, ModelStore, PipelineComponents
-
+from io_utils.model_store import ModelMetadata, ModelStore
+from io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
+from generic_networks.tokenizers import TieredTokenizer
+from generic_networks.token_expanders import CompoundWordExpander
+from generic_networks.lemmatizers import FSTLemmatizer
+from generic_networks.taggers import BDRNNTagger
+from generic_networks.parsers import BDRNNParser
 
 class Cube(object):
-    def __init__(self):
+    def __init__(self, verbose=False):
         """
         Create an empty instance for Cube
         Before it can be used, you must call @method load with @param language_code set to your target language
         """
-        self.loaded = False
-        self.tokenizer_enabled = False
-        self.compound_enabled = False
-        self.lemmatizer_enabled = False
-        self.parser_enabled = False
-        self.tokenizer_enabled = False
-        self.tagger_enabled = False
-        self.model = {}
-        self.metadata = ModelMetadata()
-        self.embeddings = None
-        self.model_store = ModelStore()
+        self._loaded = False
+        self._verbose = verbose
+        self._tokenizer = None # tokenizer object, default is None
+        self._compound_word_expander = False # compound word expander, default is None
+        self._lemmatizer = False # lemmatizer object, default is None
+        self._parser = False # parser object, default is None
+        self._tagger = False # tagger object, default is None
+        self.embeddings = None # ?? needed?
+        self.metadata = ModelMetadata()        
+        self._model_repository = "models"
+        self._embeddings_repository = os.path.join("models","embeddings")
+        #self.model_store = ModelStore() # needed???
 
-    def load(self, lang_code, version="latest"):
+    def load(self, language_code, version="latest", tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True):
         """
         Loads the pipeline with all available models for the target language.
 
         @param lang_code: Target language code. See http://opensource.adobe.com/NLP-Cube/ for available languages and their codes
         @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
+       
         """
-        self.model_store.load(lang_code, version=version)
+        # Initialize a ModelStore object
+        model_store_object = ModelStore(disk_path=self._model_repository)
         
-        # Load metadata from the store 
-        self.metadata = self.model_store.metadata
+        # Find a local model or download it if it does not exist, returning the local model folder path
+        model_folder_path = model_store_object.find(lang_code=language_code, version=version, verbose=self._verbose)
+        
+        # Load metadata from the model 
+        self.metadata.read(os.path.join(model_folder_path,"metadata.json"))
 
-        # Load models from the ModelStore.
-        self.model = self.model_store.model
+        # Load embeddings                
+        embeddings = WordEmbeddings(verbose=False)   
+        if self._verbose:
+            sys.stdout.write('\tLoading embeddings... \n')        
+        embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None, full_load=False)
 
-    def process_text(self, text="", pipeline=None):
-        """
-        Runs the pipeline on the input text. If the pipeline is set to None, Cube will run all available processing models
-        @param text: the text to be processed. It can either be raw text format or, a list of sentences, each composed of a list of CONLLEntry
-        @param pipeline: a list of PipelineComponents to be used for processing
-        @return: A list of sentences, each composed of a list of CONLLEntry items
-        """
-        if pipeline is None:
-            pipeline = [PipelineComponents.TOKENIZER, PipelineComponents.PARSER, PipelineComponents.TAGGER,
-                        PipelineComponents.LEMMATIZER, PipelineComponents.COMPOUND]
+        # 1. Load tokenizer
+        if tokenization:
+            if not os.path.isfile(os.path.join(model_folder_path, 'tokenizer-tok.bestAcc')):
+                sys.stdout.write('\tTokenization is not available on this model. \n')
+            else:
+                if self._verbose: 
+                    sys.stdout.write('\tLoading tokenization model ...\n')
+                tokenizer_encodings = Encodings(verbose=False)
+                tokenizer_encodings.load(os.path.join(model_folder_path, 'tokenizer.encodings'))
+                config = TieredTokenizerConfig(os.path.join(model_folder_path, 'tokenizer.conf'))
+                self._tokenizer = TieredTokenizer(config, tokenizer_encodings, embeddings, runtime=True)
+                self._tokenizer.load(os.path.join(model_folder_path, 'tokenizer'))                
 
-        if PipelineComponents.TOKENIZER in pipeline and self.tokenizer_enabled:
-            sys.stdout.write("\nTokenizing... \n\t")
-            sys.stdout.flush()
+        # 3. Load compound
+        if compound_word_expanding:
+            if not os.path.isfile(os.path.join(model_folder_path, 'compound.bestAcc')):
+                if self._verbose: # supress warning here because many languages do not have compund words 
+                    sys.stdout.write('\tCompound word expansion is not available on this model. \n')
+            else:                
+                if self._verbose:
+                    sys.stdout.write('\tLoading compound word expander model ...\n')
+                compound_encodings = Encodings(verbose=False)
+                compound_encodings.load(os.path.join(model_folder_path, 'compound.encodings'))
+                config = CompoundWordConfig(os.path.join(model_folder_path, 'compound.conf'))
+                self._compound_word_expander = CompoundWordExpander(config, compound_encodings, embeddings, runtime=True)
+                self._compound_word_expander.load(os.path.join(model_folder_path, 'compound.bestAcc'))
+                
+        # 4. Load lemmatizer
+        if lemmatization:
+            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestACC')):
+                sys.stdout.write('\tLemmatizer is not available on this model. \n')
+            else:
+                if self._verbose:
+                    sys.stdout.write('\tLoading lemmatization model ...\n')
+                lemmatizer_encodings = Encodings(verbose=False)
+                lemmatizer_encodings.load(os.path.join(model_folder_path, 'lemmatizer.encodings'))
+                config = LemmatizerConfig(os.path.join(model_folder_path, 'lemmatizer.conf'))
+                self._lemmatizer = FSTLemmatizer(config, lemmatizer_encodings, embeddings, runtime=True)
+                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestACC'))                
 
-            lines = text.replace("\r", "").split("\n")
-            # analyze use of spaces in first part of the file
-            test = "";
-            useSpaces = " "
-            cnt = 0
-            while True:
-                test = test + lines[cnt]
-                # print(lines[cnt])
-                if cnt + 1 >= len(lines) or cnt > 5:
-                    break
-                cnt += 1
+        # 5. Load taggers
+        if tagging or lemmatization: # we need tagging for lemmatization
+            if not os.path.isfile(os.path.join(model_folder_path, 'tagger.bestUPOS')):
+                sys.stdout.write('\tTagging is not available on this model. \n')
+                if lemmatization:
+                    sys.stdout.write('\t\tDisabling the lemmatization model due to missing tagger. \n')
+                    self._lemmatizer = None                    
+            else:
+                if self._verbose:
+                    sys.stdout.write('\tLoading tagger model ...\n')
+                tagger_encodings = Encodings(verbose=False)
+                tagger_encodings.load(os.path.join(model_folder_path, 'tagger.encodings'))
+                config = TaggerConfig(os.path.join(model_folder_path, 'tagger.conf'))
+                self._tagger = [None, None, None]
+                self._tagger[0] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
+                self._tagger[0].load(os.path.join(model_folder_path, 'tagger.bestUPOS'))
+                self._tagger[1] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
+                self._tagger[1].load(os.path.join(model_folder_path, 'tagger.bestXPOS'))
+                self._tagger[2] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
+                self._tagger[2].load(os.path.join(model_folder_path, 'tagger.bestATTRS'))
 
-            if float(test.count(' ')) / float(len(test)) < 0.02:
-                useSpaces = ""
-            # print (str(float(test.count(' '))/float(len(test))))
-            input_string = ""
-            for i in range(len(lines)):
-                input_string = input_string + lines[i].replace("\r", "").replace("\n", "").strip() + useSpaces
+        # 6. Load parser
+        if parsing:            
+            if not os.path.isfile(os.path.join(model_folder_path, 'parser.bestUAS')):
+                sys.stdout.write('\tParsing is not available on this model... \n')
+            else:
+                if self._verbose:            
+                    sys.stdout.write('\tLoading parser model ...\n')
+                parser_encodings = Encodings(verbose=False)
+                parser_encodings.load(os.path.join(model_folder_path, 'parser.encodings'))
+                config = ParserConfig(os.path.join(model_folder_path, 'parser.conf'))
+                self._parser = BDRNNParser(config, parser_encodings, embeddings, runtime=True)
+                self._parser.load(os.path.join(model_folder_path, 'parser.bestUAS'))
+        
+        self._loaded = True
+        if self._verbose:
+            sys.stdout.write('Model loading complete.\n\n')
+    
+    def __call__(self, text):
+        if not self._loaded:
+            raise Exception("Cube object is initialized but no model is loaded (eg.: call cube.load('en') )")
+        
+        sequences = []
+        if self._tokenizer:
+            # split text by lines
+            input_lines = text.split("\n")
+            for input_line in input_lines:                
+                sequences += self._tokenizer.tokenize(input_line)
 
-            sequences = self.model[PipelineComponents.TOKENIZER].tokenize(input_string)
+        if self._compound_word_expander:
+            sequences = self._compound_word_expander.expand_sequences(sequences)
+            
+        if self._parser:
+            sequences = self._parser.parse_sequences(sequences)
 
-            sys.stdout.write("\n")
-        else:
-            sequences = text
-
-        if PipelineComponents.COMPOUND in pipeline and self.compound_enabled:
-            sequences = self.model[PipelineComponents.COMPOUND].expand_sequences(sequences)
-
-        if PipelineComponents.PARSER in pipeline and self.parser_enabled:
-            sequences = self.model[PipelineComponents.PARSER].parse_sequences(sequences)
-
-        if PipelineComponents.TAGGER in pipeline and self.tagger_enabled:
+        if self._tagger or self._lemmatizer:    
+            import copy
             new_sequences = []
-            for sequence in sequences:
-                import copy
+            for sequence in sequences:            
                 new_sequence = copy.deepcopy(sequence)
-                predicted_tags_UPOS = self.model[PipelineComponents.TAGGER][0].tag(new_sequence)
-                predicted_tags_XPOS = self.model[PipelineComponents.TAGGER][1].tag(new_sequence)
-                predicted_tags_ATTRS = self.model[PipelineComponents.TAGGER][2].tag(new_sequence)
+                predicted_tags_UPOS = self._tagger[0].tag(new_sequence)
+                predicted_tags_XPOS = self._tagger[1].tag(new_sequence)
+                predicted_tags_ATTRS = self._tagger[2].tag(new_sequence)
                 for entryIndex in range(len(sequence)):
                     new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
                     new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
                     new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
                 new_sequences.append(new_sequence)
-
             sequences = new_sequences
 
-        if PipelineComponents.LEMMATIZER in pipeline and self.lemmatizer_enabled:
-            sequences = self.model[PipelineComponents.LEMMATIZER].lemmatize_sequences(sequences)
+        if self._lemmatizer:
+            sequences = self._lemmatizer.lemmatize_sequences(sequences)
 
-        return sequences
-
-
+        return sequences                
+        
 if __name__ == "__main__":
-    cube = Cube()
-    cube.load('ro')
+    cube = Cube(verbose=True)
+    cube.load('ro',tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
     cube.metadata.info()
     
-    sequences = cube.process_text(
-        text="Ana are mere, și Maria are pere. Ce mai faci băiatule, deși mi se pare că ai peri deși. "
-             "Și-a făcut casă noaptea și-a plecat acasă. Ce faci bosule? Ce faci boule? De ce terminația asta nu e de "
-             "substantiv masculin?"
-             "Ți-am zădărnicit șerpicoarea maricoasă că să veremești frumos de tot. "
-             "Stadioanele sunt ocupate de copii fotbaliști și de copii talentați la sport.")
-    sys.stdout.write("\n\n\n")
-    from io_utils.conll import Dataset
-
-    ds = Dataset()
-    ds.sequences = sequences
-    ds.write_stdout()
+    text="Prințesa Louisa s-a născut la 19 martie la Casa Leicester, Westminster, Londra. Tatăl ei a fost Frederick, Prinț de Wales, fiul cel mare al regelui George al II-lea și a reginei Caroline de Ansbach. Mama ei a fost Prințesa de Wales (născută Augusta de Saxa-Gotha).\n\n\rA fost botezată la 11 aprilie și nașii ei au fost: Frederic al II-lea, Landgraf de Hesse-Cassel (unchiul patern prin căsătorie) și mătușile paterne Louise, regină a Danemarcei și Norvegiei și Anne, Prințesă Regală.[1]\n\rSănătatea ei a fost delicată de-a lungul întregii ei vieți. Prințesa Louisa a murit la Casa Carlton din Londra, la 13 mai 1768, necăsătorită și fără copii, la vârsta de 19 ani."
+    
+    sentences = cube(text)
+    
+    for sentence in sentences:
+        print()
+        for token in sentence:
+            line = ""
+            line+= str(token.index)+"\t"            
+            line+= token.word + "\t"
+            line+= token.lemma+"\t"
+            line+= token.upos+"\t"
+            line+= token.xpos+"\t"
+            line+= token.attrs+"\t"
+            line+= str(token.head)+"\t"
+            line+= token.label+"\t"
+            line+= token.deps+"\t"
+            line+= token.space_after
+            print(line)
