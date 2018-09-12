@@ -4,7 +4,7 @@ import sys
 import os
 from io_utils.encodings import Encodings
 from io_utils.embeddings import WordEmbeddings
-from io_utils.model_store import ModelStore, PipelineComponents
+from io_utils.model_store import ModelMetadata, ModelStore, PipelineComponents
 
 
 class Cube(object):
@@ -21,6 +21,7 @@ class Cube(object):
         self.tokenizer_enabled = False
         self.tagger_enabled = False
         self.model = {}
+        self.metadata = ModelMetadata()
         self.embeddings = None
         self.model_store = ModelStore()
 
@@ -32,6 +33,9 @@ class Cube(object):
         @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
         """
         self.model_store.load(lang_code, version=version)
+        
+        # Load metadata from the store 
+        self.metadata = self.model_store.metadata
 
         # Load models from the ModelStore.
         self.model = self.model_store.model
@@ -107,6 +111,8 @@ class Cube(object):
 if __name__ == "__main__":
     cube = Cube()
     cube.load('ro')
+    cube.metadata.info()
+    
     sequences = cube.process_text(
         text="Ana are mere, și Maria are pere. Ce mai faci băiatule, deși mi se pare că ai peri deși. "
              "Și-a făcut casă noaptea și-a plecat acasă. Ce faci bosule? Ce faci boule? De ce terminația asta nu e de "

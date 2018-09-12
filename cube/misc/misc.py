@@ -20,7 +20,7 @@ import sys
 import os
 import time
 
-def fopen (filename, mode):
+def fopen (filename, mode="r"):
     if sys.version_info[0] == 2:                    
         return open(filename, mode)
     else:            
