@@ -171,10 +171,10 @@ class Cube(object):
         
 if __name__ == "__main__":
     cube = Cube(verbose=True)
-    cube.load('ro',tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
+    cube.load('en',tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
     cube.metadata.info()
     
-    text="Prințesa Louisa s-a născut la 19 martie la Casa Leicester, Westminster, Londra. Tatăl ei a fost Frederick, Prinț de Wales, fiul cel mare al regelui George al II-lea și a reginei Caroline de Ansbach. Mama ei a fost Prințesa de Wales (născută Augusta de Saxa-Gotha).\n\n\rA fost botezată la 11 aprilie și nașii ei au fost: Frederic al II-lea, Landgraf de Hesse-Cassel (unchiul patern prin căsătorie) și mătușile paterne Louise, regină a Danemarcei și Norvegiei și Anne, Prințesă Regală.[1]\n\rSănătatea ei a fost delicată de-a lungul întregii ei vieți. Prințesa Louisa a murit la Casa Carlton din Londra, la 13 mai 1768, necăsătorită și fără copii, la vârsta de 19 ani."
+    text="Je suis un cochon. Prințesa Louisa s-a născut la 19 martie la Casa Leicester, Westminster, Londra. Tatăl ei a fost Frederick, Prinț de Wales, fiul cel mare al regelui George al II-lea și a reginei Caroline de Ansbach. Mama ei a fost Prințesa de Wales (născută Augusta de Saxa-Gotha).\n\n\rA fost botezată la 11 aprilie și nașii ei au fost: Frederic al II-lea, Landgraf de Hesse-Cassel (unchiul patern prin căsătorie) și mătușile paterne Louise, regină a Danemarcei și Norvegiei și Anne, Prințesă Regală.[1]\n\rSănătatea ei a fost delicată de-a lungul întregii ei vieți. Prințesa Louisa a murit la Casa Carlton din Londra, la 13 mai 1768, necăsătorită și fără copii, la vârsta de 19 ani."
     
     sentences = cube(text)
     

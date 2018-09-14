@@ -21,6 +21,7 @@ import io
 import os
 import sys
 import json
+import tempfile
 from shutil import rmtree, copyfile
 from misc.misc import fopen
 import zipfile
@@ -289,38 +290,50 @@ class ModelStore(object):
         self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)
         sys.stdout.write("\n")
 
-    def _download_with_progress_bar(self, url):
+    def _download_with_progress_bar(self, url, local_filename):
         r = requests.get(url, stream=True)
         total_size = int(r.headers['Content-Length'].strip())
         current_size = 0
-        request_content = []        
+        #request_content = []        
+        f = fopen(local_filename, 'wb')
         for buf in r.iter_content(4096*16):            
             if buf:
-                request_content.append(buf)
+                #request_content.append(buf)
+                f.write(buf)
                 current_size += len(buf)  
                 done = int(40 * current_size / total_size)
                 sys.stdout.write("\r[%s%s] %3.1f%%, downloading %.2f/%.2f MB ..." % ('=' * done, ' ' * (40-done), 100* current_size/total_size, current_size/1024/1024, total_size/1024/1024) )    
                 sys.stdout.flush()
-        return b"".join(request_content)
+        #return b"".join(request_content)
+        f.close()
         
     def _download_and_extract_lang_model(self, url, file_name, force=False):
         if os.path.exists(file_name):
             if force:
                 os.remove(file_name)
             return
-
-        # Download and extract zip archive.
-        request_content = self._download_with_progress_bar(url)
-        #request = requests.get(url)
-        #request_content = request.content        
-        sys.stdout.write("\rDownload complete, decompressing files ...                                         ")
-        sys.stdout.flush()
         
-        zipfile = ZipFile(io.BytesIO(request_content))
-        zipfile.extractall(self.disk_path)
-        zipfile.close()
-        sys.stdout.write("\nModel downloaded successfully.")
-        sys.stdout.flush()
+        temp_folder = tempfile.mkdtemp()  
+        try:
+            # Download and extract zip archive.
+            zip_file_name = os.path.join(temp_folder, "tmp.zip")
+            self._download_with_progress_bar(url, zip_file_name)       
+            sys.stdout.write("\rDownload complete, decompressing files ...                                         ")
+            sys.stdout.flush()
+            
+            zipfile = ZipFile(zip_file_name, "r")
+            zipfile.extractall(self.disk_path)
+            zipfile.close()
+            sys.stdout.write("\nModel downloaded successfully.")
+            sys.stdout.flush()
+            
+        except Exception as e:
+            print("Error encountered, cleaning up and exiting ...")
+            rmtree(temp_folder, ignore_errors=True)
+            raise e
+        
+        # delete temporary folder
+        rmtree(temp_folder, ignore_errors=True)
 
     def _download_embeddings(self, embeddings_remote_link, embeddings_file_name):
         """
@@ -332,22 +345,18 @@ class ModelStore(object):
         """
         
         embeddings_folder = os.path.join(self.disk_path,"embeddings")
+        if not os.path.exists(embeddings_folder):
+            os.makedirs(embeddings_folder)        
         embeddings_file = os.path.join(embeddings_folder,embeddings_file_name)
                 
         # Check locally for the file
         sys.stdout.write("\nChecking for associated vector embeddings file ["+embeddings_file_name+"] ...\n")
         if os.path.isfile(embeddings_file):
-            return 
-        
+            return         
+            
         # We don't have the correct embedding file, download it ...        
-        request_content = self._download_with_progress_bar(embeddings_remote_link)
-        sys.stdout.write("\rDownload complete, flushing to disk ...                                              ")
-        sys.stdout.flush()        
-        if not os.path.exists(embeddings_folder):
-            os.makedirs(embeddings_folder)
-        with open(embeddings_file, 'wb') as fd:
-            fd.write(request_content)
-        sys.stdout.write("\nEmbeddings downloaded successfully.")        
+        self._download_with_progress_bar(embeddings_remote_link, embeddings_file)                
+        sys.stdout.write("\rEmbeddings downloaded successfully.                                                  ")        
     
     def _version_to_download(self, lang_code, version="latest"):
         """
@@ -470,16 +479,14 @@ class ModelStore(object):
             input_folder = "English-GWT"
             output_folder_path = "path_to_where_zip_files_will_be_placed"
         """
-        import tempfile
                 
         # check input folder exists
         if not os.path.isdir(input_folder):
             raise Exception("Input folder not found")
             
         # create temporary folder locally            
+        temp_folder = tempfile.mkdtemp()  
         try: 
-            temp_folder = tempfile.mkdtemp()        
-            
             # create local model sub-folder
             output_folder = os.path.join(temp_folder, metadata.language_code+"-"+str(metadata.model_version))
             print("\tWriting model to temp folder: "+output_folder)
@@ -577,11 +584,11 @@ class ModelStore(object):
             
         except Exception as e:
             print("Error encountered, cleaning up and exiting ...")
-            rmtree(temp_folder)
+            rmtree(temp_folder, ignore_errors=True)
             raise e
         
         # delete temporary folder
         print("\tCleaning up ...")
-        rmtree(temp_folder)
+        rmtree(temp_folder, ignore_errors=True)
         
         print("Model packaged successfully as: "+model_file)

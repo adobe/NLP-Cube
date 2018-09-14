@@ -23,8 +23,11 @@ import time
 def fopen (filename, mode="r"):
     if sys.version_info[0] == 2:                    
         return open(filename, mode)
-    else:            
-        return open(filename, mode, encoding="utf-8")
+    else:                    
+        if "b" in mode.lower():
+            return open(filename, mode)
+        else:
+            return open(filename, mode, encoding="utf-8")
 
 # return ETA in seconds
 def get_eta(progress, total, time_delta, granularity=2):
