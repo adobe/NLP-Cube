@@ -240,7 +240,7 @@ class LemmatizerTrainer:
                 selected_dev_acc = dev_acc
                 if self.testset is not None:
                     selected_test_acc = test_acc
-                path = output_base + ".bestACC"
+                path = output_base + ".bestAcc"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
                 self.tagger.save(path)

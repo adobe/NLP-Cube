@@ -21,7 +21,9 @@ import io
 import os
 import sys
 import json
+from shutil import rmtree, copyfile
 from misc.misc import fopen
+import zipfile
 from zipfile import ZipFile
 
 import requests
@@ -443,3 +445,143 @@ class ModelStore(object):
         if lang_code:
             online_models = [x for x in online_models if lang_code in x[0]]            
         return online_models
+        
+    def _copy_file(self, input_folder, output_folder, file_name):
+        src_file = os.path.join(input_folder, file_name)
+        dst_file = os.path.join(output_folder, file_name)
+        if not os.path.isfile(src_file):            
+            return False
+        copyfile(src_file, dst_file)
+        return True
+            
+    def _zipper(self, dir, zip_file):
+        zip = zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_DEFLATED)
+        root_len = len(os.path.abspath(dir))
+        for root, dirs, files in os.walk(dir):
+            archive_root = os.path.abspath(root)[root_len:]
+            for f in files:
+                fullpath = os.path.join(root, f)
+                archive_name = os.path.join(archive_root, f)                
+                zip.write(fullpath, archive_name, zipfile.ZIP_DEFLATED)
+        zip.close()    
+    
+    def package_model(self, input_folder, output_folder_path, metadata, should_contain_tokenizer = True, should_contain_compound_word_expander = False, should_contain_lemmatizer = True, should_contain_tagger = True, should_contain_parser = True):
+        """
+            input_folder = "English-GWT"
+            output_folder_path = "path_to_where_zip_files_will_be_placed"
+        """
+        import tempfile
+                
+        # check input folder exists
+        if not os.path.isdir(input_folder):
+            raise Exception("Input folder not found")
+            
+        # create temporary folder locally            
+        try: 
+            temp_folder = tempfile.mkdtemp()        
+            
+            # create local model sub-folder
+            output_folder = os.path.join(temp_folder, metadata.language_code+"-"+str(metadata.model_version))
+            print("\tWriting model to temp folder: "+output_folder)
+            os.makedirs(output_folder)        
+            
+            # write metadata to this folder
+            metadata.save(os.path.join(output_folder,"metadata.json"))
+            
+            # copy tokenizer files        
+            if should_contain_tokenizer:
+                tokenizer_is_valid = True
+                if not self._copy_file(input_folder, output_folder, "tokenizer.encodings"):
+                    tokenizer_is_valid = False
+                if not self._copy_file(input_folder, output_folder, "tokenizer.conf"):
+                    tokenizer_is_valid = False
+                if not self._copy_file(input_folder, output_folder, "tokenizer-tok.bestAcc"):
+                    tokenizer_is_valid = False
+                if not self._copy_file(input_folder, output_folder, "tokenizer-ss.bestAcc"):
+                    tokenizer_is_valid = False            
+                if tokenizer_is_valid:
+                    print("\tTokenizer model found.")
+                else:
+                    raise Exception("Tokenizer model not found (or incomplete).")
+            
+            # copy compound_word_expander files        
+            if should_contain_compound_word_expander:
+                compound_word_expander = True
+                if not self._copy_file(input_folder, output_folder, "compound.bestAcc"):
+                    compound_word_expander = False
+                if not self._copy_file(input_folder, output_folder, "compound.conf"):
+                    compound_word_expander = False
+                if not self._copy_file(input_folder, output_folder, "compound.encodings"):
+                    compound_word_expander = False            
+                if compound_word_expander:
+                    print("\tCompound word expander model found.")
+                else:
+                    raise Exception("Compound word expander model not found (or incomplete).")
+            
+            # copy tagger files
+            if should_contain_tagger:
+                tagger = True
+                if not self._copy_file(input_folder, output_folder, "tagger.bestUPOS"):
+                    tagger = False
+                if not self._copy_file(input_folder, output_folder, "tagger.bestXPOS"):
+                    tagger = False
+                if not self._copy_file(input_folder, output_folder, "tagger.bestATTRS"):
+                    tagger = False
+                if not self._copy_file(input_folder, output_folder, "tagger.conf"):
+                    tagger = False
+                if not self._copy_file(input_folder, output_folder, "tagger.encodings"):
+                    tagger = False            
+                if tagger:
+                    print("\tTagger model found.")
+                else:
+                    raise Exception("Tagger model not found (or incomplete).")
+            
+            # copy lemmatizer files
+            if should_contain_lemmatizer:
+                lemmatizer = True
+                # patch 
+                if os.path.isfile(os.path.join(input_folder, "lemmatizer.bestACC")):
+                    os.rename(os.path.join(input_folder, "lemmatizer.bestACC"), os.path.join(input_folder, "lemmatizer.bestAcc"))
+                if not self._copy_file(input_folder, output_folder, "lemmatizer.bestAcc"):
+                    lemmatizer = False
+                if not self._copy_file(input_folder, output_folder, "lemmatizer.conf"):
+                    lemmatizer = False
+                if not self._copy_file(input_folder, output_folder, "lemmatizer.encodings"):
+                    lemmatizer = False            
+                if lemmatizer:
+                    print("\tLemmatizer model found.")
+                else:
+                    raise Exception("Lemmatizer model not found (or incomplete).")
+            
+            # copy parser files
+            if should_contain_parser:
+                parser = True
+                if not self._copy_file(input_folder, output_folder, "parser.bestUAS"):
+                    parser = False
+                if not self._copy_file(input_folder, output_folder, "parser.bestLAS"):
+                    parser = False
+                if not self._copy_file(input_folder, output_folder, "parser.conf"):
+                    parser = False
+                if not self._copy_file(input_folder, output_folder, "parser.encodings"):
+                    parser = False            
+                if parser:
+                    print("\tParser model found.")
+                else:
+                    raise Exception("Parser model not found (or incomplete).")
+            
+            # package into zip file
+            print("\tCompressing model ...")    
+            
+            model_file = os.path.join(output_folder_path,metadata.language_code+"-"+str(metadata.model_version)+".zip")            
+            self._zipper(temp_folder, model_file)
+            
+        except Exception as e:
+            print("Error encountered, cleaning up and exiting ...")
+            rmtree(temp_folder)
+            raise e
+        
+        # delete temporary folder
+        print("\tCleaning up ...")
+        rmtree(temp_folder)
+        
+        print("Model packaged successfully as: "+model_file)
