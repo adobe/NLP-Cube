@@ -122,6 +122,8 @@ class ModelStore(object):
         self.cloud_path = cloud_path or self.MODELS_PATH_CLOUD
         self.model = {}
         self.metadata = ModelMetadata()
+        if not os.path.exists(self.disk_path):
+            os.makedirs(self.disk_path)
 
     def _list_folders (self, lang_code=None):        
         output = [os.path.basename(os.path.normpath(dI)) for dI in os.listdir(self.disk_path) if os.path.isdir(os.path.join(self.disk_path,dI))]
