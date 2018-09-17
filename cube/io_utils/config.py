@@ -113,7 +113,7 @@ class TokenizerConfig(Config):
         self.patience = -1
         self.tokenize_maximum_sequence_length = 500  # how much to run predict on, at a time
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + "\n")
@@ -134,7 +134,7 @@ class TaggerConfig(Config):
         self.presoftmax_mlp_dropouts = [0.5]
         self.input_size = 100
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
@@ -170,7 +170,7 @@ class ParserConfig(Config):
         self.use_lexical = True
         self.input_embeddings_size = 100
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
@@ -207,7 +207,24 @@ class LemmatizerConfig(Config):
         self.char_rnn_layers = 2
         self.tag_embeddings_size = 100
 
-        if filename == None:
+        if filename is None:
+            sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
+
+
+class GDBConfig(Config):
+    def __init__(self, filename=none):
+        super().__init__()
+        self.use_char_embeddings = True
+        self.char_rnn_layers = 2
+        self.embeddings_size = 100
+        self.arc_rnn_layers = [200, 200]
+        self.label_rnn_size = 100
+        self.proj_size = 100
+
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
@@ -226,7 +243,7 @@ class NMTConfig(Config):
         self.aux_we_layer_size = 100
         self.input_dropout_prob = 0.33
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
@@ -262,7 +279,7 @@ class TieredTokenizerConfig(Config):
         self.tok_char_peek_lstm_size = 200
         self.tok_char_peek_lstm_dropout = 0.33
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
@@ -280,7 +297,7 @@ class CompoundWordConfig(Config):
         self.decoder_size = 200
         self.decoder_layers = 2
 
-        if filename == None:
+        if filename is None:
             sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             sys.stdout.write("Reading configuration file " + filename + " \n")
