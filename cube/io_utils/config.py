@@ -143,7 +143,7 @@ class TaggerConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-        
+
         if verbose:
             print ("INPUT SIZE:", self.input_size)
             print ("LAYERS:", self.layers)
@@ -299,12 +299,14 @@ class CompoundWordConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-            
+
+
 class GDBConfig(Config):
     def __init__(self, filename=none, verbose=False):
         super().__init__()
         self.use_char_embeddings = True
         self.char_rnn_layers = 2
+        self.char_rnn_size = 100
         self.embeddings_size = 100
         self.arc_rnn_layers = [200, 200]
         self.label_rnn_size = 100
