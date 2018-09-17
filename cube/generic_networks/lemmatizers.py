@@ -310,13 +310,13 @@ class FSTLemmatizer:
 
     def load(self, path):
         self.model.populate(path)
-        dict_path = path.replace(".bestACC", ".dict")
+        dict_path = path.replace(".bestAcc", ".dict")
         import os.path
         if os.path.exists(dict_path):
             self.load_dict(dict_path)
 
     def load_dict(self, path):
-        print ("Loading lemma dictionary")
+        #print ("Loading lemma dictionary")
         with fopen(path, "r") as f:
             lines = f.readlines()
             for line in lines:
@@ -329,7 +329,7 @@ class FSTLemmatizer:
                     upos = parts[1]
                     key = word + '\t' + upos
                     self.word2lemma[key] = parts[4]
-        print ("Loaded " + str(len(self.word2lemma)) + " pairs")
+        #print ("Loaded " + str(len(self.word2lemma)) + " pairs")
 
     def lemmatize_sequences(self, sequences):
         new_sequences = []

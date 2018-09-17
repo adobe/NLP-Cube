@@ -148,7 +148,7 @@ class Encodings(object):
 
     def load(self, filename):
         # We only read character2int, labels, holistic words and label2int here. word_list should be recomputed for every dataset (if deemed necessary)
-        with fopen(filename) as f:
+        with fopen(filename,"r") as f:
             line = f.readline()
 
             num_labels = int(line.split(" ")[1])
