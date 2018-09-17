@@ -82,7 +82,7 @@ class Config(object):
 
 
 class TokenizerConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
 
         self.base = ""
@@ -113,17 +113,20 @@ class TokenizerConfig(Config):
         self.patience = -1
         self.tokenize_maximum_sequence_length = 500  # how much to run predict on, at a time
 
+
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + "\n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + "\n")
             self.load(filename)
 
         self._valid = True
 
 
 class TaggerConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.layers = [200, 200]
         self.layer_dropouts = [0.5, 0.5]
@@ -135,27 +138,30 @@ class TaggerConfig(Config):
         self.input_size = 100
 
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-
-        print ("INPUT SIZE:", self.input_size)
-        print ("LAYERS:", self.layers)
-        print ("LAYER DROPOUTS:", self.layer_dropouts)
-        print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-        print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
-        print ("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
-        print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
+        
+        if verbose:
+            print ("INPUT SIZE:", self.input_size)
+            print ("LAYERS:", self.layers)
+            print ("LAYER DROPOUTS:", self.layer_dropouts)
+            print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+            print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
+            print ("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
+            print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
             print (
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one")
+                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
             self._valid = False
 
 
 class ParserConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.layers = [300, 300, 200, 200, 200]
         self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
@@ -170,26 +176,30 @@ class ParserConfig(Config):
         self.use_lexical = True
         self.input_embeddings_size = 100
 
+
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
-        print ("LAYERS:", self.layers)
-        print ("LAYER DROPOUTS:", self.layer_dropouts)
-        print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-        print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
-        print ("ARC PROJECTION SIZE:", self.arc_proj_size)
-        print ("LABEL PROJECTION SIZE:", self.label_proj_size)
-        print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
-        print ("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
-        print ("USE MORPHOLOGY AS INPUT:", self.use_morphology)
-        print ("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
+        if verbose:
+            print ("LAYERS:", self.layers)
+            print ("LAYER DROPOUTS:", self.layer_dropouts)
+            print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+            print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
+            print ("ARC PROJECTION SIZE:", self.arc_proj_size)
+            print ("LABEL PROJECTION SIZE:", self.label_proj_size)
+            print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
+            print ("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
+            print ("USE MORPHOLOGY AS INPUT:", self.use_morphology)
+            print ("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
             print (
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one")
+                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
             self._valid = False
 
         if self.use_morphology and self.predict_morphology:
@@ -198,7 +208,7 @@ class ParserConfig(Config):
 
 
 class LemmatizerConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.rnn_size = 200
         self.rnn_layers = 2
@@ -208,14 +218,16 @@ class LemmatizerConfig(Config):
         self.tag_embeddings_size = 100
 
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
 
 class GDBConfig(Config):
-    def __init__(self, filename=none):
+    def __init__(self, filename=none, verbose=False):
         super().__init__()
         self.use_char_embeddings = True
         self.char_rnn_layers = 2
@@ -225,9 +237,11 @@ class GDBConfig(Config):
         self.proj_size = 100
 
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
 
@@ -251,7 +265,7 @@ class NMTConfig(Config):
 
 
 class TieredTokenizerConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         # sentece splitting
         self.ss_char_embeddings_size = 100
@@ -280,16 +294,18 @@ class TieredTokenizerConfig(Config):
         self.tok_char_peek_lstm_dropout = 0.33
 
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
         self._valid = True
 
 
 class CompoundWordConfig(Config):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.character_embeddings_size = 100
         self.encoder_size = 200
@@ -298,7 +314,9 @@ class CompoundWordConfig(Config):
         self.decoder_layers = 2
 
         if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
