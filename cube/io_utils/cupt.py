@@ -40,8 +40,8 @@ class CUPTDataset:
             line = line.replace("\r", "")
             if (not line.startswith("#") or in_sequence) and line != '':
                 parts = line.split("\t")
-                s = ConllEntry(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8],
-                               parts[9])
+                s = CUPTEntry(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[10], parts[8],
+                              parts[9])
                 seq.append(s)
                 in_sequence = True
             elif line == "":
@@ -53,7 +53,7 @@ class CUPTDataset:
         return sequences
 
 
-class ConllEntry:
+class CUPTEntry:
     def __init__(self, index, word, lemma, upos, xpos, attrs, head, label, deps, space_after):
         self.index, self.is_compound_entry = self._int_try_parse(index)
         self.word = word

@@ -461,14 +461,14 @@ def parse_train(params):
                 exec ("config.__dict__[\"" + variable + "\"] = " + value)
                 # END INJECTION
         encodings = Encodings()
-        encodings.compute(trainset, devset, 'label')
+        encodings.compute(trainset, devset, 'label', CUPT_format=True)
         # update wordlist if testset was provided
         if params.test_file:
             encodings.update_wordlist(testset)
         embeddings = WordEmbeddings()
-        embeddings.read_from_file(params.embeddings, encodings.word_list)
+        embeddings.read_from_file(params.embeddings, None)
         gdbner = GDBNer(config, encodings, embeddings)
-        trainer = NERTrainers(gdbner, encodings, params.itters, trainset, devset, testset)
+        trainer = NERTrainer(gdbner, encodings, params.itters, trainset, devset, testset)
         trainer.start_training(params.output_base, params.batch_size)
 
 

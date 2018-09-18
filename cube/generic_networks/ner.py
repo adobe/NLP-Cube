@@ -20,6 +20,35 @@ import dynet as dy
 import numpy as np
 
 
+def get_link(seq, iSrc, iDst):
+    l1 = seq[iSrc].label
+    l2 = seq[iDst].label
+
+    if iSrc == 0 and l2 != '*':
+        return 1
+    if iDst == 0 and l1 != '*':
+        return 1
+
+    if l1 == "*" or l2 == "*":
+        return 0
+
+    if (l2 in l1) or (l1 in l2):
+        # print l1, l2, 1
+        return 1
+    else:
+        # print l1, l2, 0
+        return 0
+
+
+def _has_index(index, label):
+    parts = label.split(";")
+    for part in parts:
+        pp = part.split(":")
+        if pp[0] == str(index):
+            return True
+    return False
+
+
 class GDBNer:
     def __init__(self, config, encodings, embeddings, runtime=False):
         self.model = dy.Model()
@@ -43,7 +72,7 @@ class GDBNer:
                                                       embeddings_size=self.config.embeddings_size, model=self.model,
                                                       runtime=runtime)
 
-        self.we_proj = self.model.add_lookup_parameters(
+        self.we_proj = self.model.add_parameters(
             (self.config.embeddings_size, self.embeddings.word_embeddings_size))
 
         self.encoder_fw = []
@@ -61,7 +90,7 @@ class GDBNer:
             self.encoder_bw.append(lstm_builder(1, input_size, layer_size, self.model))
             input_size = layer_size * 2
 
-        self.link_w = self.model.add_parameters((1, input_size))
+        self.link_w = self.model.add_parameters((1, self.config.proj_size * 2))
         self.link_b = self.model.add_parameters((1))
 
         self.label_decoder = lstm_builder(1, self.config.proj_size, self.config.label_rnn_size, self.model)
@@ -73,7 +102,7 @@ class GDBNer:
         self.proj_b2 = self.model.add_parameters((self.config.proj_size))
         self.proj_b3 = self.model.add_parameters((self.config.proj_size))
 
-        self.label_w = self.model.add_parameters((len(self.encodings.label2int), self.label_rnn_sizes))
+        self.label_w = self.model.add_parameters((len(self.encodings.label2int), self.config.label_rnn_size))
         self.label_b = self.model.add_parameters((len(self.encodings.label2int)))
 
         self.losses = []
@@ -102,9 +131,9 @@ class GDBNer:
 
             word_vec, found = self.embeddings.get_word_embeddings(word)
             if not found:
-                word_vec = self.embeddings.get_word_embeddings('</s>')
+                word_vec, found = self.embeddings.get_word_embeddings('</s>')
 
-            word_vector = self.we_proj.expr(update=True) * word_vec
+            word_vector = self.we_proj.expr(update=True) * dy.inputVector(word_vec)
 
             tag_mult = 1.0
             if upos in self.encodings.upos2int:
@@ -128,7 +157,7 @@ class GDBNer:
             tag_vector = (upos_vec + xpos_vec + attrs_vec) * dy.scalarInput(tag_mult)
 
             if self.config.use_char_embeddings:
-                char_vector = self.character_network.compute_embeddings(word, runtime=runtime)
+                char_vector, states = self.character_network.compute_embeddings(word, runtime=runtime)
             else:
                 char_vector = zero_vec_tag
 
@@ -208,7 +237,7 @@ class GDBNer:
             label = ""
             i = 0
             for row in seq:
-                if self._has_index(index, row.label):
+                if _has_index(index, row.label):
                     if first:
                         first = False
                         parts = row.label.split(";")
@@ -257,13 +286,14 @@ class GDBNer:
                     o = output[iSrc][iDst]  # the softmax portion
                     t = get_link(seq, iSrc, iDst)
                     # if t==1:
-                    self.losses.append(-dy.log(dy.pick(o, t)))
+                    # self.losses.append(-dy.log(dy.pick(o, t)))
+                    self.losses.append(dy.binary_log_loss(o, dy.scalarInput(t)))
 
         # labels
         gs_chains, labels = self._get_gs_chains(seq)
 
         for chain, label in zip(gs_chains, labels):
-            label_rnn = self.label_lstm.initial_state()
+            label_rnn = self.label_decoder.initial_state()
             for index in chain:
                 label_rnn = label_rnn.add_input(proj_x3[index])
             label_softmax = dy.softmax(
@@ -298,7 +328,7 @@ class GDBNer:
                     expressions.append(expr)
 
         for expression in expressions:
-            lstm_label = self.label_lstm.initial_state()
+            lstm_label = self.label_decoder.initial_state()
             for index in expression:
                 lstm_label = lstm_label.add_input(proj_x[index])
             label_soft = self.label_w.expr(update=True) * lstm_label.output() + self.label_b.expr(update=True)
