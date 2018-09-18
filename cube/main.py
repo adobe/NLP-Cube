@@ -26,8 +26,8 @@ from misc.misc import fopen
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store', dest='train',
-                      choices=['tagger', 'parser', 'lemmatizer', 'tokenizer', 'mt', 'compound'],
-                      help='select which model to train: tagger, parser, lemmatizer, tokenizer')
+                      choices=['tagger', 'parser', 'lemmatizer', 'tokenizer', 'mt', 'compound', 'ner'],
+                      help='select which model to train: tagger, parser, lemmatizer, tokenizer, mt, compound, ner')
     parser.add_option('--train-file', action='store', dest='train_file', help='location of the train dataset')
     parser.add_option('--dev-file', action='store', dest='dev_file', help='location of the dev dataset')
     parser.add_option('--embeddings', action='store', dest='embeddings',
@@ -108,6 +108,7 @@ if __name__ == '__main__':
         dynet_config.set_gpu()
 
 from io_utils.conll import Dataset
+from io_utils.cupt import CUPTDataset
 from io_utils.mt import MTDataset
 from io_utils.config import TokenizerConfig
 from io_utils.config import TaggerConfig
@@ -116,6 +117,7 @@ from io_utils.config import LemmatizerConfig
 from io_utils.config import NMTConfig
 from io_utils.config import TieredTokenizerConfig
 from io_utils.config import CompoundWordConfig
+from io_utils.config import GDBConfig
 from io_utils.embeddings import WordEmbeddings
 from io_utils.encodings import Encodings
 from io_utils.trainers import TokenizerTrainer
@@ -124,6 +126,7 @@ from io_utils.trainers import ParserTrainer
 from io_utils.trainers import LemmatizerTrainer
 from io_utils.trainers import MTTrainer
 from io_utils.trainers import CompoundWordTrainer
+from io_utils.trainers import NERTrainer
 from generic_networks.tokenizers import BDRNNTokenizer
 from generic_networks.taggers import BDRNNTagger
 from generic_networks.parsers import BDRNNParser
@@ -131,6 +134,7 @@ from generic_networks.lemmatizers import FSTLemmatizer
 from generic_networks.translators import BRNNMT
 from generic_networks.tokenizers import TieredTokenizer
 from generic_networks.token_expanders import CompoundWordExpander
+from generic_networks.ner import GDBNer
 
 
 def parse_test(params):
@@ -424,6 +428,48 @@ def parse_train(params):
                                    raw_test_file=params.raw_test_file, gold_train_file=params.train_file,
                                    gold_dev_file=params.dev_file, gold_test_file=params.test_file)
         trainer.start_training(params.output_base, batch_size=params.batch_size)
+    elif params.train == "ner":
+        print ("Starting training for " + params.train)
+        print ("==PARAMETERS==")
+        print ("TRAIN FILE: " + params.train_file)
+        print ("DEV FILE: " + params.dev_file)
+        if params.test_file is not None:
+            print ("TEST FILE: " + params.test_file)
+        print ("EMBEDDINGS FILE: " + params.embeddings)
+        print ("STOPPING CONDITION: " + str(params.itters))
+        print ("OUTPUT BASE: " + params.output_base)
+        print ("AUX SOFTMAX WEIGHT: " + str(params.aux_softmax_weight))
+        print ("CONFIG FILE: " + str(params.config))
+        print ("==============\n")
+
+        trainset = CUPTDataset(params.train_file)
+        devset = CUPTDataset(params.dev_file)
+        if params.test_file:
+            testset = CUPTDataset(params.test_file)
+        else:
+            testset = None
+        config = GDBConfig(params.config)
+        if not config._valid:
+            return
+        # PARAM INJECTION
+        if params.params != None:
+            parts = params.params.split(":")
+            for param in parts:
+                variable = param.split("=")[0]
+                value = param[len(variable) + 1:]
+                print("External param injection: " + variable + "=" + value)
+                exec ("config.__dict__[\"" + variable + "\"] = " + value)
+                # END INJECTION
+        encodings = Encodings()
+        encodings.compute(trainset, devset, 'label')
+        # update wordlist if testset was provided
+        if params.test_file:
+            encodings.update_wordlist(testset)
+        embeddings = WordEmbeddings()
+        embeddings.read_from_file(params.embeddings, encodings.word_list)
+        gdbner = GDBNer(config, encodings, embeddings)
+        trainer = NERTrainers(gdbner, encodings, params.itters, trainset, devset, testset)
+        trainer.start_training(params.output_base, params.batch_size)
 
 
 def parse_run(params):

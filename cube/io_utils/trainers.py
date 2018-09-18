@@ -18,6 +18,7 @@
 
 import sys
 from misc.misc import fopen
+
 sys.path.insert(0, '../')
 from random import shuffle
 import time
@@ -121,7 +122,7 @@ class MTTrainer:
         last_proc = 0
         iSeq = 0
         if filename is not None:
-            f = fopen(filename,"w",encoding="utf-8")            
+            f = fopen(filename, "w", encoding="utf-8")
 
         for seq in dataset.sequences:
             proc = int((iSeq + 1) * 100 / len(dataset.sequences))
@@ -1076,7 +1077,7 @@ class TokenizerTrainer:
 
         with fopen(raw_text_file, "r") as file:
             lines = file.readlines()
-            
+
         # analyze use of spaces in first part of the file
         test = "";
         cnt = 0
@@ -1117,3 +1118,197 @@ class TokenizerTrainer:
         metrics = conll_eval(self.tokenizer.config.base + "-temporary.conllu", gold_conllu_file)
 
         return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
+
+class NERTrainer:
+    def __init__(self, parser, encodings, patience, trainset, devset, testset=None):
+        self.parser = parser
+        self.trainset = trainset
+        self.devset = devset
+        self.testset = testset
+        self.patience = patience
+        self.encodings = encodings
+
+    def start_training(self, output_base, batch_size=100):
+
+        epoch = 0
+        itt_no_improve = self.patience
+
+        path = output_base + ".encodings"
+        sys.stdout.write("Storing encodings in " + path + "\n")
+        self.encodings.save(path)
+        path = output_base + ".conf"
+        sys.stdout.write("Storing config in " + path + "\n")
+        self.parser.config.save(path)
+        sys.stdout.write("\tevaluating on devset...")
+        sys.stdout.flush()
+        # dev_uas, dev_las, dev_upos, dev_xpos, dev_attrs, dev_lemma = self.eval(self.devset)
+        # sys.stdout.write(" UAS=" + str(dev_uas) + " LAS=" + str(dev_las) + " UPOS=" + str(dev_upos) + " XPOS=" + str(
+        #     dev_xpos) + " ATTRS=" + str(dev_attrs) + " LEMMA=" + str(dev_lemma) + "\n")
+        # if self.testset is not None:
+        #     sys.stdout.write("\tevaluating on testset...")
+        #     sys.stdout.flush()
+        #     test_uas, test_las, test_upos, test_xpos, test_attrs, test_lemma = self.eval(self.testset)
+        #     sys.stdout.write(
+        #         " UAS=" + str(test_uas) + " LAS=" + str(test_las) + " UPOS=" + str(test_upos) + " XPOS=" + str(
+        #             test_xpos) + " ATTRS=" + str(test_attrs) + " LEMMA=" + str(test_lemma) + "\n")
+
+        # best_dev_uas = dev_uas
+        # best_dev_las = dev_las
+        best_dev_uas = 0
+        best_dev_las = 0
+        test_uas_uas = 0
+        test_uas_las = 0
+        test_las_uas = 0
+        test_las_las = 0
+        dev_uas_uas = 0
+        dev_uas_las = 0
+        dev_las_uas = 0
+        dev_las_las = 0
+        current_batch_size = 0
+        self.parser.start_batch()
+
+        while itt_no_improve > 0:
+
+            itt_no_improve -= 1
+            epoch += 1
+            sys.stdout.write("Starting epoch " + str(epoch) + "\n")
+            sys.stdout.flush()
+            sys.stdout.write("\tshuffling training data... ")
+            sys.stdout.flush()
+            shuffle(self.trainset.sequences)
+            sys.stdout.write("done\n")
+            sys.stdout.flush()
+            last_proc = 0
+            sys.stdout.write("\ttraining...")
+            sys.stdout.flush()
+            total_loss = 0
+            start_time = time.time()
+
+            for iSeq in range(len(self.trainset.sequences)):
+                seq = self.trainset.sequences[iSeq]
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
+                if proc % 5 == 0 and proc != last_proc:
+                    last_proc = proc
+                    sys.stdout.write(" " + str(proc))
+                    sys.stdout.flush()
+
+                self.parser.learn(seq)
+                current_batch_size += len(seq)
+                if current_batch_size >= batch_size:
+                    total_loss += self.parser.end_batch()
+                    current_batch_size = 0
+                    self.parser.start_batch()
+            total_loss += self.parser.end_batch()
+            current_batch_size = 0
+            stop_time = time.time()
+            sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
+                stop_time - start_time) + "\n")
+            self.parser.start_batch()
+
+            # sys.stdout.write("\tevaluating on trainset...")
+            # sys.stdout.flush()
+            # train_uas, train_las = self.eval(self.trainset)
+            # sys.stdout.write(" UAS=" + str(train_uas) + " LAS=" + str(train_las) + "\n")
+
+            sys.stdout.write("\tevaluating on devset...")
+            sys.stdout.flush()
+            dev_uas, dev_las, dev_upos, dev_xpos, dev_attrs = self.eval(self.devset)
+            sys.stdout.write(
+                " UAS=" + str(dev_uas) + " LAS=" + str(dev_las) + " UPOS=" + str(dev_upos) + " XPOS=" + str(
+                    dev_xpos) + " ATTRS=" + str(dev_attrs) + "\n")
+            if self.testset is not None:
+                sys.stdout.write("\tevaluating on testset...")
+                sys.stdout.flush()
+                test_uas, test_las, test_upos, test_xpos, test_attrs = self.eval(self.testset)
+                sys.stdout.write(
+                    " UAS=" + str(test_uas) + " LAS=" + str(test_las) + " UPOS=" + str(test_upos) + " XPOS=" + str(
+                        test_xpos) + " ATTRS=" + str(test_attrs) + "\n")
+
+            if dev_uas > best_dev_uas:
+                best_dev_uas = dev_uas
+                dev_uas_uas = dev_uas
+                dev_uas_las = dev_las
+                if self.testset is not None:
+                    test_uas_uas = test_uas
+                    test_uas_las = test_las
+                path = output_base + ".bestUAS"
+                sys.stdout.write("\tStoring " + path + "\n")
+                sys.stdout.flush()
+                self.parser.save(path)
+                itt_no_improve = self.patience
+
+            if dev_las > best_dev_las:
+                best_dev_las = dev_las
+                dev_las_uas = dev_uas
+                dev_las_las = dev_las
+                if self.testset is not None:
+                    test_las_uas = test_uas
+                    test_las_las = test_las
+                path = output_base + ".bestLAS"
+                sys.stdout.write("\tStoring " + path + "\n")
+                sys.stdout.flush()
+                self.parser.save(path)
+                itt_no_improve = self.patience
+
+            path = output_base + ".last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.parser.save(path)
+
+        sys.stdout.write("Training is done with devset\n")
+        sys.stdout.write("Best UAS score provides:\n")
+        sys.stdout.write("\tDev UAS=" + str(dev_uas_uas) + " LAS=" + str(dev_uas_las) + "\n")
+        sys.stdout.write("\tTest UAS=" + str(test_uas_uas) + " LAS=" + str(test_uas_las) + "\n")
+        sys.stdout.write("Best LAS score provides:\n")
+        sys.stdout.write("\tDev UAS=" + str(dev_las_uas) + " LAS=" + str(dev_las_las) + "\n")
+        sys.stdout.write("\tTest UAS=" + str(test_las_uas) + " LAS=" + str(test_las_las) + "\n")
+        sys.stdout.write("\n")
+
+    def eval(self, dataset):
+        last_proc = 0
+        correct_uas = 0
+        correct_las = 0
+        correct_upos = 0
+        correct_xpos = 0
+        correct_attrs = 0
+
+        total = 0
+        for iSeq in range(len(dataset.sequences)):
+            seq = dataset.sequences[iSeq]
+            # remove compound words
+            tmp = []
+            for entry in seq:
+                if not entry.is_compound_entry:
+                    tmp.append(entry)
+            seq = tmp
+            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
+            if proc % 5 == 0 and proc != last_proc:
+                last_proc = proc
+                sys.stdout.write(" " + str(proc))
+                sys.stdout.flush()
+
+            predicted = self.parser.tag(seq)
+
+            for entry, pred in zip(seq, predicted):
+                total += 1
+                gold_head = entry.head
+                gold_label = entry.label
+                pred_head = pred.head
+                pred_label = pred.label
+
+                if pred_head == gold_head:
+                    correct_uas += 1
+                    if gold_label == pred_label:
+                        correct_las += 1
+
+                if pred.upos == entry.upos:
+                    correct_upos += 1
+                if pred.xpos == entry.xpos:
+                    correct_xpos += 1
+                if pred.attrs == entry.attrs:
+                    correct_attrs += 1
+
+        if total == 0:
+            total += 1
+        return float(correct_uas) / total, float(correct_las) / total, float(correct_upos) / total, float(
+            correct_xpos) / total, float(correct_attrs) / total

@@ -39,7 +39,7 @@ class GDBNer:
             from generic_networks.character_embeddings import CharacterNetwork
             self.character_network = CharacterNetwork(self.config.embeddings_size, encodings,
                                                       rnn_size=self.config.char_rnn_size,
-                                                      rnn_layers=selgf.char_rnn_layers,
+                                                      rnn_layers=self.config.char_rnn_layers,
                                                       embeddings_size=self.config.embeddings_size, model=self.model,
                                                       runtime=runtime)
 
@@ -51,12 +51,12 @@ class GDBNer:
 
         lstm_builder = dy.VanillaLSTMBuilder
         if not runtime:
-            from utils import orthonormal_VanillaLSTMBuilder
+            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
             lstm_builder = orthonormal_VanillaLSTMBuilder
 
         input_size = self.config.embeddings_size
 
-        for layer_size in self.config.arc_rnn_size:
+        for layer_size in self.config.arc_rnn_layers:
             self.encoder_fw.append(lstm_builder(1, input_size, layer_size, self.model))
             self.encoder_bw.append(lstm_builder(1, input_size, layer_size, self.model))
             input_size = layer_size * 2
@@ -73,8 +73,8 @@ class GDBNer:
         self.proj_b2 = self.model.add_parameters((self.config.proj_size))
         self.proj_b3 = self.model.add_parameters((self.config.proj_size))
 
-        self.label_w = dy.model.add_parameters((len(self.encodings.label2int), self.label_rnn_sizes))
-        self.label_b = dy.model.add_parameters((len(self.encodings.label2int)))
+        self.label_w = self.model.add_parameters((len(self.encodings.label2int), self.label_rnn_sizes))
+        self.label_b = self.model.add_parameters((len(self.encodings.label2int)))
 
         self.losses = []
 
@@ -222,7 +222,7 @@ class GDBNer:
                 i += 1
             if label == "":
                 for row in seq:
-                    print row.orig_line
+                    print (row.orig_line)
             chains.append(lst)
             labels.append(label)
 

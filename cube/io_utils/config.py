@@ -302,7 +302,7 @@ class CompoundWordConfig(Config):
 
 
 class GDBConfig(Config):
-    def __init__(self, filename=none, verbose=False):
+    def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.use_char_embeddings = True
         self.char_rnn_layers = 2
@@ -319,3 +319,5 @@ class GDBConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
+
+        self._valid = True
