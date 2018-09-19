@@ -32,12 +32,15 @@ def get_link(seq, iSrc, iDst):
     if l1 == "*" or l2 == "*":
         return 0
 
-    if (l2 in l1) or (l1 in l2):
-        # print l1, l2, 1
-        return 1
-    else:
-        # print l1, l2, 0
-        return 0
+    pp_l1 = l1.split(';')
+    pp_l2 = l2.split(';')
+    for l1 in pp_l1:
+        for l2 in pp_l2:
+            ppl1 = l1.split(':')[0]
+            ppl2 = l2.split(':')[0]
+            if ppl1 == ppl2:
+                return 1
+    return 0
 
 
 def _has_index(index, label):
@@ -183,14 +186,13 @@ class GDBNer:
         return seq_input
 
     def save(self, path):
-        print ("\tStoring " + path + "\n")
         self.model.save(path)
 
     def load(self, path):
-        print ("\tLoading " + path + "\n")
         self.model.populate(path)
 
     def tag(self, seq):
+        dy.renew_cg()
         output, proj_x = self._predict(seq, runtime=True)
         return self._decode(output, proj_x)
 
@@ -307,7 +309,7 @@ class GDBNer:
         for iSrc in range(len(output)):
             for iDst in range(len(output)):
                 if iDst > iSrc:
-                    if output[iSrc][iDst].value()[1] > output[iSrc][iDst].value()[0]:
+                    if output[iSrc][iDst].value() >= 0.5:
                         a[iSrc][iDst] = 1
                         a[iDst][iSrc] = 1
 

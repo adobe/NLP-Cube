@@ -1119,9 +1119,10 @@ class TokenizerTrainer:
 
         return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
 
+
 class NERTrainer:
-    def __init__(self, parser, encodings, patience, trainset, devset, testset=None):
-        self.parser = parser
+    def __init__(self, ner, encodings, patience, trainset, devset, testset=None):
+        self.ner = ner
         self.trainset = trainset
         self.devset = devset
         self.testset = testset
@@ -1138,34 +1139,19 @@ class NERTrainer:
         self.encodings.save(path)
         path = output_base + ".conf"
         sys.stdout.write("Storing config in " + path + "\n")
-        self.parser.config.save(path)
+        self.ner.config.save(path)
         sys.stdout.write("\tevaluating on devset...")
         sys.stdout.flush()
-        # dev_uas, dev_las, dev_upos, dev_xpos, dev_attrs, dev_lemma = self.eval(self.devset)
-        # sys.stdout.write(" UAS=" + str(dev_uas) + " LAS=" + str(dev_las) + " UPOS=" + str(dev_upos) + " XPOS=" + str(
-        #     dev_xpos) + " ATTRS=" + str(dev_attrs) + " LEMMA=" + str(dev_lemma) + "\n")
-        # if self.testset is not None:
-        #     sys.stdout.write("\tevaluating on testset...")
-        #     sys.stdout.flush()
-        #     test_uas, test_las, test_upos, test_xpos, test_attrs, test_lemma = self.eval(self.testset)
-        #     sys.stdout.write(
-        #         " UAS=" + str(test_uas) + " LAS=" + str(test_las) + " UPOS=" + str(test_upos) + " XPOS=" + str(
-        #             test_xpos) + " ATTRS=" + str(test_attrs) + " LEMMA=" + str(test_lemma) + "\n")
 
-        # best_dev_uas = dev_uas
-        # best_dev_las = dev_las
-        best_dev_uas = 0
-        best_dev_las = 0
-        test_uas_uas = 0
-        test_uas_las = 0
-        test_las_uas = 0
-        test_las_las = 0
-        dev_uas_uas = 0
-        dev_uas_las = 0
-        dev_las_uas = 0
-        dev_las_las = 0
+        best_dev_score = 0
+        best_dev_precision = 0
+        best_dev_recall = 0
+        best_test_score = 0
+        best_test_precision = 0
+        best_test_recall = 0
+
         current_batch_size = 0
-        self.parser.start_batch()
+        self.ner.start_batch()
 
         while itt_no_improve > 0:
 
@@ -1188,127 +1174,114 @@ class NERTrainer:
                 seq = self.trainset.sequences[iSeq]
                 proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
-                    last_proc = proc
-                    sys.stdout.write(" " + str(proc))
-                    sys.stdout.flush()
+                    while last_proc < proc:
+                        last_proc += 5
+                        sys.stdout.write(" " + str(last_proc))
+                        sys.stdout.flush()
 
-                self.parser.learn(seq)
+                self.ner.learn(seq)
                 current_batch_size += len(seq)
                 if current_batch_size >= batch_size:
-                    total_loss += self.parser.end_batch()
+                    total_loss += self.ner.end_batch()
                     current_batch_size = 0
-                    self.parser.start_batch()
-            total_loss += self.parser.end_batch()
+                    self.ner.start_batch()
+            total_loss += self.ner.end_batch()
             current_batch_size = 0
             stop_time = time.time()
             sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
                 stop_time - start_time) + "\n")
-            self.parser.start_batch()
-
-            # sys.stdout.write("\tevaluating on trainset...")
-            # sys.stdout.flush()
-            # train_uas, train_las = self.eval(self.trainset)
-            # sys.stdout.write(" UAS=" + str(train_uas) + " LAS=" + str(train_las) + "\n")
+            self.ner.start_batch()
 
             sys.stdout.write("\tevaluating on devset...")
             sys.stdout.flush()
-            dev_uas, dev_las, dev_upos, dev_xpos, dev_attrs = self.eval(self.devset)
+            dev_precision, dev_recall, dev_score = self.eval(self.devset)
             sys.stdout.write(
-                " UAS=" + str(dev_uas) + " LAS=" + str(dev_las) + " UPOS=" + str(dev_upos) + " XPOS=" + str(
-                    dev_xpos) + " ATTRS=" + str(dev_attrs) + "\n")
+                " P=" + str(dev_precision) + " R=" + str(dev_recall) + " F=" + str(dev_score) + "\n")
             if self.testset is not None:
                 sys.stdout.write("\tevaluating on testset...")
                 sys.stdout.flush()
-                test_uas, test_las, test_upos, test_xpos, test_attrs = self.eval(self.testset)
+                test_precision, test_recall, test_score = self.eval(self.testset)
                 sys.stdout.write(
-                    " UAS=" + str(test_uas) + " LAS=" + str(test_las) + " UPOS=" + str(test_upos) + " XPOS=" + str(
-                        test_xpos) + " ATTRS=" + str(test_attrs) + "\n")
+                    " P=" + str(test_precision) + " R=" + str(test_recall) + " F=" + str(test_score) + "\n")
 
-            if dev_uas > best_dev_uas:
-                best_dev_uas = dev_uas
-                dev_uas_uas = dev_uas
-                dev_uas_las = dev_las
+            if dev_score > best_dev_score:
+                best_dev_score = dev_score
+                best_dev_precision = dev_precision
+                best_dev_recall = dev_recall
+
                 if self.testset is not None:
-                    test_uas_uas = test_uas
-                    test_uas_las = test_las
-                path = output_base + ".bestUAS"
+                    best_test_score = test_score
+                    best_test_precision = test_precision
+                    best_test_recall = test_recall
+                path = output_base + ".bestFScore"
                 sys.stdout.write("\tStoring " + path + "\n")
                 sys.stdout.flush()
-                self.parser.save(path)
-                itt_no_improve = self.patience
-
-            if dev_las > best_dev_las:
-                best_dev_las = dev_las
-                dev_las_uas = dev_uas
-                dev_las_las = dev_las
-                if self.testset is not None:
-                    test_las_uas = test_uas
-                    test_las_las = test_las
-                path = output_base + ".bestLAS"
-                sys.stdout.write("\tStoring " + path + "\n")
-                sys.stdout.flush()
-                self.parser.save(path)
+                self.ner.save(path)
                 itt_no_improve = self.patience
 
             path = output_base + ".last"
             sys.stdout.write("\tStoring " + path + "\n")
             sys.stdout.flush()
-            self.parser.save(path)
+            self.ner.save(path)
 
         sys.stdout.write("Training is done with devset\n")
         sys.stdout.write("Best UAS score provides:\n")
-        sys.stdout.write("\tDev UAS=" + str(dev_uas_uas) + " LAS=" + str(dev_uas_las) + "\n")
-        sys.stdout.write("\tTest UAS=" + str(test_uas_uas) + " LAS=" + str(test_uas_las) + "\n")
-        sys.stdout.write("Best LAS score provides:\n")
-        sys.stdout.write("\tDev UAS=" + str(dev_las_uas) + " LAS=" + str(dev_las_las) + "\n")
-        sys.stdout.write("\tTest UAS=" + str(test_las_uas) + " LAS=" + str(test_las_las) + "\n")
+        sys.stdout.write(
+            "\tDev P=" + str(best_dev_precision) + " R=" + str(best_dev_recall) + " F=" + str(best_dev_score) + "\n")
+        if self.testset is not None:
+            sys.stdout.write("\tTest P=" + str(best_test_precision) + " R=" + str(best_test_recall) + " F=" + str(
+                best_test_score) + "\n")
         sys.stdout.write("\n")
 
     def eval(self, dataset):
+        true_p = 0
+        false_p = 0
+        total_p = 0
         last_proc = 0
-        correct_uas = 0
-        correct_las = 0
-        correct_upos = 0
-        correct_xpos = 0
-        correct_attrs = 0
+        iSeq = 0
 
-        total = 0
-        for iSeq in range(len(dataset.sequences)):
-            seq = dataset.sequences[iSeq]
-            # remove compound words
-            tmp = []
-            for entry in seq:
-                if not entry.is_compound_entry:
-                    tmp.append(entry)
-            seq = tmp
-            proc = int((iSeq + 1) * 100 / len(dataset.sequences))
-            if proc % 5 == 0 and proc != last_proc:
-                last_proc = proc
-                sys.stdout.write(" " + str(proc))
-                sys.stdout.flush()
+        for s in dataset.sequences:
+            iSeq += 1
+            proc = int(iSeq * 100 / len(dataset.sequences))
+            if proc % 15 == 0 and last_proc != proc:
+                while last_proc < proc:
+                    last_proc += 5
+                    sys.stdout.write(" " + str(last_proc))
+                    sys.stdout.flush()
 
-            predicted = self.parser.tag(seq)
+            import dynet as dy
+            dy.renew_cg()  # This is a special case for trainers. We evaluate the graph itself instead of the final output
 
-            for entry, pred in zip(seq, predicted):
-                total += 1
-                gold_head = entry.head
-                gold_label = entry.label
-                pred_head = pred.head
-                pred_label = pred.label
+            output, proj_x = self.ner._predict(s)
+            for iSrc in range(len(s)):
+                for iDst in range(len(s)):
+                    if iDst > iSrc:
+                        # from network import get_link
+                        from generic_networks.ner import get_link
+                        link = get_link(s, iSrc, iDst)
+                        if link == 1:
+                            total_p += 1
+                        p_val = output[iSrc][iDst].value()
+                        if p_val >= 0.5:
+                            link_pred = 1
+                        else:
+                            link_pred = 0
 
-                if pred_head == gold_head:
-                    correct_uas += 1
-                    if gold_label == pred_label:
-                        correct_las += 1
+                        if link_pred == 1 and link == 1:
+                            true_p += 1
+                        elif link_pred == 1:
+                            false_p += 1
 
-                if pred.upos == entry.upos:
-                    correct_upos += 1
-                if pred.xpos == entry.xpos:
-                    correct_xpos += 1
-                if pred.attrs == entry.attrs:
-                    correct_attrs += 1
+        # print(" ", true_p, false_p, total_p)
+        if false_p + true_p == 0:
+            false_p += 1
+        precision = float(true_p) / float(false_p + true_p)
+        if total_p == 0:
+            total_p += 1
+        recall = float(true_p) / total_p
+        if precision == 0 or recall == 0:
+            fscore = 0
+        else:
+            fscore = float(2 * precision * recall) / (precision + recall)
 
-        if total == 0:
-            total += 1
-        return float(correct_uas) / total, float(correct_las) / total, float(correct_upos) / total, float(
-            correct_xpos) / total, float(correct_attrs) / total
+        return precision, recall, fscore

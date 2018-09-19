@@ -34,7 +34,8 @@ class CUPTDataset:
     def _make_sequences(self, lines):
         sequences = []
         in_sequence = False
-        seq = []
+        seq = [CUPTEntry(0, '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '*', '<ROOT>',
+                         '<ROOT>')]
         for line in lines:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
@@ -48,7 +49,8 @@ class CUPTDataset:
                 in_sequence = False
                 if len(seq) > 0:
                     sequences.append(seq)
-                seq = []
+                seq = [CUPTEntry(0, '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '*', '<ROOT>',
+                                 '<ROOT>')]
 
         return sequences
 
