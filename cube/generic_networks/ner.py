@@ -171,7 +171,7 @@ class GDBNer:
                 p3 = 1.0
 
             scale = 1.0
-            if runtime:
+            if not runtime:
                 if p1 < 0.34:
                     word_vector = zero_vec_tag
                     scale += 1.0
