@@ -245,6 +245,8 @@ class GDBNer:
                         parts = row.label.split(";")
                         for part in parts:
                             pp = part.split(":")
+                            if len(pp) == 1:
+                                print(str(row.index) + "\t" + row.word + "\t" + row.label)
                             if pp[0] == str(index):
                                 label = pp[1]
                                 break

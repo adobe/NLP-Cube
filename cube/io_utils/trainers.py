@@ -1252,7 +1252,7 @@ class NERTrainer:
             import dynet as dy
             dy.renew_cg()  # This is a special case for trainers. We evaluate the graph itself instead of the final output
 
-            output, proj_x = self.ner._predict(s)
+            output, proj_x = self.ner._predict(s, runtime=True)
             for iSrc in range(len(s)):
                 for iDst in range(len(s)):
                     if iDst > iSrc:
