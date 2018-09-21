@@ -278,6 +278,7 @@ class GDBNer:
                         self._backtrack(a, current_nodes, solutions)
                         current_nodes = current_nodes[:-1]  # pop
         if not recursed and len(current_nodes) > 1:
+            import copy
             solutions.append(copy.deepcopy(current_nodes))
 
     def learn(self, seq):
@@ -337,6 +338,6 @@ class GDBNer:
                 lstm_label = lstm_label.add_input(proj_x[index])
             label_soft = self.label_w.expr(update=True) * lstm_label.output() + self.label_b.expr(update=True)
             label_index = np.argmax(label_soft.npvalue())
-            labels.append(self.encodings.label_list[label_index])
+            labels.append(self.encodings.labels[label_index])
 
         return expressions, labels
