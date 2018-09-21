@@ -18,6 +18,7 @@
 
 import sys
 from misc.misc import fopen
+
 sys.path.insert(0, '../')
 from random import shuffle
 import time
@@ -121,7 +122,7 @@ class MTTrainer:
         last_proc = 0
         iSeq = 0
         if filename is not None:
-            f = fopen(filename,"w",encoding="utf-8")            
+            f = fopen(filename, "w", encoding="utf-8")
 
         for seq in dataset.sequences:
             proc = int((iSeq + 1) * 100 / len(dataset.sequences))
@@ -1076,7 +1077,7 @@ class TokenizerTrainer:
 
         with fopen(raw_text_file, "r") as file:
             lines = file.readlines()
-            
+
         # analyze use of spaces in first part of the file
         test = "";
         cnt = 0
@@ -1117,3 +1118,170 @@ class TokenizerTrainer:
         metrics = conll_eval(self.tokenizer.config.base + "-temporary.conllu", gold_conllu_file)
 
         return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
+
+
+class NERTrainer:
+    def __init__(self, ner, encodings, patience, trainset, devset, testset=None):
+        self.ner = ner
+        self.trainset = trainset
+        self.devset = devset
+        self.testset = testset
+        self.patience = patience
+        self.encodings = encodings
+
+    def start_training(self, output_base, batch_size=100):
+
+        epoch = 0
+        itt_no_improve = self.patience
+
+        path = output_base + ".encodings"
+        sys.stdout.write("Storing encodings in " + path + "\n")
+        self.encodings.save(path)
+        path = output_base + ".conf"
+        sys.stdout.write("Storing config in " + path + "\n")
+        self.ner.config.save(path)
+        sys.stdout.write("\tevaluating on devset...")
+        sys.stdout.flush()
+
+        best_dev_score = 0
+        best_dev_precision = 0
+        best_dev_recall = 0
+        best_test_score = 0
+        best_test_precision = 0
+        best_test_recall = 0
+
+        current_batch_size = 0
+        self.ner.start_batch()
+
+        while itt_no_improve > 0:
+
+            itt_no_improve -= 1
+            epoch += 1
+            sys.stdout.write("Starting epoch " + str(epoch) + "\n")
+            sys.stdout.flush()
+            sys.stdout.write("\tshuffling training data... ")
+            sys.stdout.flush()
+            shuffle(self.trainset.sequences)
+            sys.stdout.write("done\n")
+            sys.stdout.flush()
+            last_proc = 0
+            sys.stdout.write("\ttraining...")
+            sys.stdout.flush()
+            total_loss = 0
+            start_time = time.time()
+
+            for iSeq in range(len(self.trainset.sequences)):
+                seq = self.trainset.sequences[iSeq]
+                proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
+                if proc % 5 == 0 and proc != last_proc:
+                    while last_proc < proc:
+                        last_proc += 5
+                        sys.stdout.write(" " + str(last_proc))
+                        sys.stdout.flush()
+
+                self.ner.learn(seq)
+                current_batch_size += len(seq)
+                if current_batch_size >= batch_size:
+                    total_loss += self.ner.end_batch()
+                    current_batch_size = 0
+                    self.ner.start_batch()
+            total_loss += self.ner.end_batch()
+            current_batch_size = 0
+            stop_time = time.time()
+            sys.stdout.write(" avg_loss=" + str(total_loss / len(self.trainset.sequences)) + " execution_time=" + str(
+                stop_time - start_time) + "\n")
+            self.ner.start_batch()
+
+            sys.stdout.write("\tevaluating on devset...")
+            sys.stdout.flush()
+            dev_precision, dev_recall, dev_score = self.eval(self.devset)
+            sys.stdout.write(
+                " P=" + str(dev_precision) + " R=" + str(dev_recall) + " F=" + str(dev_score) + "\n")
+            if self.testset is not None:
+                sys.stdout.write("\tevaluating on testset...")
+                sys.stdout.flush()
+                test_precision, test_recall, test_score = self.eval(self.testset)
+                sys.stdout.write(
+                    " P=" + str(test_precision) + " R=" + str(test_recall) + " F=" + str(test_score) + "\n")
+
+            if dev_score > best_dev_score:
+                best_dev_score = dev_score
+                best_dev_precision = dev_precision
+                best_dev_recall = dev_recall
+
+                if self.testset is not None:
+                    best_test_score = test_score
+                    best_test_precision = test_precision
+                    best_test_recall = test_recall
+                path = output_base + ".bestFScore"
+                sys.stdout.write("\tStoring " + path + "\n")
+                sys.stdout.flush()
+                self.ner.save(path)
+                itt_no_improve = self.patience
+
+            path = output_base + ".last"
+            sys.stdout.write("\tStoring " + path + "\n")
+            sys.stdout.flush()
+            self.ner.save(path)
+
+        sys.stdout.write("Training is done with devset\n")
+        sys.stdout.write("Best UAS score provides:\n")
+        sys.stdout.write(
+            "\tDev P=" + str(best_dev_precision) + " R=" + str(best_dev_recall) + " F=" + str(best_dev_score) + "\n")
+        if self.testset is not None:
+            sys.stdout.write("\tTest P=" + str(best_test_precision) + " R=" + str(best_test_recall) + " F=" + str(
+                best_test_score) + "\n")
+        sys.stdout.write("\n")
+
+    def eval(self, dataset):
+        true_p = 0
+        false_p = 0
+        total_p = 0
+        last_proc = 0
+        iSeq = 0
+
+        for s in dataset.sequences:
+            iSeq += 1
+            proc = int(iSeq * 100 / len(dataset.sequences))
+            if proc % 15 == 0 and last_proc != proc:
+                while last_proc < proc:
+                    last_proc += 5
+                    sys.stdout.write(" " + str(last_proc))
+                    sys.stdout.flush()
+
+            import dynet as dy
+            dy.renew_cg()  # This is a special case for trainers. We evaluate the graph itself instead of the final output
+
+            output, proj_x = self.ner._predict(s, runtime=True)
+            for iSrc in range(len(s)):
+                for iDst in range(len(s)):
+                    if iDst > iSrc:
+                        # from network import get_link
+                        from generic_networks.ner import get_link
+                        link = get_link(s, iSrc, iDst)
+                        if link == 1:
+                            total_p += 1
+                        p_val = output[iSrc][iDst].value()
+                        if p_val >= 0.5:
+                            link_pred = 1
+                        else:
+                            link_pred = 0
+
+                        if link_pred == 1 and link == 1:
+                            true_p += 1
+                        elif link_pred == 1:
+                            false_p += 1
+
+        # print(" ", true_p, false_p, total_p)
+        if false_p + true_p == 0:
+            false_p += 1
+        precision = float(true_p) / float(false_p + true_p)
+        if total_p == 0:
+            total_p += 1
+        recall = float(true_p) / total_p
+        if precision == 0 or recall == 0:
+            fscore = 0
+        else:
+            fscore = float(2 * precision * recall) / (precision + recall)
+
+        return precision, recall, fscore

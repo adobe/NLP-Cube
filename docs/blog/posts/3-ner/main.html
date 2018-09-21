@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <title>NLP Cube</title>
+
+        <!-- Bootstrap core CSS -->
+
+        <!-- Custom styles for this template -->
+        <style>
+            body {
+                padding-top: 54px;
+            }
+            @media (min-width: 992px) {
+                body {
+                    font-family: source-sans-pro, sans-serif ;
+                    padding-top: 56px;
+                }
+            }
+
+        </style>
+        <link href="../../../vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" media='screen'>
+        <link href="../../../css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="../../../vendor/font-awesome/css/font-awesome.min.css">
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    </head>
+
+    <body>
+
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="#">NLP Cube</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="../../../index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../../../start.html">Getting started</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../../../examples.html">Examples</a>
+                        </li>
+                        <li class="nav-item active">
+                            <a class="nav-link" href="../../../blog/list.html">Blog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="../../../contact.html">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+
+        <div id='hero-wrapper'>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h1 class="mt-5">NLP - Cube</h1>
+                        <p class="lead">Sentence Splitting, Tokenization, Lemmatization, Part-of-speech Tagging, Dependency Parsing and Named Entity Recognition for more than 50 languages</p>
+                        <ul class="list-unstyled">
+                            <li><a href='https://github.com/adobe/NLP-Cube' class="btn btn-primary">Browse the code</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id='sub-hero-wrapper'>
+            <div class="col-lg-8 col-md-10 mx-auto">
+              <h1>Named entity recognition with Graph-Based-Decoding</h1>
+                <p>During the PARSEME Shared Task we experimented with a new architecture and algorithm for identifying expression. You can read the paper <a href='http://www.aclweb.org/anthology/W18-4928'>here</a>.</p>
+                
+                <p>We started working on integrating this technique into NLP-Cube and we are almost done. During our experiments we tested the unmodified GBG on Named Entity Recognition. We used the CONLL2003 corpus and got some pretty interesting results. According to the <a href='https://aclweb.org/aclwiki/CONLL-2003_(State_of_the_art)>'>ACL Wiki</a>, the best performing system is that of <a href='https://arxiv.org/pdf/1508.01991.pdf'>Huang et al. (2015)</a> with a <b>90.1%</b> F-Score. Our system achieved an F-Score of <b>95.12%</b> for token-based evaluation (which is the same score used in the previously mentioned evaluation) and <b>93.40%</b> strict F-Score (where we only counted NERs that are fully recognized and we discard partial matches).</p>
+                <p>Full evaluation output (using the PARSEME evaluation script):</p>
+                <pre>
+## Global evaluation
+* MWE-based: P=5369/5849=0.9179 R=5369/5648=0.9506 F=0.9340
+* Tok-based: P=7884/8465=0.9314 R=7884/8112=0.9719 F=0.9512
+
+## Per-category evaluation (partition of Global)
+* LOC: MWE-proportion: gold=1668/5648=30% pred=1580/5849=27%
+* LOC: MWE-based: P=1472/1580=0.9316 R=1472/1668=0.8825 F=0.9064
+* LOC: Tok-based: P=1675/1797=0.9321 R=1675/1925=0.8701 F=0.9001
+* MISC: MWE-proportion: gold=702/5648=12% pred=743/5849=13%
+* MISC: MWE-based: P=567/743=0.7631 R=567/702=0.8077 F=0.7848
+* MISC: Tok-based: P=743/998=0.7445 R=743/918=0.8094 F=0.7756
+* ORG: MWE-proportion: gold=1661/5648=29% pred=1835/5849=31%
+* ORG: MWE-based: P=1469/1835=0.8005 R=1469/1661=0.8844 F=0.8404
+* ORG: Tok-based: P=2250/2738=0.8218 R=2250/2496=0.9014 F=0.8598
+* PER: MWE-proportion: gold=1617/5648=29% pred=1691/5849=29%
+* PER: MWE-based: P=1527/1691=0.9030 R=1527/1617=0.9443 F=0.9232
+* PER: Tok-based: P=2677/2932=0.9130 R=2677/2773=0.9654 F=0.9385
+
+## MWE continuity (partition of Global)
+* Continuous: MWE-proportion: gold=5648/5648=100% pred=5755/5849=98%
+* Continuous: MWE-based: P=5369/5755=0.9329 R=5369/5648=0.9506 F=0.9417
+* Discontinuous: MWE-proportion: gold=0/5648=0% pred=94/5849=2%
+* Discontinuous: MWE-based: P=0/94=0.0000 R=0/0=0.0000 F=0.0000
+
+## Number of tokens (partition of Global)
+* Multi-token: MWE-proportion: gold=2074/5648=37% pred=2209/5849=38%
+* Multi-token: MWE-based: P=1941/2209=0.8787 R=1941/2074=0.9359 F=0.9064
+* Single-token: MWE-proportion: gold=3574/5648=63% pred=3640/5849=62%
+* Single-token: MWE-based: P=3428/3640=0.9418 R=3428/3574=0.9591 F=0.9504
+
+## Whether seen in train (partition of Global)
+* Seen-in-train: MWE-proportion: gold=3021/5648=53% pred=3011/5849=51%
+* Seen-in-train: MWE-based: P=2941/3011=0.9768 R=2941/3021=0.9735 F=0.9751
+* Unseen-in-train: MWE-proportion: gold=2627/5648=47% pred=2838/5849=49%
+* Unseen-in-train: MWE-based: P=2428/2838=0.8555 R=2428/2627=0.9242 F=0.8886
+
+## Whether identical to train (partition of Seen-in-train)
+* Variant-of-train: MWE-proportion: gold=10/3021=0% pred=14/3011=0%
+* Variant-of-train: MWE-based: P=7/14=0.5000 R=7/10=0.7000 F=0.5833
+* Identical-to-train: MWE-proportion: gold=3011/3021=100% pred=2997/3011=100%
+* Identical-to-train: MWE-based: P=2934/2997=0.9790 R=2934/3011=0.9744 F=0.9767
+                </pre>
+                
+            </div>
+        </div>
+
+
+        <!-- Bootstrap core JavaScript -->
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    </body>
+
+</html>

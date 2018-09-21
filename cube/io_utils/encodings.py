@@ -20,6 +20,7 @@ import sys
 import re
 from misc.misc import fopen
 
+
 class Encodings(object):
 
     def __init__(self, verbose=True):
@@ -38,7 +39,7 @@ class Encodings(object):
         self.characters = []
         self.verbose = verbose
 
-    def compute(self, train, dev, tag_type=None, word_cutoff=7, char_cutoff=5):
+    def compute(self, train, dev, tag_type=None, word_cutoff=7, char_cutoff=5, CUPT_format=False):
         if self.verbose:
             sys.stdout.write("Computing encoding maps... ")
             sys.stdout.flush()
@@ -83,9 +84,17 @@ class Encodings(object):
                     label = entry.attrs
                 elif tag_type == 'label':
                     label = entry.label
-                if label not in self.label2int:
-                    self.label2int[label] = len(self.label2int)
-                    self.labels.append(label)
+
+                if CUPT_format and tag_type == 'label':
+                    if entry.label != "*":
+                        labels = entry.label.split(';')
+                        entry_labels = [label.split(':')[1] for label in labels if ':' in label]
+                        for entry_label in entry_labels:
+                            self.label2int.setdefault(entry_label, len(self.label2int))
+                else:
+                    if label not in self.label2int:
+                        self.label2int[label] = len(self.label2int)
+                        self.labels.append(label)
 
                 # morphological encodings
                 if entry.upos not in self.upos2int:
@@ -148,7 +157,7 @@ class Encodings(object):
 
     def load(self, filename):
         # We only read character2int, labels, holistic words and label2int here. word_list should be recomputed for every dataset (if deemed necessary)
-        with fopen(filename,"r") as f:
+        with fopen(filename, "r") as f:
             line = f.readline()
 
             num_labels = int(line.split(" ")[1])
@@ -235,7 +244,7 @@ class Encodings(object):
                 self.attrs_list[value] = key
             f.close()
 
-    def save(self, filename):    
+    def save(self, filename):
         f = fopen(filename, "w")
         f.write("LABELS " + str(len(self.label2int)) + "\n")
         for label in self.label2int:
