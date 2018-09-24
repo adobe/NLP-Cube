@@ -10,6 +10,7 @@ cube/.idea/*
 cube/venv/*
 .idea/*
 venv/*
+cube/*.py
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*
