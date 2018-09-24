@@ -20,6 +20,7 @@ import sys
 from cube.misc.misc import fopen
 
 
+
 class CUPTDataset:
     def __init__(self, file=None):
         if file is not None:

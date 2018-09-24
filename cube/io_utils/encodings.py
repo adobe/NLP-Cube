@@ -21,6 +21,7 @@ import re
 from cube.misc.misc import fopen
 
 
+
 class Encodings(object):
 
     def __init__(self, verbose=True):
