@@ -87,7 +87,7 @@ class Cube(object):
 
         # 4. Load lemmatizer
         if lemmatization:
-            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestACC')):
+            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestAcc')):
                 sys.stdout.write('\tLemmatizer is not available on this model. \n')
             else:
                 if self._verbose:
@@ -96,7 +96,7 @@ class Cube(object):
                 lemmatizer_encodings.load(os.path.join(model_folder_path, 'lemmatizer.encodings'))
                 config = LemmatizerConfig(os.path.join(model_folder_path, 'lemmatizer.conf'))
                 self._lemmatizer = FSTLemmatizer(config, lemmatizer_encodings, embeddings, runtime=True)
-                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestACC'))
+                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestAcc'))
 
                 # 5. Load taggers
         if tagging or lemmatization:  # we need tagging for lemmatization
