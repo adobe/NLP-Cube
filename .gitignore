@@ -11,7 +11,9 @@ cube/venv/*
 .idea/*
 venv/*
 cube/*.py
+
 models/
+
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*

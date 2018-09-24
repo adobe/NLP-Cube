@@ -15,6 +15,7 @@ from .generic_networks.parsers import BDRNNParser
 from pathlib import Path
 
 
+
 class Cube(object):
     def __init__(self, verbose=False):
         """
@@ -35,7 +36,6 @@ class Cube(object):
             os.makedirs(self._model_repository)
 
         self._embeddings_repository = os.path.join(self._model_repository, "embeddings")
-        # self.model_store = ModelStore() # needed???
 
     def load(self, language_code, version="latest", tokenization=True, compound_word_expanding=False, tagging=True,
              lemmatization=True, parsing=True):
@@ -92,7 +92,7 @@ class Cube(object):
 
         # 4. Load lemmatizer
         if lemmatization:
-            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestACC')):
+            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestAcc')):
                 sys.stdout.write('\tLemmatizer is not available on this model. \n')
             else:
                 if self._verbose:
@@ -101,7 +101,7 @@ class Cube(object):
                 lemmatizer_encodings.load(os.path.join(model_folder_path, 'lemmatizer.encodings'))
                 config = LemmatizerConfig(os.path.join(model_folder_path, 'lemmatizer.conf'))
                 self._lemmatizer = FSTLemmatizer(config, lemmatizer_encodings, embeddings, runtime=True)
-                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestACC'))
+                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestAcc'))
 
                 # 5. Load taggers
         if tagging or lemmatization:  # we need tagging for lemmatization
@@ -153,6 +153,7 @@ class Cube(object):
                 sequences += self._tokenizer.tokenize(input_line)
         else:
             sequences = text  # the input should already be tokenized
+
 
         if self._compound_word_expander:
             sequences = self._compound_word_expander.expand_sequences(sequences)

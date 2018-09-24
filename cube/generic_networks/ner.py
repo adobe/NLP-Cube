@@ -68,6 +68,7 @@ class GDBNer:
             (len(self.encodings.attrs2int), self.config.embeddings_size))
 
         if self.config.use_char_embeddings:
+
             from cube.generic_networks.character_embeddings import CharacterNetwork
             self.character_network = CharacterNetwork(self.config.embeddings_size, encodings,
                                                       rnn_size=self.config.char_rnn_size,
