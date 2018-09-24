@@ -18,7 +18,7 @@
 
 import sys
 import re
-from misc.misc import fopen
+from cube.misc.misc import fopen
 
 
 class Encodings(object):

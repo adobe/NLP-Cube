@@ -22,8 +22,8 @@ import sys
 import copy
 import random
 
-from generic_networks.character_embeddings import CharacterNetwork
-from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+from cube.generic_networks.character_embeddings import CharacterNetwork
+from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
 
 
 class BDRNNTagger:

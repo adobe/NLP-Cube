@@ -2,15 +2,15 @@
 
 import sys
 import os
-from io_utils.encodings import Encodings
-from io_utils.embeddings import WordEmbeddings
-from io_utils.model_store import ModelMetadata, ModelStore
-from io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
-from generic_networks.tokenizers import TieredTokenizer
-from generic_networks.token_expanders import CompoundWordExpander
-from generic_networks.lemmatizers import FSTLemmatizer
-from generic_networks.taggers import BDRNNTagger
-from generic_networks.parsers import BDRNNParser
+from .io_utils.encodings import Encodings
+from .io_utils.embeddings import WordEmbeddings
+from .io_utils.model_store import ModelMetadata, ModelStore
+from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
+from .generic_networks.tokenizers import TieredTokenizer
+from .generic_networks.token_expanders import CompoundWordExpander
+from .generic_networks.lemmatizers import FSTLemmatizer
+from .generic_networks.taggers import BDRNNTagger
+from .generic_networks.parsers import BDRNNParser
 
 
 class Cube(object):

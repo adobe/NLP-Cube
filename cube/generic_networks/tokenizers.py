@@ -22,10 +22,10 @@ import numpy as np
 import os
 import random
 import string
-from misc.misc import fopen
+from cube.misc.misc import fopen
 
-from misc.misc import get_eta, pretty_time, log_progress, line_count
-from io_utils.conll import ConllEntry
+from cube.misc.misc import get_eta, pretty_time, log_progress, line_count
+from cube.io_utils.conll import ConllEntry
 
 
 class TieredTokenizer:
@@ -40,8 +40,8 @@ class TieredTokenizer:
         self.trainerTok = dy.AdamTrainer(self.modelTok, alpha=2e-3, beta_1=0.9, beta_2=0.9)
 
         # sentence split model
-        from generic_networks.wrappers import CNN, CNNConvLayer, CNNPoolingLayer
-        from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+        from cube.generic_networks.wrappers import CNN, CNNConvLayer, CNNPoolingLayer
+        from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
         # character-level-embeddings
         self.SS_char_lookup = self.modelSS.add_lookup_parameters(
             (len(self.encodings.char2int), self.config.ss_char_embeddings_size))

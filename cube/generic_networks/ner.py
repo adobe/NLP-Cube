@@ -68,7 +68,7 @@ class GDBNer:
             (len(self.encodings.attrs2int), self.config.embeddings_size))
 
         if self.config.use_char_embeddings:
-            from generic_networks.character_embeddings import CharacterNetwork
+            from cube.generic_networks.character_embeddings import CharacterNetwork
             self.character_network = CharacterNetwork(self.config.embeddings_size, encodings,
                                                       rnn_size=self.config.char_rnn_size,
                                                       rnn_layers=self.config.char_rnn_layers,
@@ -83,7 +83,7 @@ class GDBNer:
 
         lstm_builder = dy.VanillaLSTMBuilder
         if not runtime:
-            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+            from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
             lstm_builder = orthonormal_VanillaLSTMBuilder
 
         input_size = self.config.embeddings_size
