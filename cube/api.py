@@ -12,6 +12,8 @@ from .generic_networks.lemmatizers import FSTLemmatizer
 from .generic_networks.taggers import BDRNNTagger
 from .generic_networks.parsers import BDRNNParser
 
+from pathlib import Path
+
 
 class Cube(object):
     def __init__(self, verbose=False):
@@ -28,8 +30,11 @@ class Cube(object):
         self._tagger = False  # tagger object, default is None
         self.embeddings = None  # ?? needed?
         self.metadata = ModelMetadata()
-        self._model_repository = "models"
-        self._embeddings_repository = os.path.join("models", "embeddings")
+        self._model_repository = os.path.join(str(Path.home()), ".nlpcube/models")
+        if not os.path.exists(self._model_repository):
+            os.makedirs(self._model_repository)
+
+        self._embeddings_repository = os.path.join(self._model_repository, "embeddings")
         # self.model_store = ModelStore() # needed???
 
     def load(self, language_code, version="latest", tokenization=True, compound_word_expanding=False, tagging=True,
@@ -147,7 +152,7 @@ class Cube(object):
             for input_line in input_lines:
                 sequences += self._tokenizer.tokenize(input_line)
         else:
-            sequences = text #the input should already be tokenized
+            sequences = text  # the input should already be tokenized
 
         if self._compound_word_expander:
             sequences = self._compound_word_expander.expand_sequences(sequences)
