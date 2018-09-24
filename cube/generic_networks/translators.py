@@ -19,7 +19,7 @@
 import dynet as dy
 import numpy as np
 import random
-from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
 
 
 class BRNNMT:

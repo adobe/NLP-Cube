@@ -23,7 +23,7 @@ sys.path.insert(0, '../')
 from random import shuffle
 import time
 import random
-from misc.conll18_ud_eval_wrapper import conll_eval
+from cube.misc.conll18_ud_eval_wrapper import conll_eval
 
 
 # import nltk

@@ -23,7 +23,7 @@ import sys
 import json
 import tempfile
 from shutil import rmtree, copyfile
-from misc.misc import fopen
+from cube.misc.misc import fopen
 import zipfile
 from zipfile import ZipFile
 
@@ -34,15 +34,15 @@ import xmltodict
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
 
-from io_utils.encodings import Encodings
-from io_utils.embeddings import WordEmbeddings
-from io_utils.config import (TieredTokenizerConfig, CompoundWordConfig,
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.embeddings import WordEmbeddings
+from cube.io_utils.config import (TieredTokenizerConfig, CompoundWordConfig,
                      LemmatizerConfig, TaggerConfig, ParserConfig)
-from generic_networks.tokenizers import TieredTokenizer
-from generic_networks.token_expanders import CompoundWordExpander
-from generic_networks.lemmatizers import FSTLemmatizer
-from generic_networks.taggers import BDRNNTagger
-from generic_networks.parsers import BDRNNParser
+from cube.generic_networks.tokenizers import TieredTokenizer
+from cube.generic_networks.token_expanders import CompoundWordExpander
+from cube.generic_networks.lemmatizers import FSTLemmatizer
+from cube.generic_networks.taggers import BDRNNTagger
+from cube.generic_networks.parsers import BDRNNParser
    
 class ModelMetadata(object):
     def __init__(self):

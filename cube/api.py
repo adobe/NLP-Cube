@@ -2,15 +2,18 @@
 
 import sys
 import os
-from io_utils.encodings import Encodings
-from io_utils.embeddings import WordEmbeddings
-from io_utils.model_store import ModelMetadata, ModelStore
-from io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
-from generic_networks.tokenizers import TieredTokenizer
-from generic_networks.token_expanders import CompoundWordExpander
-from generic_networks.lemmatizers import FSTLemmatizer
-from generic_networks.taggers import BDRNNTagger
-from generic_networks.parsers import BDRNNParser
+from .io_utils.encodings import Encodings
+from .io_utils.embeddings import WordEmbeddings
+from .io_utils.model_store import ModelMetadata, ModelStore
+from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
+from .generic_networks.tokenizers import TieredTokenizer
+from .generic_networks.token_expanders import CompoundWordExpander
+from .generic_networks.lemmatizers import FSTLemmatizer
+from .generic_networks.taggers import BDRNNTagger
+from .generic_networks.parsers import BDRNNParser
+
+from pathlib import Path
+
 
 
 class Cube(object):
@@ -28,9 +31,11 @@ class Cube(object):
         self._tagger = False  # tagger object, default is None
         self.embeddings = None  # ?? needed?
         self.metadata = ModelMetadata()
-        self._model_repository = "models"
-        self._embeddings_repository = os.path.join("models", "embeddings")
-        # self.model_store = ModelStore() # needed???
+        self._model_repository = os.path.join(str(Path.home()), ".nlpcube/models")
+        if not os.path.exists(self._model_repository):
+            os.makedirs(self._model_repository)
+
+        self._embeddings_repository = os.path.join(self._model_repository, "embeddings")
 
     def load(self, language_code, version="latest", tokenization=True, compound_word_expanding=False, tagging=True,
              lemmatization=True, parsing=True):
@@ -147,7 +152,8 @@ class Cube(object):
             for input_line in input_lines:
                 sequences += self._tokenizer.tokenize(input_line)
         else:
-            sequences = text #the input should already be tokenized
+            sequences = text  # the input should already be tokenized
+
 
         if self._compound_word_expander:
             sequences = self._compound_word_expander.expand_sequences(sequences)

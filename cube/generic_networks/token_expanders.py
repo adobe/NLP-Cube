@@ -27,7 +27,7 @@ class CompoundWordExpander:
         self.model = dy.Model()
         self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9, beta_2=0.9)
 
-        from character_embeddings import CharacterNetwork
+        from cube.character_embeddings import CharacterNetwork
         self.encoder = CharacterNetwork(self.config.character_embeddings_size, encodings, self.config.encoder_size,
                                         self.config.encoder_layers, self.config.character_embeddings_size, self.model,
                                         runtime=runtime)

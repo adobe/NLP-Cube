@@ -19,9 +19,9 @@
 import numpy as np
 import random
 import dynet as dy
-from generic_networks.character_embeddings import CharacterNetwork
-from graph.decoders import GreedyDecoder
-from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+from cube.generic_networks.character_embeddings import CharacterNetwork
+from cube.graph.decoders import GreedyDecoder
+from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
 import copy
 import sys
 

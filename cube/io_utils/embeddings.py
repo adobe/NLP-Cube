@@ -17,7 +17,7 @@
 #
 
 import sys
-from misc.misc import fopen
+from cube.misc.misc import fopen
 from scipy import spatial
 
 

@@ -19,8 +19,8 @@ import dynet as dy
 import numpy as np
 import copy
 import sys
-from misc.misc import fopen
-from generic_networks.character_embeddings import CharacterNetwork
+from cube.misc.misc import fopen
+from .character_embeddings import CharacterNetwork
 
 
 class FSTLemmatizer:
@@ -57,7 +57,7 @@ class FSTLemmatizer:
                                       self.config.rnn_size,
                                       self.model)
         else:
-            from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+            from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
             self.rnn = orthonormal_VanillaLSTMBuilder(self.config.rnn_layers,
                                                       self.config.char_rnn_size * 2 + self.config.char_embeddings + self.config.tag_embeddings_size,
                                                       self.config.rnn_size,

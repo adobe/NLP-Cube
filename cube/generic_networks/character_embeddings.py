@@ -45,7 +45,7 @@ class CharacterNetwork:
                 self.rnn_fw.append(dy.VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
                 self.rnn_bw.append(dy.VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
             else:
-                from generic_networks.utils import orthonormal_VanillaLSTMBuilder
+                from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
                 self.rnn_fw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
                 self.rnn_bw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
 
