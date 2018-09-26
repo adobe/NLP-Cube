@@ -6,8 +6,45 @@ Follow the [Quick Start Tutorial](https://github.com/adobe/NLP-Cube/blob/pip3.pa
 
 Advanced users that want to create their own models, will have to use the installation tutorial (below).
 
+## Simple (PIP) installation
 
-## Installation
+If you just want to use NLP-Cube, just use the available PIP package:
+
+```bash
+pip3 install nlpcube
+```
+### Usage
+
+To use NLP-Cube programmatically (in Python), follow [this tutorial](https://github.com/adobe/NLP-Cube/blob/pip3.package/examples/simple_example.ipynb)
+
+To use NLP-Cube as a web service, you need to clone this repo, install requirements and start the server:
+
+```bash
+git clone https://github.com/adobe/NLP-Cube.git
+cd NLP-Cube
+pip3 install -r requirements.txt
+```
+The following command will start the server and preload languages: en, fr and de.
+```bash
+cd cube
+python3 webserver.py --port 8080 --lang=en --lang=fr --lang=de
+``` 
+
+To test, open the following [this link](http://localhost:8080/nlp?lang=en&text=This%20is%20a%20simple%20test)
+
+
+## Manual Installation (if you want to train new models)
+
+### Cloning NLP-Cube
+
+In order to create new models you need to start by cloning this repo and installing requirements.
+
+**Clone**
+```bash
+git clone https://github.com/adobe/NLP-Cube.git
+cd NLP-Cube
+pip3 install -r requirements.txt
+```
 
 NLP-Cube is dependent on [DyNET](https://github.com/clab/dynet). In order to train your own models you should do a custom DyNET installation with MKL and/or CUDA support.
 
@@ -37,20 +74,6 @@ NLP-Cube is dependent on [DyNET](https://github.com/clab/dynet). In order to tra
     cd python
     python3 ../../setup.py build --build-dir=.. --skip-build install
     ```
-    
-### Cloning or installing cube
-
-In order to install NLP-Cube, you can clone this repo (to get the latest version) or just use the pip package (to get the latest stable version):
-
-**Clone**
-```bash
-git clone https://github.com/adobe/NLP-Cube.git
-```
-
-**PIP**
-```bash
-pip3 install --upgrade nlpcube
-```
 
 ### Training
 
@@ -59,78 +82,3 @@ Training models is easy. Just use `--help` command line to get available command
 ```bash
 python=3 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000
 ```
-
-#### Running the server:
-
-Use the following command to run the server locally:
-
-```python3 cube/main.py --start-server --model-tokenization=corpus/trained_models/ro/tokenizer --model-parsing=corpus/trained_models/ro/parser --model-lemmatization=corpus/trained_models/ro/lemma --embeddings=corpus/wiki.ro.vec --server-port=8080```
-
-
-## Parser architecture
-```
-#   -----------------                    -------------------------- 
-#   |word emebddings|----          ------|morphological embeddings|
-#   -----------------    |        |      --------------------------
-#                        |        |
-#                      --------------
-#                      |concatenate |
-#                      --------------
-#                             |
-#                     ----------------
-#                     |bdlstm_1_layer|
-#                     ----------------
-#                             |
-#                     ----------------                  
-#                     |bdlstm_2_layer| 
-#                     ----------------                    
-#                             |-----------------------------------------------------------------                          
-#                     ----------------                                                         |
-#                     |bdlstm_3_layer|                                                         |
-#                     ----------------                                                         |
-#                             |                                                                |
-#        ---------------------------------------------                    ---------------------------------------------              
-#        |           |                |              |                    |           |                |              |
-#        |           |                |              |                    |           |                |              |
-#    ---------  -----------       ----------    ------------          ---------  -----------       ----------    ------------
-#    |to_link|  |from_link|       |to_label|    |from_label|          |to_link|  |from_link|       |to_label|    |from_label|
-#    ---------  -----------       ----------    ------------          ---------  -----------       ----------    ------------
-#         |        |                      |       |                       |           |                  |            |
-#       --------------                 ---------------                  ------------------            -------------------
-#       |softmax link|                 |softmax label|                  |aux softmax link|            |aux softmax label|
-#       --------------                 ---------------                  ------------------            -------------------
-#
-#
-
-```
-
-# Tagger architecture
-
-```
-#   -----------------                    ---------------------- 
-#   |word emebddings|----          ------|character embeddings|
-#   -----------------    |        |      ----------------------
-#                        |        |
-#                      --------------
-#                      |tanh_1_layer|
-#                      --------------
-#                             |
-#                     ----------------
-#                     |bdlstm_1_layer|
-#                     ----------------
-#                             |
-#                      --------------                  
-#                      |tanh_2_layer|-------------------
-#                      --------------                   |
-#                             |                         |
-#                     ----------------         -------------------
-#                     |bdlstm_2_layer|         |aux_softmax_layer|
-#                     ----------------         -------------------
-#                             |
-#                      ---------------
-#                      |softmax_layer|
-#                      ---------------
-#
-
-```
-
