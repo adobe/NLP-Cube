@@ -85,10 +85,6 @@ if __name__ == '__main__':
     parser.add_option("--mt-destination-embeddings", action='store', dest='mt_destination_embeddings',
                       help='embeddings file for destination language')
 
-    parser.add_option('--start-server', action='store_true', dest='server',
-                      help='start an embedded webserver')
-    parser.add_option('--server-port', action='store', dest='port', type='int', default='80',
-                      help='set the runtime server port')
     parser.add_option('--model-lemmatization', action='store', dest='model_lemmatization',
                       help='precomputed lemmatization model')
     parser.add_option('--model-tokenization', action='store', dest='model_tokenization',
@@ -673,16 +669,6 @@ if params.train:
             valid = False
     if valid:
         parse_train(params)
-
-if params.server:
-    from server.webserver import EmbeddedWebserver
-
-    WordEmbeddings
-    we = WordEmbeddings()
-    we.read_from_file(params.embeddings, None, False)
-    ews = EmbeddedWebserver(we, port=params.port, lemma=params.model_lemmatization,
-                            tokenization=params.model_tokenization, tagging=params.model_tagging,
-                            parsing=params.model_parsing)
 
 if params.test:
     valid = True
