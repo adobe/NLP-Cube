@@ -49,11 +49,27 @@ pip3 install -r requirements.txt
 NLP-Cube is dependent on [DyNET](https://github.com/clab/dynet). In order to train your own models you should do a custom DyNET installation with MKL and/or CUDA support.
 
 
-### Installing dyNET:
+### Installing DyNet:
 
 1. Make sure you have [Mercurial](https://www.mercurial-scm.org/wiki/Download), [python](https://www.python.org/downloads/), [pip](https://pip.pypa.io/en/stable/installing/), [cmake](https://cmake.org/install/) installed (you can also check steps documented [here](http://dynet.readthedocs.io/en/latest/python.html#installing-a-cutting-edge-and-or-gpu-version))
-2. Install Intel's [MKL](https://software.seek.intel.com/performance-libraries) library
-3. Install `dyNET` by using the installation steps from the [manual installation page](http://dynet.readthedocs.io/en/latest/python.html#manual-installation). More specifically, you should use:
+2. [Hard mode] Install Intel's [MKL](https://software.seek.intel.com/performance-libraries) library. Download appropriate version for your OS and follow the install script provided in the archive. MKL is a optimized math library that `DyNet` can use to significantly speed up training and runtime performance.
+
+OR
+
+2. [Easy mode] If you run a debian (should work on other \*nix systems), run the following commands to automatically setup MKL:
+```bash
+sudo wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB 
+sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+sudo wget https://apt.repos.intel.com/setup/intelproducts.list -O /etc/apt/sources.list.d/intelproducts.list
+sudo apt-get update 
+sudo apt-get install -y intel-mkl-64bit-2018.2-046
+```
+
+OR
+
+2. [Don't really care about speed mode] Do not install MKL at all. This will slow down `DyNet` by ~2.5 times but it will work just as well. Don't forget to run cmake in step 3. without the "-DMKL_ROOT=/opt/intel/mkl" flag in this case.
+
+3. Install `DyNet` by using the installation steps from the [manual installation page](http://dynet.readthedocs.io/en/latest/python.html#manual-installation). More specifically, you should use:
 
     ```
     pip install cython
@@ -74,6 +90,8 @@ NLP-Cube is dependent on [DyNET](https://github.com/clab/dynet). In order to tra
     cd python
     python3 ../../setup.py build --build-dir=.. --skip-build install
     ```
+
+Note: sometimes cmake fails. If it does, delete the contents of the build folder and give the -DEIGEN3_INCLUDE_DIR flag the absolute path to eigen (dont use ../ or other relative paths). Also, check cmake is updated to the latest version available. 
 
 ### Training
 
