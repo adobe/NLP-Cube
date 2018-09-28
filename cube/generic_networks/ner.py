@@ -68,7 +68,6 @@ class GDBNer:
             (len(self.encodings.attrs2int), self.config.embeddings_size))
 
         if self.config.use_char_embeddings:
-
             from cube.generic_networks.character_embeddings import CharacterNetwork
             self.character_network = CharacterNetwork(self.config.embeddings_size, encodings,
                                                       rnn_size=self.config.char_rnn_size,
@@ -194,6 +193,8 @@ class GDBNer:
 
     def tag(self, seq):
         dy.renew_cg()
+        seq = [CUPTEntry(0, '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '*', '<ROOT>',
+                         '<ROOT>')] + seq  # append root
         output, proj_x = self._predict(seq, runtime=True)
         return self._decode(output, proj_x)
 

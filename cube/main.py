@@ -20,10 +20,7 @@
 import dynet_config
 import optparse
 import sys
-print (sys.path)
 sys.path.append('')
-#from ipdb import set_trace
-#set_trace()
 import os
 import copy
 from misc.misc import fopen
