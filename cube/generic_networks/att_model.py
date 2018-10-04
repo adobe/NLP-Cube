@@ -98,8 +98,7 @@ class AttentionClassifier(object):
 		self.v_p = self.model.add_parameters((1, self.state_size))
 
 		# LSTM/GRU and last layer projection matrix
-		self.lstm = dy.GRUBuilder(self.lstm_num_of_layers, 
-										self.embedding_size, self.state_size, self.model)
+		self.lstm = dy.GRUBuilder(self.lstm_num_of_layers, self.embedding_size, self.state_size, self.model)
 
 		self.output_w = self.model.add_parameters((self.num_of_classes, self.state_size))
 		self.output_b = self.model.add_parameters((self.num_of_classes))
