@@ -72,7 +72,7 @@ OR
 3. Install `DyNet` by using the installation steps from the [manual installation page](http://dynet.readthedocs.io/en/latest/python.html#manual-installation). More specifically, you should use:
 
     ```
-    pip install cython
+    pip3 install cython
     mkdir dynet-base
     cd dynet-base
 
