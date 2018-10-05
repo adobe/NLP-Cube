@@ -98,5 +98,5 @@ Note: sometimes cmake fails. If it does, delete the contents of the build folder
 Training models is easy. Just use `--help` command line to get available command. Depending on what model you want to train, you must set the appropiate value for the `--train` parameter. For example, if you want to train the lemmatizer, you need to use the following command (provided that you have downloaded the training data and placed it in the `corpus` folder:
 
 ```bash
-python=3 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000
+python3 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000
 ```
