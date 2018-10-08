@@ -193,6 +193,7 @@ class GDBNer:
 
     def tag(self, seq):
         dy.renew_cg()
+        from io_utils.cupt import CUPTEntry
         seq = [CUPTEntry(0, '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '<ROOT>', '*', '<ROOT>',
                          '<ROOT>')] + seq  # append root
         output, proj_x = self._predict(seq, runtime=True)
