@@ -114,7 +114,28 @@
                 <li>Test NLPCube and help us find bugs</li>
                 <li>Notify us about state-of-the-art methods and resutls using via the GIT <a href='https://github.com/adobe/NLP-Cube/issues'>issue tracker</a></li>
                 <li>Train new models and make them available to everybody</li>
-            </ul>
+            </ul>          
+            
+            <div class='row'><glyph class="fa fa-bookmark"></glyph><h2>Cite</h2></div>
+            <p>If you use <strong>NLP-Cube</strong> in your research we would be grateful if you would cite the following paper: </p>                                   
+            <p style="margin:20pt"><strong><a href="http://www.aclweb.org/anthology/K18-2017">NLP-Cube: End-to-End Raw Text Processing With Neural Networks</a></strong>, Boroș, Tiberiu and Dumitrescu, Stefan Daniel and Burtica, Ruxandra, Proceedings of the CoNLL 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies, Association for Computational Linguistics. p. 171--179. October 2018</p>            
+            <p> or, for the bibtex format, please <span href="" onclick="toogle_bib()" style="cursor:pointer;color:#007bff">click here</span>.</p>                         
+            <div id="bib_div" style="margin:10pt; padding:10pt; background-color:#DDDDEE; display:none;">
+                  <pre style="font-size:0.725em">@InProceedings{boro-dumitrescu-burtica:2018:K18-2,
+    author    = {Boroș, Tiberiu  and  Dumitrescu, Stefan Daniel  and  Burtica, Ruxandra},
+    title     = {{NLP}-Cube: End-to-End Raw Text Processing With Neural Networks},
+    booktitle = {Proceedings of the {CoNLL} 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies},
+    month     = {October},
+    year      = {2018},
+    address   = {Brussels, Belgium},
+    publisher = {Association for Computational Linguistics},
+    pages     = {171--179},    
+    url       = {http://www.aclweb.org/anthology/K18-2017}
+}</pre>
+            </div>
+
+
+   
         </div>
 
 
@@ -124,6 +145,12 @@
         <script src="vendor/jquery/jquery.min.js"></script>
         <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
+        <script type="text/javascript">
+            function toogle_bib() {                
+                $("#bib_div").toggle(1500);                
+            }
+        </script>
+        
     </body>
 
 </html>
