@@ -100,3 +100,25 @@ Training models is easy. Just use `--help` command line to get available command
 ```bash
 python3 cube/main.py --train=lemmatizer --train-file=corpus/ud_treebanks/UD_Romanian/ro-ud-train.conllu --dev-file=corpus/ud_treebanks/UD_Romanian/ro-ud-dev.conllu --embeddings=corpus/wiki.ro.vec --store=corpus/trained_models/ro/lemma/lemma --test-file=corpus/ud_test/gold/conll17-ud-test-2017-05-09/ro.conllu --batch-size=1000
 ```
+
+## Cite
+
+If you use NLP-Cube in your research we would be grateful if you would cite the following paper: 
+* [**NLP-Cube: End-to-End Raw Text Processing With Neural Networks**](http://www.aclweb.org/anthology/K18-2017), Boroș, Tiberiu and Dumitrescu, Stefan Daniel and Burtica, Ruxandra, Proceedings of the CoNLL 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies, Association for Computational Linguistics. p. 171--179. October 2018 
+
+or, in bibtex format: 
+
+```
+@InProceedings{boro-dumitrescu-burtica:2018:K18-2,
+  author    = {Boroș, Tiberiu  and  Dumitrescu, Stefan Daniel  and  Burtica, Ruxandra},
+  title     = {{NLP}-Cube: End-to-End Raw Text Processing With Neural Networks},
+  booktitle = {Proceedings of the {CoNLL} 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies},
+  month     = {October},
+  year      = {2018},
+  address   = {Brussels, Belgium},
+  publisher = {Association for Computational Linguistics},
+  pages     = {171--179},
+  abstract  = {We introduce NLP-Cube: an end-to-end Natural Language Processing framework, evaluated in CoNLL's "Multilingual Parsing from Raw Text to Universal Dependencies 2018" Shared Task. It performs sentence splitting, tokenization, compound word expansion, lemmatization, tagging and parsing. Based entirely on recurrent neural networks, written in Python, this ready-to-use open source system is freely available on GitHub. For each task we describe and discuss its specific network architecture, closing with an overview on the results obtained in the competition.},
+  url       = {http://www.aclweb.org/anthology/K18-2017}
+}
+```
