@@ -1,20 +1,4 @@
-#
-# Author: Ruxandra Burtica
-#
-# Copyright (c) 2018 Adobe Systems Incorporated. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+# -*- coding: utf-8 -*-
 
 from collections import defaultdict
 import io
@@ -33,16 +17,6 @@ import xmltodict
 # Append parent dir to sys path.
 parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.sys.path.insert(0, parentdir)
-
-from cube.io_utils.encodings import Encodings
-from cube.io_utils.embeddings import WordEmbeddings
-from cube.io_utils.config import (TieredTokenizerConfig, CompoundWordConfig,
-                     LemmatizerConfig, TaggerConfig, ParserConfig)
-from cube.generic_networks.tokenizers import TieredTokenizer
-from cube.generic_networks.token_expanders import CompoundWordExpander
-from cube.generic_networks.lemmatizers import FSTLemmatizer
-from cube.generic_networks.taggers import BDRNNTagger
-from cube.generic_networks.parsers import BDRNNParser
    
 class ModelMetadata(object):
     def __init__(self):
@@ -168,21 +142,32 @@ class ModelStore(object):
                 return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
                 
         else: # check for a specific local version, according to version parameter
-            version = float(version)
-            if os.path.isdir(os.path.join(self.disk_path, lang_code, version)):
+            version = float(version)            
+            if os.path.isdir(os.path.join(self.disk_path, lang_code +"-"+ str(version))):
                 return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
             else: # version not found, trying to download it from the cloud
-                version = self._version_to_download(lang_code, version=version)                
-                if version == None:                
+                cloud_version = self._version_to_download(lang_code, version=version)                
+                if cloud_version == None:                
                     raise Exception("Version ["+str(version)+"] for language ["+lang_code+"] was not found in the online repository. Maybe try using .find(version='latest') to auto-download the latest model?")
-                self._download_model(lang_code, str(version))                
-                return os.path.join(self.disk_path,lang_code+"-"+str(version)) #self._load(lang_code,version)
+                self._download_model(lang_code, str(cloud_version))                
+                return os.path.join(self.disk_path,lang_code+"-"+str(cloud_version)) #self._load(lang_code,version)
         
 
     def _load(self, lang_code, version):
         """
         Load models on the class.
         """
+        
+        from cube.io_utils.encodings import Encodings
+        from cube.io_utils.embeddings import WordEmbeddings
+        from cube.io_utils.config import (TieredTokenizerConfig, CompoundWordConfig,
+                             LemmatizerConfig, TaggerConfig, ParserConfig)
+        from cube.generic_networks.tokenizers import TieredTokenizer
+        from cube.generic_networks.token_expanders import CompoundWordExpander
+        from cube.generic_networks.lemmatizers import FSTLemmatizer
+        from cube.generic_networks.taggers import BDRNNTagger
+        from cube.generic_networks.parsers import BDRNNParser
+                
         # Refresh metadata
         self.metadata.read(os.path.join(self.disk_path,lang_code+"-"+str(version),"metadata.json"))
         model_folder = os.path.join(self.disk_path,lang_code+"-"+str(version))        
@@ -267,6 +252,25 @@ class ModelStore(object):
             parser_object.load(os.path.join(model_folder, 'parser.bestUAS'))
             self.model[PipelineComponents.PARSER] = parser_object
 
+    def import_local_model(self, model_file):
+        """
+        Import a local .zip file. Will overwrite folder.
+        
+        Args:
+            @param model_file: The full path to the local .zip file        
+        """
+        if not os.path.exists(model_file):
+            raise Exception("Model file not found: {}".format(model_file))
+        
+        print("Importing model {}".format(model_file))
+        
+        self._download_and_extract_lang_model(model_file, None)        
+        self.metadata.read(os.path.join(self.disk_path,model_file.replace(".zip",""),"metadata.json"))
+                
+        self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)  
+            
+        print("Model {} was successfully imported.".format(model_file))
+        
     def _download_model(self, lang_code, version):
         """
         Downloads pre-trained models for the provided language.
@@ -276,8 +280,7 @@ class ModelStore(object):
                 See http://opensource.adobe.com/NLP-Cube/ for available languages and their codes
             @param version: Version of the model.
         """
-        #sys.stdout.write('Downloading models for {} \n'.format(lang_code))
-
+        
         model_name = '{}-{}'.format(lang_code, version)
         model_path_cloud = os.path.join(self.cloud_path, '{}.zip'.format(model_name))
         model_path_local = os.path.join(self.disk_path, '{}.zip'.format(model_name))
@@ -308,23 +311,27 @@ class ModelStore(object):
         f.close()
         
     def _download_and_extract_lang_model(self, url, file_name, force=False):
-        if os.path.exists(file_name):
-            if force:
-                os.remove(file_name)
-            return
+        if file_name:
+            if os.path.exists(file_name):
+                if force:
+                    os.remove(file_name)
+                return
         
         temp_folder = tempfile.mkdtemp()  
         try:
+            if file_name != None: # online zip file
             # Download and extract zip archive.
-            zip_file_name = os.path.join(temp_folder, "tmp.zip")
-            self._download_with_progress_bar(url, zip_file_name)       
-            sys.stdout.write("\rDownload complete, decompressing files ...                                         ")
-            sys.stdout.flush()
-            
+                zip_file_name = os.path.join(temp_folder, "tmp.zip")
+                self._download_with_progress_bar(url, zip_file_name)       
+                sys.stdout.write("\rDownload complete, decompressing files ...                                         ")
+                sys.stdout.flush()
+            else:
+                zip_file_name = url
+                        
             zipfile = ZipFile(zip_file_name, "r")
             zipfile.extractall(self.disk_path)
             zipfile.close()
-            sys.stdout.write("\nModel downloaded successfully.")
+            sys.stdout.write("\nModel extracted successfully.")
             sys.stdout.flush()
             
         except Exception as e:
@@ -429,9 +436,14 @@ class ModelStore(object):
         ex: [("en",1.0),("en",1.1),("es",1.0)...]
         """
         lang_models = self._list_folders()         
-        lang_models = [x for x in lang_models if "-" in x] # eliminate the embeddings and any other non-model folder        
+        lang_models = [x for x in lang_models if x.count("-") == 1] # eliminate the embeddings and any other non-model folder                
         if len(lang_models)>0:            
-            local_models = [(x.split("-")[0],float(x.split("-")[1])) for x in lang_models]            
+            local_models = []
+            for x in lang_models:
+                try:
+                    local_models.append((x.split("-")[0],float(x.split("-")[1])))
+                except:
+                    pass                         
             if lang_code:
                 local_models = [x for x in local_models if lang_code in x[0]]
             return local_models

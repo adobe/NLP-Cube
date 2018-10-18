@@ -23,21 +23,17 @@ class Cube(object):
         Before it can be used, you must call @method load with @param language_code set to your target language
         """
         self._loaded = False
-        self._verbose = verbose
-        self._tokenizer = None  # tokenizer object, default is None
-        self._compound_word_expander = False  # compound word expander, default is None
-        self._lemmatizer = False  # lemmatizer object, default is None
-        self._parser = False  # parser object, default is None
-        self._tagger = False  # tagger object, default is None
-        self.embeddings = None  # ?? needed?
-        self.metadata = ModelMetadata()
+        self._verbose = verbose                
+        
         self._model_repository = os.path.join(str(Path.home()), ".nlpcube/models")
         if not os.path.exists(self._model_repository):
             os.makedirs(self._model_repository)
 
         self._embeddings_repository = os.path.join(self._model_repository, "embeddings")
+        if not os.path.exists(self._embeddings_repository):
+            os.makedirs(self._embeddings_repository)
 
-    def load(self, language_code, version="latest", tokenization=True, compound_word_expanding=False, tagging=True,
+    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True,
              lemmatization=True, parsing=True):
         """
         Loads the pipeline with all available models for the target language.
@@ -46,21 +42,46 @@ class Cube(object):
         @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
        
         """
+        self._tokenizer = None  # tokenizer object, default is None
+        self._compound_word_expander = None  # compound word expander, default is None
+        self._lemmatizer = None  # lemmatizer object, default is None
+        self._parser = None  # parser object, default is None
+        self._tagger = None  # tagger object, default is None
+        self.metadata = ModelMetadata()
+        
         # Initialize a ModelStore object
-        model_store_object = ModelStore(disk_path=self._model_repository)
+        if local_models_repository: 
+            model_store_object = ModelStore(disk_path=local_models_repository)
+        else: 
+            model_store_object = ModelStore(disk_path=self._model_repository)
 
         # Find a local model or download it if it does not exist, returning the local model folder path
         model_folder_path = model_store_object.find(lang_code=language_code, version=version, verbose=self._verbose)
 
         # Load metadata from the model 
-        self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
+        if not local_models_repository: # load an official model which has a metadata file
+            self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
+        else:
+            if os.path.exists(os.path.join(model_folder_path, "metadata.json")): # load metadata if available
+                self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
+            else:                                 
+                self.metadata = None
 
         # Load embeddings                
         embeddings = WordEmbeddings(verbose=False)
         if self._verbose:
             sys.stdout.write('\tLoading embeddings... \n')
-        embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None,
+        if not local_models_repository: # load an official model which has an embeddings file
+            embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None,
                                   full_load=False)
+        else:
+            if local_embeddings_file == None and self.metadata == None:
+                raise Exception("When using a locally-trained model please specify a path to a local embeddings file (local_embeddings_file cannot be None).")
+            if local_embeddings_file == None:
+                raise Exception("Please specify an embeddings file with the `local_embeddings_file` parameter")
+            if not os.path.exists(local_embeddings_file):
+                raise Exception("Cannot read embeddings: {}".format(local_embeddings_file))
+            embeddings.read_from_file(local_embeddings_file, None, full_load=False)            
 
         # 1. Load tokenizer
         if tokenization:
@@ -75,7 +96,7 @@ class Cube(object):
                 self._tokenizer = TieredTokenizer(config, tokenizer_encodings, embeddings, runtime=True)
                 self._tokenizer.load(os.path.join(model_folder_path, 'tokenizer'))
 
-                # 3. Load compound
+        # 2. Load compound
         if compound_word_expanding:
             if not os.path.isfile(os.path.join(model_folder_path, 'compound.bestAcc')):
                 if self._verbose:  # supress warning here because many languages do not have compund words
@@ -90,7 +111,7 @@ class Cube(object):
                                                                     runtime=True)
                 self._compound_word_expander.load(os.path.join(model_folder_path, 'compound.bestAcc'))
 
-        # 4. Load lemmatizer
+        # 3. Load lemmatizer
         if lemmatization:
             if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestAcc')):
                 sys.stdout.write('\tLemmatizer is not available on this model. \n')
@@ -103,7 +124,7 @@ class Cube(object):
                 self._lemmatizer = FSTLemmatizer(config, lemmatizer_encodings, embeddings, runtime=True)
                 self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestAcc'))
 
-                # 5. Load taggers
+        # 4. Load tagger
         if tagging or lemmatization:  # we need tagging for lemmatization
             if not os.path.isfile(os.path.join(model_folder_path, 'tagger.bestUPOS')):
                 sys.stdout.write('\tTagging is not available on this model. \n')
@@ -124,7 +145,7 @@ class Cube(object):
                 self._tagger[2] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
                 self._tagger[2].load(os.path.join(model_folder_path, 'tagger.bestATTRS'))
 
-        # 6. Load parser
+        # 5. Load parser
         if parsing:
             if not os.path.isfile(os.path.join(model_folder_path, 'parser.bestUAS')):
                 sys.stdout.write('\tParsing is not available on this model... \n')
@@ -147,13 +168,16 @@ class Cube(object):
 
         sequences = []
         if self._tokenizer:
+            if not isinstance(text, str):
+                raise Exception("The text argument must be a string!")
             # split text by lines
             input_lines = text.split("\n")
-            for input_line in input_lines:
-                sequences += self._tokenizer.tokenize(input_line)
+            for input_line in input_lines:                
+                sequences+=self._tokenizer.tokenize(input_line)                
         else:
+            if not isinstance(text, list):
+                raise Exception("The text argument must be a list of lists of tokens!")
             sequences = text  # the input should already be tokenized
-
 
         if self._compound_word_expander:
             sequences = self._compound_word_expander.expand_sequences(sequences)
@@ -164,12 +188,12 @@ class Cube(object):
         if self._tagger or self._lemmatizer:
             import copy
             new_sequences = []
-            for sequence in sequences:
-                new_sequence = copy.deepcopy(sequence)
+            for sequence in sequences:                
+                new_sequence = copy.deepcopy(sequence)                
                 predicted_tags_UPOS = self._tagger[0].tag(new_sequence)
                 predicted_tags_XPOS = self._tagger[1].tag(new_sequence)
                 predicted_tags_ATTRS = self._tagger[2].tag(new_sequence)
-                for entryIndex in range(len(sequence)):
+                for entryIndex in range(len(new_sequence)):
                     new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
                     new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
                     new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
