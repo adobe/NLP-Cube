@@ -10,6 +10,7 @@ from shutil import rmtree, copyfile
 from cube.misc.misc import fopen
 import zipfile
 from zipfile import ZipFile
+from pathlib import Path
 
 import requests
 import xmltodict
@@ -86,18 +87,29 @@ class ModelStore(object):
     """
     Abstraction layer for working with models.
     """
-
-    MODELS_PATH_LOCAL = 'models'
+    
     MODELS_PATH_CLOUD = 'https://nlpcube.blob.core.windows.net/models'
     MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
-
+    
     def __init__(self, disk_path=None, cloud_path=None):
-        self.disk_path = disk_path or self.MODELS_PATH_LOCAL
+        #self.disk_path = disk_path or self.MODELS_PATH_LOCAL
         self.cloud_path = cloud_path or self.MODELS_PATH_CLOUD
+        
+        if disk_path == None:
+            self.disk_path = os.path.join(str(Path.home()), ".nlpcube/models")
+            if not os.path.exists(self.disk_path):
+                os.makedirs(self.disk_path)
+        
+            self.embeddings_repository = os.path.join(self.disk_path, "embeddings")
+            if not os.path.exists(self.embeddings_repository):
+                os.makedirs(self.embeddings_repository)
+        else:
+            self.disk_path = disk_path
+            
         self.model = {}
         self.metadata = ModelMetadata()
 
-    def _list_folders (self, lang_code=None):        
+    def _list_folders (self, lang_code=None):              
         output = [os.path.basename(os.path.normpath(dI)) for dI in os.listdir(self.disk_path) if os.path.isdir(os.path.join(self.disk_path,dI))]
         if lang_code != None:
             output = [dI for dI in output if lang_code in dI]        
@@ -178,7 +190,7 @@ class ModelStore(object):
        
         # 1. Load word embeddings
         self.embeddings = WordEmbeddings(verbose=False)   
-        sys.stdout.write('\tLoading embeddings... \n')        
+        sys.stdout.write('\tLoading embeddings ... \n')        
         self.embeddings.read_from_file(embeddings_file_path, None, full_load=False)
 
         # 2. Load tokenizer
@@ -269,7 +281,7 @@ class ModelStore(object):
                 
         self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)  
             
-        print("Model {} was successfully imported.".format(model_file))
+        print("\nModel {} was successfully imported.".format(model_file))
         
     def _download_model(self, lang_code, version):
         """
@@ -450,7 +462,7 @@ class ModelStore(object):
         else:
             return []    
         
-    def list_online_models(self, lang_code):
+    def list_online_models(self, lang_code = None):
         """
         Returns a list of tuples of the models found online
         ex: [("en",1.0),("en",1.1),("es",1.0)...]

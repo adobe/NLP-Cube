@@ -2,7 +2,7 @@
 
 NLP-Cube is an opensource Natural Language Processing Framework with support for languages which are included in the [UD Treebanks](http://universaldependencies.org/). 
 
-Follow the [Quick Start Tutorial](https://github.com/adobe/NLP-Cube/blob/pip3.package/examples/simple_example.ipynb) to get things running in no time.
+Follow the [Quick Start Tutorial](examples/1.%20NLP-Cube%20Quick%20Tutorial.ipynb) to get things running in no time.
 
 Advanced users that want to create their own models, will have to use the installation tutorial (below).
 
@@ -15,7 +15,7 @@ pip3 install nlpcube
 ```
 ### Usage
 
-To use NLP-Cube programmatically (in Python), follow [this tutorial](https://github.com/adobe/NLP-Cube/blob/pip3.package/examples/simple_example.ipynb)
+To use NLP-Cube programmatically (in Python), follow [this tutorial](examples/1.%20NLP-Cube%20Quick%20Tutorial.ipynb)
 
 To use NLP-Cube as a web service, you need to clone this repo, install requirements and start the server:
 

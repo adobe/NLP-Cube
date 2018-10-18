@@ -12,9 +12,6 @@ from .generic_networks.lemmatizers import FSTLemmatizer
 from .generic_networks.taggers import BDRNNTagger
 from .generic_networks.parsers import BDRNNParser
 
-from pathlib import Path
-
-
 
 class Cube(object):
     def __init__(self, verbose=False):
@@ -23,15 +20,8 @@ class Cube(object):
         Before it can be used, you must call @method load with @param language_code set to your target language
         """
         self._loaded = False
-        self._verbose = verbose                
+        self._verbose = verbose   
         
-        self._model_repository = os.path.join(str(Path.home()), ".nlpcube/models")
-        if not os.path.exists(self._model_repository):
-            os.makedirs(self._model_repository)
-
-        self._embeddings_repository = os.path.join(self._model_repository, "embeddings")
-        if not os.path.exists(self._embeddings_repository):
-            os.makedirs(self._embeddings_repository)
 
     def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True,
              lemmatization=True, parsing=True):
@@ -53,7 +43,7 @@ class Cube(object):
         if local_models_repository: 
             model_store_object = ModelStore(disk_path=local_models_repository)
         else: 
-            model_store_object = ModelStore(disk_path=self._model_repository)
+            model_store_object = ModelStore()
 
         # Find a local model or download it if it does not exist, returning the local model folder path
         model_folder_path = model_store_object.find(lang_code=language_code, version=version, verbose=self._verbose)
@@ -70,7 +60,7 @@ class Cube(object):
         # Load embeddings                
         embeddings = WordEmbeddings(verbose=False)
         if self._verbose:
-            sys.stdout.write('\tLoading embeddings... \n')
+            sys.stdout.write('\tLoading embeddings ... \n')
         if not local_models_repository: # load an official model which has an embeddings file
             embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None,
                                   full_load=False)

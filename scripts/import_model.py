@@ -26,3 +26,4 @@ if __name__ == "__main__":
     model_store_object = ModelStore()
     
     model_store_object.import_local_model(model_path)
+   
