@@ -158,7 +158,7 @@ def parse_test(params):
         parser = BDRNNParser(config, encodings, embeddings)
         parser.load(params.model_base + ".bestUAS")
         if params.decoder == 'mst':
-            print ("!!!!!!!!!!!!!!!!!!!!!!!!!USING MST DECODER")
+            print ("\tUSING MST DECODER")
             from graph.decoders import MSTDecoder
             parser.decoder = MSTDecoder()
         f = fopen(params.output_file, "w")

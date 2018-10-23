@@ -1,0 +1,17 @@
+{
+    "embeddings_file_name": "name-of-embedding-file(eg.:wiki.en.vec)",
+    "embeddings_remote_link": "online-link-from-where-to-download-if-not-existing-locally(eg.:https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.en.vec)",
+    "language": "UD_English",
+    "language_code": "name-of-your-model(eg.:my_model)",
+    "model_build_date": "build-date(can be auto-generated like: 2018-09-14 15:06:20.553546)",
+    "model_build_source": "UD_English-EWT",
+    "model_version": 1.0,
+    "notes": "any-comment-here(eg.:Source: ud-treebanks-v2.2). 
+        Note that this field supports new lines.
+        Name of the model will be <language_code-model_version> (used when loading with cube.load("your-model-name-here"))
+        Let's say we have two models named my_en_model-1.0 and my_en_model-1.7
+        When using .load("my_en_model") we'll auto load the latest local model 1.7
+        If we want model 1.0, we .load("my_en_model", version="1.0"). Please note that version must be convertible to float!        
+    ",
+    "token_delimiter": " "
+}

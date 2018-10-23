@@ -17,6 +17,8 @@ models/
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*
+examples/.ipynb_checkpoints
+examples/.ipynb_checkpoints/*
 
 # CMake
 cmake-build-debug/
