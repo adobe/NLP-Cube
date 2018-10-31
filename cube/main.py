@@ -64,7 +64,7 @@ if __name__ == '__main__':
     parser.add_option("--decay", action='store', dest='decay', default=0, type='float',
                       help='set value for weight decay regularization')
     parser.add_option("--params", action='store', dest='params', type='str', help='external params')
-    parser.add_option("--random-seed", action='store', dest='random_seed',
+    parser.add_option("--random-seed", action='store', dest='random_seed', default=None,
                       help='set this parameter to force a fixed random seed (e.g.: --random-seed 9)')
     
     parser.add_option("--input-file", action='store', dest='input_file',
@@ -101,8 +101,10 @@ if __name__ == '__main__':
 
     memory = int(params.memory)
     
-    if params.random_seed:
+    if params.random_seed != None:
         random_seed = int(params.random_seed)
+        if random_seed == 0:
+                print("[Warning] While Python and Numpy's seeds are now set to 0, DyNet uses 0 to reset the seed generator (fully random). Use any non-zero int value to set DyNet to a fixed random seed.")            
         # set python random seed
         import random
         random.seed(random_seed)

@@ -2,16 +2,6 @@
 
 import sys
 import os
-from .io_utils.encodings import Encodings
-from .io_utils.embeddings import WordEmbeddings
-from .io_utils.model_store import ModelMetadata, ModelStore
-from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
-from .generic_networks.tokenizers import TieredTokenizer
-from .generic_networks.token_expanders import CompoundWordExpander
-from .generic_networks.lemmatizers import FSTLemmatizer
-from .generic_networks.taggers import BDRNNTagger
-from .generic_networks.parsers import BDRNNParser
-
 
 class Cube(object):
     def __init__(self, verbose=False, random_seed=None, memory=512, autobatch=False, use_gpu=False):
@@ -20,12 +10,14 @@ class Cube(object):
         Before it can be used, you must call @method load with @param language_code set to your target language        
         """
         self._loaded = False
-        self._verbose = verbose   
-        
+        self._verbose = verbose           
         import dynet_config
         
-        if random_seed:
-            random_seed = int(params.random_seed)
+        if random_seed != None:
+            if not isinstance(random_seed, int):
+                raise Exception ("Random seed must be an integer!")   
+            if random_seed == 0:
+                print("[Warning] While Python and Numpy's seeds are now set to 0, DyNet uses 0 to reset the seed generator (fully random). Use any non-zero int value to set DyNet to a fixed random seed.")
             # set python random seed
             import random
             random.seed(random_seed)
@@ -47,6 +39,16 @@ class Cube(object):
         @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
        
         """
+        from .io_utils.encodings import Encodings
+        from .io_utils.embeddings import WordEmbeddings
+        from .io_utils.model_store import ModelMetadata, ModelStore
+        from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
+        from .generic_networks.tokenizers import TieredTokenizer
+        from .generic_networks.token_expanders import CompoundWordExpander
+        from .generic_networks.lemmatizers import FSTLemmatizer
+        from .generic_networks.taggers import BDRNNTagger
+        from .generic_networks.parsers import BDRNNParser        
+        
         self._tokenizer = None  # tokenizer object, default is None
         self._compound_word_expander = None  # compound word expander, default is None
         self._lemmatizer = None  # lemmatizer object, default is None
