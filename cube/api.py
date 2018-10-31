@@ -14,17 +14,32 @@ from .generic_networks.parsers import BDRNNParser
 
 
 class Cube(object):
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, random_seed=None, memory=512, autobatch=False, use_gpu=False):
         """
         Create an empty instance for Cube
-        Before it can be used, you must call @method load with @param language_code set to your target language
+        Before it can be used, you must call @method load with @param language_code set to your target language        
         """
         self._loaded = False
         self._verbose = verbose   
         
+        import dynet_config
+        
+        if random_seed:
+            random_seed = int(params.random_seed)
+            # set python random seed
+            import random
+            random.seed(random_seed)
+            #set numpy random seed
+            import numpy as np
+            np.random.seed(random_seed)
+        else:
+            random_seed = 0 # this is the default value for DyNet (meaning full random)        
+            
+        dynet_config.set(mem=memory, random_seed=random_seed, autobatch=autobatch)
+        if use_gpu:
+            dynet_config.set_gpu()        
 
-    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True,
-             lemmatization=True, parsing=True):
+    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True):
         """
         Loads the pipeline with all available models for the target language.
 
@@ -62,7 +77,7 @@ class Cube(object):
         if self._verbose:
             sys.stdout.write('\tLoading embeddings ... \n')
         if not local_models_repository: # load an official model which has an embeddings file
-            embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None,
+            embeddings.read_from_file(os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name), None,
                                   full_load=False)
         else:
             if local_embeddings_file == None and self.metadata == None:
