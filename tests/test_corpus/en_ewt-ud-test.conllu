@@ -1,0 +1,596 @@
+# newdoc id = weblog-blogspot.com_zentelligence_20040423000200_ENG_20040423_000200
+# sent_id = weblog-blogspot.com_zentelligence_20040423000200_ENG_20040423_000200-0001
+# text = What if Google Morphed Into GoogleOS?
+1	What	what	PRON	WP	PronType=Int	0	root	0:root	_
+2	if	if	SCONJ	IN	_	4	mark	4:mark	_
+3	Google	Google	PROPN	NNP	Number=Sing	4	nsubj	4:nsubj	_
+4	Morphed	morph	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	1	advcl	1:advcl:if	_
+5	Into	into	ADP	IN	_	6	case	6:case	_
+6	GoogleOS	GoogleOS	PROPN	NNP	Number=Sing	4	obl	4:obl:into	SpaceAfter=No
+7	?	?	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_zentelligence_20040423000200_ENG_20040423_000200-0002
+# text = What if Google expanded on its search-engine (and now e-mail) wares into a full-fledged operating system?
+1	What	what	PRON	WP	PronType=Int	0	root	0:root	_
+2	if	if	SCONJ	IN	_	4	mark	4:mark	_
+3	Google	Google	PROPN	NNP	Number=Sing	4	nsubj	4:nsubj	_
+4	expanded	expand	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	1	advcl	1:advcl:if	_
+5	on	on	ADP	IN	_	15	case	15:case	_
+6	its	its	PRON	PRP$	Gender=Neut|Number=Sing|Person=3|Poss=Yes|PronType=Prs	15	nmod:poss	15:nmod:poss	_
+7	search	search	NOUN	NN	Number=Sing	9	compound	9:compound	SpaceAfter=No
+8	-	-	PUNCT	HYPH	_	9	punct	9:punct	SpaceAfter=No
+9	engine	engine	NOUN	NN	Number=Sing	15	compound	15:compound	_
+10	(	(	PUNCT	-LRB-	_	9	punct	9:punct	SpaceAfter=No
+11	and	and	CCONJ	CC	_	13	cc	13:cc	_
+12	now	now	ADV	RB	_	13	advmod	13:advmod	_
+13	e-mail	e-mail	NOUN	NN	Number=Sing	9	conj	9:conj:and|15:compound	SpaceAfter=No
+14	)	)	PUNCT	-RRB-	_	15	punct	15:punct	_
+15	wares	wares	NOUN	NNS	Number=Plur	4	obl	4:obl:on	_
+16	into	into	ADP	IN	_	22	case	22:case	_
+17	a	a	DET	DT	Definite=Ind|PronType=Art	22	det	22:det	_
+18	full	full	ADV	RB	_	20	advmod	20:advmod	SpaceAfter=No
+19	-	-	PUNCT	HYPH	_	20	punct	20:punct	SpaceAfter=No
+20	fledged	fledged	ADJ	JJ	Degree=Pos	22	amod	22:amod	_
+21	operating	operating	NOUN	NN	Number=Sing	22	compound	22:compound	_
+22	system	system	NOUN	NN	Number=Sing	4	obl	4:obl:into	SpaceAfter=No
+23	?	?	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_zentelligence_20040423000200_ENG_20040423_000200-0003
+# text = [via Microsoft Watch from Mary Jo Foley ]
+1	[	[	PUNCT	-LRB-	_	4	punct	4:punct	SpaceAfter=No
+2	via	via	ADP	IN	_	4	case	4:case	_
+3	Microsoft	Microsoft	PROPN	NNP	Number=Sing	4	compound	4:compound	_
+4	Watch	Watch	PROPN	NNP	Number=Sing	0	root	0:root	_
+5	from	from	ADP	IN	_	6	case	6:case	_
+6	Mary	Mary	PROPN	NNP	Number=Sing	4	nmod	4:nmod:from	_
+7	Jo	Jo	PROPN	NNP	Number=Sing	6	flat	6:flat	_
+8	Foley	Foley	PROPN	NNP	Number=Sing	6	flat	6:flat	_
+9	]	]	PUNCT	-RRB-	_	4	punct	4:punct	_
+
+# newdoc id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0001
+# text = (And, by the way, is anybody else just a little nostalgic for the days when that was a good thing?)
+1	(	(	PUNCT	-LRB-	_	14	punct	14:punct	SpaceAfter=No
+2	And	and	CCONJ	CC	_	14	cc	14:cc	SpaceAfter=No
+3	,	,	PUNCT	,	_	14	punct	14:punct	_
+4	by	by	ADP	IN	_	6	case	6:case	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	6	det	6:det	_
+6	way	way	NOUN	NN	Number=Sing	14	obl	14:obl:by	SpaceAfter=No
+7	,	,	PUNCT	,	_	14	punct	14:punct	_
+8	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	14	cop	14:cop	_
+9	anybody	anybody	PRON	NN	Number=Sing	14	nsubj	14:nsubj	_
+10	else	else	ADJ	JJ	Degree=Pos	9	amod	9:amod	_
+11	just	just	ADV	RB	_	13	advmod	13:advmod	_
+12	a	a	DET	DT	Definite=Ind|PronType=Art	13	det	13:det	_
+13	little	little	ADJ	JJ	Degree=Pos	14	obl:npmod	14:obl:npmod	_
+14	nostalgic	nostalgic	NOUN	NN	Number=Sing	0	root	0:root	_
+15	for	for	ADP	IN	_	17	case	17:case	_
+16	the	the	DET	DT	Definite=Def|PronType=Art	17	det	17:det	_
+17	days	day	NOUN	NNS	Number=Plur	14	nmod	14:nmod:for|23:nsubj	_
+18	when	when	ADV	WRB	PronType=Rel	23	advmod	23:advmod	_
+19	that	that	PRON	DT	Number=Sing|PronType=Dem	23	nsubj	17:ref	_
+20	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	23	cop	23:cop	_
+21	a	a	DET	DT	Definite=Ind|PronType=Art	23	det	23:det	_
+22	good	good	ADJ	JJ	Degree=Pos	23	amod	23:amod	_
+23	thing	thing	NOUN	NN	Number=Sing	17	acl:relcl	17:acl:relcl	SpaceAfter=No
+24	?	?	PUNCT	.	_	14	punct	14:punct	SpaceAfter=No
+25	)	)	PUNCT	-RRB-	_	14	punct	14:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0002
+# text = This BuzzMachine post argues that Google's rush toward ubiquity might backfire -- which we've all heard before, but it's particularly well-put in this post.
+1	This	this	DET	DT	Number=Sing|PronType=Dem	3	det	3:det	_
+2	BuzzMachine	BuzzMachine	PROPN	NNP	Number=Sing	3	compound	3:compound	_
+3	post	post	NOUN	NN	Number=Sing	4	nsubj	4:nsubj	_
+4	argues	argue	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+5	that	that	SCONJ	IN	_	12	mark	12:mark	_
+6	Google	Google	PROPN	NNP	Number=Sing	8	nmod:poss	8:nmod:poss	SpaceAfter=No
+7	's	's	PART	POS	_	6	case	6:case	_
+8	rush	rush	NOUN	NN	Number=Sing	12	nsubj	12:nsubj	_
+9	toward	toward	ADP	IN	_	10	case	10:case	_
+10	ubiquity	ubiquity	NOUN	NN	Number=Sing	8	nmod	8:nmod:toward	_
+11	might	might	AUX	MD	VerbForm=Fin	12	aux	12:aux	_
+12	backfire	backfire	VERB	VB	VerbForm=Inf	4	ccomp	4:ccomp|18:obj	_
+13	--	--	PUNCT	,	_	12	punct	12:punct	_
+14	which	which	PRON	WDT	PronType=Rel	18	obj	12:ref	_
+15	we	we	PRON	PRP	Case=Nom|Number=Plur|Person=1|PronType=Prs	18	nsubj	18:nsubj	SpaceAfter=No
+16	've	have	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	18	aux	18:aux	_
+17	all	all	ADV	RB	_	18	advmod	18:advmod	_
+18	heard	hear	VERB	VBN	Tense=Past|VerbForm=Part	12	acl:relcl	12:acl:relcl	_
+19	before	before	ADV	RB	_	18	advmod	18:advmod	SpaceAfter=No
+20	,	,	PUNCT	,	_	27	punct	27:punct	_
+21	but	but	CCONJ	CC	_	27	cc	27:cc	_
+22	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	27	nsubj:pass	27:nsubj:pass	SpaceAfter=No
+23	's	be	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	27	aux:pass	27:aux:pass	_
+24	particularly	particularly	ADV	RB	_	27	advmod	27:advmod	_
+25	well	well	ADV	RB	Degree=Pos	27	advmod	27:advmod	SpaceAfter=No
+26	-	-	PUNCT	HYPH	_	27	punct	27:punct	SpaceAfter=No
+27	put	put	VERB	VBN	Tense=Past|VerbForm=Part	4	conj	4:conj:but	_
+28	in	in	ADP	IN	_	30	case	30:case	_
+29	this	this	DET	DT	Number=Sing|PronType=Dem	30	det	30:det	_
+30	post	post	NOUN	NN	Number=Sing	27	obl	27:obl:in	SpaceAfter=No
+31	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0003
+# text = Google is a nice search engine.
+1	Google	Google	PROPN	NNP	Number=Sing	6	nsubj	6:nsubj	_
+2	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	6	cop	6:cop	_
+3	a	a	DET	DT	Definite=Ind|PronType=Art	6	det	6:det	_
+4	nice	nice	ADJ	JJ	Degree=Pos	6	amod	6:amod	_
+5	search	search	NOUN	NN	Number=Sing	6	compound	6:compound	_
+6	engine	engine	NOUN	NN	Number=Sing	0	root	0:root	SpaceAfter=No
+7	.	.	PUNCT	.	_	6	punct	6:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0004
+# text = Does anybody use it for anything else?
+1	Does	do	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	3	aux	3:aux	_
+2	anybody	anybody	PRON	NN	Number=Sing	3	nsubj	3:nsubj	_
+3	use	use	VERB	VB	VerbForm=Inf	0	root	0:root	_
+4	it	it	PRON	PRP	Case=Acc|Gender=Neut|Number=Sing|Person=3|PronType=Prs	3	obj	3:obj	_
+5	for	for	ADP	IN	_	6	case	6:case	_
+6	anything	anything	PRON	NN	Number=Sing	3	obl	3:obl:for	_
+7	else	else	ADJ	JJ	Degree=Pos	6	amod	6:amod	SpaceAfter=No
+8	?	?	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0005
+# text = They own blogger, of course.
+1	They	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	2	nsubj	2:nsubj	_
+2	own	own	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	blogger	blogger	PROPN	NNP	Number=Sing	2	obj	2:obj	SpaceAfter=No
+4	,	,	PUNCT	,	_	2	punct	2:punct	_
+5	of	of	ADV	RB	_	2	advmod	2:advmod	_
+6	course	course	ADV	RB	_	5	fixed	5:fixed	SpaceAfter=No
+7	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0006
+# text = Is that a money maker?
+1	Is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	cop	5:cop	_
+2	that	that	PRON	DT	Number=Sing|PronType=Dem	5	nsubj	5:nsubj	_
+3	a	a	DET	DT	Definite=Ind|PronType=Art	5	det	5:det	_
+4	money	money	NOUN	NN	Number=Sing	5	compound	5:compound	_
+5	maker	maker	NOUN	NN	Number=Sing	0	root	0:root	SpaceAfter=No
+6	?	?	PUNCT	.	_	5	punct	5:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050511222700_ENG_20050511_222700-0007
+# text = I'm staying away from the stock.
+1	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	3	nsubj	3:nsubj	SpaceAfter=No
+2	'm	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	3	aux	3:aux	_
+3	staying	stay	VERB	VBG	Tense=Pres|VerbForm=Part	0	root	0:root	_
+4	away	away	ADV	RB	_	3	advmod	3:advmod	_
+5	from	from	ADP	IN	_	7	case	7:case	_
+6	the	the	DET	DT	Definite=Def|PronType=Art	7	det	7:det	_
+7	stock	stock	NOUN	NN	Number=Sing	4	obl	4:obl:from	SpaceAfter=No
+8	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# newdoc id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0001
+# text = I doubt the very few who actually read my blog have not come across this yet, but I figured I would put it out there anyways.
+1	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	2	nsubj	2:nsubj	_
+2	doubt	doubt	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	the	the	DET	DT	Definite=Def|PronType=Art	5	det	5:det	_
+4	very	very	ADV	RB	_	5	advmod	5:advmod	_
+5	few	few	ADJ	JJ	Degree=Pos	13	nsubj	8:nsubj|13:nsubj	_
+6	who	who	PRON	WP	PronType=Rel	8	nsubj	5:ref	_
+7	actually	actually	ADV	RB	_	8	advmod	8:advmod	_
+8	read	read	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	5	acl:relcl	5:acl:relcl	_
+9	my	my	PRON	PRP$	Number=Sing|Person=1|Poss=Yes|PronType=Prs	10	nmod:poss	10:nmod:poss	_
+10	blog	blog	NOUN	NN	Number=Sing	8	obj	8:obj	_
+11	have	have	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	13	aux	13:aux	_
+12	not	not	PART	RB	_	13	advmod	13:advmod	_
+13	come	come	VERB	VBN	Tense=Past|VerbForm=Part	2	ccomp	2:ccomp	_
+14	across	across	ADP	IN	_	15	case	15:case	_
+15	this	this	PRON	DT	Number=Sing|PronType=Dem	13	obl	13:obl:across	_
+16	yet	yet	ADV	RB	_	13	advmod	13:advmod	SpaceAfter=No
+17	,	,	PUNCT	,	_	20	punct	20:punct	_
+18	but	but	CCONJ	CC	_	20	cc	20:cc	_
+19	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	20	nsubj	20:nsubj	_
+20	figured	figure	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	2	conj	2:conj:but	_
+21	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	23	nsubj	23:nsubj	_
+22	would	would	AUX	MD	VerbForm=Fin	23	aux	23:aux	_
+23	put	put	VERB	VB	VerbForm=Inf	20	ccomp	20:ccomp	_
+24	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	23	obj	23:obj	_
+25	out	out	ADV	RB	_	26	advmod	26:advmod	_
+26	there	there	ADV	RB	PronType=Dem	23	advmod	23:advmod	_
+27	anyways	anyways	ADV	RB	_	23	advmod	23:advmod	SpaceAfter=No
+28	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0002
+# text = John Donovan from Argghhh! has put out a excellent slide show on what was actually found and fought for in Fallujah.
+1	John	John	PROPN	NNP	Number=Sing	6	nsubj	6:nsubj	_
+2	Donovan	Donovan	PROPN	NNP	Number=Sing	1	flat	1:flat	_
+3	from	from	ADP	IN	_	4	case	4:case	_
+4	Argghhh!	Argghhh!	PROPN	NNP	Number=Sing	1	nmod	1:nmod:from	_
+5	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	6	aux	6:aux	_
+6	put	put	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+7	out	out	ADP	RP	_	6	compound:prt	6:compound:prt	_
+8	a	a	DET	DT	Definite=Ind|PronType=Art	11	det	11:det	_
+9	excellent	excellent	ADJ	JJ	Degree=Pos	11	amod	11:amod	_
+10	slide	slide	NOUN	NN	Number=Sing	11	compound	11:compound	_
+11	show	show	NOUN	NN	Number=Sing	6	obj	6:obj	_
+12	on	on	SCONJ	IN	_	13	case	13:case	_
+13	what	what	PRON	WP	PronType=Int	11	nmod	11:nmod:on	_
+14	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	16	aux:pass	16:aux:pass	_
+15	actually	actually	ADV	RB	_	16	advmod	16:advmod	_
+16	found	find	VERB	VBN	Tense=Past|VerbForm=Part	13	acl:relcl	13:acl:relcl	_
+17	and	and	CCONJ	CC	_	18	cc	18:cc	_
+18	fought	fight	VERB	VBN	Tense=Past|VerbForm=Part	16	conj	13:acl:relcl|16:conj:and	_
+19	for	for	ADP	IN	_	18	obl	18:obl	_
+20	in	in	ADP	IN	_	21	case	21:case	_
+21	Fallujah	Fallujah	PROPN	NNP	Number=Sing	16	obl	16:obl:in	SpaceAfter=No
+22	.	.	PUNCT	.	_	6	punct	6:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0003
+# text = Click here To view it.
+1	Click	click	VERB	VB	Mood=Imp|VerbForm=Fin	0	root	0:root	_
+2	here	here	ADV	RB	PronType=Dem	1	advmod	1:advmod	_
+3	To	to	PART	TO	_	4	mark	4:mark	_
+4	view	view	VERB	VB	VerbForm=Inf	1	advcl	1:advcl:to	_
+5	it	it	PRON	PRP	Case=Acc|Gender=Neut|Number=Sing|Person=3|PronType=Prs	4	obj	4:obj	SpaceAfter=No
+6	.	.	PUNCT	.	_	1	punct	1:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0004
+# text = He makes some good observations on a few of the pic's.
+1	He	he	PRON	PRP	Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs	2	nsubj	2:nsubj	_
+2	makes	make	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	some	some	DET	DT	_	5	det	5:det	_
+4	good	good	ADJ	JJ	Degree=Pos	5	amod	5:amod	_
+5	observations	observation	NOUN	NNS	Number=Plur	2	obj	2:obj	_
+6	on	on	ADP	IN	_	8	case	8:case	_
+7	a	a	DET	DT	Definite=Ind|PronType=Art	8	det	8:det	_
+8	few	few	ADJ	JJ	Degree=Pos	5	nmod	5:nmod:on	_
+9	of	of	ADP	IN	_	11	case	11:case	_
+10	the	the	DET	DT	Definite=Def|PronType=Art	11	det	11:det	_
+11	pic's	pic'	NOUN	NNS	Number=Plur	8	obl	8:obl:of	SpaceAfter=No
+12	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0005
+# text = One of the pictures shows a flag that was found in Fallujah.
+1	One	one	NUM	CD	NumType=Card	5	nsubj	5:nsubj	_
+2	of	of	ADP	IN	_	4	case	4:case	_
+3	the	the	DET	DT	Definite=Def|PronType=Art	4	det	4:det	_
+4	pictures	picture	NOUN	NNS	Number=Plur	1	nmod	1:nmod:of	_
+5	shows	show	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+6	a	a	DET	DT	Definite=Ind|PronType=Art	7	det	7:det	_
+7	flag	flag	NOUN	NN	Number=Sing	5	obj	5:obj|10:nsubj:pass	_
+8	that	that	PRON	WDT	PronType=Rel	10	nsubj:pass	7:ref	_
+9	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	10	aux:pass	10:aux:pass	_
+10	found	find	VERB	VBN	Tense=Past|VerbForm=Part|Voice=Pass	7	acl:relcl	7:acl:relcl	_
+11	in	in	ADP	IN	_	12	case	12:case	_
+12	Fallujah	Fallujah	PROPN	NNP	Number=Sing	10	obl	10:obl:in	SpaceAfter=No
+13	.	.	PUNCT	.	_	5	punct	5:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0006
+# text = On the next two pictures he took screenshots of two beheading video's.
+1	On	on	ADP	IN	_	5	case	5:case	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	5	det	5:det	_
+3	next	next	ADJ	JJ	Degree=Pos	5	amod	5:amod	_
+4	two	two	NUM	CD	NumType=Card	5	nummod	5:nummod	_
+5	pictures	picture	NOUN	NNS	Number=Plur	7	obl	7:obl:on	_
+6	he	he	PRON	PRP	Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs	7	nsubj	7:nsubj	_
+7	took	take	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+8	screenshots	screenshot	NOUN	NNS	Number=Plur	7	obj	7:obj	_
+9	of	of	ADP	IN	_	12	case	12:case	_
+10	two	two	NUM	CD	NumType=Card	12	nummod	12:nummod	_
+11	beheading	beheading	NOUN	NN	Number=Sing	12	compound	12:compound	_
+12	video's	video'	NOUN	NNS	Number=Plur	8	nmod	8:nmod:of	SpaceAfter=No
+13	.	.	PUNCT	.	_	7	punct	7:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0007
+# text = Compare the flags to the Fallujah one.
+1	Compare	compare	VERB	VB	Mood=Imp|VerbForm=Fin	0	root	0:root	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
+3	flags	flag	NOUN	NNS	Number=Plur	1	obj	1:obj	_
+4	to	to	ADP	IN	_	7	case	7:case	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	7	det	7:det	_
+6	Fallujah	Fallujah	PROPN	NNP	Number=Sing	7	compound	7:compound	_
+7	one	one	NOUN	NN	Number=Sing	1	obl	1:obl:to	SpaceAfter=No
+8	.	.	PUNCT	.	_	1	punct	1:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0008
+# text = You have to see these slides....they are amazing.
+1	You	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	2	nsubj	2:nsubj|4:nsubj:xsubj	_
+2	have	have	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	to	to	PART	TO	_	4	mark	4:mark	_
+4	see	see	VERB	VB	VerbForm=Inf	2	xcomp	2:xcomp	_
+5	these	these	DET	DT	Number=Plur|PronType=Dem	6	det	6:det	_
+6	slides	slide	NOUN	NNS	Number=Plur	4	obj	4:obj	SpaceAfter=No
+7	....	....	PUNCT	,	_	2	punct	2:punct	SpaceAfter=No
+8	they	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	10	nsubj	10:nsubj	_
+9	are	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	10	cop	10:cop	_
+10	amazing	amazing	ADJ	JJ	Degree=Pos	2	ccomp	2:ccomp	SpaceAfter=No
+11	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_floppingaces_20041126180010_ENG_20041126_180010-0009
+# text = This Fallujah operation my turn out to be the most important operation done by the US Military since the end of the war.
+1	This	this	DET	DT	Number=Sing|PronType=Dem	3	det	3:det	_
+2	Fallujah	Fallujah	PROPN	NNP	Number=Sing	3	compound	3:compound	_
+3	operation	operation	NOUN	NN	Number=Sing	5	nsubj	5:nsubj|12:nsubj:xsubj	_
+4	my	may	AUX	MD	Typo=Yes|VerbForm=Fin	5	aux	5:aux	_
+5	turn	turn	VERB	VB	VerbForm=Inf	0	root	0:root	_
+6	out	out	ADP	RP	_	5	compound:prt	5:compound:prt	_
+7	to	to	PART	TO	_	12	mark	12:mark	_
+8	be	be	AUX	VB	VerbForm=Inf	12	cop	12:cop	_
+9	the	the	DET	DT	Definite=Def|PronType=Art	12	det	12:det	_
+10	most	most	ADV	RBS	_	11	advmod	11:advmod	_
+11	important	important	ADJ	JJ	Degree=Pos	12	amod	12:amod	_
+12	operation	operation	NOUN	NN	Number=Sing	5	xcomp	5:xcomp	_
+13	done	do	VERB	VBN	Tense=Past|VerbForm=Part	12	advcl	12:advcl	_
+14	by	by	ADP	IN	_	17	case	17:case	_
+15	the	the	DET	DT	Definite=Def|PronType=Art	17	det	17:det	_
+16	US	US	PROPN	NNP	Number=Sing	17	compound	17:compound	_
+17	Military	military	NOUN	NN	Number=Sing	13	obl	13:obl:by	_
+18	since	since	ADP	IN	_	20	case	20:case	_
+19	the	the	DET	DT	Definite=Def|PronType=Art	20	det	20:det	_
+20	end	end	NOUN	NN	Number=Sing	13	obl	13:obl:since	_
+21	of	of	ADP	IN	_	23	case	23:case	_
+22	the	the	DET	DT	Definite=Def|PronType=Art	23	det	23:det	_
+23	war	war	NOUN	NN	Number=Sing	20	nmod	20:nmod:of	SpaceAfter=No
+24	.	.	PUNCT	.	_	5	punct	5:punct	_
+
+# newdoc id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500
+# sent_id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500-0001
+# text = Let me join the chorus of annoyance over Google's new toolbar , which, as noted in the linked article, commits just about every sin an online marketer could commit, and makes up a few new ones besides.
+1	Let	let	VERB	VB	Mood=Imp|VerbForm=Fin	0	root	0:root	_
+2	me	I	PRON	PRP	Case=Acc|Number=Sing|Person=1|PronType=Prs	1	obj	1:obj|3:nsubj:xsubj	_
+3	join	join	VERB	VB	VerbForm=Inf	1	xcomp	1:xcomp	_
+4	the	the	DET	DT	Definite=Def|PronType=Art	5	det	5:det	_
+5	chorus	chorus	NOUN	NN	Number=Sing	3	obj	3:obj	_
+6	of	of	ADP	IN	_	7	case	7:case	_
+7	annoyance	annoyance	NOUN	NN	Number=Sing	5	nmod	5:nmod:of	_
+8	over	over	ADP	IN	_	12	case	12:case	_
+9	Google	Google	PROPN	NNP	Number=Sing	12	nmod:poss	12:nmod:poss	SpaceAfter=No
+10	's	's	PART	POS	_	9	case	9:case	_
+11	new	new	ADJ	JJ	Degree=Pos	12	amod	12:amod	_
+12	toolbar	toolbar	NOUN	NN	Number=Sing	7	nmod	7:nmod:over|23:nsubj|35:nsubj	_
+13	,	,	PUNCT	,	_	12	punct	12:punct	_
+14	which	which	PRON	WDT	PronType=Rel	23	nsubj	12:ref	SpaceAfter=No
+15	,	,	PUNCT	,	_	23	punct	23:punct	_
+16	as	as	SCONJ	IN	_	17	mark	17:mark	_
+17	noted	note	VERB	VBN	Tense=Past|VerbForm=Part	23	advcl	23:advcl:as	_
+18	in	in	ADP	IN	_	21	case	21:case	_
+19	the	the	DET	DT	Definite=Def|PronType=Art	21	det	21:det	_
+20	linked	link	VERB	VBN	Tense=Past|VerbForm=Part	21	amod	21:amod	_
+21	article	article	NOUN	NN	Number=Sing	17	obl	17:obl:in	SpaceAfter=No
+22	,	,	PUNCT	,	_	23	punct	23:punct	_
+23	commits	commit	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	12	acl:relcl	12:acl:relcl	_
+24	just	just	ADV	RB	_	25	advmod	25:advmod	_
+25	about	about	ADV	RB	_	27	advmod	27:advmod	_
+26	every	every	DET	DT	_	27	det	27:det	_
+27	sin	sin	NOUN	NN	Number=Sing	23	obj	23:obj	_
+28	an	a	DET	DT	Definite=Ind|PronType=Art	30	det	30:det	_
+29	online	online	ADJ	JJ	Degree=Pos	30	amod	30:amod	_
+30	marketer	marketer	NOUN	NN	Number=Sing	32	nsubj	32:nsubj	_
+31	could	could	AUX	MD	VerbForm=Fin	32	aux	32:aux	_
+32	commit	commit	VERB	VB	VerbForm=Inf	27	acl:relcl	27:acl:relcl	SpaceAfter=No
+33	,	,	PUNCT	,	_	35	punct	35:punct	_
+34	and	and	CCONJ	CC	_	35	cc	35:cc	_
+35	makes	make	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	23	conj	12:acl:relcl|23:conj:and	_
+36	up	up	ADP	RP	_	35	compound:prt	35:compound:prt	_
+37	a	a	DET	DT	Definite=Ind|PronType=Art	40	det	40:det	_
+38	few	few	ADJ	JJ	Degree=Pos	40	amod	40:amod	_
+39	new	new	ADJ	JJ	Degree=Pos	40	amod	40:amod	_
+40	ones	one	NOUN	NNS	Number=Plur	35	obj	35:obj	_
+41	besides	besides	ADV	RB	_	35	advmod	35:advmod	SpaceAfter=No
+42	.	.	PUNCT	.	_	1	punct	1:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500-0002
+# text = I'm not fond of the Google-hates-privacy argument
+1	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	4	nsubj	4:nsubj	SpaceAfter=No
+2	'm	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	4	cop	4:cop	_
+3	not	not	PART	RB	_	4	advmod	4:advmod	_
+4	fond	fond	ADJ	JJ	Degree=Pos	0	root	0:root	_
+5	of	of	ADP	IN	_	12	case	12:case	_
+6	the	the	DET	DT	Definite=Def|PronType=Art	12	det	12:det	_
+7	Google	Google	PROPN	NNP	Number=Sing	9	nsubj	9:nsubj	SpaceAfter=No
+8	-	-	PUNCT	HYPH	_	9	punct	9:punct	SpaceAfter=No
+9	hates	hate	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	12	compound	12:compound	SpaceAfter=No
+10	-	-	PUNCT	HYPH	_	9	punct	9:punct	SpaceAfter=No
+11	privacy	privacy	NOUN	NN	Number=Sing	9	obj	9:obj	_
+12	argument	argument	NOUN	NN	Number=Sing	4	obl	4:obl:of	_
+
+# sent_id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500-0003
+# text = (You don't need to use their site, you can opt-out of sharing your information, you don't need to send stuff to anyone with a Gmail account, and if -- wonder of wonders -- you're worried that you might send something to someone who would forward an excerpt to someone who would then store it on a Gmail account... you have far, far too much time on your hands).
+1	(	(	PUNCT	-LRB-	_	5	punct	5:punct	SpaceAfter=No
+2	You	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	5	nsubj	5:nsubj|7:nsubj:xsubj	_
+3	do	do	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	5	aux	5:aux	SpaceAfter=No
+4	n't	not	PART	RB	_	5	advmod	5:advmod	_
+5	need	need	VERB	VB	VerbForm=Inf	0	root	0:root	_
+6	to	to	PART	TO	_	7	mark	7:mark	_
+7	use	use	VERB	VB	VerbForm=Inf	5	xcomp	5:xcomp	_
+8	their	they	PRON	PRP$	Number=Plur|Person=3|Poss=Yes|PronType=Prs	9	nmod:poss	9:nmod:poss	_
+9	site	site	NOUN	NN	Number=Sing	7	obj	7:obj	SpaceAfter=No
+10	,	,	PUNCT	,	_	13	punct	13:punct	_
+11	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	13	nsubj	13:nsubj	_
+12	can	can	AUX	MD	VerbForm=Fin	13	aux	13:aux	_
+13	opt	opt	VERB	VB	VerbForm=Inf	5	conj	5:conj:and	SpaceAfter=No
+14	-	-	PUNCT	HYPH	_	13	punct	13:punct	SpaceAfter=No
+15	out	out	ADP	RP	_	13	compound:prt	13:compound:prt	_
+16	of	of	SCONJ	IN	_	17	mark	17:mark	_
+17	sharing	share	VERB	VBG	VerbForm=Ger	13	advcl	13:advcl:of	_
+18	your	you	PRON	PRP$	Person=2|Poss=Yes|PronType=Prs	19	nmod:poss	19:nmod:poss	_
+19	information	information	NOUN	NN	Number=Sing	17	obj	17:obj	SpaceAfter=No
+20	,	,	PUNCT	,	_	24	punct	24:punct	_
+21	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	24	nsubj	24:nsubj|26:nsubj:xsubj	_
+22	do	do	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	24	aux	24:aux	SpaceAfter=No
+23	n't	not	PART	RB	_	24	advmod	24:advmod	_
+24	need	need	VERB	VB	VerbForm=Inf	5	conj	5:conj:and	_
+25	to	to	PART	TO	_	26	mark	26:mark	_
+26	send	send	VERB	VB	VerbForm=Inf	24	xcomp	24:xcomp	_
+27	stuff	stuff	NOUN	NN	Number=Sing	26	obj	26:obj	_
+28	to	to	ADP	IN	_	29	case	29:case	_
+29	anyone	anyone	PRON	NN	Number=Sing	26	obl	26:obl:to	_
+30	with	with	ADP	IN	_	33	case	33:case	_
+31	a	a	DET	DT	Definite=Ind|PronType=Art	33	det	33:det	_
+32	Gmail	Gmail	PROPN	NNP	Number=Sing	33	compound	33:compound	_
+33	account	account	NOUN	NN	Number=Sing	29	nmod	29:nmod:with	SpaceAfter=No
+34	,	,	PUNCT	,	_	70	punct	70:punct	_
+35	and	and	CCONJ	CC	_	70	cc	70:cc	_
+36	if	if	SCONJ	IN	_	44	mark	44:mark	_
+37	--	--	PUNCT	,	_	44	punct	44:punct	_
+38	wonder	wonder	NOUN	NN	Number=Sing	44	parataxis	44:parataxis	_
+39	of	of	ADP	IN	_	40	case	40:case	_
+40	wonders	wonder	NOUN	NNS	Number=Plur	38	nmod	38:nmod:of	_
+41	--	--	PUNCT	,	_	44	punct	44:punct	_
+42	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	44	nsubj	44:nsubj	SpaceAfter=No
+43	're	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	44	cop	44:cop	_
+44	worried	worried	ADJ	JJ	Degree=Pos	70	advcl	70:advcl:if	_
+45	that	that	SCONJ	IN	_	48	mark	48:mark	_
+46	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	48	nsubj	48:nsubj	_
+47	might	might	AUX	MD	VerbForm=Fin	48	aux	48:aux	_
+48	send	send	VERB	VB	VerbForm=Inf	44	ccomp	44:ccomp	_
+49	something	something	PRON	NN	Number=Sing	48	obj	48:obj	_
+50	to	to	ADP	IN	_	51	case	51:case	_
+51	someone	someone	PRON	NN	Number=Sing	48	obl	48:obl:to|54:nsubj	_
+52	who	who	PRON	WP	PronType=Rel	54	nsubj	51:ref	_
+53	would	would	AUX	MD	VerbForm=Fin	54	aux	54:aux	_
+54	forward	forward	VERB	VB	VerbForm=Inf	51	acl:relcl	51:acl:relcl	_
+55	an	a	DET	DT	Definite=Ind|PronType=Art	56	det	56:det	_
+56	excerpt	excerpt	NOUN	NN	Number=Sing	54	obj	54:obj	_
+57	to	to	ADP	IN	_	58	case	58:case	_
+58	someone	someone	PRON	NN	Number=Sing	54	obl	54:obl:to|62:nsubj	_
+59	who	who	PRON	WP	PronType=Rel	62	nsubj	58:ref	_
+60	would	would	AUX	MD	VerbForm=Fin	62	aux	62:aux	_
+61	then	then	ADV	RB	PronType=Dem	62	advmod	62:advmod	_
+62	store	store	VERB	VB	VerbForm=Inf	58	acl:relcl	58:acl:relcl	_
+63	it	it	PRON	PRP	Case=Acc|Gender=Neut|Number=Sing|Person=3|PronType=Prs	62	obj	62:obj	_
+64	on	on	ADP	IN	_	67	case	67:case	_
+65	a	a	DET	DT	Definite=Ind|PronType=Art	67	det	67:det	_
+66	Gmail	Gmail	PROPN	NNP	Number=Sing	67	compound	67:compound	_
+67	account	account	NOUN	NN	Number=Sing	62	obl	62:obl:on	SpaceAfter=No
+68	...	...	PUNCT	,	_	70	punct	70:punct	_
+69	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	70	nsubj	70:nsubj	_
+70	have	have	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	5	conj	5:conj:and	_
+71	far	far	ADV	RB	Degree=Pos	75	advmod	75:advmod	SpaceAfter=No
+72	,	,	PUNCT	,	_	75	punct	75:punct	_
+73	far	far	ADV	RB	Degree=Pos	75	advmod	75:advmod	_
+74	too	too	ADV	RB	_	75	advmod	75:advmod	_
+75	much	much	ADJ	JJ	Degree=Pos	76	amod	76:amod	_
+76	time	time	NOUN	NN	Number=Sing	70	obj	70:obj	_
+77	on	on	ADP	IN	_	79	case	79:case	_
+78	your	you	PRON	PRP$	Person=2|Poss=Yes|PronType=Prs	79	nmod:poss	79:nmod:poss	_
+79	hands	hand	NOUN	NNS	Number=Plur	70	obl	70:obl:on	SpaceAfter=No
+80	)	)	PUNCT	-RRB-	_	5	punct	5:punct	SpaceAfter=No
+81	.	.	PUNCT	.	_	5	punct	5:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500-0004
+# text = However, this toolbar is really bad news.
+1	However	however	ADV	RB	_	8	advmod	8:advmod	SpaceAfter=No
+2	,	,	PUNCT	,	_	8	punct	8:punct	_
+3	this	this	DET	DT	Number=Sing|PronType=Dem	4	det	4:det	_
+4	toolbar	toolbar	NOUN	NN	Number=Sing	8	nsubj	8:nsubj	_
+5	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	cop	8:cop	_
+6	really	really	ADV	RB	_	7	advmod	7:advmod	_
+7	bad	bad	ADJ	JJ	Degree=Pos	8	amod	8:amod	_
+8	news	news	NOUN	NN	Number=Sing	0	root	0:root	SpaceAfter=No
+9	.	.	PUNCT	.	_	8	punct	8:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050224181500_ENG_20050224_181500-0005
+# text = On the other hand, it looks pretty cool.
+1	On	on	ADP	IN	_	4	case	4:case	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	4	det	4:det	_
+3	other	other	ADJ	JJ	Degree=Pos	4	amod	4:amod	_
+4	hand	hand	NOUN	NN	Number=Sing	7	obl	7:obl:on	SpaceAfter=No
+5	,	,	PUNCT	,	_	7	punct	7:punct	_
+6	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	7	nsubj	7:nsubj|9:nsubj:xsubj	_
+7	looks	look	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+8	pretty	pretty	ADV	RB	_	9	advmod	9:advmod	_
+9	cool	cool	ADJ	JJ	Degree=Pos	7	xcomp	7:xcomp	SpaceAfter=No
+10	.	.	PUNCT	.	_	7	punct	7:punct	_
+
+# newdoc id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0001
+# text = Iran says it is creating nuclear energy without wanting nuclear weapons.
+1	Iran	Iran	PROPN	NNP	Number=Sing	2	nsubj	2:nsubj	_
+2	says	say	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	5	nsubj	5:nsubj	_
+4	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	5	aux	5:aux	_
+5	creating	create	VERB	VBG	VerbForm=Ger	2	ccomp	2:ccomp	_
+6	nuclear	nuclear	ADJ	JJ	Degree=Pos	7	amod	7:amod	_
+7	energy	energy	NOUN	NN	Number=Sing	5	obj	5:obj	_
+8	without	without	SCONJ	IN	_	9	mark	9:mark	_
+9	wanting	want	VERB	VBG	VerbForm=Ger	5	advcl	5:advcl:without	_
+10	nuclear	nuclear	ADJ	JJ	Degree=Pos	11	amod	11:amod	_
+11	weapons	weapon	NOUN	NNS	Number=Plur	9	obj	9:obj	SpaceAfter=No
+12	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0002
+# text = The United States doesn't believe the Iranian Government.
+1	The	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
+2	United	United	PROPN	NNP	Number=Sing	3	compound	3:compound	_
+3	States	States	PROPN	NNP	Number=Sing	6	nsubj	6:nsubj	_
+4	does	do	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	6	aux	6:aux	SpaceAfter=No
+5	n't	not	PART	RB	_	6	advmod	6:advmod	_
+6	believe	believe	VERB	VB	VerbForm=Inf	0	root	0:root	_
+7	the	the	DET	DT	Definite=Def|PronType=Art	9	det	9:det	_
+8	Iranian	iranian	ADJ	JJ	Degree=Pos	9	amod	9:amod	_
+9	Government	government	NOUN	NN	Number=Sing	6	obj	6:obj	SpaceAfter=No
+10	.	.	PUNCT	.	_	6	punct	6:punct	_
+
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0003
+# text = One can suspect the Iranian Government.
+1	One	one	PRON	PRP	_	3	nsubj	3:nsubj	_
+2	can	can	AUX	MD	VerbForm=Fin	3	aux	3:aux	_
+3	suspect	suspect	VERB	VB	VerbForm=Inf	0	root	0:root	_
+4	the	the	DET	DT	Definite=Def|PronType=Art	6	det	6:det	_
+5	Iranian	iranian	ADJ	JJ	Degree=Pos	6	amod	6:amod	_
+6	Government	government	NOUN	NN	Number=Sing	3	obj	3:obj	SpaceAfter=No
+7	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0004
+# text = But there is no proof .
+1	But	but	CCONJ	CC	_	3	cc	3:cc	_
+2	there	there	PRON	EX	_	3	expl	3:expl	_
+3	is	be	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+4	no	no	DET	DT	_	5	det	5:det	_
+5	proof	proof	NOUN	NN	Number=Sing	3	nsubj	3:nsubj	_
+6	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0005
+# text = I read an Article in Time magazine accusing the Iranian Government of being willing to start a nuclear war and I sympathise with the Article.
+1	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	2	nsubj	2:nsubj	_
+2	read	read	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+3	an	a	DET	DT	Definite=Ind|PronType=Art	4	det	4:det	_
+4	Article	article	NOUN	NN	Number=Sing	2	obj	2:obj	_
+5	in	in	ADP	IN	_	7	case	7:case	_
+6	Time	Time	PROPN	NNP	Number=Sing	7	compound	7:compound	_
+7	magazine	magazine	PROPN	NNP	Number=Sing	4	nmod	4:nmod:in	_
+8	accusing	accuse	VERB	VBG	VerbForm=Ger	4	acl	4:acl	_
+9	the	the	DET	DT	Definite=Def|PronType=Art	11	det	11:det	_
+10	Iranian	iranian	ADJ	JJ	Degree=Pos	11	amod	11:amod	_
+11	Government	government	NOUN	NN	Number=Sing	8	obj	8:obj	_
+12	of	of	SCONJ	IN	_	14	mark	14:mark	_
+13	being	be	AUX	VBG	VerbForm=Ger	14	cop	14:cop	_
+14	willing	willing	ADJ	JJ	Degree=Pos	8	advcl	8:advcl:of	_
+15	to	to	PART	TO	_	16	mark	16:mark	_
+16	start	start	VERB	VB	VerbForm=Inf	14	xcomp	14:xcomp	_
+17	a	a	DET	DT	Definite=Ind|PronType=Art	19	det	19:det	_
+18	nuclear	nuclear	ADJ	JJ	Degree=Pos	19	amod	19:amod	_
+19	war	war	NOUN	NN	Number=Sing	16	obj	16:obj	_
+20	and	and	CCONJ	CC	_	22	cc	22:cc	_
+21	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	22	nsubj	22:nsubj	_
+22	sympathise	sympathise	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	2	conj	2:conj:and	_
+23	with	with	ADP	IN	_	25	case	25:case	_
+24	the	the	DET	DT	Definite=Def|PronType=Art	25	det	25:det	_
+25	Article	article	NOUN	NN	Number=Sing	22	obl	22:obl:with	SpaceAfter=No
+26	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_grandpasgripes_20060413051000_ENG_20060413_051000-0006
+# text = They are certainly being nasty to the United Nations Security Council in connection with the anti-proliferation treaty.
+1	They	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	5	nsubj	5:nsubj	_
+2	are	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	5	aux	5:aux	_
+3	certainly	certainly	ADV	RB	_	5	advmod	5:advmod	_
+4	being	be	AUX	VBG	VerbForm=Ger	5	cop	5:cop	_
+5	nasty	nasty	ADJ	JJ	Degree=Pos	0	root	0:root	_
+6	to	to	ADP	IN	_	11	case	11:case	_
+7	the	the	DET	DT	Definite=Def|PronType=Art	11	det	11:det	_
+8	United	United	PROPN	NNP	Number=Sing	9	compound	9:compound	_
+9	Nations	Nations	PROPN	NNP	Number=Sing	11	compound	11:compound	_
+10	Security	Security	PROPN	NNP	Number=Sing	11	compound	11:compound	_
+11	Council	Council	PROPN	NNP	Number=Sing	5	obl	5:obl:to	_
+12	in	in	ADP	IN	_	13	case	13:case	_
+13	connection	connection	NOUN	NN	Number=Sing	5	obl	5:obl:in	_
+14	with	with	ADP	IN	_	17	case	17:case	_
+15	the	the	DET	DT	Definite=Def|PronType=Art	17	det	17:det	_
+16	anti-proliferation	anti-proliferation	NOUN	NN	Number=Sing	17	compound	17:compound	_
+17	treaty	treaty	NOUN	NN	Number=Sing	13	nmod	13:nmod:with	SpaceAfter=No
+18	.	.	PUNCT	.	_	5	punct	5:punct	_
+

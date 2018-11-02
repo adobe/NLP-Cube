@@ -1,0 +1,793 @@
+# newdoc id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713
+# sent_id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713-0001
+# text = From the AP comes this story :
+1	From	from	ADP	IN	_	3	case	3:case	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
+3	AP	AP	PROPN	NNP	Number=Sing	4	obl	4:obl:from	_
+4	comes	come	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+5	this	this	DET	DT	Number=Sing|PronType=Dem	6	det	6:det	_
+6	story	story	NOUN	NN	Number=Sing	4	nsubj	4:nsubj	_
+7	:	:	PUNCT	:	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713-0002
+# text = President Bush on Tuesday nominated two individuals to replace retiring jurists on federal courts in the Washington area.
+1	President	President	PROPN	NNP	Number=Sing	5	nsubj	5:nsubj	_
+2	Bush	Bush	PROPN	NNP	Number=Sing	1	flat	1:flat	_
+3	on	on	ADP	IN	_	4	case	4:case	_
+4	Tuesday	Tuesday	PROPN	NNP	Number=Sing	5	obl	5:obl:on	_
+5	nominated	nominate	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+6	two	two	NUM	CD	NumType=Card	7	nummod	7:nummod	_
+7	individuals	individual	NOUN	NNS	Number=Plur	5	obj	5:obj	_
+8	to	to	PART	TO	_	9	mark	9:mark	_
+9	replace	replace	VERB	VB	VerbForm=Inf	5	advcl	5:advcl:to	_
+10	retiring	retire	VERB	VBG	VerbForm=Ger	11	amod	11:amod	_
+11	jurists	jurist	NOUN	NNS	Number=Plur	9	obj	9:obj	_
+12	on	on	ADP	IN	_	14	case	14:case	_
+13	federal	federal	ADJ	JJ	Degree=Pos	14	amod	14:amod	_
+14	courts	court	NOUN	NNS	Number=Plur	11	nmod	11:nmod:on	_
+15	in	in	ADP	IN	_	18	case	18:case	_
+16	the	the	DET	DT	Definite=Def|PronType=Art	18	det	18:det	_
+17	Washington	Washington	PROPN	NNP	Number=Sing	18	compound	18:compound	_
+18	area	area	NOUN	NN	Number=Sing	14	nmod	14:nmod:in	SpaceAfter=No
+19	.	.	PUNCT	.	_	5	punct	5:punct	_
+
+# sent_id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713-0003
+# text = Bush nominated Jennifer M. Anderson for a 15-year term as associate judge of the Superior Court of the District of Columbia, replacing Steffen W. Graae.
+1	Bush	Bush	PROPN	NNP	Number=Sing	2	nsubj	2:nsubj	_
+2	nominated	nominate	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+3	Jennifer	Jennifer	PROPN	NNP	Number=Sing	2	obj	2:obj	_
+4	M.	M.	PROPN	NNP	Number=Sing	3	flat	3:flat	_
+5	Anderson	Anderson	PROPN	NNP	Number=Sing	3	flat	3:flat	_
+6	for	for	ADP	IN	_	11	case	11:case	_
+7	a	a	DET	DT	Definite=Ind|PronType=Art	11	det	11:det	_
+8	15	15	NUM	CD	NumType=Card	10	nummod	10:nummod	SpaceAfter=No
+9	-	-	PUNCT	HYPH	_	10	punct	10:punct	SpaceAfter=No
+10	year	year	NOUN	NN	Number=Sing	11	compound	11:compound	_
+11	term	term	NOUN	NN	Number=Sing	2	obl	2:obl:for	_
+12	as	as	ADP	IN	_	14	case	14:case	_
+13	associate	associate	ADJ	JJ	Degree=Pos	14	amod	14:amod	_
+14	judge	judge	NOUN	NN	Number=Sing	11	nmod	11:nmod:as	_
+15	of	of	ADP	IN	_	18	case	18:case	_
+16	the	the	DET	DT	Definite=Def|PronType=Art	18	det	18:det	_
+17	Superior	Superior	PROPN	NNP	Number=Sing	18	compound	18:compound	_
+18	Court	Court	PROPN	NNP	Number=Sing	14	nmod	14:nmod:of	_
+19	of	of	ADP	IN	_	21	case	21:case	_
+20	the	the	DET	DT	Definite=Def|PronType=Art	21	det	21:det	_
+21	District	District	PROPN	NNP	Number=Sing	18	nmod	18:nmod:of	_
+22	of	of	ADP	IN	_	23	case	23:case	_
+23	Columbia	Columbia	PROPN	NNP	Number=Sing	21	nmod	21:nmod:of	SpaceAfter=No
+24	,	,	PUNCT	,	_	2	punct	2:punct	_
+25	replacing	replace	VERB	VBG	VerbForm=Ger	2	advcl	2:advcl	_
+26	Steffen	Steffen	PROPN	NNP	Number=Sing	25	obj	25:obj	_
+27	W.	W.	PROPN	NNP	Number=Sing	26	flat	26:flat	_
+28	Graae	Graae	PROPN	NNP	Number=Sing	26	flat	26:flat	SpaceAfter=No
+29	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713-0004
+# text = ***
+1	***	***	PUNCT	NFP	_	0	root	0:root	_
+
+# sent_id = weblog-blogspot.com_nominations_20041117172713_ENG_20041117_172713-0005
+# text = Bush also nominated A. Noel Anketell Kramer for a 15-year term as associate judge of the District of Columbia Court of Appeals, replacing John Montague Steadman.
+1	Bush	Bush	PROPN	NNP	Number=Sing	3	nsubj	3:nsubj	_
+2	also	also	ADV	RB	_	3	advmod	3:advmod	_
+3	nominated	nominate	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+4	A.	A.	PROPN	NNP	Number=Sing	3	obj	3:obj	_
+5	Noel	Noel	PROPN	NNP	Number=Sing	4	flat	4:flat	_
+6	Anketell	Anketell	PROPN	NNP	Number=Sing	4	flat	4:flat	_
+7	Kramer	Kramer	PROPN	NNP	Number=Sing	4	flat	4:flat	_
+8	for	for	ADP	IN	_	13	case	13:case	_
+9	a	a	DET	DT	Definite=Ind|PronType=Art	13	det	13:det	_
+10	15	15	NUM	CD	NumType=Card	12	nummod	12:nummod	SpaceAfter=No
+11	-	-	PUNCT	HYPH	_	12	punct	12:punct	SpaceAfter=No
+12	year	year	NOUN	NN	Number=Sing	13	compound	13:compound	_
+13	term	term	NOUN	NN	Number=Sing	3	obl	3:obl:for	_
+14	as	as	ADP	IN	_	16	case	16:case	_
+15	associate	associate	ADJ	JJ	Degree=Pos	16	amod	16:amod	_
+16	judge	judge	NOUN	NN	Number=Sing	13	nmod	13:nmod:as	_
+17	of	of	ADP	IN	_	19	case	19:case	_
+18	the	the	DET	DT	Definite=Def|PronType=Art	19	det	19:det	_
+19	District	District	PROPN	NNP	Number=Sing	16	nmod	16:nmod:of	_
+20	of	of	ADP	IN	_	22	case	22:case	_
+21	Columbia	Columbia	PROPN	NNP	Number=Sing	22	compound	22:compound	_
+22	Court	Court	PROPN	NNP	Number=Sing	19	nmod	19:nmod:of	_
+23	of	of	ADP	IN	_	24	case	24:case	_
+24	Appeals	Appeals	PROPN	NNPS	Number=Plur	22	nmod	22:nmod:of	SpaceAfter=No
+25	,	,	PUNCT	,	_	3	punct	3:punct	_
+26	replacing	replace	VERB	VBG	VerbForm=Ger	3	advcl	3:advcl	_
+27	John	John	PROPN	NNP	Number=Sing	26	obj	26:obj	_
+28	Montague	Montague	PROPN	NNP	Number=Sing	27	flat	27:flat	_
+29	Steadman	Steadman	PROPN	NNP	Number=Sing	27	flat	27:flat	SpaceAfter=No
+30	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# newdoc id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000
+# sent_id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000-0001
+# text = The sheikh in wheel-chair has been attacked with a F-16-launched bomb.
+1	The	the	DET	DT	Definite=Def|PronType=Art	2	det	2:det	_
+2	sheikh	sheikh	NOUN	NN	Number=Sing	9	nsubj:pass	9:nsubj:pass	_
+3	in	in	ADP	IN	_	6	case	6:case	_
+4	wheel	wheel	NOUN	NN	Number=Sing	6	compound	6:compound	SpaceAfter=No
+5	-	-	PUNCT	HYPH	_	6	punct	6:punct	SpaceAfter=No
+6	chair	chair	NOUN	NN	Number=Sing	2	nmod	2:nmod:in	_
+7	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	9	aux	9:aux	_
+8	been	be	AUX	VBN	Tense=Past|VerbForm=Part	9	aux:pass	9:aux:pass	_
+9	attacked	attack	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+10	with	with	ADP	IN	_	17	case	17:case	_
+11	a	a	DET	DT	Definite=Ind|PronType=Art	17	det	17:det	_
+12	F	f	NOUN	NN	Number=Sing	16	compound	16:compound	SpaceAfter=No
+13	-	-	PUNCT	HYPH	_	12	punct	12:punct	SpaceAfter=No
+14	16	16	NUM	CD	NumType=Card	12	compound	12:compound	SpaceAfter=No
+15	-	-	PUNCT	HYPH	_	16	punct	16:punct	SpaceAfter=No
+16	launched	launch	VERB	VBN	Tense=Past|VerbForm=Part	17	acl	17:acl	_
+17	bomb	bomb	NOUN	NN	Number=Sing	9	obl	9:obl:with	SpaceAfter=No
+18	.	.	PUNCT	.	_	9	punct	9:punct	_
+
+# sent_id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000-0002
+# text = He could be killed years ago and the israelians have all the reasons, since he founded and he is the spiritual leader of Hamas, but they didn't.
+1	He	he	PRON	PRP	Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs	4	nsubj:pass	4:nsubj:pass	_
+2	could	could	AUX	MD	VerbForm=Fin	4	aux	4:aux	_
+3	be	be	AUX	VB	VerbForm=Inf	4	aux:pass	4:aux:pass	_
+4	killed	kill	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+5	years	year	NOUN	NNS	Number=Plur	6	obl:tmod	6:obl:tmod	_
+6	ago	ago	ADV	RB	_	4	advmod	4:advmod	_
+7	and	and	CCONJ	CC	_	10	cc	10:cc	_
+8	the	the	DET	DT	Definite=Def|PronType=Art	9	det	9:det	_
+9	israelians	israelians	PROPN	NNPS	Number=Plur	10	nsubj	10:nsubj	_
+10	have	have	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	4	conj	4:conj:and	_
+11	all	all	DET	PDT	_	13	det:predet	13:det:predet	_
+12	the	the	DET	DT	Definite=Def|PronType=Art	13	det	13:det	_
+13	reasons	reason	NOUN	NNS	Number=Plur	10	obj	10:obj	SpaceAfter=No
+14	,	,	PUNCT	,	_	10	punct	10:punct	_
+15	since	since	SCONJ	IN	_	17	mark	17:mark	_
+16	he	he	PRON	PRP	Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs	17	nsubj	17:nsubj	_
+17	founded	found	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	10	advcl	10:advcl:since	_
+18	and	and	CCONJ	CC	_	23	cc	23:cc	_
+19	he	he	PRON	PRP	Case=Nom|Gender=Masc|Number=Sing|Person=3|PronType=Prs	23	nsubj	23:nsubj	_
+20	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	23	cop	23:cop	_
+21	the	the	DET	DT	Definite=Def|PronType=Art	23	det	23:det	_
+22	spiritual	spiritual	ADJ	JJ	Degree=Pos	23	amod	23:amod	_
+23	leader	leader	NOUN	NN	Number=Sing	17	conj	10:advcl:since|17:conj:and	_
+24	of	of	ADP	IN	_	25	case	25:case	_
+25	Hamas	Hamas	PROPN	NNP	Number=Sing	23	nmod	23:nmod:of	SpaceAfter=No
+26	,	,	PUNCT	,	_	29	punct	29:punct	_
+27	but	but	CCONJ	CC	_	29	cc	29:cc	_
+28	they	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	29	nsubj	29:nsubj	_
+29	did	do	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	4	conj	4:conj:but	SpaceAfter=No
+30	n't	not	PART	RB	_	29	advmod	29:advmod	SpaceAfter=No
+31	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000-0003
+# text = Today's incident proves that Sharon has lost his patience and his hope in peace.
+1	Today	today	NOUN	NN	Number=Sing	3	nmod:poss	3:nmod:poss	SpaceAfter=No
+2	's	's	PART	POS	_	1	case	1:case	_
+3	incident	incident	NOUN	NN	Number=Sing	4	nsubj	4:nsubj	_
+4	proves	prove	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+5	that	that	SCONJ	IN	_	8	mark	8:mark	_
+6	Sharon	Sharon	PROPN	NNP	Number=Sing	8	nsubj	8:nsubj	_
+7	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	aux	8:aux	_
+8	lost	lose	VERB	VBN	Tense=Past|VerbForm=Part	4	ccomp	4:ccomp	_
+9	his	he	PRON	PRP$	Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs	10	nmod:poss	10:nmod:poss	_
+10	patience	patience	NOUN	NN	Number=Sing	8	obj	8:obj	_
+11	and	and	CCONJ	CC	_	13	cc	13:cc	_
+12	his	he	PRON	PRP$	Gender=Masc|Number=Sing|Person=3|Poss=Yes|PronType=Prs	13	nmod:poss	13:nmod:poss	_
+13	hope	hope	NOUN	NN	Number=Sing	10	conj	8:obj|10:conj:and	_
+14	in	in	ADP	IN	_	15	case	15:case	_
+15	peace	peace	NOUN	NN	Number=Sing	13	nmod	13:nmod:in	SpaceAfter=No
+16	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000-0004
+# text = Nervous people make mistakes, so I suppose there will be a wave of succesfull arab attacks.
+1	Nervous	nervous	ADJ	JJ	Degree=Pos	2	amod	2:amod	_
+2	people	people	NOUN	NNS	Number=Plur	3	nsubj	3:nsubj	_
+3	make	make	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+4	mistakes	mistake	NOUN	NNS	Number=Plur	3	obj	3:obj	SpaceAfter=No
+5	,	,	PUNCT	,	_	3	punct	3:punct	_
+6	so	so	ADV	RB	_	8	advmod	8:advmod	_
+7	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	8	nsubj	8:nsubj	_
+8	suppose	suppose	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	3	parataxis	3:parataxis	_
+9	there	there	PRON	EX	_	11	expl	11:expl	_
+10	will	will	AUX	MD	VerbForm=Fin	11	aux	11:aux	_
+11	be	be	VERB	VB	VerbForm=Inf	8	ccomp	8:ccomp	_
+12	a	a	DET	DT	Definite=Ind|PronType=Art	13	det	13:det	_
+13	wave	wave	NOUN	NN	Number=Sing	11	nsubj	11:nsubj	_
+14	of	of	ADP	IN	_	17	case	17:case	_
+15	succesfull	succesfull	ADJ	JJ	Degree=Pos	17	amod	17:amod	_
+16	arab	arab	ADJ	JJ	Degree=Pos	17	amod	17:amod	_
+17	attacks	attack	NOUN	NNS	Number=Plur	13	nmod	13:nmod:of	SpaceAfter=No
+18	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-blogspot.com_gettingpolitical_20030906235000_ENG_20030906_235000-0005
+# text = A la guerre c'est comme a la guerre!
+1	A	a	X	FW	Foreign=Yes	0	root	0:root	_
+2	la	la	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+3	guerre	guerre	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+4	c'est	c'est	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+5	comme	comme	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+6	a	a	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+7	la	la	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	_
+8	guerre	guerre	X	FW	Foreign=Yes	1	flat:foreign	1:flat:foreign	SpaceAfter=No
+9	!	!	PUNCT	.	_	1	punct	1:punct	_
+
+# newdoc id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0001
+# text = In the eastern city of Baqubah, guerrillas detonated a car bomb outside a police station, killing several people.
+1	In	in	ADP	IN	_	4	case	4:case	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	4	det	4:det	_
+3	eastern	eastern	ADJ	JJ	Degree=Pos	4	amod	4:amod	_
+4	city	city	NOUN	NN	Number=Sing	9	obl	9:obl:in	_
+5	of	of	ADP	IN	_	6	case	6:case	_
+6	Baqubah	Baqubah	PROPN	NNP	Number=Sing	4	nmod	4:nmod:of	SpaceAfter=No
+7	,	,	PUNCT	,	_	9	punct	9:punct	_
+8	guerrillas	guerrilla	NOUN	NNS	Number=Plur	9	nsubj	9:nsubj	_
+9	detonated	detonate	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+10	a	a	DET	DT	Definite=Ind|PronType=Art	12	det	12:det	_
+11	car	car	NOUN	NN	Number=Sing	12	compound	12:compound	_
+12	bomb	bomb	NOUN	NN	Number=Sing	9	obj	9:obj	_
+13	outside	outside	ADP	IN	_	16	case	16:case	_
+14	a	a	DET	DT	Definite=Ind|PronType=Art	16	det	16:det	_
+15	police	police	NOUN	NN	Number=Sing	16	compound	16:compound	_
+16	station	station	NOUN	NN	Number=Sing	9	obl	9:obl:outside	SpaceAfter=No
+17	,	,	PUNCT	,	_	9	punct	9:punct	_
+18	killing	kill	VERB	VBG	VerbForm=Ger	9	advcl	9:advcl	_
+19	several	several	ADJ	JJ	Degree=Pos	20	amod	20:amod	_
+20	people	people	NOUN	NNS	Number=Plur	18	obj	18:obj	SpaceAfter=No
+21	.	.	PUNCT	.	_	9	punct	9:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0002
+# text = The US lost yet another helicopter to hostile fire near Habbaniyah in the Sunni heartland, but this time the crew was safe.
+1	The	the	DET	DT	Definite=Def|PronType=Art	2	det	2:det	_
+2	US	US	PROPN	NNP	Number=Sing	3	nsubj	3:nsubj	_
+3	lost	lose	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+4	yet	yet	ADV	RB	_	6	advmod	6:advmod	_
+5	another	another	DET	DT	_	6	det	6:det	_
+6	helicopter	helicopter	NOUN	NN	Number=Sing	3	obj	3:obj	_
+7	to	to	ADP	IN	_	9	case	9:case	_
+8	hostile	hostile	ADJ	JJ	Degree=Pos	9	amod	9:amod	_
+9	fire	fire	NOUN	NN	Number=Sing	3	obl	3:obl:to	_
+10	near	near	ADP	IN	_	11	case	11:case	_
+11	Habbaniyah	Habbaniyah	PROPN	NNP	Number=Sing	9	nmod	9:nmod:near	_
+12	in	in	ADP	IN	_	15	case	15:case	_
+13	the	the	DET	DT	Definite=Def|PronType=Art	15	det	15:det	_
+14	Sunni	sunni	ADJ	JJ	Degree=Pos	15	amod	15:amod	_
+15	heartland	heartland	NOUN	NN	Number=Sing	11	nmod	11:nmod:in	SpaceAfter=No
+16	,	,	PUNCT	,	_	23	punct	23:punct	_
+17	but	but	CCONJ	CC	_	23	cc	23:cc	_
+18	this	this	DET	DT	Number=Sing|PronType=Dem	19	det	19:det	_
+19	time	time	NOUN	NN	Number=Sing	23	obl:tmod	23:obl:tmod	_
+20	the	the	DET	DT	Definite=Def|PronType=Art	21	det	21:det	_
+21	crew	crew	NOUN	NN	Number=Sing	23	nsubj	23:nsubj	_
+22	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	23	cop	23:cop	_
+23	safe	safe	ADJ	JJ	Degree=Pos	3	conj	3:conj:but	SpaceAfter=No
+24	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0003
+# text = In Fallujah, hundreds of demonstrators came out against US troops when they briefly arrested a yound newlywed bride.
+1	In	in	ADP	IN	_	2	case	2:case	_
+2	Fallujah	Fallujah	PROPN	NNP	Number=Sing	7	obl	7:obl:in	SpaceAfter=No
+3	,	,	PUNCT	,	_	7	punct	7:punct	_
+4	hundreds	hundred	NOUN	NNS	Number=Plur	7	nsubj	7:nsubj	_
+5	of	of	ADP	IN	_	6	case	6:case	_
+6	demonstrators	demonstrator	NOUN	NNS	Number=Plur	4	nmod	4:nmod:of	_
+7	came	come	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+8	out	out	ADV	RB	_	7	advmod	7:advmod	_
+9	against	against	ADP	IN	_	11	case	11:case	_
+10	US	US	PROPN	NNP	Number=Sing	11	compound	11:compound	_
+11	troops	troops	NOUN	NN	Number=Sing	7	obl	7:obl:against	_
+12	when	when	ADV	WRB	PronType=Int	15	mark	15:mark	_
+13	they	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	15	nsubj	15:nsubj	_
+14	briefly	briefly	ADV	RB	_	15	advmod	15:advmod	_
+15	arrested	arrest	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	7	advcl	7:advcl:when	_
+16	a	a	DET	DT	Definite=Ind|PronType=Art	19	det	19:det	_
+17	yound	yound	ADJ	JJ	Degree=Pos	19	amod	19:amod	_
+18	newlywed	newlywed	ADJ	JJ	Degree=Pos	19	amod	19:amod	_
+19	bride	bride	NOUN	NN	Number=Sing	15	obj	15:obj	SpaceAfter=No
+20	.	.	PUNCT	.	_	7	punct	7:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0004
+# text = (I hope that the US army got an enormous amount of information from her relatives, because otherwise this move was a bad, bad tradeoff).
+1	(	(	PUNCT	-LRB-	_	3	punct	3:punct	SpaceAfter=No
+2	I	I	PRON	PRP	Case=Nom|Number=Sing|Person=1|PronType=Prs	3	nsubj	3:nsubj	_
+3	hope	hope	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+4	that	that	SCONJ	IN	_	8	mark	8:mark	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	7	det	7:det	_
+6	US	US	PROPN	NNP	Number=Sing	7	compound	7:compound	_
+7	army	army	NOUN	NN	Number=Sing	8	nsubj	8:nsubj	_
+8	got	get	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	3	ccomp	3:ccomp	_
+9	an	a	DET	DT	Definite=Ind|PronType=Art	11	det	11:det	_
+10	enormous	enormous	ADJ	JJ	Degree=Pos	11	amod	11:amod	_
+11	amount	amount	NOUN	NN	Number=Sing	8	obj	8:obj	_
+12	of	of	ADP	IN	_	13	case	13:case	_
+13	information	information	NOUN	NN	Number=Sing	11	nmod	11:nmod:of	_
+14	from	from	ADP	IN	_	16	case	16:case	_
+15	her	she	PRON	PRP$	Gender=Fem|Number=Sing|Person=3|Poss=Yes|PronType=Prs	16	nmod:poss	16:nmod:poss	_
+16	relatives	relative	NOUN	NNS	Number=Plur	8	obl	8:obl:from	SpaceAfter=No
+17	,	,	PUNCT	,	_	3	punct	3:punct	_
+18	because	because	SCONJ	IN	_	27	mark	27:mark	_
+19	otherwise	otherwise	ADV	RB	_	27	advmod	27:advmod	_
+20	this	this	DET	DT	Number=Sing|PronType=Dem	21	det	21:det	_
+21	move	move	NOUN	NN	Number=Sing	27	nsubj	27:nsubj	_
+22	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	27	cop	27:cop	_
+23	a	a	DET	DT	Definite=Ind|PronType=Art	27	det	27:det	_
+24	bad	bad	ADJ	JJ	Degree=Pos	27	amod	27:amod	SpaceAfter=No
+25	,	,	PUNCT	,	_	27	punct	27:punct	_
+26	bad	bad	ADJ	JJ	Degree=Pos	27	amod	27:amod	_
+27	tradeoff	tradeoff	NOUN	NN	Number=Sing	3	advcl	3:advcl:because	SpaceAfter=No
+28	)	)	PUNCT	-RRB-	_	3	punct	3:punct	SpaceAfter=No
+29	.	.	PUNCT	.	_	3	punct	3:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0005
+# text = The US troops fired into the hostile crowd, killing 4.
+1	The	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
+2	US	US	PROPN	NNP	Number=Sing	3	compound	3:compound	_
+3	troops	troops	NOUN	NNS	Number=Plur	4	nsubj	4:nsubj	_
+4	fired	fire	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	_
+5	into	into	ADP	IN	_	8	case	8:case	_
+6	the	the	DET	DT	Definite=Def|PronType=Art	8	det	8:det	_
+7	hostile	hostile	ADJ	JJ	Degree=Pos	8	amod	8:amod	_
+8	crowd	crowd	NOUN	NN	Number=Sing	4	obl	4:obl:into	SpaceAfter=No
+9	,	,	PUNCT	,	_	4	punct	4:punct	_
+10	killing	kill	VERB	VBG	VerbForm=Ger	4	advcl	4:advcl	_
+11	4	4	NUM	CD	NumType=Card	10	obj	10:obj	SpaceAfter=No
+12	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20040114085100_ENG_20040114_085100-0006
+# text = It seems clear to me that the manhunt for high Baath officials in the Sunni heartland is being done wrong, or at least in ways that are bad for US standing with local Iraqis.
+1	It	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	2	expl	2:expl	_
+2	seems	seem	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	clear	clear	ADJ	JJ	Degree=Pos	2	xcomp	2:xcomp	_
+4	to	to	ADP	IN	_	5	case	5:case	_
+5	me	I	PRON	PRP	Case=Acc|Number=Sing|Person=1|PronType=Prs	2	obl	2:obl:to	_
+6	that	that	SCONJ	IN	_	19	mark	19:mark	_
+7	the	the	DET	DT	Definite=Def|PronType=Art	8	det	8:det	_
+8	manhunt	manhunt	NOUN	NN	Number=Sing	19	nsubj:pass	19:nsubj:pass|20:nsubj:xsubj|26:nsubj:xsubj	_
+9	for	for	ADP	IN	_	12	case	12:case	_
+10	high	high	ADJ	JJ	Degree=Pos	12	amod	12:amod	_
+11	Baath	Baath	PROPN	NNP	Number=Sing	12	compound	12:compound	_
+12	officials	official	NOUN	NNS	Number=Plur	8	nmod	8:nmod:for	_
+13	in	in	ADP	IN	_	16	case	16:case	_
+14	the	the	DET	DT	Definite=Def|PronType=Art	16	det	16:det	_
+15	Sunni	sunni	ADJ	JJ	Degree=Pos	16	amod	16:amod	_
+16	heartland	heartland	NOUN	NN	Number=Sing	8	nmod	8:nmod:in	_
+17	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	19	aux	19:aux	_
+18	being	be	AUX	VBG	VerbForm=Ger	19	aux:pass	19:aux:pass	_
+19	done	do	VERB	VBN	Tense=Past|VerbForm=Part|Voice=Pass	2	csubj	2:csubj	_
+20	wrong	wrong	ADV	RB	_	19	xcomp	19:xcomp	SpaceAfter=No
+21	,	,	PUNCT	,	_	26	punct	26:punct	_
+22	or	or	CCONJ	CC	_	26	cc	26:cc	_
+23	at	at	ADV	RB	_	26	advmod	26:advmod	_
+24	least	least	ADV	RBS	Degree=Sup	23	fixed	23:fixed	_
+25	in	in	ADP	IN	_	26	case	26:case	_
+26	ways	way	NOUN	NNS	Number=Plur	20	conj	19:xcomp|20:conj:or|29:nsubj	_
+27	that	that	PRON	WDT	PronType=Rel	29	nsubj	26:ref	_
+28	are	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	29	cop	29:cop	_
+29	bad	bad	ADJ	JJ	Degree=Pos	26	acl:relcl	26:acl:relcl	_
+30	for	for	ADP	IN	_	32	case	32:case	_
+31	US	US	PROPN	NNP	Number=Sing	32	compound	32:compound	_
+32	standing	standing	NOUN	NN	Number=Sing	29	obl	29:obl:for	_
+33	with	with	ADP	IN	_	35	case	35:case	_
+34	local	local	ADJ	JJ	Degree=Pos	35	amod	35:amod	_
+35	Iraqis	Iraqis	PROPN	NNPS	Number=Plur	32	nmod	32:nmod:with	SpaceAfter=No
+36	.	.	PUNCT	.	_	2	punct	2:punct	_
+
+# newdoc id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500
+# sent_id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500-0001
+# text = Google has finally had an analyst day -- a chance to present the company's story to the (miniscule number of) people who haven't heard it.
+1	Google	Google	PROPN	NNP	Number=Sing	4	nsubj	4:nsubj	_
+2	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	4	aux	4:aux	_
+3	finally	finally	ADV	RB	_	4	advmod	4:advmod	_
+4	had	have	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+5	an	a	DET	DT	Definite=Ind|PronType=Art	7	det	7:det	_
+6	analyst	analyst	NOUN	NN	Number=Sing	7	compound	7:compound	_
+7	day	day	NOUN	NN	Number=Sing	4	obj	4:obj	_
+8	--	--	PUNCT	:	_	7	punct	7:punct	_
+9	a	a	DET	DT	Definite=Ind|PronType=Art	10	det	10:det	_
+10	chance	chance	NOUN	NN	Number=Sing	7	appos	7:appos	_
+11	to	to	PART	TO	_	12	mark	12:mark	_
+12	present	present	VERB	VB	VerbForm=Inf	10	acl	10:acl:to	_
+13	the	the	DET	DT	Definite=Def|PronType=Art	14	det	14:det	_
+14	company	company	NOUN	NN	Number=Sing	16	nmod:poss	16:nmod:poss	SpaceAfter=No
+15	's	's	PART	POS	_	14	case	14:case	_
+16	story	story	NOUN	NN	Number=Sing	12	obj	12:obj	_
+17	to	to	ADP	IN	_	21	case	21:case	_
+18	the	the	DET	DT	Definite=Def|PronType=Art	21	det	21:det	_
+19	(	(	PUNCT	-LRB-	_	21	punct	21:punct	SpaceAfter=No
+20	miniscule	miniscule	ADJ	JJ	Degree=Pos	21	amod	21:amod	_
+21	number	number	NOUN	NN	Number=Sing	12	obl	12:obl:to	_
+22	of	of	ADP	IN	_	24	case	24:case	SpaceAfter=No
+23	)	)	PUNCT	-RRB-	_	24	punct	24:punct	_
+24	people	people	NOUN	NNS	Number=Plur	21	nmod	21:nmod:of|28:nsubj	_
+25	who	who	PRON	WP	PronType=Rel	28	nsubj	24:ref	_
+26	have	have	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	28	aux	28:aux	SpaceAfter=No
+27	n't	not	PART	RB	_	28	advmod	28:advmod	_
+28	heard	hear	VERB	VBN	Tense=Past|VerbForm=Part	24	acl:relcl	24:acl:relcl	_
+29	it	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	28	obj	28:obj	SpaceAfter=No
+30	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500-0002
+# text = Usually, these are just a chance for the suckups to suck up, but this time people are actually concerned about the company's plans.
+1	Usually	usually	ADV	RB	_	7	advmod	7:advmod	SpaceAfter=No
+2	,	,	PUNCT	,	_	7	punct	7:punct	_
+3	these	these	PRON	DT	Number=Plur|PronType=Dem	7	nsubj	7:nsubj	_
+4	are	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	7	cop	7:cop	_
+5	just	just	ADV	RB	_	7	advmod	7:advmod	_
+6	a	a	DET	DT	Definite=Ind|PronType=Art	7	det	7:det	_
+7	chance	chance	NOUN	NN	Number=Sing	0	root	0:root	_
+8	for	for	SCONJ	IN	_	12	mark	12:mark	_
+9	the	the	DET	DT	Definite=Def|PronType=Art	10	det	10:det	_
+10	suckups	suckup	NOUN	NNS	Number=Plur	12	nsubj	12:nsubj	_
+11	to	to	PART	TO	_	12	mark	12:mark	_
+12	suck	suck	VERB	VB	VerbForm=Inf	7	acl	7:acl:to	_
+13	up	up	ADP	RP	_	12	compound:prt	12:compound:prt	SpaceAfter=No
+14	,	,	PUNCT	,	_	21	punct	21:punct	_
+15	but	but	CCONJ	CC	_	21	cc	21:cc	_
+16	this	this	DET	DT	Number=Sing|PronType=Dem	17	det	17:det	_
+17	time	time	NOUN	NN	Number=Sing	21	obl:tmod	21:obl:tmod	_
+18	people	people	NOUN	NNS	Number=Plur	21	nsubj	21:nsubj	_
+19	are	be	AUX	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	21	cop	21:cop	_
+20	actually	actually	ADV	RB	_	21	advmod	21:advmod	_
+21	concerned	concerned	ADJ	JJ	Degree=Pos	7	conj	7:conj:but	_
+22	about	about	ADP	IN	_	26	case	26:case	_
+23	the	the	DET	DT	Definite=Def|PronType=Art	24	det	24:det	_
+24	company	company	NOUN	NN	Number=Sing	26	nmod:poss	26:nmod:poss	SpaceAfter=No
+25	's	's	PART	POS	_	24	case	24:case	_
+26	plans	plan	NOUN	NNS	Number=Plur	21	obl	21:obl:about	SpaceAfter=No
+27	.	.	PUNCT	.	_	7	punct	7:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500-0003
+# text = They work on Wall Street, after all, so when they hear a company who's stated goals include "Don't be evil," they imagine a company who's eventually history will be "Don't be profitable."
+1	They	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	2	nsubj	2:nsubj	_
+2	work	work	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+3	on	on	ADP	IN	_	5	case	5:case	_
+4	Wall	Wall	PROPN	NNP	Number=Sing	5	compound	5:compound	_
+5	Street	Street	PROPN	NNP	Number=Sing	2	obl	2:obl:on	SpaceAfter=No
+6	,	,	PUNCT	,	_	2	punct	2:punct	_
+7	after	after	ADV	IN	_	8	case	8:case	_
+8	all	all	ADV	RB	_	2	obl	2:obl:after	SpaceAfter=No
+9	,	,	PUNCT	,	_	2	punct	2:punct	_
+10	so	so	ADV	RB	_	28	advmod	28:advmod	_
+11	when	when	ADV	WRB	PronType=Int	13	mark	13:mark	_
+12	they	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	13	nsubj	13:nsubj	_
+13	hear	hear	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	28	advcl	28:advcl:when	_
+14	a	a	DET	DT	Definite=Ind|PronType=Art	15	det	15:det	_
+15	company	company	NOUN	NN	Number=Sing	13	obj	13:obj	_
+16	who's	who's	PRON	WP$	PronType=Int	18	nmod:poss	18:nmod:poss	_
+17	stated	state	VERB	VBN	Tense=Past|VerbForm=Part	18	amod	18:amod	_
+18	goals	goal	NOUN	NNS	Number=Plur	19	nsubj	19:nsubj	_
+19	include	include	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	15	acl:relcl	15:acl:relcl	_
+20	"	"	PUNCT	``	_	24	punct	24:punct	SpaceAfter=No
+21	Do	do	AUX	VB	Mood=Imp|VerbForm=Fin	24	aux	24:aux	SpaceAfter=No
+22	n't	not	PART	RB	_	24	advmod	24:advmod	_
+23	be	be	AUX	VB	Mood=Imp|VerbForm=Fin	24	cop	24:cop	_
+24	evil	evil	ADJ	JJ	Degree=Pos	19	ccomp	19:ccomp	SpaceAfter=No
+25	,	,	PUNCT	,	_	13	punct	13:punct	SpaceAfter=No
+26	"	"	PUNCT	''	_	13	punct	13:punct	_
+27	they	they	PRON	PRP	Case=Nom|Number=Plur|Person=3|PronType=Prs	28	nsubj	28:nsubj	_
+28	imagine	imagine	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	2	parataxis	2:parataxis	_
+29	a	a	DET	DT	Definite=Ind|PronType=Art	30	det	30:det	_
+30	company	company	NOUN	NN	Number=Sing	28	obj	28:obj	_
+31	who's	who's	PRON	WP$	PronType=Int	33	nmod:poss	33:nmod:poss	_
+32	eventually	eventually	ADJ	JJ	Degree=Pos	33	amod	33:amod	_
+33	history	history	NOUN	NN	Number=Sing	35	nsubj	35:nsubj	_
+34	will	will	AUX	MD	VerbForm=Fin	35	aux	35:aux	_
+35	be	be	VERB	VB	VerbForm=Inf	30	acl:relcl	30:acl:relcl	_
+36	"	"	PUNCT	``	_	40	punct	40:punct	SpaceAfter=No
+37	Do	do	AUX	VB	VerbForm=Inf	40	aux	40:aux	SpaceAfter=No
+38	n't	not	PART	RB	_	40	advmod	40:advmod	_
+39	be	be	AUX	VB	VerbForm=Inf	40	cop	40:cop	_
+40	profitable	profitable	ADJ	JJ	Degree=Pos	35	ccomp	35:ccomp	SpaceAfter=No
+41	.	.	PUNCT	.	_	2	punct	2:punct	SpaceAfter=No
+42	"	"	PUNCT	''	_	2	punct	2:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500-0004
+# text = It's not quite as freewheeling an environment as you'd imagine: Sergey Brin has actually created a mathematical 'proof' that the company's self-driven research strategy, which gives employees one day a week to do research projects on their own, is a good, respectable idea .
+1	It	it	PRON	PRP	Case=Nom|Gender=Neut|Number=Sing|Person=3|PronType=Prs	8	nsubj	8:nsubj	SpaceAfter=No
+2	's	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	8	cop	8:cop	_
+3	not	not	PART	RB	_	8	advmod	8:advmod	_
+4	quite	quite	ADV	RB	_	5	advmod	5:advmod	_
+5	as	as	ADV	RB	_	6	advmod	6:advmod	_
+6	freewheeling	freewheeling	ADJ	JJ	Degree=Pos	8	amod	8:amod	_
+7	an	a	DET	DT	Definite=Ind|PronType=Art	8	det	8:det	_
+8	environment	environment	NOUN	NN	Number=Sing	0	root	0:root	_
+9	as	as	SCONJ	IN	_	12	mark	12:mark	_
+10	you	you	PRON	PRP	Case=Nom|Person=2|PronType=Prs	12	nsubj	12:nsubj	SpaceAfter=No
+11	'd	would	AUX	MD	VerbForm=Fin	12	aux	12:aux	_
+12	imagine	imagine	VERB	VB	VerbForm=Inf	5	advcl	5:advcl:as	SpaceAfter=No
+13	:	:	PUNCT	:	_	8	punct	8:punct	_
+14	Sergey	Sergey	PROPN	NNP	Number=Sing	18	nsubj	18:nsubj	_
+15	Brin	Brin	PROPN	NNP	Number=Sing	14	flat	14:flat	_
+16	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	18	aux	18:aux	_
+17	actually	actually	ADV	RB	_	18	advmod	18:advmod	_
+18	created	create	VERB	VBN	Tense=Past|VerbForm=Part	8	parataxis	8:parataxis	_
+19	a	a	DET	DT	Definite=Ind|PronType=Art	22	det	22:det	_
+20	mathematical	mathematical	ADJ	JJ	Degree=Pos	22	amod	22:amod	_
+21	'	'	PUNCT	``	_	22	punct	22:punct	SpaceAfter=No
+22	proof	proof	NOUN	NN	Number=Sing	18	obj	18:obj	SpaceAfter=No
+23	'	'	PUNCT	''	_	22	punct	22:punct	_
+24	that	that	SCONJ	IN	_	54	mark	54:mark	_
+25	the	the	DET	DT	Definite=Def|PronType=Art	26	det	26:det	_
+26	company	company	NOUN	NN	Number=Sing	32	nmod:poss	32:nmod:poss	SpaceAfter=No
+27	's	's	PART	POS	_	26	case	26:case	_
+28	self	self	NOUN	NN	Number=Sing	30	compound	30:compound	SpaceAfter=No
+29	-	-	PUNCT	HYPH	_	30	punct	30:punct	SpaceAfter=No
+30	driven	drive	VERB	VBN	Tense=Past|VerbForm=Part	32	amod	32:amod	_
+31	research	research	NOUN	NN	Number=Sing	32	compound	32:compound	_
+32	strategy	strategy	NOUN	NN	Number=Sing	54	nsubj	35:nsubj|54:nsubj	SpaceAfter=No
+33	,	,	PUNCT	,	_	32	punct	32:punct	_
+34	which	which	PRON	WDT	PronType=Rel	35	nsubj	32:ref	_
+35	gives	give	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	32	acl:relcl	32:acl:relcl	_
+36	employees	employee	NOUN	NNS	Number=Plur	35	iobj	35:iobj	_
+37	one	one	NUM	CD	NumType=Card	38	nummod	38:nummod	_
+38	day	day	NOUN	NN	Number=Sing	35	obj	35:obj	_
+39	a	a	DET	DT	Definite=Ind|PronType=Art	40	det	40:det	_
+40	week	week	NOUN	NN	Number=Sing	38	nmod:tmod	38:nmod:tmod	_
+41	to	to	PART	TO	_	42	mark	42:mark	_
+42	do	do	VERB	VB	VerbForm=Inf	38	acl	38:acl:to	_
+43	research	research	NOUN	NN	Number=Sing	44	compound	44:compound	_
+44	projects	project	NOUN	NNS	Number=Plur	42	obj	42:obj	_
+45	on	on	ADP	IN	_	47	case	47:case	_
+46	their	they	PRON	PRP$	Number=Plur|Person=3|Poss=Yes|PronType=Prs	47	nmod:poss	47:nmod:poss	_
+47	own	own	ADJ	JJ	Degree=Pos	42	obl	42:obl:on	SpaceAfter=No
+48	,	,	PUNCT	,	_	54	punct	54:punct	_
+49	is	be	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	54	cop	54:cop	_
+50	a	a	DET	DT	Definite=Ind|PronType=Art	54	det	54:det	_
+51	good	good	ADJ	JJ	Degree=Pos	54	amod	54:amod	SpaceAfter=No
+52	,	,	PUNCT	,	_	54	punct	54:punct	_
+53	respectable	respectable	ADJ	JJ	Degree=Pos	54	amod	54:amod	_
+54	idea	idea	NOUN	NN	Number=Sing	22	acl	22:acl:that	_
+55	.	.	PUNCT	.	_	8	punct	8:punct	_
+
+# sent_id = weblog-blogspot.com_marketview_20050210075500_ENG_20050210_075500-0005
+# text = Read the entire article; there's a punchline, too.
+1	Read	read	VERB	VB	Mood=Imp|VerbForm=Fin	0	root	0:root	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	4	det	4:det	_
+3	entire	entire	ADJ	JJ	Degree=Pos	4	amod	4:amod	_
+4	article	article	NOUN	NN	Number=Sing	1	obj	1:obj	SpaceAfter=No
+5	;	;	PUNCT	,	_	1	punct	1:punct	_
+6	there	there	PRON	EX	_	7	expl	7:expl	SpaceAfter=No
+7	's	be	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	1	parataxis	1:parataxis	_
+8	a	a	DET	DT	Definite=Ind|PronType=Art	9	det	9:det	_
+9	punchline	punchline	NOUN	NN	Number=Sing	7	nsubj	7:nsubj	SpaceAfter=No
+10	,	,	PUNCT	,	_	7	punct	7:punct	_
+11	too	too	ADV	RB	_	7	advmod	7:advmod	SpaceAfter=No
+12	.	.	PUNCT	.	_	1	punct	1:punct	_
+
+# newdoc id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0001
+# text = My opinion piece on the implications of Arafat's passing for al-Qaeda has appeared at Newsday.
+1	My	my	PRON	PRP$	Number=Sing|Person=1|Poss=Yes|PronType=Prs	3	nmod:poss	3:nmod:poss	_
+2	opinion	opinion	NOUN	NN	Number=Sing	3	compound	3:compound	_
+3	piece	piece	NOUN	NN	Number=Sing	16	nsubj	16:nsubj	_
+4	on	on	ADP	IN	_	6	case	6:case	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	6	det	6:det	_
+6	implications	implication	NOUN	NNS	Number=Plur	3	nmod	3:nmod:on	_
+7	of	of	ADP	IN	_	10	case	10:case	_
+8	Arafat	Arafat	PROPN	NNP	Number=Sing	10	nmod:poss	10:nmod:poss	SpaceAfter=No
+9	's	's	PART	POS	_	8	case	8:case	_
+10	passing	passing	NOUN	NN	Number=Sing	6	nmod	6:nmod:of	_
+11	for	for	ADP	IN	_	14	case	14:case	_
+12	al	al	PROPN	NNP	Number=Sing	14	compound	14:compound	SpaceAfter=No
+13	-	-	PUNCT	HYPH	_	14	punct	14:punct	SpaceAfter=No
+14	Qaeda	Qaeda	PROPN	NNP	Number=Sing	6	nmod	6:nmod:for	_
+15	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	16	aux	16:aux	_
+16	appeared	appear	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+17	at	at	ADP	IN	_	18	case	18:case	_
+18	Newsday	Newsday	PROPN	NNP	Number=Sing	16	obl	16:obl:at	SpaceAfter=No
+19	.	.	PUNCT	.	_	16	punct	16:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0002
+# text = Excerpt:
+1	Excerpt	excerpt	NOUN	NN	Number=Sing	0	root	0:root	SpaceAfter=No
+2	:	:	PUNCT	:	_	1	punct	1:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0003
+# text = "Arafat's secular nationalism was supple enough to compromise with Israel and to imagine a two-state solution, even if the road of negotiations remained rocky.
+1	"	"	PUNCT	``	_	7	punct	7:punct	SpaceAfter=No
+2	Arafat	Arafat	PROPN	NNP	Number=Sing	5	nmod:poss	5:nmod:poss	SpaceAfter=No
+3	's	's	PART	POS	_	2	case	2:case	_
+4	secular	secular	ADJ	JJ	Degree=Pos	5	amod	5:amod	_
+5	nationalism	nationalism	NOUN	NN	Number=Sing	7	nsubj	7:nsubj	_
+6	was	be	AUX	VBD	Mood=Ind|Number=Sing|Person=3|Tense=Past|VerbForm=Fin	7	cop	7:cop	_
+7	supple	supple	ADJ	JJ	Degree=Pos	0	root	0:root	_
+8	enough	enough	ADV	RB	_	7	advmod	7:advmod	_
+9	to	to	PART	TO	_	10	mark	10:mark	_
+10	compromise	compromise	VERB	VB	VerbForm=Inf	7	advcl	7:advcl:to	_
+11	with	with	ADP	IN	_	12	case	12:case	_
+12	Israel	Israel	PROPN	NNP	Number=Sing	10	obl	10:obl:with	_
+13	and	and	CCONJ	CC	_	15	cc	15:cc	_
+14	to	to	PART	TO	_	15	mark	15:mark	_
+15	imagine	imagine	VERB	VB	VerbForm=Inf	10	conj	7:advcl:to|10:conj:and	_
+16	a	a	DET	DT	Definite=Ind|PronType=Art	20	det	20:det	_
+17	two	two	NUM	CD	NumType=Card	19	nummod	19:nummod	SpaceAfter=No
+18	-	-	PUNCT	HYPH	_	19	punct	19:punct	SpaceAfter=No
+19	state	state	NOUN	NN	Number=Sing	20	compound	20:compound	_
+20	solution	solution	NOUN	NN	Number=Sing	15	obj	15:obj	SpaceAfter=No
+21	,	,	PUNCT	,	_	15	punct	15:punct	_
+22	even	even	ADV	RB	_	28	advmod	28:advmod	_
+23	if	if	SCONJ	IN	_	28	mark	28:mark	_
+24	the	the	DET	DT	Definite=Def|PronType=Art	25	det	25:det	_
+25	road	road	NOUN	NN	Number=Sing	28	nsubj	28:nsubj|29:nsubj:xsubj	_
+26	of	of	ADP	IN	_	27	case	27:case	_
+27	negotiations	negotiation	NOUN	NNS	Number=Plur	25	nmod	25:nmod:of	_
+28	remained	remain	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	15	advcl	15:advcl:if	_
+29	rocky	rocky	ADJ	JJ	Degree=Pos	28	xcomp	28:xcomp	SpaceAfter=No
+30	.	.	PUNCT	.	_	7	punct	7:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0004
+# text = The continued Israeli colonization of the occupied Palestinian territories during the 1990s helped, along with terrorist attacks by radical groups such as Hamas, to derail the peace process, which Sharon had always opposed.
+1	The	the	DET	DT	Definite=Def|PronType=Art	4	det	4:det	_
+2	continued	continue	VERB	VBN	Tense=Past|VerbForm=Part	4	amod	4:amod	_
+3	Israeli	israeli	ADJ	JJ	Degree=Pos	4	amod	4:amod	_
+4	colonization	colonization	NOUN	NN	Number=Sing	13	nsubj	13:nsubj|27:nsubj:xsubj	_
+5	of	of	ADP	IN	_	9	case	9:case	_
+6	the	the	DET	DT	Definite=Def|PronType=Art	9	det	9:det	_
+7	occupied	occupy	VERB	VBN	Tense=Past|VerbForm=Part	9	amod	9:amod	_
+8	Palestinian	Palestinian	PROPN	NNP	Number=Sing	9	compound	9:compound	_
+9	territories	territories	PROPN	NNPS	Number=Plur	4	nmod	4:nmod:of	_
+10	during	during	ADP	IN	_	12	case	12:case	_
+11	the	the	DET	DT	Definite=Def|PronType=Art	12	det	12:det	_
+12	1990s	1990	NOUN	NNS	Number=Plur	4	nmod	4:nmod:during	_
+13	helped	help	VERB	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	0	root	0:root	SpaceAfter=No
+14	,	,	PUNCT	,	_	13	punct	13:punct	_
+15	along	along	ADP	IN	_	18	case	18:case	_
+16	with	with	ADP	IN	_	18	case	18:case	_
+17	terrorist	terrorist	ADJ	JJ	Degree=Pos	18	amod	18:amod	_
+18	attacks	attack	NOUN	NNS	Number=Plur	13	obl	13:obl:along	_
+19	by	by	ADP	IN	_	21	case	21:case	_
+20	radical	radical	ADJ	JJ	Degree=Pos	21	amod	21:amod	_
+21	groups	group	NOUN	NNS	Number=Plur	18	nmod	18:nmod:by	_
+22	such	such	ADJ	JJ	Degree=Pos	24	case	24:case	_
+23	as	as	ADP	IN	_	22	fixed	22:fixed	_
+24	Hamas	Hamas	PROPN	NNP	Number=Sing	21	nmod	21:nmod:such_as	SpaceAfter=No
+25	,	,	PUNCT	,	_	13	punct	13:punct	_
+26	to	to	PART	TO	_	27	mark	27:mark	_
+27	derail	derail	VERB	VB	VerbForm=Inf	13	xcomp	13:xcomp	_
+28	the	the	DET	DT	Definite=Def|PronType=Art	30	det	30:det	_
+29	peace	peace	NOUN	NN	Number=Sing	30	compound	30:compound	_
+30	process	process	NOUN	NN	Number=Sing	27	obj	27:obj|36:obj	SpaceAfter=No
+31	,	,	PUNCT	,	_	30	punct	30:punct	_
+32	which	which	PRON	WDT	PronType=Rel	36	obj	30:ref	_
+33	Sharon	Sharon	PROPN	NNP	Number=Sing	36	nsubj	36:nsubj	_
+34	had	have	AUX	VBD	Mood=Ind|Tense=Past|VerbForm=Fin	36	aux	36:aux	_
+35	always	always	ADV	RB	_	36	advmod	36:advmod	_
+36	opposed	oppose	VERB	VBN	Tense=Past|VerbForm=Part	30	acl:relcl	30:acl:relcl	SpaceAfter=No
+37	.	.	PUNCT	.	_	13	punct	13:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0005
+# text = Arafat's death creates a vacuum in Palestinian leadership that will not soon be filled.
+1	Arafat	Arafat	PROPN	NNP	Number=Sing	3	nmod:poss	3:nmod:poss	SpaceAfter=No
+2	's	's	PART	POS	_	1	case	1:case	_
+3	death	death	NOUN	NN	Number=Sing	4	nsubj	4:nsubj	_
+4	creates	create	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+5	a	a	DET	DT	Definite=Ind|PronType=Art	6	det	6:det	_
+6	vacuum	vacuum	NOUN	NN	Number=Sing	4	obj	4:obj|15:nsubj:pass	_
+7	in	in	ADP	IN	_	9	case	9:case	_
+8	Palestinian	palestinian	ADJ	JJ	Degree=Pos	9	amod	9:amod	_
+9	leadership	leadership	NOUN	NN	Number=Sing	6	nmod	6:nmod:in	_
+10	that	that	PRON	WDT	PronType=Rel	15	nsubj:pass	6:ref	_
+11	will	will	AUX	MD	VerbForm=Fin	15	aux	15:aux	_
+12	not	not	PART	RB	_	15	advmod	15:advmod	_
+13	soon	soon	ADV	RB	Degree=Pos	15	advmod	15:advmod	_
+14	be	be	AUX	VB	VerbForm=Inf	15	aux:pass	15:aux:pass	_
+15	filled	fill	VERB	VBN	Tense=Past|VerbForm=Part|Voice=Pass	6	acl:relcl	6:acl:relcl	SpaceAfter=No
+16	.	.	PUNCT	.	_	4	punct	4:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0006
+# text = Sharon's assassination of major Hamas leaders has also weakened authority structures in that party.
+1	Sharon	Sharon	PROPN	NNP	Number=Sing	3	nmod:poss	3:nmod:poss	SpaceAfter=No
+2	's	's	PART	POS	_	1	case	1:case	_
+3	assassination	assassination	NOUN	NN	Number=Sing	10	nsubj	10:nsubj	_
+4	of	of	ADP	IN	_	7	case	7:case	_
+5	major	major	ADJ	JJ	Degree=Pos	7	amod	7:amod	_
+6	Hamas	Hamas	PROPN	NNP	Number=Sing	7	compound	7:compound	_
+7	leaders	leader	NOUN	NNS	Number=Plur	3	nmod	3:nmod:of	_
+8	has	have	AUX	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	10	aux	10:aux	_
+9	also	also	ADV	RB	_	10	advmod	10:advmod	_
+10	weakened	weaken	VERB	VBN	Tense=Past|VerbForm=Part	0	root	0:root	_
+11	authority	authority	NOUN	NN	Number=Sing	12	compound	12:compound	_
+12	structures	structure	NOUN	NNS	Number=Plur	10	obj	10:obj	_
+13	in	in	ADP	IN	_	15	case	15:case	_
+14	that	that	DET	DT	Number=Sing|PronType=Dem	15	det	15:det	_
+15	party	party	NOUN	NN	Number=Sing	12	nmod	12:nmod:in	SpaceAfter=No
+16	.	.	PUNCT	.	_	10	punct	10:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0007
+# text = If the Israelis and the Palestinian leadership cannot find a way to reinvigorate the peace process, cells of radical young Palestinians may grow up that look to bin Laden for their cues.
+1	If	if	SCONJ	IN	_	10	mark	10:mark	_
+2	the	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
+3	Israelis	Israelis	PROPN	NNPS	Number=Plur	10	nsubj	10:nsubj	_
+4	and	and	CCONJ	CC	_	7	cc	7:cc	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	7	det	7:det	_
+6	Palestinian	palestinian	ADJ	JJ	Degree=Pos	7	amod	7:amod	_
+7	leadership	leadership	NOUN	NN	Number=Sing	3	conj	3:conj:and|10:nsubj	_
+8	can	can	AUX	MD	VerbForm=Fin	10	aux	10:aux	SpaceAfter=No
+9	not	not	PART	RB	_	10	advmod	10:advmod	_
+10	find	find	VERB	VB	VerbForm=Inf	25	advcl	25:advcl:if	_
+11	a	a	DET	DT	Definite=Ind|PronType=Art	12	det	12:det	_
+12	way	way	NOUN	NN	Number=Sing	10	obj	10:obj	_
+13	to	to	PART	TO	_	14	mark	14:mark	_
+14	reinvigorate	reinvigorate	VERB	VB	VerbForm=Inf	12	acl	12:acl:to	_
+15	the	the	DET	DT	Definite=Def|PronType=Art	17	det	17:det	_
+16	peace	peace	NOUN	NN	Number=Sing	17	compound	17:compound	_
+17	process	process	NOUN	NN	Number=Sing	14	obj	14:obj	SpaceAfter=No
+18	,	,	PUNCT	,	_	25	punct	25:punct	_
+19	cells	cell	NOUN	NNS	Number=Plur	25	nsubj	25:nsubj	_
+20	of	of	ADP	IN	_	23	case	23:case	_
+21	radical	radical	ADJ	JJ	Degree=Pos	23	amod	23:amod	_
+22	young	young	ADJ	JJ	Degree=Pos	23	amod	23:amod	_
+23	Palestinians	Palestinians	PROPN	NNPS	Number=Plur	19	nmod	19:nmod:of|28:nsubj	_
+24	may	may	AUX	MD	VerbForm=Fin	25	aux	25:aux	_
+25	grow	grow	VERB	VB	VerbForm=Inf	0	root	0:root	_
+26	up	up	ADP	RP	_	25	compound:prt	25:compound:prt	_
+27	that	that	PRON	WDT	PronType=Rel	28	nsubj	23:ref	_
+28	look	look	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	23	acl:relcl	23:acl:relcl	_
+29	to	to	ADP	IN	_	30	case	30:case	_
+30	bin	bin	PROPN	NNP	Number=Sing	28	obl	28:obl:to	_
+31	Laden	Laden	PROPN	NNP	Number=Sing	30	flat	30:flat	_
+32	for	for	ADP	IN	_	34	case	34:case	_
+33	their	they	PRON	PRP$	Number=Plur|Person=3|Poss=Yes|PronType=Prs	34	nmod:poss	34:nmod:poss	_
+34	cues	cue	NOUN	NNS	Number=Plur	28	obl	28:obl:for	SpaceAfter=No
+35	.	.	PUNCT	.	_	25	punct	25:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0008
+# text = Even if local Palestinian leaders remain strong enough to keep al-Qaida out, the festering Israeli-Palestinian struggle remains among the best recruiting posters for al-Qaida with young Muslim men.
+1	Even	even	ADV	RB	_	6	advmod	6:advmod	_
+2	if	if	SCONJ	IN	_	6	mark	6:mark	_
+3	local	local	ADJ	JJ	Degree=Pos	5	amod	5:amod	_
+4	Palestinian	palestinian	ADJ	JJ	Degree=Pos	5	amod	5:amod	_
+5	leaders	leader	NOUN	NNS	Number=Plur	6	nsubj	6:nsubj|8:nsubj:xsubj	_
+6	remain	remain	VERB	VBP	Mood=Ind|Tense=Pres|VerbForm=Fin	22	advcl	22:advcl:if	_
+7	strong	strong	ADJ	JJ	Degree=Pos	8	amod	8:amod	_
+8	enough	enough	ADJ	JJ	Degree=Pos	6	xcomp	6:xcomp	_
+9	to	to	PART	TO	_	10	mark	10:mark	_
+10	keep	keep	VERB	VB	VerbForm=Inf	7	advcl	7:advcl:to	_
+11	al	al	PROPN	NNP	Number=Sing	13	compound	13:compound	SpaceAfter=No
+12	-	-	PUNCT	HYPH	_	13	punct	13:punct	SpaceAfter=No
+13	Qaida	Qaida	PROPN	NNP	Number=Sing	10	obj	10:obj|14:nsubj:xsubj	_
+14	out	out	ADV	RB	_	10	xcomp	10:xcomp	SpaceAfter=No
+15	,	,	PUNCT	,	_	22	punct	22:punct	_
+16	the	the	DET	DT	Definite=Def|PronType=Art	21	det	21:det	_
+17	festering	fester	VERB	VBG	VerbForm=Ger	21	amod	21:amod	_
+18	Israeli	israeli	ADJ	JJ	Degree=Pos	20	amod	20:amod	SpaceAfter=No
+19	-	-	PUNCT	HYPH	_	20	punct	20:punct	SpaceAfter=No
+20	Palestinian	palestinian	ADJ	JJ	Degree=Pos	21	amod	21:amod	_
+21	struggle	struggle	NOUN	NN	Number=Sing	22	nsubj	22:nsubj	_
+22	remains	remain	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	0:root	_
+23	among	among	ADP	IN	_	27	case	27:case	_
+24	the	the	DET	DT	Definite=Def|PronType=Art	27	det	27:det	_
+25	best	best	ADJ	JJS	Degree=Sup	27	amod	27:amod	_
+26	recruiting	recruiting	NOUN	NN	Number=Sing	27	compound	27:compound	_
+27	posters	poster	NOUN	NNS	Number=Plur	22	obl	22:obl:among	_
+28	for	for	ADP	IN	_	31	case	31:case	_
+29	al	al	PROPN	NNP	Number=Sing	31	compound	31:compound	SpaceAfter=No
+30	-	-	PUNCT	HYPH	_	31	punct	31:punct	SpaceAfter=No
+31	Qaida	Qaida	PROPN	NNP	Number=Sing	27	nmod	27:nmod:for	_
+32	with	with	ADP	IN	_	35	case	35:case	_
+33	young	young	ADJ	JJ	Degree=Pos	35	amod	35:amod	_
+34	Muslim	muslim	ADJ	JJ	Degree=Pos	35	amod	35:amod	_
+35	men	man	NOUN	NNS	Number=Plur	22	obl	22:obl:with	SpaceAfter=No
+36	.	.	PUNCT	.	_	22	punct	22:punct	_
+
+# sent_id = weblog-juancole.com_juancole_20041120060600_ENG_20041120_060600-0009
+# text = Resolving this conflict would be the most effective weapon the United States could deploy in its war on terror."
+1	Resolving	resolve	VERB	VBG	VerbForm=Ger	9	csubj	9:csubj	_
+2	this	this	DET	DT	Number=Sing|PronType=Dem	3	det	3:det	_
+3	conflict	conflict	NOUN	NN	Number=Sing	1	obj	1:obj	_
+4	would	would	AUX	MD	VerbForm=Fin	9	aux	9:aux	_
+5	be	be	AUX	VB	VerbForm=Inf	9	cop	9:cop	_
+6	the	the	DET	DT	Definite=Def|PronType=Art	9	det	9:det	_
+7	most	most	ADV	RBS	_	8	advmod	8:advmod	_
+8	effective	effective	ADJ	JJ	Degree=Pos	9	amod	9:amod	_
+9	weapon	weapon	NOUN	NN	Number=Sing	0	root	0:root	_
+10	the	the	DET	DT	Definite=Def|PronType=Art	12	det	12:det	_
+11	United	United	PROPN	NNP	Number=Sing	12	compound	12:compound	_
+12	States	States	PROPN	NNP	Number=Sing	14	nsubj	14:nsubj	_
+13	could	could	AUX	MD	VerbForm=Fin	14	aux	14:aux	_
+14	deploy	deploy	VERB	VB	VerbForm=Inf	9	acl:relcl	9:acl:relcl	_
+15	in	in	ADP	IN	_	17	case	17:case	_
+16	its	its	PRON	PRP$	Gender=Neut|Number=Sing|Person=3|Poss=Yes|PronType=Prs	17	nmod:poss	17:nmod:poss	_
+17	war	war	NOUN	NN	Number=Sing	14	obl	14:obl:in	_
+18	on	on	ADP	IN	_	19	case	19:case	_
+19	terror	terror	NOUN	NN	Number=Sing	17	nmod	17:nmod:on	SpaceAfter=No
+20	.	.	PUNCT	.	_	9	punct	9:punct	SpaceAfter=No
+21	"	"	PUNCT	''	_	9	punct	9:punct	_
+
