@@ -2,29 +2,36 @@
 
 import sys
 import os
-from .io_utils.encodings import Encodings
-from .io_utils.embeddings import WordEmbeddings
-from .io_utils.model_store import ModelMetadata, ModelStore
-from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
-from .generic_networks.tokenizers import TieredTokenizer
-from .generic_networks.token_expanders import CompoundWordExpander
-from .generic_networks.lemmatizers import FSTLemmatizer
-from .generic_networks.taggers import BDRNNTagger
-from .generic_networks.parsers import BDRNNParser
-
 
 class Cube(object):
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, random_seed=None, memory=512, autobatch=False, use_gpu=False):
         """
         Create an empty instance for Cube
-        Before it can be used, you must call @method load with @param language_code set to your target language
+        Before it can be used, you must call @method load with @param language_code set to your target language        
         """
         self._loaded = False
-        self._verbose = verbose   
+        self._verbose = verbose           
+        import dynet_config
         
+        if random_seed != None:
+            if not isinstance(random_seed, int):
+                raise Exception ("Random seed must be an integer!")   
+            if random_seed == 0:
+                print("[Warning] While Python and Numpy's seeds are now set to 0, DyNet uses 0 to reset the seed generator (fully random). Use any non-zero int value to set DyNet to a fixed random seed.")
+            # set python random seed
+            import random
+            random.seed(random_seed)
+            #set numpy random seed
+            import numpy as np
+            np.random.seed(random_seed)
+        else:
+            random_seed = 0 # this is the default value for DyNet (meaning full random)        
+            
+        dynet_config.set(mem=memory, random_seed=random_seed, autobatch=autobatch)
+        if use_gpu:
+            dynet_config.set_gpu()        
 
-    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True,
-             lemmatization=True, parsing=True):
+    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True):
         """
         Loads the pipeline with all available models for the target language.
 
@@ -32,6 +39,16 @@ class Cube(object):
         @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
        
         """
+        from .io_utils.encodings import Encodings
+        from .io_utils.embeddings import WordEmbeddings
+        from .io_utils.model_store import ModelMetadata, ModelStore
+        from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
+        from .generic_networks.tokenizers import TieredTokenizer
+        from .generic_networks.token_expanders import CompoundWordExpander
+        from .generic_networks.lemmatizers import FSTLemmatizer
+        from .generic_networks.taggers import BDRNNTagger
+        from .generic_networks.parsers import BDRNNParser        
+        
         self._tokenizer = None  # tokenizer object, default is None
         self._compound_word_expander = None  # compound word expander, default is None
         self._lemmatizer = None  # lemmatizer object, default is None
@@ -62,7 +79,7 @@ class Cube(object):
         if self._verbose:
             sys.stdout.write('\tLoading embeddings ... \n')
         if not local_models_repository: # load an official model which has an embeddings file
-            embeddings.read_from_file(os.path.join(self._embeddings_repository, self.metadata.embeddings_file_name), None,
+            embeddings.read_from_file(os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name), None,
                                   full_load=False)
         else:
             if local_embeddings_file == None and self.metadata == None:
