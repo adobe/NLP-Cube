@@ -16,15 +16,17 @@ This class should test:
 import os, sys, subprocess
 import unittest
 
-class Main_Tests(unittest.TestCase):
+class Api_Tests(unittest.TestCase):
 
     def setUp(self):
         # get current directory                
         self.root_path = os.path.dirname(os.path.realpath(__file__))
         self.root_path = os.path.abspath(os.path.join(self.root_path, os.pardir)) 
         self.main_file_path = os.path.join(self.root_path, "cube", "main.py")
+        self.scripts_path = os.path.join(self.root_path, "scripts")
         self.corpus_path = os.path.join(self.root_path, "tests", "test_corpus")
         self.model_path = os.path.join(self.root_path, "tests", "my_model-1.0")
+        self.local_model_repo = os.path.join(self.root_path, "tests")
         self.scratch_path = os.path.join(self.root_path, "tests", "scratch")
         self.input_file_path = os.path.join(self.corpus_path, "en_ewt-ud-test.txt")
         self.output_file_path = os.path.join(self.scratch_path, "en_ewt-ud-test-output.conllu") 
@@ -33,35 +35,107 @@ class Main_Tests(unittest.TestCase):
             os.makedirs(self.model_path)
         if not os.path.exists(self.scratch_path):
             os.makedirs(self.scratch_path)
+                
+        #import root_path    
+        sys.path.append(self.root_path)
         
-        print("[setUp] Absolute path of NLP-Cube: "+self.root_path)
-        print()
+        #print("[setUp] Absolute path of NLP-Cube: "+self.root_path)
+        #print()
         
     
-    def test_0_init_model_store_and_list_online_models(self):
-        pass
+    def atest_0_init_model_store_and_list_online_models(self):       
+        print("\n\33[33m{}\33[0m".format("Loading the model store and querying the online database ..."))
+        from cube.io_utils.model_store import ModelMetadata, ModelStore
+        model_store_object = ModelStore()
+        online_models = model_store_object.list_online_models()
+        #print("Found models online:"+str(online_models))        
+        self.assertTrue(len(online_models)>0)
     
-    def test_1_download_and_run_an_online_model(self):                                    
-        command = "python3 " + self.main_file_path + " --train tokenizer"
-        command+= " --train-file "+os.path.join(self.corpus_path,"en_ewt-ud-train.conllu") + " --raw-train-file " + os.path.join(self.corpus_path,"en_ewt-ud-train.txt")
-        command+= " --dev-file "+os.path.join(self.corpus_path,"en_ewt-ud-dev.conllu") + " --raw-dev-file " + os.path.join(self.corpus_path,"en_ewt-ud-dev.txt")
-        command+= " --embeddings "+os.path.join(self.root_path, "examples", "wiki.dummy.vec")
-        command+= " --store " + os.path.join(self.model_path, "tokenizer")
-        command+= " --autobatch --batch-size 1000 --set-mem 1000 --random-seed 42 --patience 1"
-        print("\n\33[33m{}\n{}\33[0m".format("Tokenizer command:",command))            
+    def atest_1_download_and_run_an_online_model(self):                                    
+        print("\n\33[33m{}\33[0m".format("Loading an online model ..."))
+        from cube.api import Cube
+        cube = Cube(verbose=True)
+        cube.load('en_small', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
+        cube.metadata.info()
+        text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+        sentences = cube(text)
+        self.assertTrue(len(sentences)>0)
+        self.assertTrue(len(sentences[0])>0)        
+    
+    # This test needs my_model-1.0 to be locally created with main_tests.py
+    def atest_2_run_a_local_model(self):  
+        print("\n\33[33m{}\33[0m".format("Run a local model that does not have embeddings or metadata (running with dummy.vec embeddings) ..."))
+        embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
+        from cube.api import Cube
+        cube = Cube(verbose=True)
+        cube.load('my_model', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True, local_models_repository=self.local_model_repo, local_embeddings_file=embeddings)        
+        text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+        sentences = cube(text)
+        self.assertTrue(len(sentences)>0)
+        self.assertTrue(len(sentences[0])>0)   
+        
+    
+    def test_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
+        print("\n\33[33m{}\33[0m".format("Package a local model without an embeddings file ..."))
+        
+        # create metadata file
+        with open(os.path.join(self.model_path,"metadata.json"),"w",encoding="utf-8") as f:
+            f.write("{\n")            
+            f.write('"embeddings_file_name": "wiki.dummy.vec",\n')
+            f.write('"embeddings_remote_link": "",\n')
+            f.write('"language": "UD_English",\n')
+            f.write('"language_code": "my_model",\n')
+            f.write('"model_build_date": "2020-01-01",\n')
+            f.write('"model_build_source": "UD_English-ParTuT",\n')
+            f.write('"model_version": 1.0,\n')
+            f.write('"notes": "Source: ud-treebanks-v2.2, dummy model",\n')
+            f.write('"token_delimiter": " "\n')
+            f.write("}\n")            
+        
+        #python3 /work/NLP-Cube/scripts/export_model.py /work/my_model-1.0 --tokenizer --tagger
+        command = "python3 " + os.path.join(self.scripts_path, "export_model.py") + " " + self.model_path
+        command+= " --tokenizer --tagger --parser --lemmatizer"
+        print("\n\t\t\33[32m{}\n{}\33[0m".format("Export command:",command))        
         popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
         output = []        
         for stdout_line in iter(popen.stdout.readline, ""):
             print(stdout_line[:-1])
-            output.append(stdout_line[:-1])
+            if stdout_line.strip()!= "":
+                output.append(stdout_line[:-1])
         popen.stdout.close()
         return_code = popen.wait()        
-        test = "Training is done with " in output[-1]
+        test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
     
+    def test_3_2_import_model_in_store(self):      
+        print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))
+        #python3 import_model.py /work/my_model-1.0.zip
+        command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
+        print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
+        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        output = []        
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line[:-1])
+            if stdout_line.strip()!= "":
+                output.append(stdout_line[:-1])
+        popen.stdout.close()
+        return_code = popen.wait()        
+        test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
+        self.assertTrue(test)
     
+    def test_3_3_run_model_with_manual_embeddings(self):  
+        pass    
+
+    def test_4_1_package_a_local_model_with_embeddings_link_in_metadata(self):  
+        pass
     
-    def test_5_run_model(self):                                    
+    def test_4_2_import_model_in_store(self):  
+        pass
+    
+    def test_3_3_run_model_without_manual_embeddings(self):  
+        pass    
+        
+    def asdasd(self):                                    
         command = "python3 " + self.main_file_path + " --run tokenizer,parser,tagger,lemmatizer"
         command+= " --models " + self.model_path
         command+= " --embeddings " + os.path.join(self.root_path, "examples", "wiki.dummy.vec")
@@ -86,5 +160,5 @@ class Main_Tests(unittest.TestCase):
         test = "treaty" in lines[-2]
         self.assertTrue(test)
         
-if __name__ == '__main__':
+if __name__ == '__main__':        
     unittest.main()
