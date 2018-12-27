@@ -42,7 +42,9 @@ The ``sentences`` object now contains the annotated text, one sentence at a time
 
 ### Webserver Usage 
 
-To use NLP-Cube as a **web service**, you need to [locally install NLP-Cube](examples/2.%20Advanced usage%20-%20NLP-Cube%20local%20installation.ipynb) and start the server:
+To use NLP-Cube as a **web service**, you need to 
+[locally install NLP-Cube](examples/2.%20Advanced%20usage%20-%20NLP-Cube%20local%20installation.ipynb) 
+and start the server:
 
 For example, the following command will start the server and preload languages: en, fr and de.
 ```bash
