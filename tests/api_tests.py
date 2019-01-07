@@ -43,7 +43,7 @@ class Api_Tests(unittest.TestCase):
         #print()
         
     
-    def atest_0_init_model_store_and_list_online_models(self):       
+    def test_0_init_model_store_and_list_online_models(self):       
         print("\n\33[33m{}\33[0m".format("Loading the model store and querying the online database ..."))
         from cube.io_utils.model_store import ModelMetadata, ModelStore
         model_store_object = ModelStore()
@@ -51,7 +51,7 @@ class Api_Tests(unittest.TestCase):
         #print("Found models online:"+str(online_models))        
         self.assertTrue(len(online_models)>0)
     
-    def atest_1_1_download_and_run_an_online_model_latest_version(self):                                    
+    def test_1_1_download_and_run_an_online_model_latest_version(self):                                    
         print("\n\33[33m{}\33[0m".format("Loading an online model (latest_version) ..."))
         from cube.api import Cube
         cube = Cube(verbose=True)
@@ -62,7 +62,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences)>0)
         self.assertTrue(len(sentences[0])>0)        
     
-    def atest_1_2_download_and_run_an_online_model_specific_version(self):                                    
+    def test_1_2_download_and_run_an_online_model_specific_version(self):                                    
         print("\n\33[33m{}\33[0m".format("Loading an online model (en, 1.1) ..."))
         from cube.api import Cube
         cube = Cube(verbose=True)
@@ -74,7 +74,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)        
     
     # This test needs my_model-1.0 to be locally created with main_tests.py
-    def atest_2_run_a_local_model(self):  
+    def test_2_run_a_local_model(self):  
         print("\n\33[33m{}\33[0m".format("Run a local model that does not have embeddings or metadata (running with dummy.vec embeddings) ..."))
         embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
         from cube.api import Cube
@@ -86,7 +86,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)   
         
     
-    def atest_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
+    def test_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
         print("\n\33[33m{}\33[0m".format("Package a local model without an embeddings file ..."))
         
         # create metadata file
@@ -118,7 +118,7 @@ class Api_Tests(unittest.TestCase):
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
     
-    def atest_3_2_import_model_in_store(self):      
+    def test_3_2_import_model_in_store(self):      
         print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))        
         command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
@@ -140,7 +140,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(test)
         
     
-    def atest_3_3_run_model_with_manual_embeddings(self):  
+    def test_3_3_run_model_with_manual_embeddings(self):  
         print("\n\33[33m{}\33[0m".format("Run a local model with manual embeddings ..."))                
         embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
         from cube.api import Cube
@@ -237,6 +237,32 @@ class Api_Tests(unittest.TestCase):
         sentences = cube(text)
         self.assertTrue(len(sentences)>0)
         self.assertTrue(len(sentences[0])>0)       
+    
+    def test_5_cleanup(self):
+        print("\n\33[33m{}\33[0m".format("Cleanup after myself ..."))                        
         
+        # delete my_model from the store, if it exists
+        from cube.io_utils.model_store import ModelMetadata, ModelStore
+        model_store_object = ModelStore()
+        local_models = model_store_object.list_local_models()
+        print("\tFound local models:"+str(local_models))        
+        self.assertTrue(len(local_models)>0)
+        
+        for model, version in local_models:
+            if model == "my_model":                                
+                # delete local model
+                print("\tDeleting 'my_model-1.0'...")        
+                model_store_object.delete_model("my_model","1.0")                
+                local_models_new = model_store_object.list_local_models()
+                print("\tFound local models:"+str(local_models_new))        
+                self.assertTrue(len(local_models)>len(local_models_new))
+                break
+    
+        # delete my_model.zip, if it exists
+        if os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip")):
+            os.remove(os.path.join(self.local_model_repo,"my_model-1.0.zip"))        
+        self.assertFalse(os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip")))
+        
+    
 if __name__ == '__main__':        
     unittest.main()

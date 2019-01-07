@@ -1,10 +1,10 @@
 # NLP-Cube Tests
 
-To perform automatic testing, simply run (inside ``tests`` folder): 
+To perform automatic testing, simply run (from the main folder): 
 
 
 ```
-python3 main_test.py 
+python3 tests/main_test.py 
 ```
 
 
@@ -12,8 +12,10 @@ and
 
 
 ```
-python3 api_test.py 
+python3 tests/api_test.py 
 ```
 
+
+Please run them in this sequence as ``main_test.py`` creates a local model that ``api_test.py`` expects to find.
 
 
