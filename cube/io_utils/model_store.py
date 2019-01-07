@@ -383,21 +383,21 @@ class ModelStore(object):
         or None if there's nothing to be done.
         """        
         online_models = self.list_online_models(lang_code)
-        
+                
         # filter by lang code
         lang_models = [x for x in online_models if lang_code in x[0]]
         
         if len(lang_models)==0:
             return None # nothing found online
-            
+        
         if version == "latest":
             # Compute latest version.
             remote_versions = [x[1] for x in lang_models]
             remote_versions.sort()
             return remote_versions[-1]             
         else:
-            for model in lang_models:
-                if str(version) in model:
+            for _, model_version in lang_models:                                
+                if str(version) == str(model_version):
                     return version
             return None # not found this particular version online
     
