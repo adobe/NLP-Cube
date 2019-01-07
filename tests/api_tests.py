@@ -51,11 +51,22 @@ class Api_Tests(unittest.TestCase):
         #print("Found models online:"+str(online_models))        
         self.assertTrue(len(online_models)>0)
     
-    def atest_1_download_and_run_an_online_model(self):                                    
-        print("\n\33[33m{}\33[0m".format("Loading an online model ..."))
+    def atest_1_1_download_and_run_an_online_model_latest_version(self):                                    
+        print("\n\33[33m{}\33[0m".format("Loading an online model (latest_version) ..."))
         from cube.api import Cube
         cube = Cube(verbose=True)
         cube.load('en_small', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
+        cube.metadata.info()
+        text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+        sentences = cube(text)
+        self.assertTrue(len(sentences)>0)
+        self.assertTrue(len(sentences[0])>0)        
+    
+    def atest_1_2_download_and_run_an_online_model_specific_version(self):                                    
+        print("\n\33[33m{}\33[0m".format("Loading an online model (en, 1.1) ..."))
+        from cube.api import Cube
+        cube = Cube(verbose=True)
+        cube.load('en', version='1.1', tokenization=True, compound_word_expanding=False, tagging=False, lemmatization=False, parsing=False)
         cube.metadata.info()
         text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
         sentences = cube(text)
@@ -75,7 +86,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)   
         
     
-    def test_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
+    def atest_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
         print("\n\33[33m{}\33[0m".format("Package a local model without an embeddings file ..."))
         
         # create metadata file
@@ -107,9 +118,95 @@ class Api_Tests(unittest.TestCase):
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
     
-    def test_3_2_import_model_in_store(self):      
-        print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))
-        #python3 import_model.py /work/my_model-1.0.zip
+    def atest_3_2_import_model_in_store(self):      
+        print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))        
+        command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
+        print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
+        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        output = []        
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line[:-1])
+            if stdout_line.strip()!= "":
+                output.append(stdout_line[:-1])
+        popen.stdout.close()
+        return_code = popen.wait()        
+        
+        # check it is in store
+        local_models = model_store_object.list_local_models()
+        test = False
+        for model, version in local_models:
+            if model == "my_model":  
+                test = True
+        self.assertTrue(test)
+        
+    
+    def atest_3_3_run_model_with_manual_embeddings(self):  
+        print("\n\33[33m{}\33[0m".format("Run a local model with manual embeddings ..."))                
+        embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
+        from cube.api import Cube
+        cube = Cube(verbose=True)
+        cube.load('my_model', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True, local_embeddings_file=embeddings)        
+        text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+        sentences = cube(text)
+        self.assertTrue(len(sentences)>0)
+        self.assertTrue(len(sentences[0])>0)   
+
+    def test_4_1_package_a_local_model_with_embeddings_link_in_metadata(self):  
+        print("\n\33[33m{}\33[0m".format("Package a local model with an external embeddings file link..."))
+        
+        # create metadata file
+        with open(os.path.join(self.model_path,"metadata.json"),"w",encoding="utf-8") as f:
+            f.write("{\n")            
+            f.write('"embeddings_file_name": "wiki.got.vec",\n')
+            f.write('"embeddings_remote_link": "https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.got.vec",\n')
+            f.write('"language": "UD_English",\n')
+            f.write('"language_code": "my_model",\n')
+            f.write('"model_build_date": "2020-01-01",\n')
+            f.write('"model_build_source": "UD_English-ParTuT",\n')
+            f.write('"model_version": 1.0,\n')
+            f.write('"notes": "Source: ud-treebanks-v2.2, dummy model, -got- embeddings because they are small",\n')
+            f.write('"token_delimiter": " "\n')
+            f.write("}\n")            
+        
+        # first cleanup if my_model-1.0.zip already exists
+        if os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip")):
+            os.remove(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
+        
+        command = "python3 " + os.path.join(self.scripts_path, "export_model.py") + " " + self.model_path
+        command+= " --tokenizer --tagger --parser --lemmatizer"
+        print("\n\t\t\33[32m{}\n{}\33[0m".format("Export command:",command))        
+        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        output = []        
+        for stdout_line in iter(popen.stdout.readline, ""):
+            print(stdout_line[:-1])
+            if stdout_line.strip()!= "":
+                output.append(stdout_line[:-1])
+        popen.stdout.close()
+        return_code = popen.wait()        
+        test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
+        self.assertTrue(test)
+    
+    def test_4_2_import_model_in_store(self):  
+        print("\n\33[33m{}\33[0m".format("Import locally created model in store (with prior cleanup)..."))        
+        
+        # first check local models         
+        from cube.io_utils.model_store import ModelMetadata, ModelStore
+        model_store_object = ModelStore()
+        local_models = model_store_object.list_local_models()
+        print("\tFound local models:"+str(local_models))        
+        self.assertTrue(len(local_models)>0)
+        
+        # search for my_model
+        for model, version in local_models:
+            if model == "my_model":                                
+                # delete local model
+                print("\tDeleting 'my_model-1.0'...")        
+                model_store_object.delete_model("my_model","1.0")                
+                local_models_new = model_store_object.list_local_models()
+                print("\tFound local models:"+str(local_models_new))        
+                self.assertTrue(len(local_models)>len(local_models_new))
+                
+        # import new model
         command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
         popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
@@ -122,43 +219,24 @@ class Api_Tests(unittest.TestCase):
         return_code = popen.wait()        
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
-    
-    def test_3_3_run_model_with_manual_embeddings(self):  
-        pass    
-
-    def test_4_1_package_a_local_model_with_embeddings_link_in_metadata(self):  
-        pass
-    
-    def test_4_2_import_model_in_store(self):  
-        pass
-    
-    def test_3_3_run_model_without_manual_embeddings(self):  
-        pass    
         
-    def asdasd(self):                                    
-        command = "python3 " + self.main_file_path + " --run tokenizer,parser,tagger,lemmatizer"
-        command+= " --models " + self.model_path
-        command+= " --embeddings " + os.path.join(self.root_path, "examples", "wiki.dummy.vec")
-        command+= " --input-file " + self.input_file_path
-        command+= " --output-file " + self.output_file_path        
-        print("\n\33[33m{}\n{}\33[0m".format("Model run command:",command))        
-        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
-        output = []        
-        for stdout_line in iter(popen.stdout.readline, ""):
-            print(stdout_line[:-1])
-            output.append(stdout_line[:-1])
-        popen.stdout.close()
-        return_code = popen.wait()        
-        test = "Training is done with " in output[-1]
-        self.assertTrue(test)   
-        
-        lines = []
-        with open(self.output_file_path,"r",encoding="utf8") as f:            
-            line = f.readline()
-            if line.strip() != "":
-                lines.append(lines)
-        test = "treaty" in lines[-2]
+        # check it is in store
+        local_models = model_store_object.list_local_models()
+        test = False
+        for model, version in local_models:
+            if model == "my_model":  
+                test = True
         self.assertTrue(test)
+        
+    def test_4_3_run_model_with_default_external_embeddings(self):  
+        print("\n\33[33m{}\33[0m".format("Run a local model with default external embeddings ..."))                        
+        from cube.api import Cube
+        cube = Cube(verbose=True)
+        cube.load('my_model', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)        
+        text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+        sentences = cube(text)
+        self.assertTrue(len(sentences)>0)
+        self.assertTrue(len(sentences[0])>0)       
         
 if __name__ == '__main__':        
     unittest.main()
