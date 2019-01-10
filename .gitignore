@@ -13,6 +13,7 @@ venv/*
 cube/*.py
 
 models/
+tests/scratch/*
 
 
 # Jupyter notebooks

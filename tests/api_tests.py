@@ -107,7 +107,7 @@ class Api_Tests(unittest.TestCase):
         command = "python3 " + os.path.join(self.scripts_path, "export_model.py") + " " + self.model_path
         command+= " --tokenizer --tagger --parser --lemmatizer"
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Export command:",command))        
-        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        ''' popen = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE, universal_newlines=True)        
         output = []        
         for stdout_line in iter(popen.stdout.readline, ""):
             print(stdout_line[:-1])
@@ -115,6 +115,9 @@ class Api_Tests(unittest.TestCase):
                 output.append(stdout_line[:-1])
         popen.stdout.close()
         return_code = popen.wait()        
+        '''
+        os.system(command)
+        
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
     
@@ -122,7 +125,7 @@ class Api_Tests(unittest.TestCase):
         print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))        
         command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
-        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        '''popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
         output = []        
         for stdout_line in iter(popen.stdout.readline, ""):
             print(stdout_line[:-1])
@@ -130,8 +133,12 @@ class Api_Tests(unittest.TestCase):
                 output.append(stdout_line[:-1])
         popen.stdout.close()
         return_code = popen.wait()        
-        
+        '''
+        os.system(command)
+         
         # check it is in store
+        from cube.io_utils.model_store import ModelMetadata, ModelStore
+        model_store_object = ModelStore()
         local_models = model_store_object.list_local_models()
         test = False
         for model, version in local_models:
@@ -175,7 +182,7 @@ class Api_Tests(unittest.TestCase):
         command = "python3 " + os.path.join(self.scripts_path, "export_model.py") + " " + self.model_path
         command+= " --tokenizer --tagger --parser --lemmatizer"
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Export command:",command))        
-        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        '''popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
         output = []        
         for stdout_line in iter(popen.stdout.readline, ""):
             print(stdout_line[:-1])
@@ -183,6 +190,8 @@ class Api_Tests(unittest.TestCase):
                 output.append(stdout_line[:-1])
         popen.stdout.close()
         return_code = popen.wait()        
+        '''
+        os.system(command)
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
     
@@ -209,7 +218,7 @@ class Api_Tests(unittest.TestCase):
         # import new model
         command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
-        popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
+        '''popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
         output = []        
         for stdout_line in iter(popen.stdout.readline, ""):
             print(stdout_line[:-1])
@@ -217,6 +226,9 @@ class Api_Tests(unittest.TestCase):
                 output.append(stdout_line[:-1])
         popen.stdout.close()
         return_code = popen.wait()        
+        '''
+        os.system(command)
+        
         test = os.path.exists(os.path.join(self.local_model_repo,"my_model-1.0.zip"))
         self.assertTrue(test)
         
