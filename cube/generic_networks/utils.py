@@ -41,8 +41,9 @@ def orthonormal_initializer(output_size, input_size):
                 break
         success = True
     if success:
-        print('Orthogonal pretrainer loss: %.2e' % loss)
+        #print('Orthogonal pretrainer loss: %.2e' % loss)
+        pass
     else:
-        print('Orthogonal pretrainer failed, using non-orthogonal random matrix')
+        #print('Orthogonal pretrainer failed, using non-orthogonal random matrix')
         Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
     return np.transpose(Q.astype(np.float32))

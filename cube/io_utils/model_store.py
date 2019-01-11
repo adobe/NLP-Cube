@@ -40,8 +40,12 @@ class ModelMetadata(object):
         # OPTIONAL: other notes, string value
         self.notes = ""
     
-    def read(self, filename):            
-        assert(filename.endswith("metadata.json"))
+    def read(self, filename):                            
+        if not os.path.exists(filename):
+            raise IOException("Metadata file ["+filename+"] not found!")
+        if not filename.endswith("metadata.json"):
+            raise IOException("Metadata file ["+filename+"] does not seem to be valid!")
+        
         data = json.load(fopen(filename,"r"))
         if sys.version_info[0] == 2: 
             items = data.iteritems()
@@ -413,7 +417,8 @@ class ModelStore(object):
             return
             
         # determine which embedding file we need to delete
-        model_metadata.load(lang_code+"-"+str(version))
+        model_metadata = ModelMetadata()                
+        model_metadata.read(os.path.join(model_folder,"metadata.json"))        
         embeddings_file_to_delete = model_metadata.embeddings_file_name
         
         # delete the model
@@ -422,12 +427,15 @@ class ModelStore(object):
             shutil.rmtree(model_folder)
         except OSError as e:
             print ("Error removing folder from local disk: %s - %s." % (e.filename, e.strerror))
-                
+           
         # search in other models for referenced embeddings file
         found_in_other_models = False
         lang_models = self._list_folders() 
-        for lang_model in lang_models:
-            model_metadata.load(lang_model)
+        for lang_model in lang_models:                        
+            metadata_file_path = os.path.join(self.disk_path, lang_model, "metadata.json")
+            if not os.path.exists(metadata_file_path):
+                continue # this is not a model folder, so skip it            
+            model_metadata.read(os.path.join(self.disk_path, lang_model, "metadata.json"))
             other_embeddings_file = model_metadata.embeddings_file_name
             if other_embeddings_file == embeddings_file_to_delete:
                 found_in_other_models = True
@@ -435,8 +443,9 @@ class ModelStore(object):
                 break
         if not found_in_other_models:
             try:
-                os.remove(embeddings_file_to_delete)
-                print("Removed embeddings file "+embeddings_file_to_delete+".")
+                embeddings_file_to_delete_abs_path = os.path.join(self.disk_path,"embeddings",embeddings_file_to_delete)
+                os.remove(embeddings_file_to_delete_abs_path)
+                print("Removed embeddings file "+embeddings_file_to_delete)
             except OSError as e:  ## if failed, report it back to the user ##
                 print ("Error removing embeddings file: %s - %s." % (e.filename, e.strerror))
             
