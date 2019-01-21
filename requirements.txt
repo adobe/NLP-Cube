@@ -5,6 +5,7 @@ nltk>=3.2.5
 requests>=2.18.4
 dyNET>=2.0.3
 flask
+beautifulsoup4
 
 # Parse XML
 xmltodict==0.11.0

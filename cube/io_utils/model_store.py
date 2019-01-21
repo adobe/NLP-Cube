@@ -92,12 +92,12 @@ class ModelStore(object):
     Abstraction layer for working with models.
     """
     
-    MODELS_PATH_CLOUD = 'https://nlpcube.blob.core.windows.net/models'
-    MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
+    CLOUD_MODEL_REPO_LOCATION = 'https://github.com/adobe/NLP-Cube/blob/master/requirements.txt'    
+    #MODELS_PATH_CLOUD = None #'https://nlpcube.blob.core.windows.net/models'
+    #MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
     
-    def __init__(self, disk_path=None, cloud_path=None):
-        #self.disk_path = disk_path or self.MODELS_PATH_LOCAL
-        self.cloud_path = cloud_path or self.MODELS_PATH_CLOUD
+    def __init__(self, disk_path=None, cloud_path=None):        
+        self.cloud_path = cloud_path #self.MODELS_PATH_CLOUD
         
         if disk_path == None:
             self.disk_path = os.path.join(str(Path.home()), ".nlpcube/models")
@@ -113,6 +113,13 @@ class ModelStore(object):
         self.model = {}
         self.metadata = ModelMetadata()
 
+    def _get_models_path_cloud (self):
+        if self.cloud_path != None:
+            return self.cloud_path 
+        r = requests.get(CLOUD_MODEL_REPO_LOCATION, allow_redirects=True)
+        print(r.content) # XXX to remove
+        return str(r.content)
+            
     def _list_folders (self, lang_code=None):              
         output = [os.path.basename(os.path.normpath(dI)) for dI in os.listdir(self.disk_path) if os.path.isdir(os.path.join(self.disk_path,dI))]
         if lang_code != None:
@@ -298,7 +305,8 @@ class ModelStore(object):
         """
         
         model_name = '{}-{}'.format(lang_code, version)
-        model_path_cloud = os.path.join(self.cloud_path, '{}.zip'.format(model_name))
+        cloud_path = self._get_models_path_cloud()
+        model_path_cloud = os.path.join(cloud_path, '{}.zip'.format(model_name))
         model_path_local = os.path.join(self.disk_path, '{}.zip'.format(model_name))
         
         # Download and extract models for provided language. 
@@ -475,6 +483,20 @@ class ModelStore(object):
         """
         Returns a list of tuples of the models found online
         ex: [("en",1.0),("en",1.1),("es",1.0)...]
+        
+        """
+        from bs4 import BeautifulSoup
+        
+        page = requests.get(CLOUD_MODEL_REPO_LOCATION).text
+        print (page)
+        soup = BeautifulSoup(page, 'html.parser')
+        models = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('zip')]
+    
+        print(models)
+        
+        return online_models
+        
+        
         """
         request = requests.get(self.MODELS_PATH_CLOUD_ALL)
         data = xmltodict.parse(request.content)
@@ -487,6 +509,7 @@ class ModelStore(object):
         if lang_code:
             online_models = [x for x in online_models if lang_code in x[0]]            
         return online_models
+        """
         
     def _copy_file(self, input_folder, output_folder, file_name):
         src_file = os.path.join(input_folder, file_name)
