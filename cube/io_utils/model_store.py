@@ -45,8 +45,8 @@ class ModelMetadata(object):
             raise IOException("Metadata file ["+filename+"] not found!")
         if not filename.endswith("metadata.json"):
             raise IOException("Metadata file ["+filename+"] does not seem to be valid!")
-        
-        data = json.load(fopen(filename,"r"))
+        with fopen(filename,"r") as f:
+            data = json.load(f)
         if sys.version_info[0] == 2: 
             items = data.iteritems()
         else:
@@ -70,7 +70,8 @@ class ModelMetadata(object):
         obj["model_build_date"] = self.model_build_date
         obj["model_build_source"] = self.model_build_source
         obj["notes"] = self.notes
-        json.dump(obj, fopen(filename,"w"), indent=4, sort_keys=True)    
+        with fopen(filename,"w") as f:
+            json.dump(obj, f, indent=4, sort_keys=True)    
         
     def info(self):
         """
@@ -92,7 +93,7 @@ class ModelStore(object):
     Abstraction layer for working with models.
     """
     
-    CLOUD_MODEL_REPO_LOCATION = 'https://github.com/adobe/NLP-Cube/blob/master/requirements.txt'    
+    CLOUD_MODEL_REPO_LOCATION = 'https://raw.githubusercontent.com/adobe/NLP-Cube/configurable-model-repo/MODEL_REPOSITORY'    
     #MODELS_PATH_CLOUD = None #'https://nlpcube.blob.core.windows.net/models'
     #MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
     
@@ -116,9 +117,8 @@ class ModelStore(object):
     def _get_models_path_cloud (self):
         if self.cloud_path != None:
             return self.cloud_path 
-        r = requests.get(CLOUD_MODEL_REPO_LOCATION, allow_redirects=True)
-        print(r.content) # XXX to remove
-        return str(r.content)
+        r = requests.get(self.CLOUD_MODEL_REPO_LOCATION, allow_redirects=True)
+        return r.content.decode("utf-8").strip() # convert b'' to string
             
     def _list_folders (self, lang_code=None):              
         output = [os.path.basename(os.path.normpath(dI)) for dI in os.listdir(self.disk_path) if os.path.isdir(os.path.join(self.disk_path,dI))]
@@ -155,7 +155,7 @@ class ModelStore(object):
                 #self._load(lang_code,latest_version)                
                 return os.path.join(self.disk_path,lang_code+"-"+str(latest_version))
             else: # no models found, check online according to version parameter
-                if version=="latest":
+                if version=="latest":                    
                     version = self._version_to_download(lang_code, version=version)
                     if version!=None:
                         print("Latest version found online: "+lang_code+"-"+str(version))
@@ -287,11 +287,26 @@ class ModelStore(object):
         
         print("Importing model {}".format(model_file))
         
-        self._download_and_extract_lang_model(model_file, None)        
+        self._download_and_extract_model_zip(model_file, None)        
         self.metadata.read(os.path.join(self.disk_path,model_file.replace(".zip",""),"metadata.json"))
                 
-        self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)  
-            
+        # check embeddings url        
+        if self.metadata.embeddings_remote_link != "": # don't download anything if link is not set
+            import regex as re
+            regex = re.compile(
+            r'^(?:http|ftp)s?://' # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+            r'localhost|' #localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+            r'(?::\d+)?' # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+            if re.match(regex, "http://www.example.com") is not None:
+                # Download Facebook embeddings based on the metadata read from the model
+                self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)
+            else: # some error in malformed URL probably
+                raise Exception("The 'embeddings_remote_link' in the metadata file is malformed: ["+str(self.metadata.embeddings_remote_link)+"]")
+                    
         print("\nModel {} was successfully imported.".format(model_file))
         
     def _download_model(self, lang_code, version):
@@ -310,11 +325,12 @@ class ModelStore(object):
         model_path_local = os.path.join(self.disk_path, '{}.zip'.format(model_name))
         
         # Download and extract models for provided language. 
-        self._download_and_extract_lang_model(model_path_cloud, model_path_local)        
+        self._download_and_extract_model_zip(url=model_path_cloud, file_name=model_path_local)        
         self.metadata.read(os.path.join(self.disk_path,lang_code+"-"+str(version),"metadata.json"))
-        
-        # Download Facebook embeddings based on the metadata read from the model
+                
+         # Download embeddings based on the metadata read from the model
         self._download_embeddings(self.metadata.embeddings_remote_link, self.metadata.embeddings_file_name)
+        
         sys.stdout.write("\n")
 
     def _download_with_progress_bar(self, url, local_filename):
@@ -322,19 +338,19 @@ class ModelStore(object):
         total_size = int(r.headers['Content-Length'].strip())
         current_size = 0
         #request_content = []        
-        f = fopen(local_filename, 'wb')
-        for buf in r.iter_content(4096*16):            
-            if buf:
-                #request_content.append(buf)
-                f.write(buf)
-                current_size += len(buf)  
-                done = int(40 * current_size / total_size)
-                sys.stdout.write("\r[%s%s] %3.1f%%, downloading %.2f/%.2f MB ..." % ('=' * done, ' ' * (40-done), 100* current_size/total_size, current_size/1024/1024, total_size/1024/1024) )    
-                sys.stdout.flush()
-        #return b"".join(request_content)
-        f.close()
+        with fopen(local_filename, 'wb') as f:
+            for buf in r.iter_content(4096*16):            
+                if buf:
+                    #request_content.append(buf)
+                    f.write(buf)
+                    current_size += len(buf)  
+                    done = int(40 * current_size / total_size)
+                    sys.stdout.write("\r[%s%s] %3.1f%%, downloading %.2f/%.2f MB ..." % ('=' * done, ' ' * (40-done), 100* current_size/total_size, current_size/1024/1024, total_size/1024/1024) )    
+                    sys.stdout.flush()
+            #return b"".join(request_content)
         
-    def _download_and_extract_lang_model(self, url, file_name, force=False):
+        
+    def _download_and_extract_model_zip(self, url, file_name, force=False):
         if file_name:
             if os.path.exists(file_name):
                 if force:
@@ -395,10 +411,10 @@ class ModelStore(object):
         or None if there's nothing to be done.
         """        
         online_models = self.list_online_models(lang_code)
-                
+
         # filter by lang code
         lang_models = [x for x in online_models if lang_code in x[0]]
-        
+
         if len(lang_models)==0:
             return None # nothing found online
         
@@ -484,20 +500,19 @@ class ModelStore(object):
         Returns a list of tuples of the models found online
         ex: [("en",1.0),("en",1.1),("es",1.0)...]
         
-        """
+        """        
+        # get model store
+        cloud_path = self._get_models_path_cloud()
+        
+        # now parse HTML page
         from bs4 import BeautifulSoup
         
-        page = requests.get(CLOUD_MODEL_REPO_LOCATION).text
-        print (page)
+        page = requests.get(cloud_path).text
+        #print (page) # debug
         soup = BeautifulSoup(page, 'html.parser')
-        models = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('zip')]
-    
-        print(models)
-        
-        return online_models
-        
-        
-        """
+        online_models = [node.get('href') for node in soup.find_all('a') if node.get('href').endswith('zip')]  
+
+        """ # old version, interrogating azure repo
         request = requests.get(self.MODELS_PATH_CLOUD_ALL)
         data = xmltodict.parse(request.content)
 
@@ -505,11 +520,12 @@ class ModelStore(object):
         online_models = [item['Name']
                       for item in data['EnumerationResults']['Blobs']['Blob']
                       if item['Name'].endswith('.zip')]
+        """
         online_models = [(x.replace(".zip","").split("-")[0],float(x.replace(".zip","").split("-")[1])) for x in online_models if "-" in x]
         if lang_code:
             online_models = [x for x in online_models if lang_code in x[0]]            
         return online_models
-        """
+        
         
     def _copy_file(self, input_folder, output_folder, file_name):
         src_file = os.path.join(input_folder, file_name)

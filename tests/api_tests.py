@@ -44,18 +44,19 @@ class Api_Tests(unittest.TestCase):
         
     
     def test_0_init_model_store_and_list_online_models(self):       
-        print("\n\33[33m{}\33[0m".format("Loading the model store and querying the online database ..."))
+        print("\n\33[33m{}\33[0m".format("0. Loading the model store and querying the online database ..."))
         from cube.io_utils.model_store import ModelMetadata, ModelStore
         model_store_object = ModelStore()
         online_models = model_store_object.list_online_models()
-        #print("Found models online:"+str(online_models))        
+        print("Found "+str(len(online_models))+ " models online.")      
         self.assertTrue(len(online_models)>0)
     
     def test_1_1_download_and_run_an_online_model_latest_version(self):                                    
-        print("\n\33[33m{}\33[0m".format("Loading an online model (latest_version) ..."))
+        print("\n\33[33m{}\33[0m".format("1.1 Loading an online model (latest_version) ..."))
         from cube.api import Cube
         cube = Cube(verbose=True)
-        cube.load('en_small', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
+        #cube.load('en_small', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
+        cube.load('bxr', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
         cube.metadata.info()
         text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
         sentences = cube(text)
@@ -63,10 +64,10 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)        
     
     def test_1_2_download_and_run_an_online_model_specific_version(self):                                    
-        print("\n\33[33m{}\33[0m".format("Loading an online model (en, 1.1) ..."))
+        print("\n\33[33m{}\33[0m".format("1.2. Loading an online model (sme, 1.0) ..."))
         from cube.api import Cube
         cube = Cube(verbose=True)
-        cube.load('en', version='1.1', tokenization=True, compound_word_expanding=False, tagging=False, lemmatization=False, parsing=False)
+        cube.load('sme', version='1.0', tokenization=True, compound_word_expanding=False, tagging=False, lemmatization=False, parsing=False)
         cube.metadata.info()
         text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
         sentences = cube(text)
@@ -75,7 +76,7 @@ class Api_Tests(unittest.TestCase):
     
     # This test needs my_model-1.0 to be locally created with main_tests.py
     def test_2_run_a_local_model(self):  
-        print("\n\33[33m{}\33[0m".format("Run a local model that does not have embeddings or metadata (running with dummy.vec embeddings) ..."))
+        print("\n\33[33m{}\33[0m".format("2. Run a local model that does not have embeddings or metadata (running with dummy.vec embeddings) ..."))
         embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
         from cube.api import Cube
         cube = Cube(verbose=True)
@@ -87,7 +88,7 @@ class Api_Tests(unittest.TestCase):
         
     
     def test_3_1_package_a_local_model_without_embeddings_link_in_metadata(self):  
-        print("\n\33[33m{}\33[0m".format("Package a local model without an embeddings file ..."))
+        print("\n\33[33m{}\33[0m".format("3.1. Package a local model without an embeddings file ..."))
         
         # create metadata file
         with open(os.path.join(self.model_path,"metadata.json"),"w",encoding="utf-8") as f:
@@ -122,7 +123,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(test)
     
     def test_3_2_import_model_in_store(self):      
-        print("\n\33[33m{}\33[0m".format("Import locally created model in store ..."))        
+        print("\n\33[33m{}\33[0m".format("3.2. Import locally created model in store ..."))        
         command = "python3 " + os.path.join(self.scripts_path, "import_model.py") + " " + os.path.join(self.local_model_repo,"my_model-1.0.zip")        
         print("\n\t\t\33[32m{}\n{}\33[0m".format("Import command:",command))        
         '''popen = subprocess.Popen(command.split(" ") , stdout=subprocess.PIPE, universal_newlines=True)
@@ -148,8 +149,9 @@ class Api_Tests(unittest.TestCase):
         
     
     def test_3_3_run_model_with_manual_embeddings(self):  
-        print("\n\33[33m{}\33[0m".format("Run a local model with manual embeddings ..."))                
+        print("\n\33[33m{}\33[0m".format("3.3. Run a local model with manual embeddings ..."))                
         embeddings = os.path.join(self.root_path, "examples","wiki.dummy.vec")
+        print("\t\tPath to local manual embeddings file: "+embeddings)
         from cube.api import Cube
         cube = Cube(verbose=True)
         cube.load('my_model', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True, local_embeddings_file=embeddings)        
@@ -159,7 +161,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)   
 
     def test_4_1_package_a_local_model_with_embeddings_link_in_metadata(self):  
-        print("\n\33[33m{}\33[0m".format("Package a local model with an external embeddings file link..."))
+        print("\n\33[33m{}\33[0m".format("4.1. Package a local model with an external embeddings file link..."))
         
         # create metadata file
         with open(os.path.join(self.model_path,"metadata.json"),"w",encoding="utf-8") as f:
@@ -196,7 +198,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(test)
     
     def test_4_2_import_model_in_store(self):  
-        print("\n\33[33m{}\33[0m".format("Import locally created model in store (with prior cleanup)..."))        
+        print("\n\33[33m{}\33[0m".format("4.2. Import locally created model in store (with prior cleanup)..."))        
         
         # first check local models         
         from cube.io_utils.model_store import ModelMetadata, ModelStore
@@ -241,7 +243,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(test)
         
     def test_4_3_run_model_with_default_external_embeddings(self):  
-        print("\n\33[33m{}\33[0m".format("Run a local model with default external embeddings ..."))                        
+        print("\n\33[33m{}\33[0m".format("4.3. Run a local model with default external embeddings ..."))                        
         from cube.api import Cube
         cube = Cube(verbose=True)
         cube.load('my_model', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)        
@@ -251,7 +253,7 @@ class Api_Tests(unittest.TestCase):
         self.assertTrue(len(sentences[0])>0)       
     
     def test_5_cleanup(self):
-        print("\n\33[33m{}\33[0m".format("Cleanup after myself ..."))                        
+        print("\n\33[33m{}\33[0m".format("5. Cleanup after myself ..."))                        
         
         # delete my_model from the store, if it exists
         from cube.io_utils.model_store import ModelMetadata, ModelStore
