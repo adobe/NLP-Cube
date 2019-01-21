@@ -93,7 +93,7 @@ class ModelStore(object):
     Abstraction layer for working with models.
     """
     
-    CLOUD_MODEL_REPO_LOCATION = 'https://raw.githubusercontent.com/adobe/NLP-Cube/configurable-model-repo/MODEL_REPOSITORY'    
+    CLOUD_MODEL_REPO_LOCATION = 'https://raw.githubusercontent.com/adobe/NLP-Cube/master/MODEL_REPOSITORY'    
     #MODELS_PATH_CLOUD = None #'https://nlpcube.blob.core.windows.net/models'
     #MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
     
