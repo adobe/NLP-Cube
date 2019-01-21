@@ -78,9 +78,12 @@ class Cube(object):
         embeddings = WordEmbeddings(verbose=False)
         if self._verbose:
             sys.stdout.write('\tLoading embeddings ... \n')
-        if not local_models_repository: # load an official model which has an embeddings file
-            embeddings.read_from_file(os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name), None,
-                                  full_load=False)
+            
+        if not local_models_repository: # load an official model 
+            if not local_embeddings_file: # load the default embedding in the model 
+                embeddings.read_from_file(os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name), None, full_load=False)
+            else: # user has specified a local embeddings file
+                embeddings.read_from_file(local_embeddings_file, None, full_load=False)
         else:
             if local_embeddings_file == None and self.metadata == None:
                 raise Exception("When using a locally-trained model please specify a path to a local embeddings file (local_embeddings_file cannot be None).")
