@@ -495,8 +495,8 @@ class TaggerTrainer:
             test_acc = self.eval(self.testset)
             sys.stdout.write(" accuracy=" + str(test_acc) + "\n")
         best_dev_upos = dev_upos
-        best_dev_xpos = dev_upos
-        best_dev_attrs = dev_upos
+        best_dev_xpos = dev_xpos
+        best_dev_attrs = dev_attrs
         best_dev_overall = (dev_upos + dev_xpos + dev_attrs) / 3
 
         while itt_no_improve > 0:
