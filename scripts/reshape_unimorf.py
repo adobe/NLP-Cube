@@ -14,7 +14,10 @@ def get_upos(unimorf):
 
 def get_attrs(unimorf, upos):
     parts = unimorf.split(';')
-    parts.remove(upos)
+    if upos not in parts:
+        print (upos)
+    else:
+        parts.remove(upos)
     parts = sorted(parts)
     attrs = ''
     for part in parts:
