@@ -42,9 +42,9 @@ class ModelMetadata(object):
     
     def read(self, filename):                            
         if not os.path.exists(filename):
-            raise IOException("Metadata file ["+filename+"] not found!")
+            raise Exception("Metadata file ["+filename+"] not found!")
         if not filename.endswith("metadata.json"):
-            raise IOException("Metadata file ["+filename+"] does not seem to be valid!")
+            raise Exception("Metadata file ["+filename+"] does not seem to be valid!")
         with fopen(filename,"r") as f:
             data = json.load(f)
         if sys.version_info[0] == 2: 
@@ -103,16 +103,16 @@ class ModelStore(object):
         if disk_path == None:
             self.disk_path = os.path.join(str(Path.home()), ".nlpcube/models")
             if not os.path.exists(self.disk_path):
-                os.makedirs(self.disk_path)
-        
-            self.embeddings_repository = os.path.join(self.disk_path, "embeddings")
-            if not os.path.exists(self.embeddings_repository):
-                os.makedirs(self.embeddings_repository)
+                os.makedirs(self.disk_path)        
         else:
             self.disk_path = disk_path
-            
+
+        self.embeddings_repository = os.path.join(self.disk_path, "embeddings")
+        if not os.path.exists(self.embeddings_repository):
+            os.makedirs(self.embeddings_repository)            
+        
         self.model = {}
-        self.metadata = ModelMetadata()
+        self.metadata = ModelMetadata()        
 
     def _get_models_path_cloud (self):
         if self.cloud_path != None:

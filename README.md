@@ -74,4 +74,67 @@ or, in bibtex format:
   abstract  = {We introduce NLP-Cube: an end-to-end Natural Language Processing framework, evaluated in CoNLL's "Multilingual Parsing from Raw Text to Universal Dependencies 2018" Shared Task. It performs sentence splitting, tokenization, compound word expansion, lemmatization, tagging and parsing. Based entirely on recurrent neural networks, written in Python, this ready-to-use open source system is freely available on GitHub. For each task we describe and discuss its specific network architecture, closing with an overview on the results obtained in the competition.},
   url       = {http://www.aclweb.org/anthology/K18-2017}
 }
+
+## Languages and performance
+
+
+|Language|Model|Token|Sentence|UPOS|XPOS|AllTags|Lemmas|UAS|LAS|
+|--------|-----|:---:|:------:|:--:|:--:|:-----:|:----:|:-:|:-:|
+|Afrikaans|
+| |af-1.0|99.97|99.65|97.28|93.0|91.53|96.42|87.61|83.96|
+|Ancient Greek|
+| |grc-1.0|100.0|18.13|94.92|95.32|84.17|86.59|72.44|67.73|
+|Arabic|
+| |ar-1.0|99.98|61.05|73.42|69.75|68.12|41.26|53.94|50.31|
+|Basque|
+| |eu-1.0|99.97|99.83|94.93|99.97|87.24|90.75|85.49|81.35|
+|Bulgarian|
+| |bg-1.0|99.94|92.8|98.51|95.6|93.99|91.59|92.38|88.84|
+|Buryat|
+| |bxr-1.0|83.26|31.52|38.08|83.26|16.74|16.05|14.44|6.5|
+|Catalan|
+| |ca-1.0|99.98|99.27|98.17|98.23|96.63|97.83|92.33|89.95|
+|Croatian|
+| |hr-1.0|99.92|95.56|97.66|99.92|89.49|93.85|90.61|85.77|
+|Czech|
+| |cs-1.0|99.99|83.79|98.75|95.54|93.61|95.79|90.67|88.46|
+|Danish|
+| |da-1.0|99.85|91.79|96.79|99.85|94.29|96.53|85.93|83.05|
+|English|
+| |en-1.0|99.25|72.8|95.34|94.83|92.48|95.62|84.7|81.93|
+|Estonian|
+| |et-1.0|99.9|91.81|96.02|97.18|91.35|93.26|86.04|82.29|
+|Finnish|
+| |fi-1.0|99.7|88.73|95.45|96.44|90.29|83.69|87.18|83.89|
+|French|
+| |fr-1.0|99.68|94.2|92.61|95.46|90.79|93.08|84.96|80.91|
+|Galician|
+| |gl-1.0|99.89|97.16|83.01|82.51|81.58|82.95|65.69|61.08|
+|German|
+| |de-1.0|99.7|81.19|91.38|94.26|80.37|75.8|79.6|74.35|
+|Gothic|
+| |got-1.0|100.0|21.59|93.1|93.8|80.58|83.74|67.23|59.67|
+|Greek|
+| |el-1.0|99.88|89.46|93.7|93.54|87.14|88.92|85.63|82.05|
+|Hebrew|
+| |he-1.0|99.93|99.69|54.13|54.17|51.49|54.13|34.84|32.29|
+|Hindi|
+| |hi-1.0|99.98|98.84|97.16|96.43|90.29|97.48|94.66|91.26|
+|Hungarian|
+| |hu-1.0|99.8|94.18|94.52|99.8|86.22|91.07|81.57|75.95|
+|Irish|
+| |ga-1.0|99.56|95.38|90.95|90.07|74.1|87.51|76.32|64.74|
+|Old Church Slavonic|
+| |cu-1.0|100.0|28.99|92.88|93.09|81.85|83.16|72.18|65.43|
+|Persian|
+| |fa-1.0|100.0|97.91|96.34|96.17|95.51|89.4|88.35|85.08|
+|Spanish|
+| |es-1.0|99.98|98.32|98.0|98.0|96.62|98.05|90.53|88.27|
+|Upper Sorbian|
+| |hsb-1.0|98.59|69.15|59.61|98.59|37.96|22.33|11.11|3.35|
+
+
+Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script.
+
+Note: we are in the process of training version 1.1 of the models which do not require embeddings (performance will be roughly similar, but models won't need the large vector embedding files).
 ```
