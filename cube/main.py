@@ -526,7 +526,7 @@ def parse_run(params):
             encodings = Encodings(verbose=False)
             encodings.load(os.path.join(params.models, "lemmatizer.encodings"))
     if lemmatize == True:
-        if not os.path.isfile(os.path.join(params.models, "lemmatizer.bestACC")):
+        if not os.path.isfile(os.path.join(params.models, "lemmatizer.bestACC")) and not os.path.isfile(os.path.join(params.models, "lemmatizer.bestAcc")):
             sys.stdout.write("\n\tLemmatization model not found!")
             sys.stdout.flush()
             sys.exit(1)
@@ -661,7 +661,10 @@ def parse_run(params):
         from io_utils.config import LemmatizerConfig
         config = LemmatizerConfig(os.path.join(params.models, "lemmatizer.conf"))
         lemmatizer_object = FSTLemmatizer(config, encodings, embeddings, runtime=True)
-        lemmatizer_object.load(os.path.join(params.models, "lemmatizer.bestACC"))
+        if os.path.isfile(os.path.join(params.models, "lemmatizer.bestACC")):
+            lemmatizer_object.load(os.path.join(params.models, "lemmatizer.bestACC"))
+        else:
+            lemmatizer_object.load(os.path.join(params.models, "lemmatizer.bestAcc"))
         sequences = lemmatizer_object.lemmatize_sequences(sequences)
         del lemmatizer_object  # free memory
         sys.stdout.write(" done\n")
