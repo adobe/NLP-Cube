@@ -20,7 +20,7 @@ jobs:
           name: upload to pypi
           command: |
             python3 -m pip install --user --upgrade twine
-            python3 -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* -u $USERNAME -p $PASSWORD
+            python3 -m twine upload dist/* -u $USERNAME -p $PASSWORD
 workflows:
   version: 2
   build_and_upload:
