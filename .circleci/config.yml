@@ -18,7 +18,7 @@ jobs:
           name: upload to pypi
           command: |
             python3 -m pip install --user --upgrade twine
-            python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
+            python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
 workflows:
   version: 2
   build_and_upload:
