@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  test_api_and_main:
+  test_api_and_main_and_upload:
     docker:
       - image: circleci/python
     steps:
@@ -15,25 +15,15 @@ jobs:
             cd /home/circleci/project/
             pip3 install --user -r requirements.txt
       - run:
-          name: test api
-          command: |
-            cd /home/circleci/project/
-            python3 tests/api_tests.py 
-      - run:
-          name: test maim
+          name: test main
           command: |
             cd /home/circleci/project/
             python3 tests/main_tests.py 
-            
-  build:
-    docker:
-      - image: circleci/python
-    steps:
-      - checkout
-      - run: 
-          name: init .pypirc
+      - run:
+          name: test api
           command: |
-            echo -e "[pypi]" >> ~/.pypirc
+            cd /home/circleci/project/
+            python3 tests/api_tests.py
       - run:
           name: create packages
           command: |
@@ -44,11 +34,10 @@ jobs:
           command: |
             python3 -m pip install --user --upgrade twine
             python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
+            
+
 workflows:
   version: 2
-  test_api_and_main:
+  test_api_and_main_and_upload:
     jobs:
-      - test_api_and_main
-  build_and_upload:
-    jobs:
-      - build
+      - test_api_and_main_and_upload
