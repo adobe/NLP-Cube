@@ -13,12 +13,12 @@ jobs:
           name: test api
           command: |
             cd /home/circleci/project/
-            python3 tests/api_test.py 
+            python3 tests/api_tests.py 
       - run:
           name: test maim
           command: |
             cd /home/circleci/project/
-            python3 tests/main_test.py 
+            python3 tests/main_tests.py 
             
   build:
     docker:
