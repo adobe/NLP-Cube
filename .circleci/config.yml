@@ -10,6 +10,11 @@ jobs:
           command: |
             echo -e "[pypi]" >> ~/.pypirc
       - run:
+          name: install requirements
+          command: |
+            cd /home/circleci/project/
+            pip3 install -r requirements.txt
+      - run:
           name: test api
           command: |
             cd /home/circleci/project/
