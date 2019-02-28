@@ -40,4 +40,4 @@ workflows:
   version: 2
   test_api_and_main_and_upload:
     jobs:
-      - test_api_and_main
+      - test_api_and_main_and_upload
