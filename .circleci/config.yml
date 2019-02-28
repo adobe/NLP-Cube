@@ -9,8 +9,6 @@ jobs:
           name: init .pypirc
           command: |
             echo -e "[pypi]" >> ~/.pypirc
-            echo -e "username = $USERNAME" >> ~/.pypirc
-            echo -e "password = $PASSWORD" >> ~/.pypirc
       - run:
           name: create packages
           command: |
