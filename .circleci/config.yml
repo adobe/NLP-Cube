@@ -1,5 +1,23 @@
 version: 2
 jobs:
+  test_api_and_main:
+    docker:
+      - image: circleci/python
+    steps:
+      - checkout
+      - run: 
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+      - run:
+          name: test api
+          command: |
+            python3 tests/api_test.py 
+      - run:
+          name: test maim
+          command: |
+            python3 tests/main_test.py 
+            
   build:
     docker:
       - image: circleci/python
@@ -21,6 +39,9 @@ jobs:
             python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
 workflows:
   version: 2
+  test_api_and_main:
+    jobs:
+      - test_api_and_main
   build_and_upload:
     jobs:
       - build
