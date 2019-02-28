@@ -12,12 +12,13 @@ jobs:
       - run:
           name: test api
           command: |
-            cd NLP-Cube
+            ls /home/circleci/project/
+            cd /home/circleci/project/NLP-Cube
             python3 tests/api_test.py 
       - run:
           name: test maim
           command: |
-            cd NLP-Cube
+            cd /home/circleci/project/NLP-Cube
             python3 tests/main_test.py 
             
   build:
