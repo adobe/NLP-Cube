@@ -6,7 +6,7 @@
 
 # NLP-Cube
 
-NLP-Cube is an opensource Natural Language Processing Framework with support for languages which are included in the [UD Treebanks](http://universaldependencies.org/). Use NLP-Cube if you need:
+NLP-Cube is an opensource Natural Language Processing Framework with support for languages which are included in the [UD Treebanks](http://universaldependencies.org/) (list of all available languages below). Use NLP-Cube if you need:
 * Sentence segmentation
 * Tokenization
 * POS Tagging (both language independent (UPOSes) and language dependent (XPOSes and ATTRs))
@@ -22,9 +22,9 @@ Example input: **"This is a test."**, output is:
 5       .       .       PUNCT   .       _       4       punct   SpaceAfter=No
 ```
 
-**For user that just want to run it**, here's how to set up and use NLP-Cube in a few lines: [Quick Start Tutorial](examples/1.%20NLP-Cube%20Quick%20Tutorial.ipynb).
+**If you just want to run it**, here's how to set it up and use NLP-Cube in a few lines: [Quick Start Tutorial](examples/1.%20NLP-Cube%20Quick%20Tutorial.ipynb).
 
-For **advanced users that want to create and train their own models**, please the the Advanced Tutorials in ``examples/``, starting with how to [locally install NLP-Cube](examples/2.%20Advanced%20usage%20-%20NLP-Cube%20local%20installation.ipynb).
+For **advanced users that want to create and train their own models**, please see the Advanced Tutorials in ``examples/``, starting with how to [locally install NLP-Cube](examples/2.%20Advanced%20usage%20-%20NLP-Cube%20local%20installation.ipynb).
 
 ## Simple (PIP) installation
 
@@ -40,11 +40,15 @@ The summary would be:
 ```
 from cube.api import Cube       # import the Cube object
 cube=Cube(verbose=True)         # initialize it
-cube.load("en")                 # select the desired language (it will auto-download the model)
+cube.load("en")                 # select the desired language (it will auto-download the model on first run)
 text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
 sentences=cube(text)            # call with your own text (string) to obtain the annotations
 ```
-The ``sentences`` object now contains the annotated text, one sentence at a time.
+The ``sentences`` object now contains the annotated text, one sentence at a time. To print the third words's POS (in the first sentence), just run:
+```
+print(sentences[0][2].upos) # [0] is the first sentence and [2] is the third word
+```
+Each token object has the following attributes: ``index``, ``word``, ``lemma``, ``upos``, ``xpos``, ``attrs``, ``head``, ``label``, ``deps``, ``space_after``. For detailed info about each attribute please see the standard CoNLL format.
 
 ### Webserver Usage 
 
@@ -85,9 +89,9 @@ or, in bibtex format:
 
 ## Languages and performance
 
-Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script. Please see more info about what [each metric represents](http://universaldependencies.org/conll18/evaluation.html) here.
+Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script. Please see more info about what [each metric represents here](http://universaldependencies.org/conll18/evaluation.html). 
 
-Note: we are in the process of training version 1.1 of the models which do not require embeddings (performance will be roughly similar, but models won't need the large vector embedding files).
+Note: we are in the process of training version 1.1 of the models which do not require embeddings (performance will be roughly similar, but models won't need the large vector embedding files). 
 
 |Language|Model|Token|Sentence|UPOS|XPOS|AllTags|Lemmas|UAS|LAS|
 |--------|-----|:---:|:------:|:--:|:--:|:-----:|:----:|:-:|:-:|
@@ -194,5 +198,4 @@ Note: we are in the process of training version 1.1 of the models which do not r
 | |ug-1.0|99.91|83.83|87.85|91.58|73.93|90.17|74.36|60.5|
 |Vietnamese|
 | |vi-1.0|87.2|92.88|78.35|76.43|76.18|81.47|51.59|45.49|
-
 
