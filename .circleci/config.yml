@@ -12,10 +12,12 @@ jobs:
       - run:
           name: test api
           command: |
+            cd NLP-Cube
             python3 tests/api_test.py 
       - run:
           name: test maim
           command: |
+            cd NLP-Cube
             python3 tests/main_test.py 
             
   build:
