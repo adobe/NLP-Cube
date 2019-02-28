@@ -13,7 +13,7 @@ jobs:
           name: install requirements
           command: |
             cd /home/circleci/project/
-            pip3 install -r requirements.txt
+            pip3 install --user -r requirements.txt
       - run:
           name: test api
           command: |
