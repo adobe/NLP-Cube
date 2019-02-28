@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python
+    steps:
+      - checkout
+      - run: 
+          name: init .pypirc
+          command: |
+            echo -e "[pypi]" >> ~/.pypirc
+      - run:
+          name: create packages
+          command: |
+            python3 setup.py sdist
+            python3 setup.py bdist_wheel
+      - run:
+          name: upload to pypi
+          command: |
+            python3 -m pip install --user --upgrade twine
+            python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD
+workflows:
+  version: 2
+  build_and_upload:
+    jobs:
+      - build
