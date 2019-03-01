@@ -32,9 +32,25 @@ jobs:
       - run:
           name: upload to pypi
           command: |
-            python3 -m pip install --user --upgrade twine
-            python3 -m twine upload dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
-            
+            if [[ "$PYPI_USERNAME" == "" ]]; then
+              echo "Skip upload"
+              exit 0
+            fi
+            python3 -m pip install --user jq
+            if [[ "$CIRCLE_BRANCH" == "master" ]]; then
+              PYPI="pypi.org"
+            else
+              PYPI="test.pypi.org"
+            fi
+            LATEST_VERSION="$(curl -s https://$PYPI/pypi/nlpcube/json | jq -r '.info.version')"
+            THIS_VERSION=`python3 <<< "import pkg_resources;print(pkg_resources.require('nlpcube')[0].version)"`
+            if [[ $THIS_VERSION != $LATEST_VERSION ]]; then
+              echo "\n\nthis: $THIS_VERSION - latest: $LATEST_VERSION => releasing to $PYPI\n\n"
+              python3 -m pip install --user --upgrade twine
+              python3 -m twine upload --repository-url https://$PYPI/legacy/ dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
+            else
+              echo "this: $THIS_VERSION = latest: $LATEST_VERSION => skip release"
+            fi
 
 workflows:
   version: 2
