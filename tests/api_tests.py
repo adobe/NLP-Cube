@@ -167,7 +167,7 @@ class Api_Tests(unittest.TestCase):
         with open(os.path.join(self.model_path,"metadata.json"),"w",encoding="utf-8") as f:
             f.write("{\n")            
             f.write('"embeddings_file_name": "wiki.got.vec",\n')
-            f.write('"embeddings_remote_link": "https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.got.vec",\n')
+            f.write('"embeddings_remote_link": "https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki.got.vec",\n')            
             f.write('"language": "UD_English",\n')
             f.write('"language_code": "my_model",\n')
             f.write('"model_build_date": "2020-01-01",\n')
