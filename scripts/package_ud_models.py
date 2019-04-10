@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-
 import sys
 import os
-from io_utils.model_store import ModelMetadata, ModelStore
+from pathlib import Path
+
+# Append parent dir to sys path.
+os.sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from cube.io_utils.model_store import ModelMetadata, ModelStore
 from datetime import datetime
 
     
@@ -102,7 +106,7 @@ if __name__ == "__main__":
         # model version: 1.0, 2.1, etc. The value is a float to perform easy comparison between versions. Format must always be #.#
         metadata.model_version = version
         # *full* link to remote embeddings file 
-        metadata.embeddings_remote_link = "https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki."+embedding_code+".vec"
+        metadata.embeddings_remote_link = "https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki."+embedding_code+".vec"
         # name under which the remote file will be saved under locally
         metadata.embeddings_file_name = "wiki."+embedding_code+".vec"
         # token delimiter. Must be either space (default) or "" (for languages like Japanese, Chinese, etc.)
