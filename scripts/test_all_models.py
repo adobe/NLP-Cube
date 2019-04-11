@@ -109,7 +109,7 @@ if __name__ == "__main__":
     model_count = len(online_models)
     
     # step 1. download all models
-    """for online_model in online_models:        
+    for online_model in online_models:        
         model, version = online_model[0], online_model[1]
         if not online_model in local_models:
             print("Downloading {}-{}".format(model,version))
@@ -119,9 +119,10 @@ if __name__ == "__main__":
         cube = Cube()
         cube.load(model, version, local_models_repository = local_model_path)
         #cube.load(model)
-    """ 
+     
     print("\n\n")
-    for online_model in local_models: #local_models+online_models:
+    #for online_model in local_models: #local_models+online_models:
+    for online_model in local_models+online_models:
         model, version = online_model[0], online_model[1]
         print("\n\nTesting model {}-{}, @{}".format(model,version, datetime.today()))
         if model == "pl":
@@ -184,8 +185,8 @@ if __name__ == "__main__":
         local_embeddings_file = os.path.join(local_embeddings_path, metadata.embeddings_file_name)
         cube = Cube(verbose=True)        
         cube.load(model, version, tokenization=True, compound_word_expanding=True, tagging=True,
-             lemmatization=True, parsing=True, local_models_repository = local_model_path, 
-             local_embeddings_file = local_embeddings_file) # all enabled, including compound
+             lemmatization=True, parsing=True, local_models_repository = local_model_path), 
+             #local_embeddings_file = local_embeddings_file) # all enabled, including compound
         start = time.time()        
         sequences = cube(test_data)        
         end = time.time()
