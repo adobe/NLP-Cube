@@ -14,7 +14,9 @@ cube/*.py
 
 models/
 tests/scratch/*
-
+scripts/*.json
+scripts/*.conllu
+scripts/*.md
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*

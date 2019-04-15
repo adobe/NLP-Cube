@@ -72,7 +72,7 @@ model_tuples = [ #folder, language_code, embedding code
     
 if __name__ == "__main__":
     if len(sys.argv)<2:
-        print("Usage: python3 test_all_models.py path-to-UD-repository-root [OPTIONAL-path-to-local-models]")
+        print("Usage: python3 test_all_models.py path-to-UD-repository-root [OPTIONAL-path-to-local-models: where en-1.1 is, etc.]")
         print("Example: python3 test_all_models.py /work/ud-treebanks-v2.2")
         sys.exit(0)
         
@@ -117,11 +117,12 @@ if __name__ == "__main__":
             print("Model {}-{} is already downloaded.".format(model,version))
             continue
         cube = Cube()
-        #cube.load(model, version)???
-        cube.load(model)
+        cube.load(model, version, local_models_repository = local_model_path)
+        #cube.load(model)
      
     print("\n\n")
-    for online_model in online_models:
+    #for online_model in local_models: #local_models+online_models:
+    for online_model in local_models+online_models:
         model, version = online_model[0], online_model[1]
         print("\n\nTesting model {}-{}, @{}".format(model,version, datetime.today()))
         if model == "pl":
@@ -184,8 +185,8 @@ if __name__ == "__main__":
         local_embeddings_file = os.path.join(local_embeddings_path, metadata.embeddings_file_name)
         cube = Cube(verbose=True)        
         cube.load(model, version, tokenization=True, compound_word_expanding=True, tagging=True,
-             lemmatization=True, parsing=True, local_models_repository = local_model_path, 
-             local_embeddings_file = local_embeddings_file) # all enabled, including compound
+             lemmatization=True, parsing=True, local_models_repository = local_model_path), 
+             #local_embeddings_file = local_embeddings_file) # all enabled, including compound
         start = time.time()        
         sequences = cube(test_data)        
         end = time.time()

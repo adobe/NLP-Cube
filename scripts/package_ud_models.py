@@ -12,9 +12,9 @@ from datetime import datetime
     
 if __name__ == "__main__":
 
-    input_models_root_folder = "/work/nlpcube"
-    output_models_root_folder = "/work/nlpcube_zip"    
-    version = 1.0
+    input_models_root_folder = "/work/nlp_cube_models/raw/models-1.1"
+    output_models_root_folder = "/work/nlp_cube_models/models_zip/1.1"    
+    version = 1.1
     
     
     
@@ -105,10 +105,19 @@ if __name__ == "__main__":
         metadata.language_code = language_code
         # model version: 1.0, 2.1, etc. The value is a float to perform easy comparison between versions. Format must always be #.#
         metadata.model_version = version
+        
+        # minimum NLP Cube version required to run
+        metadata.minimum_nlp_cube_version = "1.0.2"
+            
         # *full* link to remote embeddings file 
-        metadata.embeddings_remote_link = "https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki."+embedding_code+".vec"
+        # for 1.0 use "https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki."+embedding_code+".vec"
+        # for 1.1 use "https://raw.githubusercontent.com/adobe/NLP-Cube/master/examples/wiki.dummy.vec"
+        metadata.embeddings_remote_link = "https://raw.githubusercontent.com/adobe/NLP-Cube/master/examples/wiki.dummy.vec"
+        
         # name under which the remote file will be saved under locally
-        metadata.embeddings_file_name = "wiki."+embedding_code+".vec"
+        # for 1.0 use "wiki."+embedding_code+".vec"
+        # for 1.1 use "wiki.dummy.vec"
+        metadata.embeddings_file_name = "wiki.dummy.vec"
         # token delimiter. Must be either space (default) or "" (for languages like Japanese, Chinese, etc.)
         if language_code in "zh ja":
             metadata.token_delimiter = "" 
@@ -122,8 +131,9 @@ if __name__ == "__main__":
         metadata.notes = "Source: ud-treebanks-v2.2"
 
         metadata.info()
-
-        input_folder = os.path.join(input_models_root_folder,local_model)
-        model_store.package_model(input_folder, output_models_root_folder, metadata, should_contain_tokenizer = True, should_contain_compound_word_expander = False, should_contain_lemmatizer = True, should_contain_tagger = True, should_contain_parser = True)
-        
+        try:        
+            input_folder = os.path.join(input_models_root_folder,local_model)
+            model_store.package_model(input_folder, output_models_root_folder, metadata, should_contain_tokenizer = True, should_contain_compound_word_expander = False, should_contain_lemmatizer = True, should_contain_tagger = True, should_contain_parser = True)
+        except:
+            print("Error processing model")
         #break # test just one package

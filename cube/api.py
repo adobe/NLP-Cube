@@ -65,34 +65,32 @@ class Cube(object):
         # Find a local model or download it if it does not exist, returning the local model folder path
         model_folder_path = model_store_object.find(lang_code=language_code, version=version, verbose=self._verbose)
 
-        # Load metadata from the model 
-        if not local_models_repository: # load an official model which has a metadata file
+        # If the model contains metadata, load it        
+        if os.path.isfile(os.path.join(model_folder_path, "metadata.json")): 
             self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
         else:
-            if os.path.exists(os.path.join(model_folder_path, "metadata.json")): # load metadata if available
-                self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
-            else:                                 
-                self.metadata = None
+            self.metadata = None
 
         # Load embeddings                
         embeddings = WordEmbeddings(verbose=False)
         if self._verbose:
             sys.stdout.write('\tLoading embeddings ... \n')
-            
-        if not local_models_repository: # load an official model 
-            if not local_embeddings_file: # load the default embedding in the model 
-                embeddings.read_from_file(os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name), None, full_load=False)
-            else: # user has specified a local embeddings file
-                embeddings.read_from_file(local_embeddings_file, None, full_load=False)
-        else:
-            if local_embeddings_file == None and self.metadata == None:
-                raise Exception("When using a locally-trained model please specify a path to a local embeddings file (local_embeddings_file cannot be None).")
-            if local_embeddings_file == None:
-                raise Exception("Please specify an embeddings file with the `local_embeddings_file` parameter")
-            if not os.path.exists(local_embeddings_file):
-                raise Exception("Cannot read embeddings: {}".format(local_embeddings_file))
-            embeddings.read_from_file(local_embeddings_file, None, full_load=False)            
-
+        if local_embeddings_file is not None:        
+            embeddings.read_from_file(local_embeddings_file, None, full_load=False)
+        else: # embeddings file is not manually specified
+            if self.metadata is None: # no metadata exists
+                raise Exception("When using a locally-trained model please specify a path to a local embeddings file (local_embeddings_file cannot be None).")    
+            else: # load from the metadata path
+                if self.metadata.embeddings_file_name is None or self.metadata.embeddings_file_name == "":
+                    # load a dummy embedding
+                    embeddings.load_dummy_embeddings()
+                else:
+                    # load full embedding from file
+                    emb_path = os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name)
+                    if not os.path.exists(emb_path):
+                        raise Exception("Embeddings file not found: {}".format(emb_path))
+                    embeddings.read_from_file(emb_path, None, full_load=False)
+       
         # 1. Load tokenizer
         if tokenization:
             if not os.path.isfile(os.path.join(model_folder_path, 'tokenizer-tok.bestAcc')):

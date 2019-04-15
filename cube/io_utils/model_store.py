@@ -33,12 +33,15 @@ class ModelMetadata(object):
         self.embeddings_file_name = ""
         # token delimiter. Must be either space (default) or "" (for languages like Japanese, Chinese, etc.)
         self.token_delimiter = " " 
+        # minimum NLP Cube version required to run this model (string, in the xx.xx.xx format)
+        self.minimum_nlp_cube_version = ""                
         # OPTIONAL: model build date: string
         self.model_build_date = ""
         # OPTIONAL: model build source: what corpus was it built from. Ex: UD-Romanian-RRT v2.2 
         self.model_build_source = ""
         # OPTIONAL: other notes, string value
         self.notes = ""
+        
     
     def read(self, filename):                            
         if not os.path.exists(filename):
@@ -64,6 +67,7 @@ class ModelMetadata(object):
         obj["language"] = self.language        
         obj["language_code"] = self.language_code
         obj["model_version"] = self.model_version
+        obj["minimum_nlp_cube_version"] = self.minimum_nlp_cube_version
         obj["embeddings_remote_link"] = self.embeddings_remote_link
         obj["embeddings_file_name"] = self.embeddings_file_name
         obj["token_delimiter"] = self.token_delimiter
@@ -72,20 +76,47 @@ class ModelMetadata(object):
         obj["notes"] = self.notes
         with fopen(filename,"w") as f:
             json.dump(obj, f, indent=4, sort_keys=True)    
+    
+    def check_nlp_cube_compatibility(self, nlp_cube_version): 
+        if self.minimum_nlp_cube_version == None:
+            return True 
+        if self.minimum_nlp_cube_version == "":
+            return True    
         
+        cube_parts = str(nlp_cube_version).strip().split(".")
+        model_parts = str(self.minimum_nlp_cube_version).strip().split(".")      
+        # for cube
+        cube_version = 0        
+        cube_version += int(cube_parts[0].rjust(2,'0').ljust(8,'0'))
+        cube_version += int(cube_parts[1].rjust(2,'0').ljust(6,'0'))
+        if len(cube_parts)>2:
+            cube_version += int(cube_parts[2].rjust(2,'0').ljust(4,'0'))
+        if len(cube_parts)>3:
+            cube_version += int(cube_parts[3].rjust(2,'0').ljust(2,'0'))
+        # for model
+        model_version = 0        
+        model_version += int(model_parts[0].rjust(2,'0').ljust(8,'0'))
+        model_version += int(model_parts[1].rjust(2,'0').ljust(6,'0'))
+        if len(model_parts)>2:
+            model_version += int(model_parts[2].rjust(2,'0').ljust(4,'0'))
+        if len(model_parts)>3:
+            model_version += int(model_parts[3].rjust(2,'0').ljust(2,'0'))        
+        return cube_version>=model_version        
+    
     def info(self):
         """
         Prints available information 
         """
         print("Model info: ["+self.language_code+"-"+str(self.model_version)+"]")
-        print("\tLanguage:                      "+self.language)
-        print("\tShort language code:           "+self.language_code)
-        print("\tVersion:                       "+str(self.model_version))
-        print("\tUses space as token delimiter: "+("True" if self.token_delimiter==" " else "False")   )
-        print("\tEmbeddings file:               "+self.embeddings_file_name)
-        print("\tEmbeddings online link:        "+self.embeddings_remote_link)
-        print("\tModel build date:              "+self.model_build_date)
-        print("\tModel build source:            "+self.model_build_source)
+        print("\tLanguage:                          "+self.language)
+        print("\tShort language code:               "+self.language_code)
+        print("\tVersion:                           "+str(self.model_version))
+        print("\tMinimum NLP Cube required version: "+str(self.minimum_nlp_cube_version))
+        print("\tUses space as token delimiter:     "+("True" if self.token_delimiter==" " else "False")   )
+        print("\tEmbeddings file:                   "+self.embeddings_file_name)
+        print("\tEmbeddings online link:            "+self.embeddings_remote_link)
+        print("\tModel build date:                  "+self.model_build_date)
+        print("\tModel build source:                "+self.model_build_source)
         print("\tNotes: "+self.notes)
         
 class ModelStore(object):
@@ -93,9 +124,7 @@ class ModelStore(object):
     Abstraction layer for working with models.
     """
     
-    CLOUD_MODEL_REPO_LOCATION = 'https://raw.githubusercontent.com/adobe/NLP-Cube/master/MODEL_REPOSITORY'    
-    #MODELS_PATH_CLOUD = None #'https://nlpcube.blob.core.windows.net/models'
-    #MODELS_PATH_CLOUD_ALL = os.path.join(MODELS_PATH_CLOUD, '?restype=container&comp=list')
+    CLOUD_MODEL_REPO_LOCATION = 'https://raw.githubusercontent.com/adobe/NLP-Cube/master/MODEL_REPOSITORY'        
     
     def __init__(self, disk_path=None, cloud_path=None):        
         self.cloud_path = cloud_path #self.MODELS_PATH_CLOUD
