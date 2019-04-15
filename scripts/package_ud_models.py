@@ -12,9 +12,10 @@ from datetime import datetime
     
 if __name__ == "__main__":
 
-    input_models_root_folder = "/work/models-1.1/models" #"/work/nlpcube"
-    output_models_root_folder = "/work/nlpcube_zip"    
+    input_models_root_folder = "/work/nlp_cube_models/raw/models-1.1"
+    output_models_root_folder = "/work/nlp_cube_models/models_zip/1.1"    
     version = 1.1
+    
     
     
     model_store = ModelStore() 
@@ -69,6 +70,7 @@ if __name__ == "__main__":
 ("UD_Slovenian-SSJ","sl","sl"), 
 ("UD_Spanish-AnCora","es","es"), 
 ("UD_Swedish-LinES","sv","sv"), 
+("UD_Swedish-Talbanken","sv","sv"), 
 ("UD_Turkish-IMST","tr","tr"), 
 ("UD_Ukrainian-IU","uk","uk"), 
 ("UD_Upper_Sorbian-UFAL","hsb","hsb"), 
@@ -103,10 +105,19 @@ if __name__ == "__main__":
         metadata.language_code = language_code
         # model version: 1.0, 2.1, etc. The value is a float to perform easy comparison between versions. Format must always be #.#
         metadata.model_version = version
+        
+        # minimum NLP Cube version required to run
+        metadata.minimum_nlp_cube_version = "1.0.2"
+            
         # *full* link to remote embeddings file 
-        metadata.embeddings_remote_link = "" #"https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki."+embedding_code+".vec"
+        # for 1.0 use "https://dl.fbaipublicfiles.com/fasttext/vectors-wiki/wiki."+embedding_code+".vec"
+        # for 1.1 use "https://raw.githubusercontent.com/adobe/NLP-Cube/master/examples/wiki.dummy.vec"
+        metadata.embeddings_remote_link = "https://raw.githubusercontent.com/adobe/NLP-Cube/master/examples/wiki.dummy.vec"
+        
         # name under which the remote file will be saved under locally
-        metadata.embeddings_file_name = "" #"wiki."+embedding_code+".vec"
+        # for 1.0 use "wiki."+embedding_code+".vec"
+        # for 1.1 use "wiki.dummy.vec"
+        metadata.embeddings_file_name = "wiki.dummy.vec"
         # token delimiter. Must be either space (default) or "" (for languages like Japanese, Chinese, etc.)
         if language_code in "zh ja":
             metadata.token_delimiter = "" 
@@ -117,21 +128,12 @@ if __name__ == "__main__":
         # OPTIONAL: model build source: what corpus was it built from. Ex: UD-Romanian-RRT v2.2 
         metadata.model_build_source = local_model
         # OPTIONAL: other notes, string value
-        metadata.notes = "Source: ud-treebanks-v2.2; This release does not use external embeddings files."
+        metadata.notes = "Source: ud-treebanks-v2.2"
 
         metadata.info()
-
-        input_folder = os.path.join(input_models_root_folder,local_model)
-        
-        # skip if exists (zip file)
-        fn = output_models_root_folder+"/"+language_code+"-"+str(version)+".zip"
-        
-        if os.path.isfile(fn):
-            print("Package exists already: "+fn)
-        else:
-            try:            
-                model_store.package_model(input_folder, output_models_root_folder, metadata, should_contain_tokenizer = True, should_contain_compound_word_expander = False, should_contain_lemmatizer = True, should_contain_tagger = True, should_contain_parser = True)
-            except Exception as err:
-                sys.stderr.write('ERROR: %s\n' % str(err))
-            
+        try:        
+            input_folder = os.path.join(input_models_root_folder,local_model)
+            model_store.package_model(input_folder, output_models_root_folder, metadata, should_contain_tokenizer = True, should_contain_compound_word_expander = False, should_contain_lemmatizer = True, should_contain_tagger = True, should_contain_parser = True)
+        except:
+            print("Error processing model")
         #break # test just one package
