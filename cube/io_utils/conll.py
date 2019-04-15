@@ -20,18 +20,32 @@ import sys
 import io
 from cube.misc.misc import fopen
 
+
 class Dataset:
-    def __init__(self, file=None):
+    def __init__(self, file=None, lang_id=0):
         if file is not None:
             sys.stdout.write("Reading " + file + "... ")
             sys.stdout.flush()
             with fopen(file, "r") as f:
                 lines = f.readlines()
-                
-            self.sequences = self._make_sequences(lines)
+
+            self.sequences = self._make_sequences(lines, lang_id=lang_id)
             sys.stdout.write("found " + str(len(self.sequences)) + " sequences\n")
 
-    def _make_sequences(self, lines):
+        self.sequences = []
+
+    def load_language(self, file, lang_id):
+        sys.stdout.write("Reading " + file + "... ")
+        sys.stdout.flush()
+        with fopen(file, "r") as f:
+            lines = f.readlines()
+
+        ns = self._make_sequences(lines, lang_id=lang_id)
+        for [seq, l_id] in ns:
+            self.sequences.append([seq, l_id])
+        sys.stdout.write("found " + str(len(ns)) + " sequences\n")
+
+    def _make_sequences(self, lines, lang_id=0):
         sequences = []
         in_sequence = False
         seq = []
@@ -47,7 +61,7 @@ class Dataset:
             elif line == "":
                 in_sequence = False
                 if len(seq) > 0:
-                    sequences.append(seq)
+                    sequences.append([seq, lang_id])
                 seq = []
 
         return sequences

@@ -135,6 +135,7 @@ class TaggerConfig(Config):
         self.presoftmax_mlp_layers = [500]
         self.presoftmax_mlp_dropouts = [0.5]
         self.input_size = 100
+        self.language_embedding_size = 100
 
         if filename is None:
             if verbose:
@@ -145,16 +146,16 @@ class TaggerConfig(Config):
             self.load(filename)
 
         if verbose:
-            print ("INPUT SIZE:", self.input_size)
-            print ("LAYERS:", self.layers)
-            print ("LAYER DROPOUTS:", self.layer_dropouts)
-            print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-            print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print ("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
-            print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
+            print("INPUT SIZE:", self.input_size)
+            print("LAYERS:", self.layers)
+            print("LAYER DROPOUTS:", self.layer_dropouts)
+            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
+            print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
+            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print (
+            print(
                 "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
             self._valid = False
 
@@ -184,24 +185,24 @@ class ParserConfig(Config):
             self.load(filename)
 
         if verbose:
-            print ("LAYERS:", self.layers)
-            print ("LAYER DROPOUTS:", self.layer_dropouts)
-            print ("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-            print ("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print ("ARC PROJECTION SIZE:", self.arc_proj_size)
-            print ("LABEL PROJECTION SIZE:", self.label_proj_size)
-            print ("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
-            print ("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
-            print ("USE MORPHOLOGY AS INPUT:", self.use_morphology)
-            print ("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
+            print("LAYERS:", self.layers)
+            print("LAYER DROPOUTS:", self.layer_dropouts)
+            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
+            print("ARC PROJECTION SIZE:", self.arc_proj_size)
+            print("LABEL PROJECTION SIZE:", self.label_proj_size)
+            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
+            print("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
+            print("USE MORPHOLOGY AS INPUT:", self.use_morphology)
+            print("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
 
         if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print (
+            print(
                 "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
             self._valid = False
 
         if self.use_morphology and self.predict_morphology:
-            print ("Configuration error: you are using morphology to predict morphology.")
+            print("Configuration error: you are using morphology to predict morphology.")
             self._valid = False
 
 

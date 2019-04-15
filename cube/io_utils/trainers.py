@@ -17,7 +17,7 @@
 #
 
 import sys
-from misc.misc import fopen
+from cube.misc.misc import fopen
 
 sys.path.insert(0, '../')
 from random import shuffle
@@ -517,14 +517,15 @@ class TaggerTrainer:
             current_batch_size = 0
             self.tagger.start_batch()
             for iSeq in range(len(self.trainset.sequences)):
-                seq = self.trainset.sequences[iSeq]
+                seq = self.trainset.sequences[iSeq][0]
+                lang_id = self.trainset.sequences[iSeq][1]
                 proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
 
-                self.tagger.learn(seq)
+                self.tagger.learn(seq, lang_id=lang_id)
                 current_batch_size += len(seq)
                 if current_batch_size > batch_size:
                     total_loss += self.tagger.end_batch()
@@ -617,7 +618,8 @@ class TaggerTrainer:
         total = 0
 
         for iSeq in range(len(dataset.sequences)):
-            seq = dataset.sequences[iSeq]
+            seq = dataset.sequences[iSeq][0]
+            lang_id = dataset.sequences[iSeq][1]
 
             proc = int((iSeq + 1) * 100 / len(dataset.sequences))
             if proc % 5 == 0 and proc != last_proc:
@@ -625,7 +627,7 @@ class TaggerTrainer:
                 sys.stdout.write(" " + str(proc))
                 sys.stdout.flush()
 
-            pred_tags = self.tagger.tag(seq)
+            pred_tags = self.tagger.tag(seq, lang_id=lang_id)
 
             for entry, pred_tag in zip(seq, pred_tags):
                 total += 1
@@ -795,7 +797,8 @@ class ParserTrainer:
 
         total = 0
         for iSeq in range(len(dataset.sequences)):
-            seq = dataset.sequences[iSeq]
+            seq = dataset.sequences[iSeq][0]
+            lang_id = dataset.sequences[iSeq][1]
             # remove compound words
             tmp = []
             for entry in seq:
@@ -970,7 +973,7 @@ class TokenizerTrainer:
         # convert Dataset to list of chars
         X_train_raw, y_train_raw, space_after_end_of_sentence = self._create_Xy_sequences(self.trainset)
         if not space_after_end_of_sentence:
-            print ("\t NOTE: Training sentences do not end with a space after EOS.")
+            print("\t NOTE: Training sentences do not end with a space after EOS.")
         # X_dev_raw, y_dev_raw, _ = self._create_Xy_sequences(self.devset)
 
         while itt_no_improve > 0:

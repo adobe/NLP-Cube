@@ -27,26 +27,28 @@ from cube.generic_networks.utils import orthonormal_VanillaLSTMBuilder
 
 
 class BDRNNTagger:
-    def __init__(self, tagger_config, encodings, embeddings, aux_softmax_weight=0.2, runtime=False):
+    def __init__(self, tagger_config, encodings, aux_softmax_weight=0.2, runtime=False, num_languages=1):
         self.config = tagger_config
         self.encodings = encodings
-        self.embeddings = embeddings
 
         self.model = dy.Model()
         self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9,
                                       beta_2=0.9)  # dy.MomentumSGDTrainer(self.model)
         self.trainer.set_sparse_updates(False)
         self.character_network = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=1,
-                                                  embeddings_size=self.embeddings.word_embeddings_size,
-                                                  model=self.model, runtime=runtime)
+                                                  embeddings_size=self.config.input_size,
+                                                  model=self.model, runtime=runtime,
+                                                  lang_embeddings_size=self.config.language_embedding_size)
 
-        self.unknown_word_embedding = self.model.add_lookup_parameters((1, self.embeddings.word_embeddings_size))
+        self.unknown_word_embedding = self.model.add_lookup_parameters((1, self.config.input_size))
         self.holistic_word_embedding = self.model.add_lookup_parameters(
-            (len(encodings.word2int), self.embeddings.word_embeddings_size))
+            (len(encodings.word2int), self.config.input_size))
+        self.language_embeddings = self.model.add_lookup_parameters(
+            (num_languages, self.config.language_embedding_size))
 
-        self.char_proj_w = self.model.add_parameters((self.config.input_size, self.embeddings.word_embeddings_size))
-        self.emb_proj_w = self.model.add_parameters((self.config.input_size, self.embeddings.word_embeddings_size))
-        self.hol_proj_w = self.model.add_parameters((self.config.input_size, self.embeddings.word_embeddings_size))
+        self.char_proj_w = self.model.add_parameters((self.config.input_size, self.config.input_size))
+        self.hol_proj_w = self.model.add_parameters((self.config.input_size, self.config.input_size))
+        self.lang_proj_w = self.model.add_parameters((self.config.input_size, self.config.language_embedding_size))
 
         self.bdrnn_fw = []
         self.bdrnn_bw = []
@@ -61,7 +63,7 @@ class BDRNNTagger:
             else:
                 self.bdrnn_fw.append(orthonormal_VanillaLSTMBuilder(1, rnn_input_size, layer_size, self.model))
                 self.bdrnn_bw.append(orthonormal_VanillaLSTMBuilder(1, rnn_input_size, layer_size, self.model))
-            rnn_input_size = layer_size * 2
+            rnn_input_size = layer_size * 2 + self.config.language_embedding_size
             index += 1
             if index == self.config.aux_softmax_layer:
                 aux_softmax_input_size = rnn_input_size
@@ -70,7 +72,7 @@ class BDRNNTagger:
         for _ in range(3):  # upos, xpos and attrs
             mlp_w = []
             mlp_b = []
-            input_sz = self.config.layers[-1] * 2
+            input_sz = self.config.layers[-1] * 2 + self.config.language_embedding_size
             for l_size in self.config.presoftmax_mlp_layers:
                 mlp_w.append(self.model.add_parameters((l_size, input_sz)))
                 mlp_b.append(self.model.add_parameters((l_size)))
@@ -95,9 +97,9 @@ class BDRNNTagger:
         self.aux_softmax_weight = aux_softmax_weight
         self.losses = []
 
-    def tag(self, seq):
+    def tag(self, seq, lang_id=0):
         dy.renew_cg()
-        softmax_list, aux_softmax_list = self._predict(seq)
+        softmax_list, aux_softmax_list = self._predict(seq, lang_id=lang_id)
         label_list = []
         for softmax in softmax_list:
             label_list.append([self.encodings.upos_list[np.argmax(softmax[0].npvalue())],
@@ -105,9 +107,9 @@ class BDRNNTagger:
                                self.encodings.attrs_list[np.argmax(softmax[2].npvalue())]])
         return label_list
 
-    def learn(self, seq):
+    def learn(self, seq, lang_id=0):
         # dy.renew_cg()
-        softmax_list, aux_softmax_list = self._predict(seq, runtime=False)
+        softmax_list, aux_softmax_list = self._predict(seq, lang_id=lang_id, runtime=False)
         losses = []
         for entry, softmax, aux_softmax in zip(seq, softmax_list, aux_softmax_list):
             upos_index = self.encodings.upos2int[entry.upos]
@@ -142,22 +144,14 @@ class BDRNNTagger:
             self.trainer.update()
         return total_loss_val
 
-    def _predict(self, seq, runtime=True):
+    def _predict(self, seq, runtime=True, lang_id=0):
         softmax_list = []
         aux_softmax_list = []
         x_list = []
+        lang_emb = self.language_embeddings[lang_id]
         for entry in seq:
             word = entry.word
-            char_emb, _ = self.character_network.compute_embeddings(word, runtime=runtime)
-            import sys
-            if sys.version_info[0] == 2:
-                word_emb, found = self.embeddings.get_word_embeddings(word.decode('utf-8'))
-            else:
-                word_emb, found = self.embeddings.get_word_embeddings(word)
-            if not found:
-                word_emb = self.unknown_word_embedding[0]
-            else:
-                word_emb = dy.inputVector(word_emb)
+            char_emb, _ = self.character_network.compute_embeddings(word, runtime=runtime, language_embeddings=lang_emb)
             if sys.version_info[0] == 2:
                 holistic_word = word.decode('utf-8').lower()
             else:
@@ -166,20 +160,22 @@ class BDRNNTagger:
                 hol_emb = self.holistic_word_embedding[self.encodings.word2int[holistic_word]]
             else:
                 hol_emb = self.holistic_word_embedding[self.encodings.word2int['<UNK>']]
-            proj_emb = self.emb_proj_w.expr(update=True) * word_emb
             proj_hol = self.hol_proj_w.expr(update=True) * hol_emb
             proj_char = self.char_proj_w.expr(update=True) * char_emb
+            proj_lang = self.lang_proj_w.expr(update=True) * lang_emb
             # x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
 
             if runtime:
-                x_list.append(dy.tanh(proj_char + proj_emb + proj_hol))
+                x_list.append(dy.tanh(proj_char + proj_hol + proj_lang))
             else:
                 p1 = random.random()
                 p2 = random.random()
                 p3 = random.random()
+                p4 = random.random()
                 m1 = 1
                 m2 = 1
                 m3 = 1
+
                 if p1 < self.config.input_dropout_prob:
                     m1 = 0
                 if p2 < self.config.input_dropout_prob:
@@ -194,7 +190,7 @@ class BDRNNTagger:
                 m2 = dy.scalarInput(m2)
                 m3 = dy.scalarInput(m3)
                 scale = dy.scalarInput(scale)
-                x_list.append(dy.tanh((proj_char * m1 + proj_emb * m2 + proj_hol * m3) * scale))
+                x_list.append(dy.tanh((proj_char * m1 + proj_hol * m2 + proj_lang * m3) * scale))
 
         # BDLSTM
         rnn_outputs = []
@@ -207,7 +203,7 @@ class BDRNNTagger:
                 bw.set_dropouts(0, 0)
             fw_list = fw.initial_state().transduce(x_list)
             bw_list = list(reversed(bw.initial_state().transduce(reversed(x_list))))
-            x_list = [dy.concatenate([x_fw, x_bw]) for x_fw, x_bw in zip(fw_list, bw_list)]
+            x_list = [dy.concatenate([x_fw, x_bw, lang_emb]) for x_fw, x_bw in zip(fw_list, bw_list)]
             # if runtime:
             #    x_out = x_list
             # else:
@@ -230,14 +226,22 @@ class BDRNNTagger:
             mlp_output.append(pre_softmax)
 
         for softmax_inp, aux_softmax_inp in zip(mlp_output, rnn_outputs[self.config.aux_softmax_layer - 1]):
-            softmax_list.append([dy.softmax(self.softmax_upos_w.expr(update=True) * softmax_inp[0] + self.softmax_upos_b.expr(update=True)),
-                                 dy.softmax(self.softmax_xpos_w.expr(update=True) * softmax_inp[1] + self.softmax_xpos_b.expr(update=True)),
-                                 dy.softmax(
-                                     self.softmax_attrs_w.expr(update=True) * softmax_inp[2] + self.softmax_attrs_b.expr(update=True))])
+            softmax_list.append([dy.softmax(
+                self.softmax_upos_w.expr(update=True) * softmax_inp[0] + self.softmax_upos_b.expr(update=True)),
+                dy.softmax(
+                    self.softmax_xpos_w.expr(update=True) * softmax_inp[1] + self.softmax_xpos_b.expr(
+                        update=True)),
+                dy.softmax(
+                    self.softmax_attrs_w.expr(update=True) * softmax_inp[
+                        2] + self.softmax_attrs_b.expr(update=True))])
             aux_softmax_list.append(
-                [dy.softmax(self.aux_softmax_upos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_upos_b.expr(update=True)),
-                 dy.softmax(self.aux_softmax_xpos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_xpos_b.expr(update=True)),
-                 dy.softmax(self.aux_softmax_attrs_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_attrs_b.expr(update=True))])
+                [dy.softmax(self.aux_softmax_upos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_upos_b.expr(
+                    update=True)),
+                 dy.softmax(self.aux_softmax_xpos_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_xpos_b.expr(
+                     update=True)),
+                 dy.softmax(
+                     self.aux_softmax_attrs_w.expr(update=True) * aux_softmax_inp + self.aux_softmax_attrs_b.expr(
+                         update=True))])
 
         return softmax_list, aux_softmax_list
 

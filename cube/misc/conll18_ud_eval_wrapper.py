@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-from misc.conll18_ud_eval import load_conllu_file, evaluate
+from cube.misc.conll18_ud_eval import load_conllu_file, evaluate
 
 #metrics = ["Tokens", "Sentences", "Words", "UPOS", "XPOS", "UFeats", "AllTags", "Lemmas", "UAS", "LAS", "CLAS", "MLAS", "BLEX"]
 #example usage:     metrics_test = conll_eval(system,gold)

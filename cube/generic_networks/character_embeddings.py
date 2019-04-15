@@ -22,6 +22,7 @@ import re
 
 class CharacterNetwork:
     def __init__(self, character_embeddings_size, encodings, rnn_size=100, rnn_layers=1, embeddings_size=100,
+                 lang_embeddings_size=100,
                  model=None, runtime=False):
         if model is None:
             self.model = dy.Model()
@@ -39,7 +40,8 @@ class CharacterNetwork:
         self.rnn_bw = []
         self.rnn_layers = rnn_layers
         self.rnn_size = rnn_size
-        input_size = character_embeddings_size + 3
+        input_size = character_embeddings_size + 3 + lang_embeddings_size
+
         for _ in range(rnn_layers):
             if runtime:
                 self.rnn_fw.append(dy.VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
@@ -49,28 +51,20 @@ class CharacterNetwork:
                 self.rnn_fw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
                 self.rnn_bw.append(orthonormal_VanillaLSTMBuilder(1, input_size, rnn_size, self.model))
 
-            input_size = rnn_size * 2
+            input_size = rnn_size * 2 + lang_embeddings_size
+
         self.linearW = self.model.add_parameters(
-            (embeddings_size, rnn_size * 4))  # last state and attention over the other states
+            (embeddings_size, rnn_size * 4 + lang_embeddings_size))  # last state and attention over the other states
         self.linearB = self.model.add_parameters((embeddings_size))
 
         self.att_w1 = self.model.add_parameters((rnn_size, rnn_size * 2))
         self.att_w2 = self.model.add_parameters((rnn_size, rnn_size * 2))
         self.att_v = self.model.add_parameters((1, rnn_size))
 
-    def compute_embeddings(self, word, runtime=True):
+    def compute_embeddings(self, word, runtime=True, language_embeddings=None):
         x_list = []
-        import sys
         import copy
-        if sys.version_info[0] == 2:
-            if not isinstance(word, unicode):
-
-                uniword = unicode(word, 'utf-8')
-            else:
-                uniword = copy.deepcopy(word)
-        else:
-            uniword = copy.deepcopy(word)
-        # print (uniword)
+        uniword = copy.deepcopy(word)
         uniword = re.sub('\d', '0', uniword)
         for i in range(len(uniword)):
             char = uniword[i]
@@ -86,6 +80,13 @@ class CharacterNetwork:
                 x_list.append(dy.concatenate([self.character_lookup[self.encodings.char2int[char]], style_emb]))
             else:
                 x_list.append(dy.concatenate([self.character_lookup[self.encodings.char2int['<UNK>']], style_emb]))
+
+            # update characters with language embeddings
+        if language_embeddings is not None:
+            tmp = []
+            for x in x_list:
+                tmp.append(dy.concatenate([x, language_embeddings]))
+            x_list = tmp
 
         rnn_outputs = x_list
         rnn_states_fw = None
@@ -104,6 +105,7 @@ class CharacterNetwork:
             rnn_bw = rnn_bw.initial_state()
             rnn_states_fw = []
             rnn_states_bw = []
+
             for x in rnn_outputs:
                 rnn_fw = rnn_fw.add_input(x)
                 rnn_states_fw.append(rnn_fw)
@@ -118,7 +120,7 @@ class CharacterNetwork:
 
         attention = self._attend(rnn_outputs, rnn_states_fw[-1], rnn_states_bw[-1])
 
-        pre_linear = dy.concatenate([fw[-1], bw[-1], attention])
+        pre_linear = dy.concatenate([fw[-1], bw[-1], attention, language_embeddings])
         embedding = dy.tanh(self.linearW.expr(update=True) * pre_linear + self.linearB.expr(update=True))
 
         return embedding, rnn_outputs
