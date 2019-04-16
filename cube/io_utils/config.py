@@ -172,8 +172,6 @@ class ParserConfig(Config):
         self.label_proj_size = 400
         self.presoftmax_mlp_dropout = 0.33
         self.predict_morphology = True
-        self.use_morphology = False
-        self.use_lexical = True
         self.input_embeddings_size = 100
 
         if filename is None:
