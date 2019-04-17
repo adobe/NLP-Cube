@@ -199,10 +199,6 @@ class ParserConfig(Config):
                 "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
             self._valid = False
 
-        if self.use_morphology and self.predict_morphology:
-            print("Configuration error: you are using morphology to predict morphology.")
-            self._valid = False
-
 
 class LemmatizerConfig(Config):
     def __init__(self, filename=None, verbose=False):

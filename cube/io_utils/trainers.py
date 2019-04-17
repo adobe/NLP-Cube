@@ -662,8 +662,8 @@ class ParserTrainer:
         path = output_base + ".conf"
         sys.stdout.write("Storing config in " + path + "\n")
         self.parser.config.save(path)
-        sys.stdout.write("\tevaluating on devset...")
-        sys.stdout.flush()
+        # sys.stdout.write("\tevaluating on devset...")
+        # sys.stdout.flush()
         # dev_uas, dev_las, dev_upos, dev_xpos, dev_attrs, dev_lemma = self.eval(self.devset)
         # sys.stdout.write(" UAS=" + str(dev_uas) + " LAS=" + str(dev_las) + " UPOS=" + str(dev_upos) + " XPOS=" + str(
         #     dev_xpos) + " ATTRS=" + str(dev_attrs) + " LEMMA=" + str(dev_lemma) + "\n")
@@ -708,14 +708,15 @@ class ParserTrainer:
             start_time = time.time()
 
             for iSeq in range(len(self.trainset.sequences)):
-                seq = self.trainset.sequences[iSeq]
+                seq = self.trainset.sequences[iSeq][0]
+                lang_id = self.trainset.sequences[iSeq][1]
                 proc = int((iSeq + 1) * 100 / len(self.trainset.sequences))
                 if proc % 5 == 0 and proc != last_proc:
                     last_proc = proc
                     sys.stdout.write(" " + str(proc))
                     sys.stdout.flush()
 
-                self.parser.learn(seq)
+                self.parser.learn(seq, lang_id)
                 current_batch_size += len(seq)
                 if current_batch_size >= batch_size:
                     total_loss += self.parser.end_batch()
@@ -811,7 +812,7 @@ class ParserTrainer:
                 sys.stdout.write(" " + str(proc))
                 sys.stdout.flush()
 
-            predicted = self.parser.tag(seq)
+            predicted = self.parser.tag(seq, lang_id)
 
             for entry, pred in zip(seq, predicted):
                 total += 1

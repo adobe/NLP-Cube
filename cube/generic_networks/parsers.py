@@ -68,7 +68,7 @@ class BDRNNParser:
             if index == self.config.aux_softmax_layer:
                 aux_proj_input_size = rnn_input_size
 
-        proj_input_size = self.config.layers[-1] * 2
+        proj_input_size = self.config.layers[-1] * 2 + self.config.input_embeddings_size
 
         self.proj_arc_w_head = self.model.add_parameters((self.config.arc_proj_size, proj_input_size))
         self.proj_arc_b_head = self.model.add_parameters((self.config.arc_proj_size))
@@ -189,7 +189,7 @@ class BDRNNParser:
         dy.renew_cg()
         arc_matrix, proj_labels, softmax_morphology = self._predict_arc(seq, lang_id)
         pred_heads = self.decoder.decode(arc_matrix)
-        softmax_labels = self._predict_label(pred_heads, proj_labels)
+        softmax_labels = self._predict_label(pred_heads, proj_labels, lang_id)
 
         tag_list = []
         for pred_head, softmax_label in zip(pred_heads, softmax_labels):
@@ -230,41 +230,40 @@ class BDRNNParser:
         for entry in seq:
             word = entry.word
 
-            if self.config.use_lexical:
-                # prepare lexical embeddings
-                char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime,
-                                                                                     language_embeddings=lang_emb)
-                encoder_states_list.append(encoder_states)
+            # prepare lexical embeddings
+            char_emb, encoder_states = self.character_network.compute_embeddings(word, runtime=runtime,
+                                                                                 language_embeddings=lang_emb)
+            encoder_states_list.append(encoder_states)
 
-                word = word.lower()
+            word = word.lower()
 
-                if word in self.encodings.word2int:
-                    holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
-                else:
-                    holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
+            if word in self.encodings.word2int:
+                holistic_emb = self.holistic_embeddings[self.encodings.word2int[word]]
+            else:
+                holistic_emb = self.holistic_embeddings[self.encodings.word2int['<UNK>']]
 
-                # dropout lexical embeddings
-                if runtime:
-                    w_emb = char_emb + holistic_emb
-                else:
-                    p1 = random.random()
-                    p2 = random.random()
+            # dropout lexical embeddings
+            if runtime:
+                w_emb = char_emb + holistic_emb
+            else:
+                p1 = random.random()
+                p2 = random.random()
 
-                    m1 = 1
-                    m2 = 1
+                m1 = 1
+                m2 = 1
 
-                    if p1 < self.config.input_dropout_prob:
-                        m1 = 0
-                    if p2 < self.config.input_dropout_prob:
-                        m2 = 0
-                    scale = 1.0
-                    if m1 + m2 > 0:
-                        scale = float(2) / (m1 + m2)
-                    m1 = dy.scalarInput(m1)
-                    m2 = dy.scalarInput(m2)
+                if p1 < self.config.input_dropout_prob:
+                    m1 = 0
+                if p2 < self.config.input_dropout_prob:
+                    m2 = 0
+                scale = 1.0
+                if m1 + m2 > 0:
+                    scale = float(2) / (m1 + m2)
+                m1 = dy.scalarInput(m1)
+                m2 = dy.scalarInput(m2)
 
-                    scale = dy.scalarInput(scale)
-                    w_emb = (char_emb * m1 + holistic_emb * m2) * scale
+                scale = dy.scalarInput(scale)
+                w_emb = (char_emb * m1 + holistic_emb * m2) * scale
 
             x_list.append(dy.concatenate([w_emb, lang_emb]))
 
