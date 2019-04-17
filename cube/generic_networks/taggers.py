@@ -253,9 +253,9 @@ class BDRNNTagger:
 
     def tag_sequences(self, sequences):
         new_sequences = []
-        for sequence in sequences:
+        for sequence, lang_id in sequences:
             new_sequence = copy.deepcopy(sequence)
-            predicted_tags = self.tag(new_sequence)
+            predicted_tags = self.tag(new_sequence, lang_id=lang_id)
             for entryIndex, pred in enumerate(predicted_tags):
                 new_sequence[entryIndex].upos = pred[0]
                 new_sequence[entryIndex].xpos = pred[1]
