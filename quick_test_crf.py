@@ -17,11 +17,11 @@ trainer = dy.AdamTrainer(model)
 
 from cube.generic_networks.character_embeddings import CharacterNetwork
 
-cn = CharacterNetwork(100, encodings, embeddings_size=100, model=model)
+cn = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2, embeddings_size=300, model=model)
 
 from cube.generic_networks.crf import CRFLabeler
 
-labeler = CRFLabeler(len(encodings.upos2int), 2, 200, 100, model)
+labeler = CRFLabeler(len(encodings.upos2int), 1, 300, 300, model)
 
 lang_emb = model.add_lookup_parameters((1, 100))
 import tqdm
