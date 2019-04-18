@@ -54,10 +54,11 @@ class CharacterNetwork:
             input_size = rnn_size * 2 + lang_embeddings_size
 
         self.linearW = self.model.add_parameters(
-            (embeddings_size, rnn_size * 4 + lang_embeddings_size))  # last state and attention over the other states
+            (
+            embeddings_size, rnn_size * 4 + 2 * lang_embeddings_size))  # last state and attention over the other states
         self.linearB = self.model.add_parameters((embeddings_size))
 
-        self.att_w1 = self.model.add_parameters((rnn_size, rnn_size * 2))
+        self.att_w1 = self.model.add_parameters((rnn_size, rnn_size * 2 + lang_embeddings_size))
         self.att_w2 = self.model.add_parameters((rnn_size, rnn_size * 2))
         self.att_v = self.model.add_parameters((1, rnn_size))
 
@@ -116,7 +117,7 @@ class CharacterNetwork:
                 bw.append(rnn_states_bw[-1].output())
             rnn_outputs = []
             for x1, x2 in zip(fw, reversed(bw)):
-                rnn_outputs.append(dy.concatenate([x1, x2]))
+                rnn_outputs.append(dy.concatenate([x1, x2, language_embeddings]))
 
         attention = self._attend(rnn_outputs, rnn_states_fw[-1], rnn_states_bw[-1])
 
