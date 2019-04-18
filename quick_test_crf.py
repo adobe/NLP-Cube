@@ -21,7 +21,7 @@ cn = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2, embeddings_siz
 
 from cube.generic_networks.crf import CRFLabeler
 
-labeler = CRFLabeler(len(encodings.upos2int), 1, 300, 300, model)
+labeler = CRFLabeler(len(encodings.upos2int), 2, 200, 300, model)
 
 lang_emb = model.add_lookup_parameters((1, 100))
 import tqdm
