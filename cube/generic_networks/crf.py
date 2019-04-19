@@ -105,7 +105,7 @@ class CRFLabeler:
             argmax_score = np.argmax(npval)
             max_score_expr = dy.pick(scores, argmax_score)
             max_score_expr_broadcast = dy.concatenate([max_score_expr] * self.tagset_size)
-            return max_score_expr + dy.log(dy.sum_cols(dy.transpose(dy.exp(scores - max_score_expr_broadcast))))
+            return max_score_expr + dy.log(dy.sum_dim(dy.transpose(dy.exp(scores - max_score_expr_broadcast)), [1]))
 
         init_alphas = [-1e10] * self.tagset_size
         init_alphas[self.START] = 0

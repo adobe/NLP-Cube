@@ -17,20 +17,27 @@ trainer = dy.AdamTrainer(model)
 
 from cube.generic_networks.character_embeddings import CharacterNetwork
 
-cn = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2, embeddings_size=300, model=model)
+cn = CharacterNetwork(100, encodings, rnn_size=100, rnn_layers=1, embeddings_size=300, model=model)
 
 from cube.generic_networks.crf import CRFLabeler
 
 labeler = CRFLabeler(len(encodings.upos2int), 2, 200, 300, model)
 
 lang_emb = model.add_lookup_parameters((1, 100))
+word_emb = model.add_lookup_parameters((len(encodings.word2int), 300))
 import tqdm
 
 
 def build_input(seq):
     out_list = []
     for entry in seq:
-        out_list.append(cn.compute_embeddings(entry.word, language_embeddings=lang_emb[0])[0])
+        c_emb = cn.compute_embeddings(entry.word, language_embeddings=lang_emb[0])[0]
+        w = entry.word.lower()
+        if w in encodings.word2int:
+            w_emb = word_emb[encodings.word2int[w]]
+        else:
+            w_emb = word_emb[encodings.word2int['<UNK>']]
+        out_list.append(c_emb + w_emb)
 
     return out_list
 
@@ -60,7 +67,7 @@ def train():
         tags = []
         for entry in seq:
             tags.append(encodings.upos2int[entry.upos])
-        loss = labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
+        loss = labeler.neg_log_loss(inp, tags)  # labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
         total_loss += loss.value() / len(inp)
         loss.backward()
         trainer.update()
