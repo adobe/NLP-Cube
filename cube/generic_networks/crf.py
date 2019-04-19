@@ -45,13 +45,19 @@ class CRFLabeler:
         # Transition matrix for tagging layer, [i,j] is score of transitioning to i from j
         self.transitions = self.model.add_lookup_parameters((self.tagset_size, self.tagset_size))
 
+    def learn(self, input, tags):
+        return self._neg_log_loss(input, tags)
+
+    def tag(self, input):
+        return self._viterbi_decoding(self._build_tagging_graph(input))[0]
+
     def set_dropout(self, p):
         self.bi_lstm.set_dropout(p)
 
     def disable_dropout(self):
         self.bi_lstm.disable_dropout()
 
-    def build_tagging_graph(self, sentence):
+    def _build_tagging_graph(self, sentence):
         # embeddings = [self.word_rep(w) for w in sentence]
         embeddings = sentence
 
@@ -72,7 +78,7 @@ class CRFLabeler:
 
         return scores
 
-    def score_sentence(self, observations, tags):
+    def _score_sentence(self, observations, tags):
         assert len(observations) == len(tags)
         score_seq = [0]
         score = dy.scalarInput(0)
@@ -83,22 +89,22 @@ class CRFLabeler:
         score = score + dy.pick(self.transitions[self.STOP], tags[-1])
         return score
 
-    def viterbi_loss(self, observations, tags):
+    def _viterbi_loss(self, observations, tags):
         # observations = self.build_tagging_graph(sentence)
-        viterbi_tags, viterbi_score = self.viterbi_decoding(observations)
+        viterbi_tags, viterbi_score = self._viterbi_decoding(observations)
         if viterbi_tags != tags:
-            gold_score = self.score_sentence(observations, tags)
+            gold_score = self._score_sentence(observations, tags)
             return (viterbi_score - gold_score), viterbi_tags
         else:
             return dy.scalarInput(0), viterbi_tags
 
-    def neg_log_loss(self, sentence, tags):
-        observations = self.build_tagging_graph(sentence)
-        gold_score = self.score_sentence(observations, tags)
-        forward_score = self.forward(observations)
+    def _neg_log_loss(self, sentence, tags):
+        observations = self._build_tagging_graph(sentence)
+        gold_score = self._score_sentence(observations, tags)
+        forward_score = self._forward(observations)
         return forward_score - gold_score
 
-    def forward(self, observations):
+    def _forward(self, observations):
 
         def log_sum_exp(scores):
             npval = scores.npvalue()
@@ -121,7 +127,7 @@ class CRFLabeler:
         alpha = log_sum_exp(terminal_expr)
         return alpha
 
-    def viterbi_decoding(self, observations):
+    def _viterbi_decoding(self, observations):
         backpointers = []
         init_vvars = [-1e10] * self.tagset_size
         init_vvars[self.START] = 0  # <Start> has all the probability

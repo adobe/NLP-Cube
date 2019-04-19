@@ -49,7 +49,7 @@ def evaluate():
         dy.renew_cg()
         seq = devset.sequences[idx][0]
         inp = build_input(seq)
-        labels = labeler.viterbi_decoding(labeler.build_tagging_graph(inp))[0]
+        labels = labeler.tag(inp)
 
         for label, entry in zip(labels, seq):
             if label == encodings.upos2int[entry.upos]:
@@ -67,7 +67,7 @@ def train():
         tags = []
         for entry in seq:
             tags.append(encodings.upos2int[entry.upos])
-        loss = labeler.neg_log_loss(inp, tags)  # labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
+        loss = labeler.learn(inp, tags)  # labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
         total_loss += loss.value() / len(inp)
         loss.backward()
         trainer.update()
