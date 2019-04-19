@@ -45,7 +45,7 @@ def build_input(seq):
 def evaluate():
     correct = 0
     total = 0
-    for idx in tqdm.tqdm(range(len(devset.sequences))):
+    for idx in tqdm.tqdm(range(len(devset.sequences)), desc='\tdevset', ncols=60):
         dy.renew_cg()
         seq = devset.sequences[idx][0]
         inp = build_input(seq)
@@ -60,7 +60,7 @@ def evaluate():
 
 def train():
     total_loss = 0
-    for idx in tqdm.tqdm(range(len(trainset.sequences))):
+    for idx in tqdm.tqdm(range(len(trainset.sequences)), desc='\ttrainset', ncols=60):
         dy.renew_cg()
         seq = trainset.sequences[idx][0]
         inp = build_input(seq)
@@ -74,16 +74,19 @@ def train():
     print("loss=" + str(total_loss / len(devset.sequences)))
 
 
-# print(evaluate())
+print(evaluate())
 
 patience = 20
 patience_left = patience
 best = 0
+epoch = 1
 while patience_left > 0:
+    print("Starting epoch " + str(epoch))
     train()
     patience_left -= 1
     score = evaluate()
-    print("devset acc=" + str(score))
+    print("\tdevset acc=" + str(score))
     if score > best:
         best = score
         patience_left = patience
+        print("\tBest score yet, resetting patience")
