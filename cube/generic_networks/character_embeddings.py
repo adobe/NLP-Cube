@@ -53,9 +53,9 @@ class CharacterNetwork:
 
             input_size = rnn_size * 2 + lang_embeddings_size
 
-        lemb_size = lang_embeddings_size
-        if rnn_layers > 1:
-            lemb_size = 2 * lang_embeddings_size
+        lemb_size = 2* lang_embeddings_size
+        #if rnn_layers > 1:
+        #    lemb_size = 2 * lang_embeddings_size
         self.linearW = self.model.add_parameters(
             (embeddings_size, rnn_size * 4 + lemb_size))  # last state and attention over the other states
         self.linearB = self.model.add_parameters((embeddings_size))
