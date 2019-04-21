@@ -8,70 +8,133 @@ devset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.con
 from cube.io_utils.encodings import Encodings
 
 encodings = Encodings()
-encodings.compute(trainset, devset)
+encodings.compute(trainset, devset, word_cutoff=2, char_cutoff=3)
 
 import dynet as dy
 
+BATCH_SIZE = 1000
+
 model = dy.Model()
-trainer = dy.AdamTrainer(model)
+trainer = dy.AdamTrainer(model, alpha=2e-3, beta_1=0.9, beta_2=0.9)
 
 from cube.generic_networks.character_embeddings import CharacterNetwork
 
-cn = CharacterNetwork(100, encodings, rnn_size=100, rnn_layers=1, embeddings_size=300, model=model)
+cn = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2, embeddings_size=200, model=model,
+                      lang_embeddings_size=1)
 
-from cube.generic_networks.crf import CRFLabeler
+from cube.generic_networks.crf import CRFDecoder
 
-labeler = CRFLabeler(len(encodings.upos2int), 2, 200, 300, model)
+labeler = dy.BiRNNBuilder(2, 200, 200, model, dy.LSTMBuilder)  # CRFLabeler(len(encodings.upos2int), 2, 200, 200, model)
+decoder = CRFDecoder(None, model, 200, 300, len(encodings.upos2int))
 
-lang_emb = model.add_lookup_parameters((1, 100))
-word_emb = model.add_lookup_parameters((len(encodings.word2int), 300))
+lang_emb = model.add_lookup_parameters((1, 1))
+word_emb = model.add_lookup_parameters((len(encodings.word2int), 200))
 import tqdm
 
 
-def build_input(seq):
+def build_input(seq, runtime=True):
     out_list = []
     for entry in seq:
-        c_emb = cn.compute_embeddings(entry.word, language_embeddings=lang_emb[0])[0]
+        c_emb = cn.compute_embeddings(entry.word, language_embeddings=lang_emb[0], runtime=runtime)[0]
         w = entry.word.lower()
         if w in encodings.word2int:
             w_emb = word_emb[encodings.word2int[w]]
         else:
             w_emb = word_emb[encodings.word2int['<UNK>']]
-        out_list.append(c_emb + w_emb)
+
+        if runtime:
+            emb = w_emb + c_emb
+        else:
+            import random
+            p1 = random.random()
+            p2 = random.random()
+            mult = 1
+            f1 = 1
+            f2 = 1
+            if p1 < 0.33:
+                f1 = 0
+                mult = 2
+            if p2 < 0.33:
+                f2 = 0
+                mult = 2
+            emb = (w_emb * f1 + c_emb * f2) * mult
+
+        out_list.append(emb)
 
     return out_list
 
 
 def evaluate():
-    correct = 0
-    total = 0
-    for idx in tqdm.tqdm(range(len(devset.sequences)), desc='\tdevset', ncols=60):
+    labeler.disable_dropout()
+    correct_train = 0
+    total_train = 0
+    # for idx in tqdm.tqdm(range(len(trainset.sequences)), desc='\teval train', ncols=60):
+    #     dy.renew_cg()
+    #     seq = trainset.sequences[idx][0]
+    #     inp = build_input(seq)
+    #     labels = labeler.tag(inp)
+    #
+    #     for label, entry in zip(labels, seq):
+    #         if entry.upos in encodings.upos2int and label == encodings.upos2int[entry.upos]:
+    #             correct_train += 1
+    #         total_train += 1
+    total_train = 1
+    correct_dev = 0
+    total_dev = 0
+    for idx in tqdm.tqdm(range(len(devset.sequences)), desc='\teval dev', ncols=60):
         dy.renew_cg()
         seq = devset.sequences[idx][0]
         inp = build_input(seq)
-        labels = labeler.tag(inp)
+        # labels = labeler.tag(inp)
+        enc = labeler.transduce(inp)
+        labels = decoder.tag(enc)
 
         for label, entry in zip(labels, seq):
-            if label == encodings.upos2int[entry.upos]:
-                correct += 1
-            total += 1
-    return correct / total
+            if entry.upos in encodings.upos2int and label == encodings.upos2int[entry.upos]:
+                correct_dev += 1
+            total_dev += 1
+    return correct_dev / total_dev, correct_train / total_train
 
 
 def train():
+    labeler.set_dropout(0.33)
     total_loss = 0
+    losses = []
+    in_batch = 0
+    dy.renew_cg()
+    total_samples = 0
+    import random
+    random.shuffle(trainset.sequences)
     for idx in tqdm.tqdm(range(len(trainset.sequences)), desc='\ttrainset', ncols=60):
-        dy.renew_cg()
+
         seq = trainset.sequences[idx][0]
-        inp = build_input(seq)
+        inp = build_input(seq, runtime=False)
         tags = []
+        in_batch += len(inp)
         for entry in seq:
             tags.append(encodings.upos2int[entry.upos])
-        loss = labeler.learn(inp, tags)  # labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
-        total_loss += loss.value() / len(inp)
+        # loss = labeler.learn(inp, tags)  # labeler.viterbi_loss(labeler.build_tagging_graph(inp), tags)[0]
+        enc = labeler.transduce(inp)
+        loss = decoder.learn(enc, tags)
+        losses.append(loss)
+        total_samples += len(inp)
+        if in_batch > BATCH_SIZE:
+            in_batch = 0
+            loss = dy.esum(losses)
+            total_loss += loss.value()
+            loss.backward()
+            trainer.update()
+            losses = []
+            dy.renew_cg()
+
+    if len(losses) > 0:
+        loss = dy.esum(losses)
+        total_loss += loss.value()
         loss.backward()
         trainer.update()
-    print("loss=" + str(total_loss / len(devset.sequences)))
+        dy.renew_cg()
+
+    print("loss=" + str(total_loss / total_samples))
 
 
 print(evaluate())
@@ -84,9 +147,10 @@ while patience_left > 0:
     print("Starting epoch " + str(epoch))
     train()
     patience_left -= 1
-    score = evaluate()
-    print("\tdevset acc=" + str(score))
-    if score > best:
-        best = score
+    score_dev, score_train = evaluate()
+    print("\tdevset acc=" + str(score_dev) + " trainser acc=" + str(score_train))
+    if score_dev > best:
+        best = score_dev
         patience_left = patience
         print("\tBest score yet, resetting patience")
+    epoch += 1
