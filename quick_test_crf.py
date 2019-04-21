@@ -24,8 +24,8 @@ cn = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2, embeddings_siz
 
 from cube.generic_networks.crf import CRFDecoder
 
-labeler = dy.BiRNNBuilder(2, 200, 200, model, dy.LSTMBuilder)  # CRFLabeler(len(encodings.upos2int), 2, 200, 200, model)
-decoder = CRFDecoder(None, model, 200, 300, len(encodings.upos2int))
+labeler = dy.BiRNNBuilder(2, 200, 400, model, dy.LSTMBuilder)  # CRFLabeler(len(encodings.upos2int), 2, 200, 200, model)
+decoder = CRFDecoder(model, 400, 300, len(encodings.upos2int))
 
 lang_emb = model.add_lookup_parameters((1, 1))
 word_emb = model.add_lookup_parameters((len(encodings.word2int), 200))

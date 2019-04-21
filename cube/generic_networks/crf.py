@@ -24,7 +24,7 @@ import numpy as np
 
 
 class CRFDecoder:
-    def __init__(self, args, model, src_output_dim, tag_emb_dim, tag_size, constraints=None):
+    def __init__(self, model, src_output_dim, tag_emb_dim, tag_size, constraints=None):
         self.model = model
         self.start_id = tag_size
         self.end_id = tag_size + 1
@@ -94,7 +94,7 @@ class CRFDecoder:
         '''
         # Be aware: if a is lookup_parameter with 2 dimension, then a[i] returns one row;
         # if b = dy.parameter(a), then b[i] returns one column; which means dy.parameter(a) already transpose a
-        transpose_transition_score = self.transition_matrix.expr(update=True)
+        transpose_transition_score = self.transition_matrix#.expr(update=True)
         # transpose_transition_score = dy.transpose(transition_score)
         # alpha(t', s) = the score of sequence from t=0 to t=t' in log space
         # np_init_alphas = -100.0 * np.ones((self.tag_size, batch_size))
@@ -188,7 +188,7 @@ class CRFDecoder:
                     for src_encoding in src_encodings]
         tag_scores = [dy.affine_transform([b_score_tag, W_score_tag, tag_emb]) for tag_emb in tag_embs]
 
-        transpose_transition_score = self.transition_matrix.expr(update=True)  # (to, from)
+        transpose_transition_score = self.transition_matrix#.expr(update=True)  # (to, from)
 
         return transpose_transition_score.npvalue(), [ts.npvalue() for ts in tag_scores]
 
@@ -207,7 +207,7 @@ class CRFDecoder:
         np_init_alpha = np.ones(self.tag_size) * -2000.0
         np_init_alpha[self.start_id] = 0.0
         max_tm1 = dy.inputTensor(np_init_alpha)
-        transpose_transition_score = self.transition_matrix.expr(update=True) # (to, from)
+        transpose_transition_score = self.transition_matrix#.expr(update=True) # (to, from)
 
         for i, tag_score in enumerate(tag_scores):
             max_tm1 = dy.concatenate_cols([max_tm1] * self.tag_size)
