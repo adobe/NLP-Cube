@@ -56,31 +56,7 @@ class Dataset:
         with fopen(filename, 'w') as file:
             for sequence in self.sequences:
                 for entry in sequence:
-                    file.write(str(entry.index))
-                    file.write("\t")
-                    if isinstance(entry.word, str):
-                        file.write(entry.word)
-                    else:
-                        file.write(entry.word.encode('utf-8'))
-                    file.write("\t")
-                    if isinstance(entry.lemma, str):
-                        file.write(entry.lemma)
-                    else:
-                        file.write(entry.lemma.encode('utf-8'))
-                    file.write("\t")
-                    file.write(entry.upos)
-                    file.write("\t")
-                    file.write(entry.xpos)
-                    file.write("\t")
-                    file.write(entry.attrs)
-                    file.write("\t")
-                    file.write(str(entry.head))
-                    file.write("\t")
-                    file.write(entry.label)
-                    file.write("\t")
-                    file.write(entry.deps)
-                    file.write("\t")
-                    file.write(entry.space_after)
+                    file.write(str(entry))
                     file.write("\n")
                 file.write("\n")
 
@@ -89,33 +65,12 @@ class Dataset:
         file = sys.stdout
         for sequence in self.sequences:
             for entry in sequence:
-                file.write(str(entry.index))
-                file.write("\t")
-                if isinstance(entry.word, str):
-                    file.write(entry.word)
-                else:
-                    file.write(entry.word.encode('utf-8'))
-                file.write("\t")
-                if isinstance(entry.lemma, str):
-                    file.write(entry.lemma)
-                else:
-                    file.write(entry.lemma.encode('utf-8'))
-                file.write("\t")
-                file.write(entry.upos)
-                file.write("\t")
-                file.write(entry.xpos)
-                file.write("\t")
-                file.write(entry.attrs)
-                file.write("\t")
-                file.write(str(entry.head))
-                file.write("\t")
-                file.write(entry.label)
-                file.write("\t")
-                file.write(entry.deps)
-                file.write("\t")
-                file.write(entry.space_after)
+                file.write(str(entry))
                 file.write("\n")
             file.write("\n")
+
+    def write_as_string(self):
+        return "".join("".join(str(entry)+"\n" for entry in sequence)+"\n" for sequence in self.sequences)
 
 
 class Encodings:
@@ -141,3 +96,6 @@ class ConllEntry:
             return int(value), False
         except ValueError:
             return value, True
+
+    def __repr__(self):
+        return "\t".join([str(self.index), self.word if isinstance(self.word, str) else self.word.encode('utf-8'), self.lemma if isinstance(self.lemma, str) else self.lemma.encode('utf-8'), self.upos, self.xpos, self.attrs, str(self.head), self.label, self.deps, self.space_after])
