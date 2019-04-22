@@ -3,11 +3,11 @@
 
 ## News
 
-**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both models 1.0 and 1.1 are trained on the same UD2.2 corpus; however, models 1.1 do not use vector embeddings, thus reducing the time and disk space required to download them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
+**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both 1.0 and 1.1 models are trained on the same [UD2.2 corpus](http://hdl.handle.net/11234/1-2837); however, models 1.1 do not use vector embeddings, thus reducing disk space and time required to use them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
 
-To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en",1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. Same goes for any language/version you want to use.
+To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en", 1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. Same goes for any language/version you want to use.
 
-If you already have NLP Cube installed and **want to use the newer 1.1 models**, type either ``cube.load("en",1.1)`` or ``cube.load("en","latest")`` to auto-download them. After this, calling ``cube.load("en")`` without version number will automatically use the latest ones from your disk.
+If you already have NLP Cube installed and **want to use the newer 1.1 models**, type either ``cube.load("en", 1.1)`` or ``cube.load("en", "latest")`` to auto-download them. After this, calling ``cube.load("en")`` without version number will automatically use the latest ones from your disk.
 
 <hr>
 
@@ -98,7 +98,9 @@ or, in bibtex format:
 
 Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script. Please see more info about what [each metric represents here](http://universaldependencies.org/conll18/evaluation.html). 
 
-Note: we are in the process of training version 1.1 of the models which do not require embeddings (performance will be roughly similar, but models won't need the large vector embedding files). 
+Notes: 
+* version 1.1 of the models no longer need the large external vector embedding files. This makes loading the 1.1 models faster and less RAM-intensive.
+* all reported results here are end-2-end. (e.g. we test the tagging accuracy on our own segmented text, as this is the real use-case; CoNLL results are mostly reported on "gold" - or pre-segmented text, leading to higher accuracy for the tagger/parser/etc.)
 
 |Language|Model|Token|Sentence|UPOS|XPOS|AllTags|Lemmas|UAS|LAS|
 |--------|-----|:---:|:------:|:--:|:--:|:-----:|:----:|:-:|:-:|
