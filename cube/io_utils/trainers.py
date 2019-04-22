@@ -840,6 +840,73 @@ class ParserTrainer:
 
 
 class TokenizerTrainer:
+    def __init__(self, tokenizer, encodings, patience, trainset, devset):
+        self.tokenizer = tokenizer
+        self.encodings = encodings
+        self.patience = patience
+        self.trainset = trainset
+        self.devset = devset
+
+    def eval(self, set):
+        pass
+
+    def _get_num_chars(self, seq):
+        seq = seq[0]
+        num_chars = 0
+        for entry in seq:
+            num_chars += len(entry.word)
+            if "spaceafter=no" not in entry.space_after.lower():
+                num_chars += 1
+        return num_chars
+
+    def start_training(self, output_base, batch_size=1000):
+        best_sent = 0
+        best_token = 0
+        best_word = 0
+        patience_left = self.patience
+        total_loss = 0
+        total_chars = 0
+        while patience_left > 0:
+            sys.stdout.write('\tShuffling training data\n')
+            random.shuffle(self.trainset.sequences)
+
+            chars_in_batch = 0
+            batched_seqs = []
+            for idx in range(len(self.trainset.sequences)):
+                batched_seqs.append(self.trainset.sequences[idx])
+                chars_in_batch += self._get_num_chars(self.trainset.sequences[idx])
+                if chars_in_batch > batch_size:
+                    loss = self.tokenizer.learn(batched_seqs)
+                    total_loss += loss
+                    total_chars += chars_in_batch
+                    chars_in_batch = 0
+                    batched_seqs = []
+            if chars_in_batch != 0:
+                loss = self.tokenizer.learn(batched_seqs)
+                total_loss += loss
+                total_chars += chars_in_batch
+                chars_in_batch = 0
+                batched_seqs = []
+
+            f_sent, f_token, f_word = eval(self.devset)
+
+            if f_sent > best_sent:
+                best_sent = f_sent
+                patience_left = self.patience
+                self.tokenizer.save(output_base + '-ss.best')
+
+            if f_token > best_token:
+                best_token = f_token
+                patience_left = self.patience
+                self.tokenizer.save(output_base + '-tok.best')
+
+            if f_word > best_word:
+                best_word = f_word
+                patience_left = self.patience
+                self.tokenizer.save(output_base + '-words.best')
+
+
+class TieredTokenizerTrainer:
     def __init__(self, tokenizer, encodings, patience, trainset, devset=None, testset=None, raw_train_file=None,
                  raw_dev_file=None, raw_test_file=None, gold_train_file=None, gold_dev_file=None, gold_test_file=None):
         self.tokenizer = tokenizer

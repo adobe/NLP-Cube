@@ -28,6 +28,75 @@ from cube.misc.misc import get_eta, pretty_time, log_progress, line_count
 from cube.io_utils.conll import ConllEntry
 
 
+class CRFTokenizer:
+    def __init__(self, config, encodings, num_languages=None, runtime=False):
+        self.model = dy.Model()
+        self.trainer = dy.AdamTrainer(self.model)
+        self.encodings = encodings
+        self.config = config
+        self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
+        self.case_lookup = self.model.add_lookup_parameters((3, 32))
+        input_size = 32 + config.char_emb_size
+        if num_languages is not None:
+            self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
+            input_size += config.lang_emb_size
+        else:
+            self.lang_lookup = None
+
+        self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
+                          'UM': 11}
+        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'EOS', 'T', 'U', 'UM']
+
+        self.lstm_fw = []
+        self.lstm_bw = []
+
+        for layer_size in self.config.lstm_layers:
+            self.lstm_fw = dy.LSTMBuilder(1, input_size, layer_size, self.model)
+            self.lstm_bw = dy.LSTMBuilder(1, input_size, layer_size, self.model)
+            input_size = layer_size * 2
+            if self.lang_lookup is not None:
+                input_size += self.config.lang_emb_size
+
+    def _make_input(self, seqs):
+        chars = []
+        tags = []
+
+        for seq, lang_id in seqs:
+            for entry in seq:
+                for char_idx in range(len(entry.word)):
+                    chars.append(entry.word[char_idx])
+                    if len(entry.word) == 1:
+                        tags.append('S')
+                    elif char_idx == 0:
+                        tags.append('B')
+                    elif char_idx == len(entry.word) - 1:
+                        tags.append('E')
+                    else:
+                        tags.append('I')
+                    if entry.is_compound_entry:
+                        tags[-1] = tags['-1'] + 'M'
+                if "spaceafter=no" not in entry.space_after.lower():
+                    chars.append(' ')
+                    tags.append('X')
+            if tags[-1] == 'S' or tags[-1] == 'X':
+                tags[-1] = 'T'
+            else:
+                append_m = ''
+                if tags[-1].endswith('M'):
+                    append_m = 'M'
+                tags[-1] = 'U' + append_m
+        return chars, tags
+
+    def learn(self, conll_sequences):
+        chars, tags = self._make_input(conll_sequences)
+        for idx in range(len(chars)):
+            print(chars[idx] + '-' + tags[idx])
+        sys.exit(0)
+
+    def tokenize(self, raw_text):
+        pass
+
+
 class TieredTokenizer:
     def __init__(self, config, encodings, embeddings, runtime=False):
         self.config = config
@@ -213,9 +282,11 @@ class TieredTokenizer:
         for index in range(len(seq)):
             word += seq[index]
             aux_softmax_output_prev.append(
-                dy.softmax(self.TOK_softmax_prev_w.expr(update=True) * fw_out[index] + self.TOK_softmax_prev_b.expr(update=True)))
+                dy.softmax(self.TOK_softmax_prev_w.expr(update=True) * fw_out[index] + self.TOK_softmax_prev_b.expr(
+                    update=True)))
             aux_softmax_output_peek.append(
-                dy.softmax(self.TOK_softmax_peek_w.expr(update=True) * bw_out[index] + self.TOK_softmax_peek_b.expr(update=True)))
+                dy.softmax(self.TOK_softmax_peek_w.expr(update=True) * bw_out[index] + self.TOK_softmax_peek_b.expr(
+                    update=True)))
 
             word_state = word_is_unknown
             peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
@@ -238,7 +309,8 @@ class TieredTokenizer:
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
 
-            softmax_output.append(dy.softmax(self.TOK_softmax_w.expr(update=True) * hidden + self.TOK_softmax_b.expr(update=True)))
+            softmax_output.append(
+                dy.softmax(self.TOK_softmax_w.expr(update=True) * hidden + self.TOK_softmax_b.expr(update=True)))
             must_split = False
             if not runtime:
                 if y_gold[index] == "S" or y_gold[index] == "SX":
@@ -465,18 +537,21 @@ class TieredTokenizer:
             peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
 
             aux_softmax_output_peek.append(
-                dy.softmax(self.SS_aux_softmax_peek_w.expr(update=True) * peek_out + self.SS_aux_softmax_peek_b.expr(update=True)))
+                dy.softmax(self.SS_aux_softmax_peek_w.expr(update=True) * peek_out + self.SS_aux_softmax_peek_b.expr(
+                    update=True)))
 
             lstm_fw = lstm_fw.add_input(x_list[cIndex])
             lstm_out = lstm_fw.output()
             aux_softmax_output_prev.append(
-                dy.softmax(self.SS_aux_softmax_prev_w.expr(update=True) * lstm_out + self.SS_aux_softmax_prev_b.expr(update=True)))
+                dy.softmax(self.SS_aux_softmax_prev_w.expr(update=True) * lstm_out + self.SS_aux_softmax_prev_b.expr(
+                    update=True)))
             hidden = dy.concatenate([lstm_out, peek_out])
             for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
                 hidden = dy.tanh(w.expr(update=True) * hidden + b.expr(update=True))
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
-            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr(update=True) * hidden + self.SS_mlp_softmax_b.expr(update=True)))
+            softmax_output.append(
+                dy.softmax(self.SS_mlp_softmax_w.expr(update=True) * hidden + self.SS_mlp_softmax_b.expr(update=True)))
 
         return softmax_output, aux_softmax_output_peek, aux_softmax_output_prev
 
@@ -751,9 +826,12 @@ class BDRNNTokenizer:
             next_chars = next_chars[-1]  # self._attend(next_chars, lstm1_forward)
 
             softmax_aux_peek.append(
-                dy.softmax(self.aux_softmax_char_peek_w.expr(update=True) * next_chars + self.aux_softmax_char_peek_b.expr(update=True)))
+                dy.softmax(
+                    self.aux_softmax_char_peek_w.expr(update=True) * next_chars + self.aux_softmax_char_peek_b.expr(
+                        update=True)))
             softmax_aux_hist.append(dy.softmax(
-                self.aux_softmax_char_hist_w.expr(update=True) * encoder_char_output + self.aux_softmax_char_hist_b.expr(update=True)))
+                self.aux_softmax_char_hist_w.expr(
+                    update=True) * encoder_char_output + self.aux_softmax_char_hist_b.expr(update=True)))
 
             # dropout at feature-set level:
             # if runtime:
@@ -763,7 +841,8 @@ class BDRNNTokenizer:
             if not runtime:
                 decoder_input = dy.dropout(decoder_input, self.config.dropout_rate)
 
-            decoder_hidden = dy.tanh(self.decoder_hiddenW.expr(update=True) * decoder_input + self.decoder_hiddenB.expr(update=True))
+            decoder_hidden = dy.tanh(
+                self.decoder_hiddenW.expr(update=True) * decoder_input + self.decoder_hiddenB.expr(update=True))
             if not runtime:
                 decoder_hidden = dy.dropout(decoder_hidden, self.config.dropout_rate)
 
