@@ -847,8 +847,41 @@ class TokenizerTrainer:
         self.trainset = trainset
         self.devset = devset
 
+    def _make_input(self, seqs):
+        chars = []
+
+        for seq in seqs:
+            for entry in seq:
+                for char_idx in range(len(entry.word)):
+                    chars.append(entry.word[char_idx])
+                if "spaceafter=no" not in entry.space_after.lower():
+                    chars.append(' ')
+        return ''.join(chars)
+
     def eval(self, set):
-        pass
+        # todo: implement multilanguage training
+        seqs = []
+        for seq, l_id in set.sequences:
+            seqs.append(seq)
+        text = self._make_input(seqs)
+        seqs = self.tokenizer.tokenize(text)
+
+        with fopen("test-temporary.conllu", 'w') as file:
+            for sentence in seqs:
+                # print ("Sentence has entries: "+str(len(sentence)))
+                for entry in sentence:
+                    line = str(
+                        entry.index) + "\t" + entry.word + "\t" + entry.lemma + "\t" + entry.upos + "\t" + entry.xpos + "\t" + entry.attrs + "\t" + str(
+                        entry.head) + "\t" + entry.label + "\t" + entry.deps + "\t" + entry.space_after + "\n"
+                    file.write(line)
+
+                file.write("\n")
+
+            # run eval script
+        #metrics = conll_eval("test-temporary.conllu", gold_conllu_file)
+
+        #return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
+        return 0, 0, 0
 
     def _get_num_chars(self, seq):
         seq = seq[0]
@@ -866,29 +899,49 @@ class TokenizerTrainer:
         patience_left = self.patience
         total_loss = 0
         total_chars = 0
+
+        # toto: multilnaguage training
+        epoch = 1
         while patience_left > 0:
+            sys.stdout.write('Starting epoch ' + str(epoch) + '\n')
+            epoch += 1
+            patience_left -= 1
+            last_proc = 0
             sys.stdout.write('\tShuffling training data\n')
             random.shuffle(self.trainset.sequences)
+            sys.stdout.write('\ttraining...')
+            sys.stdout.flush()
 
             chars_in_batch = 0
             batched_seqs = []
             for idx in range(len(self.trainset.sequences)):
-                batched_seqs.append(self.trainset.sequences[idx])
+                curr_proc = (idx + 1) * 100 // len(self.trainset.sequences)
+                # print(curr_proc)
+                if curr_proc % 5 == 0 and last_proc != curr_proc:
+                    while last_proc < curr_proc:
+                        last_proc += 5
+                        sys.stdout.write(' ' + str(last_proc))
+                        sys.stdout.flush()
+
+                batched_seqs.append(self.trainset.sequences[idx][0])
                 chars_in_batch += self._get_num_chars(self.trainset.sequences[idx])
                 if chars_in_batch > batch_size:
-                    loss = self.tokenizer.learn(batched_seqs)
+                    loss = self.tokenizer.learn(batched_seqs, lang_id=0)
                     total_loss += loss
                     total_chars += chars_in_batch
                     chars_in_batch = 0
                     batched_seqs = []
+
             if chars_in_batch != 0:
                 loss = self.tokenizer.learn(batched_seqs)
                 total_loss += loss
                 total_chars += chars_in_batch
-                chars_in_batch = 0
-                batched_seqs = []
 
-            f_sent, f_token, f_word = eval(self.devset)
+            sys.stdout.write(' loss=' + str(total_loss / total_chars) + '\n')
+
+            sys.stdout.write('\tevaluating...')
+            f_sent, f_token, f_word = self.eval(self.devset)
+            sys.stdout.write(' sent=' + str(f_sent) + ' tok=' + str(f_token) + ' words=' + str(f_word) + '\n')
 
             if f_sent > best_sent:
                 best_sent = f_sent

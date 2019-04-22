@@ -26,10 +26,11 @@ from cube.misc.misc import fopen
 
 from cube.misc.misc import get_eta, pretty_time, log_progress, line_count
 from cube.io_utils.conll import ConllEntry
+from cube.generic_networks.crf import CRFDecoder
 
 
 class CRFTokenizer:
-    def __init__(self, config, encodings, num_languages=None, runtime=False):
+    def __init__(self, config, encodings, num_languages=1, runtime=False):
         self.model = dy.Model()
         self.trainer = dy.AdamTrainer(self.model)
         self.encodings = encodings
@@ -37,11 +38,9 @@ class CRFTokenizer:
         self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
         self.case_lookup = self.model.add_lookup_parameters((3, 32))
         input_size = 32 + config.char_emb_size
-        if num_languages is not None:
-            self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
-            input_size += config.lang_emb_size
-        else:
-            self.lang_lookup = None
+
+        self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
+        input_size += config.lang_emb_size
 
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
@@ -51,17 +50,17 @@ class CRFTokenizer:
         self.lstm_bw = []
 
         for layer_size in self.config.lstm_layers:
-            self.lstm_fw = dy.LSTMBuilder(1, input_size, layer_size, self.model)
-            self.lstm_bw = dy.LSTMBuilder(1, input_size, layer_size, self.model)
-            input_size = layer_size * 2
-            if self.lang_lookup is not None:
-                input_size += self.config.lang_emb_size
+            self.lstm_fw.append(dy.LSTMBuilder(1, input_size, layer_size, self.model))
+            self.lstm_bw.append(dy.LSTMBuilder(1, input_size, layer_size, self.model))
+            input_size = layer_size * 2 + self.config.lang_emb_size
+
+        self.crf_decoder = CRFDecoder(self.model, input_size, 100, len(self.label2int))
 
     def _make_input(self, seqs):
         chars = []
         tags = []
 
-        for seq, lang_id in seqs:
+        for seq in seqs:
             for entry in seq:
                 for char_idx in range(len(entry.word)):
                     chars.append(entry.word[char_idx])
@@ -78,23 +77,87 @@ class CRFTokenizer:
                 if "spaceafter=no" not in entry.space_after.lower():
                     chars.append(' ')
                     tags.append('X')
-            if tags[-1] == 'S' or tags[-1] == 'X':
-                tags[-1] = 'T'
+            delta = -1
+            while tags[delta] == 'X':
+                delta -= 1  # it should never crash if dataset is ok
+
+            if tags[delta] == 'S':
+                tags[delta] = 'T'
             else:
                 append_m = ''
-                if tags[-1].endswith('M'):
+                if tags[delta].endswith('M'):
                     append_m = 'M'
-                tags[-1] = 'U' + append_m
+                tags[delta] = 'U' + append_m
         return chars, tags
 
-    def learn(self, conll_sequences):
+    def learn(self, conll_sequences, lang_id=0):
+        dy.renew_cg()
         chars, tags = self._make_input(conll_sequences)
-        for idx in range(len(chars)):
-            print(chars[idx] + '-' + tags[idx])
-        sys.exit(0)
+        # for char, tag in zip(chars, tags):
+        #     print(char + "-" + tag)
+        #
+        # for seq in conll_sequences:
+        #     for entry in seq:
+        #         print(entry.word + "\t" + entry.space_after)
+        # sys.exit(0)
+        embs = self._forward(chars, lang_id=lang_id)
+        tgt_tags = [self.label2int[tag] for tag in tags]
+        loss = self.crf_decoder.learn(embs, tgt_tags)
+        l_val = loss.value()
+        loss.backward()
+        self.trainer.update()
+        return l_val
 
-    def tokenize(self, raw_text):
-        pass
+    def tokenize(self, raw_text, lang_id=0):
+        chars = [c for c in raw_text]
+        embs = self._forward(chars, lang_id=lang_id)
+        int_tags = self.crf_decoder.tag(embs)
+        tags = [self.label_list[tag] for tag in int_tags]
+        seqs = []
+        w = ''
+        seq = []
+        index = 1
+        for char, tag in zip(chars, tags):
+            if tag != 'X':
+                w += char
+            if tag == 'E' or tag == 'S' or tag == 'M' or tag == 'U':
+                entry = ConllEntry(index, w, '_', '_', '_', '_', index - 1, '_', '_', '')
+                seq.append(entry)
+                index += 1
+                w = ''
+            if tag == 'U' or tag == 'T':
+                seqs.append(seq)
+                seq = []
+                index = 1
+        if len(seq) != 0:
+            seqs.append(seq)
+        return seqs
+
+    def _forward(self, chars, lang_id=0):
+        inp = []
+
+        lang_emb = self.lang_lookup[lang_id]
+
+        for char in chars:
+            case_emb = self.case_lookup[0]
+            if char.lower() == char.upper():
+                case_emb = self.case_lookup[1]
+            elif char.lower() != char:
+                case_emb = self.case_lookup[2]
+            if char.lower() in self.encodings.char2int:
+                char_emb = self.char_lookup[self.encodings.char2int[char.lower()]]
+
+            else:
+                char_emb = self.char_lookup[self.encodings.char2int['<UNK>']]
+
+            inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
+
+        for l_fw, l_bw in zip(self.lstm_fw, self.lstm_bw):
+            x_fw = l_fw.initial_state().transduce(inp)
+            x_bw = l_fw.initial_state().transduce(inp)
+            inp = [dy.concatenate([fw, bw, lang_emb]) for fw, bw in zip(x_fw, list(reversed(x_bw)))]
+
+        return inp
 
 
 class TieredTokenizer:
