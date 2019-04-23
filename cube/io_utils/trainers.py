@@ -858,7 +858,7 @@ class TokenizerTrainer:
                     chars.append(' ')
         return ''.join(chars)
 
-    def eval(self, set):
+    def eval(self, set, output_base):
         # todo: implement multilanguage training
         seqs = []
         for seq, l_id in set.sequences:
@@ -866,7 +866,7 @@ class TokenizerTrainer:
         text = self._make_input(seqs)
         seqs = self.tokenizer.tokenize(text)
 
-        with fopen("test-temporary.conllu", 'w') as file:
+        with fopen(output_base + "-temporary.conllu", 'w') as file:
             for sentence in seqs:
                 # print ("Sentence has entries: "+str(len(sentence)))
                 for entry in sentence:
@@ -877,11 +877,26 @@ class TokenizerTrainer:
 
                 file.write("\n")
 
-            # run eval script
-        #metrics = conll_eval("test-temporary.conllu", gold_conllu_file)
+        with fopen(output_base + "-gold.conllu", 'w') as file:
+            for sentence, lang_id in set.sequences:
+                # print ("Sentence has entries: "+str(len(sentence)))
+                for entry in sentence:
+                    line = str(
+                        entry.index) + "\t" + entry.word + "\t" + entry.lemma + "\t" + entry.upos + "\t" + entry.xpos + "\t" + entry.attrs + "\t" + str(
+                        entry.head) + "\t" + entry.label + "\t" + entry.deps + "\t" + entry.space_after + "\n"
+                    file.write(line)
 
-        #return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
-        return 0, 0, 0
+                file.write("\n")
+
+            # run eval script
+        metrics = conll_eval(output_base + "-temporary.conllu", output_base + "-gold.conllu")
+
+        # return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
+        if metrics is None:
+            return 0, 0, 0
+        else:
+            return metrics["Sentences"].f1, metrics["Tokens"].f1, metrics["Words"].f1
+        # return 0, 0, 0
 
     def _get_num_chars(self, seq):
         seq = seq[0]
@@ -899,6 +914,12 @@ class TokenizerTrainer:
         patience_left = self.patience
         total_loss = 0
         total_chars = 0
+        path = output_base + ".encodings"
+        sys.stdout.write("Storing encodings in " + path + "\n")
+        self.encodings.save(path)
+        path = output_base + ".conf"
+        sys.stdout.write("Storing config in " + path + "\n")
+        self.tokenizer.config.save(path)
 
         # toto: multilnaguage training
         epoch = 1
@@ -914,6 +935,7 @@ class TokenizerTrainer:
 
             chars_in_batch = 0
             batched_seqs = []
+            start = time.time()
             for idx in range(len(self.trainset.sequences)):
                 curr_proc = (idx + 1) * 100 // len(self.trainset.sequences)
                 # print(curr_proc)
@@ -937,25 +959,30 @@ class TokenizerTrainer:
                 total_loss += loss
                 total_chars += chars_in_batch
 
-            sys.stdout.write(' loss=' + str(total_loss / total_chars) + '\n')
+            stop = time.time()
+
+            sys.stdout.write(' loss=' + str(total_loss / total_chars) + ' execution time=' + str(stop - start) + '\n')
 
             sys.stdout.write('\tevaluating...')
-            f_sent, f_token, f_word = self.eval(self.devset)
+            f_sent, f_token, f_word = self.eval(self.devset, output_base)
             sys.stdout.write(' sent=' + str(f_sent) + ' tok=' + str(f_token) + ' words=' + str(f_word) + '\n')
 
             if f_sent > best_sent:
                 best_sent = f_sent
                 patience_left = self.patience
+                sys.stdout.write('\t\tStoring ' + output_base + '-ss.best\n')
                 self.tokenizer.save(output_base + '-ss.best')
 
             if f_token > best_token:
                 best_token = f_token
                 patience_left = self.patience
+                sys.stdout.write('\t\tStoring ' + output_base + '-tok.best\n')
                 self.tokenizer.save(output_base + '-tok.best')
 
             if f_word > best_word:
                 best_word = f_word
                 patience_left = self.patience
+                sys.stdout.write('\t\tStoring ' + output_base + '-words.best\n')
                 self.tokenizer.save(output_base + '-words.best')
 
 

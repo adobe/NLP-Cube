@@ -21,8 +21,11 @@ from cube.misc.conll18_ud_eval import load_conllu_file, evaluate
 #metrics = ["Tokens", "Sentences", "Words", "UPOS", "XPOS", "UFeats", "AllTags", "Lemmas", "UAS", "LAS", "CLAS", "MLAS", "BLEX"]
 #example usage:     metrics_test = conll_eval(system,gold)
 #                   test_tok_f1, test_ss_f1 = metrics_test["Tokens"].f1*100., metrics_test["Sentences"].f1*100.
-def conll_eval(system_file, gold_file):    
-    gold_ud = load_conllu_file(gold_file)
-    system_ud = load_conllu_file(system_file)
-    return evaluate(gold_ud, system_ud)
+def conll_eval(system_file, gold_file):
+    try:
+        gold_ud = load_conllu_file(gold_file)
+        system_ud = load_conllu_file(system_file)
+        return evaluate(gold_ud, system_ud)
+    except:
+        return None
     

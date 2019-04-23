@@ -44,7 +44,7 @@ class CRFTokenizer:
 
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
-        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'EOS', 'T', 'U', 'UM']
+        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
 
         self.lstm_fw = []
         self.lstm_bw = []
@@ -120,10 +120,11 @@ class CRFTokenizer:
         for char, tag in zip(chars, tags):
             if tag != 'X':
                 w += char
-            if tag == 'E' or tag == 'S' or tag == 'M' or tag == 'U':
-                entry = ConllEntry(index, w, '_', '_', '_', '_', index - 1, '_', '_', '')
-                seq.append(entry)
-                index += 1
+            if tag == 'E' or tag == 'S' or tag == 'M' or tag == 'U' or tag == 'T':
+                if w.strip()!='':
+                    entry = ConllEntry(index, w, '_', '_', '_', '_', index - 1, '_', '_', '')
+                    seq.append(entry)
+                    index += 1
                 w = ''
             if tag == 'U' or tag == 'T':
                 seqs.append(seq)
@@ -158,6 +159,12 @@ class CRFTokenizer:
             inp = [dy.concatenate([fw, bw, lang_emb]) for fw, bw in zip(x_fw, list(reversed(x_bw)))]
 
         return inp
+
+    def save(self, filename):
+        self.model.save(filename)
+
+    def load(self, filename):
+        self.model.populate(filename)
 
 
 class TieredTokenizer:
