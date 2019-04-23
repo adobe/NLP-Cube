@@ -1,9 +1,9 @@
 from cube.io_utils.conll import Dataset
 
 trainset = Dataset()
-trainset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
+trainset.load_language('corpus/ud-treebanks-v2.2/UD_English-EWT/en_ewt-ud-train.conllu', 0)
 devset = Dataset()
-devset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
+devset.load_language('corpus/ud-treebanks-v2.2/UD_English-EWT/en_ewt-ud-dev.conllu', 0)
 
 from cube.io_utils.encodings import Encodings
 
