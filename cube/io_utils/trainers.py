@@ -847,6 +847,27 @@ class TokenizerTrainer:
         self.trainset = trainset
         self.devset = devset
 
+        self.train_buckets = {}
+        self.dev_buckets = {}
+
+        self._bucket_languages()
+
+    def _bucket_languages(self):
+        max_lang_id = 0
+        for seq, lang_id in self.trainset.sequences:
+            if lang_id > max_lang_id:
+                max_lang_id = lang_id
+
+        for lang_id in range(max_lang_id + 1):
+            self.train_buckets[lang_id] = []
+            self.dev_buckets[lang_id] = []
+
+        for seq, lang_id in self.trainset.sequences:
+            self.train_buckets[lang_id].append(seq)
+
+        for seq, lang_id in self.devset.sequences:
+            self.dev_buckets[lang_id].append(seq)
+
     def _make_input(self, seqs):
         chars = []
 
@@ -858,37 +879,39 @@ class TokenizerTrainer:
                     chars.append(' ')
         return ''.join(chars)
 
-    def eval(self, set, output_base):
+    def eval(self, output_base):
         # todo: implement multilanguage training
-        seqs = []
-        for seq, l_id in set.sequences:
-            seqs.append(seq)
-        text = self._make_input(seqs)
-        seqs = self.tokenizer.tokenize(text)
 
-        with fopen(output_base + "-temporary.conllu", 'w') as file:
+        pred_file = open(output_base + "-temporary.conllu", 'w')
+        gold_file = open(output_base + "-gold.conllu", 'w')
+        for lang_id in self.dev_buckets:
+            text = self._make_input(self.dev_buckets[lang_id])
+            seqs = self.tokenizer.tokenize(text, lang_id=lang_id)
+            # with fopen(output_base + "-temporary.conllu", 'w') as file:
             for sentence in seqs:
                 # print ("Sentence has entries: "+str(len(sentence)))
                 for entry in sentence:
                     line = str(
                         entry.index) + "\t" + entry.word + "\t" + entry.lemma + "\t" + entry.upos + "\t" + entry.xpos + "\t" + entry.attrs + "\t" + str(
                         entry.head) + "\t" + entry.label + "\t" + entry.deps + "\t" + entry.space_after + "\n"
-                    file.write(line)
+                    pred_file.write(line)
 
-                file.write("\n")
+                pred_file.write("\n")
 
-        with fopen(output_base + "-gold.conllu", 'w') as file:
-            for sentence, lang_id in set.sequences:
+            for sentence in self.dev_buckets[lang_id]:
                 # print ("Sentence has entries: "+str(len(sentence)))
                 for entry in sentence:
                     line = str(
                         entry.index) + "\t" + entry.word + "\t" + entry.lemma + "\t" + entry.upos + "\t" + entry.xpos + "\t" + entry.attrs + "\t" + str(
                         entry.head) + "\t" + entry.label + "\t" + entry.deps + "\t" + entry.space_after + "\n"
-                    file.write(line)
+                    gold_file.write(line)
 
-                file.write("\n")
+                gold_file.write("\n")
 
             # run eval script
+
+        pred_file.close()
+        gold_file.close()
         metrics = conll_eval(output_base + "-temporary.conllu", output_base + "-gold.conllu")
 
         # return metrics["Tokens"].f1 * 100., metrics["Sentences"].f1 * 100.
@@ -921,6 +944,8 @@ class TokenizerTrainer:
         sys.stdout.write("Storing config in " + path + "\n")
         self.tokenizer.config.save(path)
 
+        #print(self.eval("tmp"))
+
         # toto: multilnaguage training
         epoch = 1
         while patience_left > 0:
@@ -936,35 +961,41 @@ class TokenizerTrainer:
             chars_in_batch = 0
             batched_seqs = []
             start = time.time()
-            for idx in range(len(self.trainset.sequences)):
-                curr_proc = (idx + 1) * 100 // len(self.trainset.sequences)
-                # print(curr_proc)
-                if curr_proc % 5 == 0 and last_proc != curr_proc:
-                    while last_proc < curr_proc:
-                        last_proc += 5
-                        sys.stdout.write(' ' + str(last_proc))
-                        sys.stdout.flush()
+            total_seqs = len(self.trainset.sequences)
+            curr_seqs = 0
+            for lang_id in self.train_buckets:
+                for idx in range(len(self.train_buckets[lang_id])):
+                    curr_seqs += 1
+                    curr_proc = curr_seqs * 100 // total_seqs
+                    # print(curr_proc)
+                    if curr_proc % 5 == 0 and last_proc != curr_proc:
+                        while last_proc < curr_proc:
+                            last_proc += 5
+                            sys.stdout.write(' ' + str(last_proc))
+                            sys.stdout.flush()
 
-                batched_seqs.append(self.trainset.sequences[idx][0])
-                chars_in_batch += self._get_num_chars(self.trainset.sequences[idx])
-                if chars_in_batch > batch_size:
-                    loss = self.tokenizer.learn(batched_seqs, lang_id=0)
+                    batched_seqs.append(self.train_buckets[lang_id][idx])
+                    chars_in_batch += self._get_num_chars(self.trainset.sequences[idx])
+                    if chars_in_batch > batch_size:
+                        loss = self.tokenizer.learn(batched_seqs, lang_id=lang_id)
+                        total_loss += loss
+                        total_chars += chars_in_batch
+                        chars_in_batch = 0
+                        batched_seqs = []
+
+                if chars_in_batch != 0:
+                    loss = self.tokenizer.learn(batched_seqs, lang_id=lang_id)
                     total_loss += loss
                     total_chars += chars_in_batch
                     chars_in_batch = 0
                     batched_seqs = []
 
-            if chars_in_batch != 0:
-                loss = self.tokenizer.learn(batched_seqs)
-                total_loss += loss
-                total_chars += chars_in_batch
-
-            stop = time.time()
+                stop = time.time()
 
             sys.stdout.write(' loss=' + str(total_loss / total_chars) + ' execution time=' + str(stop - start) + '\n')
 
             sys.stdout.write('\tevaluating...')
-            f_sent, f_token, f_word = self.eval(self.devset, output_base)
+            f_sent, f_token, f_word = self.eval(output_base)
             sys.stdout.write(' sent=' + str(f_sent) + ' tok=' + str(f_token) + ' words=' + str(f_word) + '\n')
 
             if f_sent > best_sent:

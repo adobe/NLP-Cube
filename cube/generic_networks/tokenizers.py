@@ -73,7 +73,7 @@ class CRFTokenizer:
                     else:
                         tags.append('I')
                     if entry.is_compound_entry:
-                        tags[-1] = tags['-1'] + 'M'
+                        tags[-1] = tags[-1] + 'M'
                 if "spaceafter=no" not in entry.space_after.lower():
                     chars.append(' ')
                     tags.append('X')
@@ -109,29 +109,24 @@ class CRFTokenizer:
         return l_val
 
     def tokenize(self, raw_text, lang_id=0):
-        chars = [c for c in raw_text]
-        embs = self._forward(chars, lang_id=lang_id)
-        int_tags = self.crf_decoder.tag(embs)
-        tags = [self.label_list[tag] for tag in int_tags]
+        # make sequences of approx 2000-4000 chars
+        BATCH_SIZE = 2000
+        start = 0
         seqs = []
-        w = ''
         seq = []
-        index = 1
-        for char, tag in zip(chars, tags):
-            if tag != 'X':
-                w += char
-            if tag == 'E' or tag == 'S' or tag == 'M' or tag == 'U' or tag == 'T':
-                if w.strip()!='':
-                    entry = ConllEntry(index, w, '_', '_', '_', '_', index - 1, '_', '_', '')
-                    seq.append(entry)
-                    index += 1
-                w = ''
-            if tag == 'U' or tag == 'T':
-                seqs.append(seq)
-                seq = []
-                index = 1
-        if len(seq) != 0:
-            seqs.append(seq)
+        word_index = 1
+        word = ''
+
+        while start < len(raw_text):
+            stop = start + BATCH_SIZE
+            if len(raw_text) - stop < BATCH_SIZE:
+                stop = len(raw_text)
+
+            chars = [c for c in raw_text[start:stop]]
+            embs = self._forward(chars, lang_id=lang_id)
+            tags=self.crf_decoder.tag(embs)
+
+
         return seqs
 
     def _forward(self, chars, lang_id=0):

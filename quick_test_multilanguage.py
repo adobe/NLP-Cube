@@ -20,10 +20,10 @@ dev_list = ['../corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
             '../corpus/ud-treebanks-v2.2/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
             '../corpus/ud-treebanks-v2.2/UD_Spanish-AnCora/es_ancora-ud-dev.conllu',
             '../corpus/ud-treebanks-v2.2/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu',
-              '../corpus/ud-treebanks-v2.2/UD_French-Spoken/fr_spoken-ud-dev.conllu',
-              '../corpus/ud-treebanks-v2.2/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
-              '../corpus/ud-treebanks-v2.2/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
-              '../corpus/ud-treebanks-v2.2/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
+            '../corpus/ud-treebanks-v2.2/UD_French-Spoken/fr_spoken-ud-dev.conllu',
+            '../corpus/ud-treebanks-v2.2/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
+            '../corpus/ud-treebanks-v2.2/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
+            '../corpus/ud-treebanks-v2.2/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
 
 trainset = Dataset()
 devset = Dataset()
