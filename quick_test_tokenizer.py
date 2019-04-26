@@ -3,7 +3,7 @@ from cube.io_utils.conll import Dataset
 trainset = Dataset()
 devset = Dataset()
 
-train_list = ['corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
+train_list = ['corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
               'corpus/ud-treebanks-v2.2/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
               'corpus/ud-treebanks-v2.2/UD_French-GSD/fr_gsd-ud-train.conllu',
               'corpus/ud-treebanks-v2.2/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
@@ -27,7 +27,7 @@ dev_list = ['corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
 
 trainset = Dataset()
 devset = Dataset()
-for ii in range(1):#len(train_list)):
+for ii in range(len(train_list)):
     trainset.load_language(train_list[ii], ii)
     devset.load_language(dev_list[ii], ii)
 

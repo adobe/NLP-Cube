@@ -124,8 +124,29 @@ class CRFTokenizer:
 
             chars = [c for c in raw_text[start:stop]]
             embs = self._forward(chars, lang_id=lang_id)
-            tags=self.crf_decoder.tag(embs)
+            tags = self.crf_decoder.tag(embs)
 
+            tmp_tags = [self.label_list[tag] for tag in tags]
+            tags = tmp_tags
+            for index, char, tag in zip(range(len(tags)), chars, tags):
+                if tag != 'X':
+                    word += char
+                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith('I'):
+                    entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+                    seq.append(entry)
+                    word_index += 1
+                    word = ''
+                if tag.startswith('T') or tag.startswith('U'):
+                    seqs.append(seq)
+                    seq = []
+                    word_index = 1
+            start += len(chars)
+
+        if word != '':
+            entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+            seq.append(entry)
+        if len(seq) != 0:
+            seqs.append(seq)
 
         return seqs
 
