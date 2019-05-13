@@ -118,6 +118,7 @@ class CRFTokenizer:
         word = ''
 
         while start < len(raw_text):
+            dy.renew_cg()
             stop = start + BATCH_SIZE
             if len(raw_text) - stop < BATCH_SIZE:
                 stop = len(raw_text)

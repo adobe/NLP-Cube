@@ -870,13 +870,19 @@ class TokenizerTrainer:
 
     def _make_input(self, seqs):
         chars = []
-
+        subtokens_left = 0
         for seq in seqs:
             for entry in seq:
-                for char_idx in range(len(entry.word)):
-                    chars.append(entry.word[char_idx])
-                if "spaceafter=no" not in entry.space_after.lower():
-                    chars.append(' ')
+                if subtokens_left == 0:
+                    for char_idx in range(len(entry.word)):
+                        chars.append(entry.word[char_idx])
+                    if "spaceafter=no" not in entry.space_after.lower():
+                        chars.append(' ')
+                else:
+                    subtokens_left -= 1
+                if entry.is_compound_entry:
+                    parts = entry.index.split('-')
+                    subtokens_left = int(parts[1]) - int(parts[0]) + 1
         return ''.join(chars)
 
     def eval(self, output_base):
@@ -944,7 +950,7 @@ class TokenizerTrainer:
         sys.stdout.write("Storing config in " + path + "\n")
         self.tokenizer.config.save(path)
 
-        #print(self.eval("tmp"))
+        # print(self.eval("tmp"))
 
         # toto: multilnaguage training
         epoch = 1
@@ -997,6 +1003,9 @@ class TokenizerTrainer:
             sys.stdout.write('\tevaluating...')
             f_sent, f_token, f_word = self.eval(output_base)
             sys.stdout.write(' sent=' + str(f_sent) + ' tok=' + str(f_token) + ' words=' + str(f_word) + '\n')
+            path = output_base + ".last"
+            sys.stdout.write('\t\tStoring ' + path + '\n')
+            self.tokenizer.save(path)
 
             if f_sent > best_sent:
                 best_sent = f_sent
