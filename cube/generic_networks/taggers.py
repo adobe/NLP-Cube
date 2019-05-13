@@ -32,10 +32,9 @@ class BDRNNTagger:
         self.encodings = encodings
 
         self.model = dy.Model()
-        self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9,
-                                      beta_2=0.9)  # dy.MomentumSGDTrainer(self.model)
+        self.trainer = dy.AdamTrainer(self.model)  # dy.MomentumSGDTrainer(self.model)
         self.trainer.set_sparse_updates(False)
-        self.character_network = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=1,
+        self.character_network = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=2,
                                                   embeddings_size=self.config.input_size,
                                                   model=self.model, runtime=runtime,
                                                   lang_embeddings_size=self.config.language_embedding_size)
