@@ -84,41 +84,16 @@ class Config(object):
 class TokenizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-
-        self.base = ""
-        # encoder-char        
-        self.char_vocabulary_size = -1  # to be calculated when first training
-        self.char_embedding_size = 100
-        self.char_generic_feature_vocabulary_size = 2
-        self.char_generic_feature_embedding_size = 5
-
-        self.encoder_char_input_attribute_dropout = 0.
-        self.encoder_char_lstm_size = 200
-
-        # next-chars
-        self.next_chars_embedding_size = 100
-        self.next_chars_window_size = 10
-
-        # encoder-word        
-        self.encoder_word_input_w2i_array = {}
-        self.encoder_word_vocab_size = 0  # ref
-        self.encoder_word_embedding_size = 0  # ref
-        self.encoder_word_lstm_size = 200
-        # decoder 
-        self.decoder_attribute_dropout = 0.33
-        self.decoder_hidden_size = 20
-
-        self.dropout_rate = 0
-        # extra        
-        self.patience = -1
-        self.tokenize_maximum_sequence_length = 500  # how much to run predict on, at a time
+        self.lstm_layers = [200, 200]
+        self.lang_emb_size = 100
+        self.char_emb_size = 100
 
         if filename is None:
             if verbose:
                 sys.stdout.write("No configuration file supplied. Using default values.\n")
         else:
             if verbose:
-                sys.stdout.write("Reading configuration file " + filename + "\n")
+                sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
         self._valid = True

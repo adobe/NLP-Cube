@@ -26,6 +26,162 @@ from cube.misc.misc import fopen
 
 from cube.misc.misc import get_eta, pretty_time, log_progress, line_count
 from cube.io_utils.conll import ConllEntry
+from cube.generic_networks.crf import CRFDecoder
+
+
+class CRFTokenizer:
+    def __init__(self, config, encodings, num_languages=1, runtime=False):
+        self.model = dy.Model()
+        self.trainer = dy.AdamTrainer(self.model)
+        self.encodings = encodings
+        self.config = config
+        self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
+        self.case_lookup = self.model.add_lookup_parameters((3, 32))
+        input_size = 32 + config.char_emb_size
+
+        self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
+        input_size += config.lang_emb_size
+
+        self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
+                          'UM': 11}
+        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
+
+        self.lstm_fw = []
+        self.lstm_bw = []
+
+        for layer_size in self.config.lstm_layers:
+            self.lstm_fw.append(dy.LSTMBuilder(1, input_size, layer_size, self.model))
+            self.lstm_bw.append(dy.LSTMBuilder(1, input_size, layer_size, self.model))
+            input_size = layer_size * 2 + self.config.lang_emb_size
+
+        self.crf_decoder = CRFDecoder(self.model, input_size, 100, len(self.label2int))
+
+    def _make_input(self, seqs):
+        chars = []
+        tags = []
+
+        for seq in seqs:
+            for entry in seq:
+                for char_idx in range(len(entry.word)):
+                    chars.append(entry.word[char_idx])
+                    if len(entry.word) == 1:
+                        tags.append('S')
+                    elif char_idx == 0:
+                        tags.append('B')
+                    elif char_idx == len(entry.word) - 1:
+                        tags.append('E')
+                    else:
+                        tags.append('I')
+                    if entry.is_compound_entry:
+                        tags[-1] = tags[-1] + 'M'
+                if "spaceafter=no" not in entry.space_after.lower():
+                    chars.append(' ')
+                    tags.append('X')
+            delta = -1
+            while tags[delta] == 'X':
+                delta -= 1  # it should never crash if dataset is ok
+
+            if tags[delta] == 'S':
+                tags[delta] = 'T'
+            else:
+                append_m = ''
+                if tags[delta].endswith('M'):
+                    append_m = 'M'
+                tags[delta] = 'U' + append_m
+        return chars, tags
+
+    def learn(self, conll_sequences, lang_id=0):
+        dy.renew_cg()
+        chars, tags = self._make_input(conll_sequences)
+        # for char, tag in zip(chars, tags):
+        #     print(char + "-" + tag)
+        #
+        # for seq in conll_sequences:
+        #     for entry in seq:
+        #         print(entry.word + "\t" + entry.space_after)
+        # sys.exit(0)
+        embs = self._forward(chars, lang_id=lang_id)
+        tgt_tags = [self.label2int[tag] for tag in tags]
+        loss = self.crf_decoder.learn(embs, tgt_tags)
+        l_val = loss.value()
+        loss.backward()
+        self.trainer.update()
+        return l_val
+
+    def tokenize(self, raw_text, lang_id=0):
+        # make sequences of approx 2000-4000 chars
+        BATCH_SIZE = 2000
+        start = 0
+        seqs = []
+        seq = []
+        word_index = 1
+        word = ''
+
+        while start < len(raw_text):
+            dy.renew_cg()
+            stop = start + BATCH_SIZE
+            if len(raw_text) - stop < BATCH_SIZE:
+                stop = len(raw_text)
+
+            chars = [c for c in raw_text[start:stop]]
+            embs = self._forward(chars, lang_id=lang_id)
+            tags = self.crf_decoder.tag(embs)
+
+            tmp_tags = [self.label_list[tag] for tag in tags]
+            tags = tmp_tags
+            for index, char, tag in zip(range(len(tags)), chars, tags):
+                if tag != 'X':
+                    word += char
+                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith('I'):
+                    entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+                    seq.append(entry)
+                    word_index += 1
+                    word = ''
+                if tag.startswith('T') or tag.startswith('U'):
+                    seqs.append(seq)
+                    seq = []
+                    word_index = 1
+            start += len(chars)
+
+        if word != '':
+            entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+            seq.append(entry)
+        if len(seq) != 0:
+            seqs.append(seq)
+
+        return seqs
+
+    def _forward(self, chars, lang_id=0):
+        inp = []
+
+        lang_emb = self.lang_lookup[lang_id]
+
+        for char in chars:
+            case_emb = self.case_lookup[0]
+            if char.lower() == char.upper():
+                case_emb = self.case_lookup[1]
+            elif char.lower() != char:
+                case_emb = self.case_lookup[2]
+            if char.lower() in self.encodings.char2int:
+                char_emb = self.char_lookup[self.encodings.char2int[char.lower()]]
+
+            else:
+                char_emb = self.char_lookup[self.encodings.char2int['<UNK>']]
+
+            inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
+
+        for l_fw, l_bw in zip(self.lstm_fw, self.lstm_bw):
+            x_fw = l_fw.initial_state().transduce(inp)
+            x_bw = l_fw.initial_state().transduce(inp)
+            inp = [dy.concatenate([fw, bw, lang_emb]) for fw, bw in zip(x_fw, list(reversed(x_bw)))]
+
+        return inp
+
+    def save(self, filename):
+        self.model.save(filename)
+
+    def load(self, filename):
+        self.model.populate(filename)
 
 
 class TieredTokenizer:
@@ -213,9 +369,11 @@ class TieredTokenizer:
         for index in range(len(seq)):
             word += seq[index]
             aux_softmax_output_prev.append(
-                dy.softmax(self.TOK_softmax_prev_w.expr(update=True) * fw_out[index] + self.TOK_softmax_prev_b.expr(update=True)))
+                dy.softmax(self.TOK_softmax_prev_w.expr(update=True) * fw_out[index] + self.TOK_softmax_prev_b.expr(
+                    update=True)))
             aux_softmax_output_peek.append(
-                dy.softmax(self.TOK_softmax_peek_w.expr(update=True) * bw_out[index] + self.TOK_softmax_peek_b.expr(update=True)))
+                dy.softmax(self.TOK_softmax_peek_w.expr(update=True) * bw_out[index] + self.TOK_softmax_peek_b.expr(
+                    update=True)))
 
             word_state = word_is_unknown
             peek_emb, found = self.word_embeddings.get_word_embeddings(word.strip())
@@ -238,7 +396,8 @@ class TieredTokenizer:
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
 
-            softmax_output.append(dy.softmax(self.TOK_softmax_w.expr(update=True) * hidden + self.TOK_softmax_b.expr(update=True)))
+            softmax_output.append(
+                dy.softmax(self.TOK_softmax_w.expr(update=True) * hidden + self.TOK_softmax_b.expr(update=True)))
             must_split = False
             if not runtime:
                 if y_gold[index] == "S" or y_gold[index] == "SX":
@@ -465,18 +624,21 @@ class TieredTokenizer:
             peek_out = self.SS_peek_lstm.initial_state().transduce(reversed(peek_chars))[-1]
 
             aux_softmax_output_peek.append(
-                dy.softmax(self.SS_aux_softmax_peek_w.expr(update=True) * peek_out + self.SS_aux_softmax_peek_b.expr(update=True)))
+                dy.softmax(self.SS_aux_softmax_peek_w.expr(update=True) * peek_out + self.SS_aux_softmax_peek_b.expr(
+                    update=True)))
 
             lstm_fw = lstm_fw.add_input(x_list[cIndex])
             lstm_out = lstm_fw.output()
             aux_softmax_output_prev.append(
-                dy.softmax(self.SS_aux_softmax_prev_w.expr(update=True) * lstm_out + self.SS_aux_softmax_prev_b.expr(update=True)))
+                dy.softmax(self.SS_aux_softmax_prev_w.expr(update=True) * lstm_out + self.SS_aux_softmax_prev_b.expr(
+                    update=True)))
             hidden = dy.concatenate([lstm_out, peek_out])
             for w, b, dropout in zip(self.SS_mlp_w, self.SS_mlp_b, self.config.ss_mlp_dropouts):
                 hidden = dy.tanh(w.expr(update=True) * hidden + b.expr(update=True))
                 if not runtime:
                     hidden = dy.dropout(hidden, dropout)
-            softmax_output.append(dy.softmax(self.SS_mlp_softmax_w.expr(update=True) * hidden + self.SS_mlp_softmax_b.expr(update=True)))
+            softmax_output.append(
+                dy.softmax(self.SS_mlp_softmax_w.expr(update=True) * hidden + self.SS_mlp_softmax_b.expr(update=True)))
 
         return softmax_output, aux_softmax_output_peek, aux_softmax_output_prev
 
@@ -751,9 +913,12 @@ class BDRNNTokenizer:
             next_chars = next_chars[-1]  # self._attend(next_chars, lstm1_forward)
 
             softmax_aux_peek.append(
-                dy.softmax(self.aux_softmax_char_peek_w.expr(update=True) * next_chars + self.aux_softmax_char_peek_b.expr(update=True)))
+                dy.softmax(
+                    self.aux_softmax_char_peek_w.expr(update=True) * next_chars + self.aux_softmax_char_peek_b.expr(
+                        update=True)))
             softmax_aux_hist.append(dy.softmax(
-                self.aux_softmax_char_hist_w.expr(update=True) * encoder_char_output + self.aux_softmax_char_hist_b.expr(update=True)))
+                self.aux_softmax_char_hist_w.expr(
+                    update=True) * encoder_char_output + self.aux_softmax_char_hist_b.expr(update=True)))
 
             # dropout at feature-set level:
             # if runtime:
@@ -763,7 +928,8 @@ class BDRNNTokenizer:
             if not runtime:
                 decoder_input = dy.dropout(decoder_input, self.config.dropout_rate)
 
-            decoder_hidden = dy.tanh(self.decoder_hiddenW.expr(update=True) * decoder_input + self.decoder_hiddenB.expr(update=True))
+            decoder_hidden = dy.tanh(
+                self.decoder_hiddenW.expr(update=True) * decoder_input + self.decoder_hiddenB.expr(update=True))
             if not runtime:
                 decoder_hidden = dy.dropout(decoder_hidden, self.config.dropout_rate)
 
