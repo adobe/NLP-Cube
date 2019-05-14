@@ -42,9 +42,18 @@ class CRFTokenizer:
         self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
         input_size += config.lang_emb_size
 
-        self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
-                          'UM': 11}
-        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
+        label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
+        self.label_list = []
+        self.label2int = {}
+        for upos in self.encodings.upos2int:
+            for label in label_list:
+                key = label + '_' + upos
+                self.label2int[key] = len(self.label2int)
+                self.label_list.append(key)
+
+        # self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
+        #                   'UM': 11}
+        # self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
 
         self.lstm_fw = []
         self.lstm_bw = []
@@ -62,8 +71,10 @@ class CRFTokenizer:
 
         for seq in seqs:
             for entry in seq:
+                upos = ''
                 for char_idx in range(len(entry.word)):
                     chars.append(entry.word[char_idx])
+                    upos = entry.upos
                     if len(entry.word) == 1:
                         tags.append('S')
                     elif char_idx == 0:
@@ -74,20 +85,22 @@ class CRFTokenizer:
                         tags.append('I')
                     if entry.is_compound_entry:
                         tags[-1] = tags[-1] + 'M'
+
+                    tags[-1] = tags[-1] + '_' + upos
                 if "spaceafter=no" not in entry.space_after.lower():
                     chars.append(' ')
-                    tags.append('X')
+                    tags.append('X_' + upos)
             delta = -1
-            while tags[delta] == 'X':
+            while tags[delta].startswith('X'):
                 delta -= 1  # it should never crash if dataset is ok
 
-            if tags[delta] == 'S':
-                tags[delta] = 'T'
+            if tags[delta].startswith('S'):
+                tags[delta] = 'T_' + upos
             else:
                 append_m = ''
-                if tags[delta].endswith('M'):
+                if tags[delta][1] == 'M':
                     append_m = 'M'
-                tags[delta] = 'U' + append_m
+                tags[delta] = 'U' + append_m + '_' + upos
         return chars, tags
 
     def learn(self, conll_sequences, lang_id=0):
