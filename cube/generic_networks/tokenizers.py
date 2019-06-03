@@ -39,7 +39,7 @@ class DummyTokenizer:
         self.case_lookup = self.model.add_lookup_parameters((3, 32))
         self.window_size = 1
         self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
-        self.LAYER_SIZE = 300
+        self.LAYER_SIZE = 100
         inp_size = config.lang_emb_size + config.lang_emb_size + 32
         self._proj_w = self.model.add_parameters((self.LAYER_SIZE, inp_size))
         self._proj_b = self.model.add_parameters((self.LAYER_SIZE))
@@ -51,7 +51,7 @@ class DummyTokenizer:
         self._skip_w = []
         self._skip_b = []
         inp_size = self.LAYER_SIZE * (self.window_size * 2 + 1)
-        for ii in range(8):
+        for ii in range(30):
             self._gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
             self._gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
             self._act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
@@ -62,7 +62,7 @@ class DummyTokenizer:
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
         self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
-
+        # self.crf = CRFDecoder(self.model, self.LAYER_SIZE, 100, len(self.label_list))
         self.softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE))
         self.softmax_output_b = self.model.add_parameters((len(self.label_list)))
 
@@ -105,7 +105,10 @@ class DummyTokenizer:
         chars, tags = self._make_input(conll_sequences)
 
         outputs = self._forward(chars, lang_id=lang_id)
+        # crf_output = self.crf.tag(outputs)
         tgt_tags = [self.label2int[tag] for tag in tags]
+
+        # loss = self.crf.learn(outputs, tgt_tags) / len(tgt_tags)
         # from ipdb import set_trace
         # set_trace()
 
@@ -116,42 +119,61 @@ class DummyTokenizer:
         self.trainer.update()
         return l_val
 
+    def _batch_forward(self, chars, lang_id, batch_size=1000):
+        tags = []
+        num_batches = len(chars) // batch_size
+        if len(chars) % batch_size != 0:
+            num_batches += 1
+
+        for ii in range(num_batches):
+            start = ii * batch_size
+            stop = ii * batch_size + batch_size
+            if stop > len(chars):
+                stop = len(chars)
+
+            cbs = stop - start
+            offset = 0
+            if start > 0:
+                start -= self.window_size
+                offset = self.window_size
+            stop = min(len(chars), stop + self.window_size)
+
+            copy_chars = chars[start:stop]
+            dy.renew_cg()
+            outputs = self._forward(copy_chars, lang_id=lang_id, runtime=True)[offset:offset + cbs]
+
+            new_tags = [np.argmax(pred.npvalue()) for pred in outputs]
+            # new_tags = self.crf.tag(outputs)
+            for tag in new_tags:
+                tags.append(self.label_list[tag])
+        return tags
+
     def tokenize(self, raw_text, lang_id=0):
         # make sequences of approx 2000-4000 chars
-        BATCH_SIZE = 3000#len(raw_text)
+        BATCH_SIZE = 3000  # len(raw_text)
         start = 0
         seqs = []
         seq = []
         word_index = 1
         word = ''
 
-        while start < len(raw_text):
-            dy.renew_cg()
-            stop = start + BATCH_SIZE
-            if len(raw_text) - stop < BATCH_SIZE:
-                stop = len(raw_text)
+        chars = [c for c in raw_text]
+        tags = self._batch_forward(chars, batch_size=1000, lang_id=lang_id)
 
-            chars = [c for c in raw_text[start:stop]]
-            outputs = self._forward(chars, lang_id=lang_id)
-            tags = [self.label_list[np.argmax(output.npvalue())] for output in outputs]
-
-            # tmp_tags = [self.label_list[tag] for tag in tags]
-            # tags = tmp_tags
-
-            for index, char, tag in zip(range(len(tags)), chars, tags):
-                if not tag.startswith('X'):
-                    word += char
-                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith(
-                        'I') and word.strip() != '':
-                    entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
-                    seq.append(entry)
-                    word_index += 1
-                    word = ''
-                if tag.startswith('T') or tag.startswith('U'):
-                    seqs.append(seq)
-                    seq = []
-                    word_index = 1
-            start += len(chars)
+        for index, char, tag in zip(range(len(tags)), chars, tags):
+            if not tag.startswith('X'):
+                word += char
+            if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith(
+                    'I') and word.strip() != '':
+                entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+                seq.append(entry)
+                word_index += 1
+                word = ''
+            if tag.startswith('T') or tag.startswith('U'):
+                seqs.append(seq)
+                seq = []
+                word_index = 1
+        start += len(chars)
 
         if word.strip() != '':
             entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
@@ -202,8 +224,7 @@ class DummyTokenizer:
 
                 act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
                 gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
-                import math
-                output = (dy.cmult(act, gate) + inp[ii + self.window_size]) * math.sqrt(0.5)
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp[ii + self.window_size])
 
                 if not runtime:
                     output = dy.dropout(output, 0.25)
@@ -213,9 +234,9 @@ class DummyTokenizer:
                 new_inp.append(dy.inputVector(np.zeros((self.LAYER_SIZE))))
             inp = new_inp
         outputs = [
-            dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
-                update=True)) for hidden, res in zip(inp[self.window_size:], skip_conn)]
-
+           dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
+               update=True)) for hidden, res in zip(inp[self.window_size:], skip_conn)]
+        #outputs = inp[self.window_size:]
         return outputs
 
     def save(self, filename):
