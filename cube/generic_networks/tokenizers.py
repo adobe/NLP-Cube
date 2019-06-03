@@ -29,6 +29,202 @@ from cube.io_utils.conll import ConllEntry
 from cube.generic_networks.crf import CRFDecoder
 
 
+class DummyTokenizer:
+    def __init__(self, config, encodings, num_languages=1, runtime=False):
+        self.model = dy.Model()
+        self.trainer = dy.AdamTrainer(self.model)
+        self.encodings = encodings
+        self.config = config
+        self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
+        self.case_lookup = self.model.add_lookup_parameters((3, 32))
+        self.window_size = 1
+        self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
+        self.LAYER_SIZE = 300
+        inp_size = config.lang_emb_size + config.lang_emb_size + 32
+        self._proj_w = self.model.add_parameters((self.LAYER_SIZE, inp_size))
+        self._proj_b = self.model.add_parameters((self.LAYER_SIZE))
+
+        self._gate_w = []
+        self._gate_b = []
+        self._act_w = []
+        self._act_b = []
+        self._skip_w = []
+        self._skip_b = []
+        inp_size = self.LAYER_SIZE * (self.window_size * 2 + 1)
+        for ii in range(8):
+            self._gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._act_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            inp_size = self.LAYER_SIZE * (self.window_size * 2 + 1)
+        self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
+                          'UM': 11}
+        self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
+
+        self.softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE))
+        self.softmax_output_b = self.model.add_parameters((len(self.label_list)))
+
+    def _make_input(self, seqs):
+        chars = []
+        tags = []
+
+        for seq in seqs:
+            for entry in seq:
+                for char_idx in range(len(entry.word)):
+                    chars.append(entry.word[char_idx])
+                    if len(entry.word) == 1:
+                        tags.append('S')
+                    elif char_idx == 0:
+                        tags.append('B')
+                    elif char_idx == len(entry.word) - 1:
+                        tags.append('E')
+                    else:
+                        tags.append('I')
+                    if entry.is_compound_entry:
+                        tags[-1] = tags[-1] + 'M'
+
+                if "spaceafter=no" not in entry.space_after.lower():
+                    chars.append(' ')
+            delta = -1
+            while tags[delta].startswith('X'):
+                delta -= 1  # it should never crash if dataset is ok
+
+            if tags[delta].startswith('S'):
+                tags[delta] = 'T'
+            else:
+                append_m = ''
+                if tags[delta].endswith('M'):
+                    append_m = 'M'
+                tags[delta] = 'U' + append_m
+        return chars, tags
+
+    def learn(self, conll_sequences, lang_id=0):
+        dy.renew_cg()
+        chars, tags = self._make_input(conll_sequences)
+
+        outputs = self._forward(chars, lang_id=lang_id)
+        tgt_tags = [self.label2int[tag] for tag in tags]
+        # from ipdb import set_trace
+        # set_trace()
+
+        loss = dy.esum([-dy.log(dy.pick(output, tgt)) for output, tgt in zip(outputs, tgt_tags)]) / len(tgt_tags)
+
+        l_val = loss.value() * len(tgt_tags)
+        loss.backward()
+        self.trainer.update()
+        return l_val
+
+    def tokenize(self, raw_text, lang_id=0):
+        # make sequences of approx 2000-4000 chars
+        BATCH_SIZE = 3000#len(raw_text)
+        start = 0
+        seqs = []
+        seq = []
+        word_index = 1
+        word = ''
+
+        while start < len(raw_text):
+            dy.renew_cg()
+            stop = start + BATCH_SIZE
+            if len(raw_text) - stop < BATCH_SIZE:
+                stop = len(raw_text)
+
+            chars = [c for c in raw_text[start:stop]]
+            outputs = self._forward(chars, lang_id=lang_id)
+            tags = [self.label_list[np.argmax(output.npvalue())] for output in outputs]
+
+            # tmp_tags = [self.label_list[tag] for tag in tags]
+            # tags = tmp_tags
+
+            for index, char, tag in zip(range(len(tags)), chars, tags):
+                if not tag.startswith('X'):
+                    word += char
+                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith(
+                        'I') and word.strip() != '':
+                    entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+                    seq.append(entry)
+                    word_index += 1
+                    word = ''
+                if tag.startswith('T') or tag.startswith('U'):
+                    seqs.append(seq)
+                    seq = []
+                    word_index = 1
+            start += len(chars)
+
+        if word.strip() != '':
+            entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
+            seq.append(entry)
+        if len(seq) != 0:
+            seqs.append(seq)
+
+        return seqs
+
+    def _forward(self, chars, lang_id=0, runtime=True):
+        inp = [dy.inputVector(np.zeros(self.config.char_emb_size + 32 + self.config.lang_emb_size)) for ii in
+               range(self.window_size)]
+
+        lang_emb = self.lang_lookup[lang_id]
+
+        for char in chars:
+            case_emb = self.case_lookup[0]
+            if char.lower() == char.upper():
+                case_emb = self.case_lookup[1]
+            elif char.lower() != char:
+                case_emb = self.case_lookup[2]
+            if char.lower() in self.encodings.char2int:
+                char_emb = self.char_lookup[self.encodings.char2int[char.lower()]]
+
+            else:
+                char_emb = self.char_lookup[self.encodings.char2int['<UNK>']]
+
+            inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
+
+        for ii in range(self.window_size + 1):
+            inp.append(dy.inputVector(np.zeros((self.config.char_emb_size + 32 + self.config.lang_emb_size))))
+
+        # outputs = []
+
+        input = [self._proj_w.expr(update=True) * x + self._proj_b.expr(update=True) for x in inp]
+        inp = input
+
+        skip_conn = [[] for ii in range(len(chars))]
+        for idx, g_w, g_b, a_w, a_b, skip_w, skip_b in zip(range(len(self._gate_w)), self._gate_w, self._gate_b,
+                                                           self._act_w, self._act_b, self._skip_w, self._skip_b):
+            new_inp = [dy.inputVector(np.zeros(self.LAYER_SIZE)) for ii in
+                       range(self.window_size)]
+
+            for ii in range(len(chars)):
+
+                hidden = dy.concatenate(inp[ii:ii + self.window_size * 2 + 1])
+                skip_conn[ii].append(skip_w.expr(update=True) * hidden + skip_b.expr(update=True))
+
+                act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
+                gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
+                import math
+                output = (dy.cmult(act, gate) + inp[ii + self.window_size]) * math.sqrt(0.5)
+
+                if not runtime:
+                    output = dy.dropout(output, 0.25)
+                new_inp.append(output)
+
+            for ii in range(self.window_size + 1):
+                new_inp.append(dy.inputVector(np.zeros((self.LAYER_SIZE))))
+            inp = new_inp
+        outputs = [
+            dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
+                update=True)) for hidden, res in zip(inp[self.window_size:], skip_conn)]
+
+        return outputs
+
+    def save(self, filename):
+        self.model.save(filename)
+
+    def load(self, filename):
+        self.model.populate(filename)
+
+
 class CRFTokenizer:
     def __init__(self, config, encodings, num_languages=1, runtime=False):
         self.model = dy.Model()
@@ -142,10 +338,12 @@ class CRFTokenizer:
 
             tmp_tags = [self.label_list[tag] for tag in tags]
             tags = tmp_tags
+
             for index, char, tag in zip(range(len(tags)), chars, tags):
-                if tag != 'X':
+                if not tag.startswith('X'):
                     word += char
-                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith('I'):
+                if not tag.startswith('B') and not tag.startswith('X') and not tag.startswith(
+                        'I') and word.strip() != '':
                     entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
                     seq.append(entry)
                     word_index += 1
@@ -156,7 +354,7 @@ class CRFTokenizer:
                     word_index = 1
             start += len(chars)
 
-        if word != '':
+        if word.strip() != '':
             entry = ConllEntry(word_index, word, '_', '_', '_', '_', word_index - 1, '_', '_', '_')
             seq.append(entry)
         if len(seq) != 0:
