@@ -37,9 +37,11 @@ class DummyTokenizer:
         self.config = config
         self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
         self.case_lookup = self.model.add_lookup_parameters((3, 32))
-        self.window_size = 1
         self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
+    
         self.LAYER_SIZE = 100
+        self.NUM_LAYERS = 15
+        self.WINDOW_SIZE = 2
         inp_size = config.lang_emb_size + config.lang_emb_size + 32
         self._proj_w = self.model.add_parameters((self.LAYER_SIZE, inp_size))
         self._proj_b = self.model.add_parameters((self.LAYER_SIZE))
@@ -50,15 +52,15 @@ class DummyTokenizer:
         self._act_b = []
         self._skip_w = []
         self._skip_b = []
-        inp_size = self.LAYER_SIZE * (self.window_size * 2 + 1)
-        for ii in range(30):
+        inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE * 2 + 1)
+        for ii in range(self.NUM_LAYERS):
             self._gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
             self._gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
             self._act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
             self._act_b.append(self.model.add_parameters((self.LAYER_SIZE)))
             self._skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
             self._skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
-            inp_size = self.LAYER_SIZE * (self.window_size * 2 + 1)
+            inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE * 2 + 1)
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
         self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
@@ -134,9 +136,9 @@ class DummyTokenizer:
             cbs = stop - start
             offset = 0
             if start > 0:
-                start -= self.window_size
-                offset = self.window_size
-            stop = min(len(chars), stop + self.window_size)
+                start -= self.WINDOW_SIZE * self.NUM_LAYERS
+                offset = self.WINDOW_SIZE * self.NUM_LAYERS
+            stop = min(len(chars), stop + self.WINDOW_SIZE * self.NUM_LAYERS)
 
             copy_chars = chars[start:stop]
             dy.renew_cg()
@@ -185,7 +187,7 @@ class DummyTokenizer:
 
     def _forward(self, chars, lang_id=0, runtime=True):
         inp = [dy.inputVector(np.zeros(self.config.char_emb_size + 32 + self.config.lang_emb_size)) for ii in
-               range(self.window_size)]
+               range(self.WINDOW_SIZE)]
 
         lang_emb = self.lang_lookup[lang_id]
 
@@ -203,7 +205,7 @@ class DummyTokenizer:
 
             inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
 
-        for ii in range(self.window_size + 1):
+        for ii in range(self.WINDOW_SIZE + 1):
             inp.append(dy.inputVector(np.zeros((self.config.char_emb_size + 32 + self.config.lang_emb_size))))
 
         # outputs = []
@@ -215,28 +217,28 @@ class DummyTokenizer:
         for idx, g_w, g_b, a_w, a_b, skip_w, skip_b in zip(range(len(self._gate_w)), self._gate_w, self._gate_b,
                                                            self._act_w, self._act_b, self._skip_w, self._skip_b):
             new_inp = [dy.inputVector(np.zeros(self.LAYER_SIZE)) for ii in
-                       range(self.window_size)]
+                       range(self.WINDOW_SIZE)]
 
             for ii in range(len(chars)):
 
-                hidden = dy.concatenate(inp[ii:ii + self.window_size * 2 + 1])
+                hidden = dy.concatenate(inp[ii:ii + self.WINDOW_SIZE * 2 + 1])
                 skip_conn[ii].append(skip_w.expr(update=True) * hidden + skip_b.expr(update=True))
 
                 act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
                 gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
-                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp[ii + self.window_size])
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp[ii + self.WINDOW_SIZE])
 
                 if not runtime:
                     output = dy.dropout(output, 0.25)
                 new_inp.append(output)
 
-            for ii in range(self.window_size + 1):
+            for ii in range(self.WINDOW_SIZE + 1):
                 new_inp.append(dy.inputVector(np.zeros((self.LAYER_SIZE))))
             inp = new_inp
         outputs = [
-           dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
-               update=True)) for hidden, res in zip(inp[self.window_size:], skip_conn)]
-        #outputs = inp[self.window_size:]
+            dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
+                update=True)) for hidden, res in zip(inp[self.WINDOW_SIZE:], skip_conn)]
+        # outputs = inp[self.window_size:]
         return outputs
 
     def save(self, filename):
