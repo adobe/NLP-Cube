@@ -14,19 +14,20 @@ encodings.load('tokenizer-mixed-romance.encodings')
 from cube.generic_networks.tokenizers import CRFTokenizer
 from cube.io_utils.config import TokenizerConfig
 
-test_list = ['corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_French-Sequoia/fr_sequoia-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_French-GSD/fr_gsd-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Portuguese-Bosque/pt_bosque-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Spanish-AnCora/es_ancora-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Catalan-AnCora/ca_ancora-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_French-Spoken/fr_spoken-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Galician-CTG/gl_ctg-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Italian-ISDT/it_isdt-ud-test.txt',
-             'corpus/ud-treebanks-v2.2/UD_Italian-PoSTWITA/it_postwita-ud-test.txt']
+test_list = ['corpus/ud-treebanks-v2.2/UD_Japanese-GSD/ja_gsd-ud-test.txt']
+# test_list = ['corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_French-Sequoia/fr_sequoia-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_French-GSD/fr_gsd-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Portuguese-Bosque/pt_bosque-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Spanish-AnCora/es_ancora-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Catalan-AnCora/ca_ancora-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_French-Spoken/fr_spoken-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Galician-CTG/gl_ctg-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Italian-ISDT/it_isdt-ud-test.txt',
+#             'corpus/ud-treebanks-v2.2/UD_Italian-PoSTWITA/it_postwita-ud-test.txt']
 
 config = TokenizerConfig(filename='tokenizer-mixed-romance.conf')
-tokenizer = CRFTokenizer(config, encodings, num_languages=len(test_list))
+tokenizer = CRFTokenizer(config, encodings, num_languages=10)
 tokenizer.load('tokenizer-mixed-romance-tok.best')
 
 for ii in range(len(test_list)):
@@ -37,6 +38,8 @@ for ii in range(len(test_list)):
         if tt == text:
             break
         text = tt
+
+    text = text.replace(' ', '')
 
     seqs = tokenizer.tokenize(text, lang_id=ii)
     with open("test-temporary.conllu", 'w') as file:

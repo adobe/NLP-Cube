@@ -40,9 +40,9 @@ class DummyTokenizer:
         self.case_lookup = self.model.add_lookup_parameters((3, 32))
         self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
 
-        self.LAYER_SIZE = 100
-        self.NUM_LAYERS = 30
-        self.WINDOW_SIZE = 1
+        self.LAYER_SIZE = 300
+        self.NUM_LAYERS = 15
+        self.WINDOW_SIZE = 2
         inp_size = config.lang_emb_size + config.lang_emb_size + 32
         if dict is not None:
             inp_size += 1
@@ -76,6 +76,7 @@ class DummyTokenizer:
             self._bw_skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
             self._bw_skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
             inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE + 1)
+
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
         self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
@@ -164,8 +165,8 @@ class DummyTokenizer:
 
             copy_chars = chars[start:stop]
             dy.renew_cg()
-            #from ipdb import set_trace
-            #set_trace()
+            # from ipdb import set_trace
+            # set_trace()
             outputs, _, _ = self._forward(copy_chars, lang_id=lang_id, runtime=True)
             outputs = outputs[offset:offset + cbs]
 
@@ -266,7 +267,7 @@ class DummyTokenizer:
 
                 act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
                 gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
-                output = dy.cmult(act, gate)  # + dy.cmult(1.0 - gate, inp[ii + self.WINDOW_SIZE])
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp_fw[ii + self.WINDOW_SIZE])
 
                 if not runtime:
                     output = dy.dropout(output, 0.25)
@@ -292,7 +293,7 @@ class DummyTokenizer:
 
                 act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
                 gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
-                output = dy.cmult(act, gate)  # + dy.cmult(1.0 - gate, inp[ii + self.WINDOW_SIZE])
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp_bw[ii + self.WINDOW_SIZE])
 
                 if not runtime:
                     output = dy.dropout(output, 0.25)
@@ -304,19 +305,21 @@ class DummyTokenizer:
 
         outputs_aux1 = [
             dy.softmax(
-                self.aux1_softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.aux1_softmax_output_b.expr(
+                self.aux1_softmax_output_w.expr(update=True) * dy.rectify(
+                    dy.esum(res)) + self.aux1_softmax_output_b.expr(
                     update=True)) for hidden, res in zip(inp_fw[self.WINDOW_SIZE:], skip_conn_fw)]
         outputs_aux2 = [
             dy.softmax(
-                self.aux2_softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.aux2_softmax_output_b.expr(
+                self.aux2_softmax_output_w.expr(update=True) * dy.rectify(
+                    dy.esum(res)) + self.aux2_softmax_output_b.expr(
                     update=True)) for hidden, res in zip(inp_bw[self.WINDOW_SIZE:], skip_conn_bw)]
 
         outputs = [
             dy.softmax(
                 self.softmax_output_w.expr(update=True) * dy.rectify(
-                    dy.concatenate([resfw[-1], resbw[-1]])) + self.softmax_output_b.expr(
+                    dy.concatenate([dy.esum(resfw), dy.esum(resbw)])) + self.softmax_output_b.expr(
                     update=True)) for hidden, resfw, resbw in
-            zip(inp_fw[self.WINDOW_SIZE:], skip_conn_fw, skip_conn_bw)]
+                    zip(inp_fw[self.WINDOW_SIZE:], skip_conn_fw, skip_conn_bw)]
         # outputs = inp[self.window_size:]
         return outputs, outputs_aux1, outputs_aux2
 
