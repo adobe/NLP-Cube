@@ -30,42 +30,62 @@ from cube.generic_networks.crf import CRFDecoder
 
 
 class DummyTokenizer:
-    def __init__(self, config, encodings, num_languages=1, runtime=False):
+    def __init__(self, config, encodings, num_languages=1, dict=None, runtime=False):
         self.model = dy.Model()
         self.trainer = dy.AdamTrainer(self.model)
         self.encodings = encodings
         self.config = config
+        self.dict = dict
         self.char_lookup = self.model.add_lookup_parameters((len(self.encodings.char2int), config.char_emb_size))
         self.case_lookup = self.model.add_lookup_parameters((3, 32))
         self.lang_lookup = self.model.add_lookup_parameters((num_languages, config.lang_emb_size))
-    
-        self.LAYER_SIZE = 100
+
+        self.LAYER_SIZE = 300
         self.NUM_LAYERS = 15
         self.WINDOW_SIZE = 2
         inp_size = config.lang_emb_size + config.lang_emb_size + 32
+        if dict is not None:
+            inp_size += 1
         self._proj_w = self.model.add_parameters((self.LAYER_SIZE, inp_size))
         self._proj_b = self.model.add_parameters((self.LAYER_SIZE))
 
-        self._gate_w = []
-        self._gate_b = []
-        self._act_w = []
-        self._act_b = []
-        self._skip_w = []
-        self._skip_b = []
-        inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE * 2 + 1)
+        self._fw_gate_w = []
+        self._fw_gate_b = []
+        self._fw_act_w = []
+        self._fw_act_b = []
+        self._fw_skip_w = []
+        self._fw_skip_b = []
+        self._bw_gate_w = []
+        self._bw_gate_b = []
+        self._bw_act_w = []
+        self._bw_act_b = []
+        self._bw_skip_w = []
+        self._bw_skip_b = []
+        inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE + 1)
         for ii in range(self.NUM_LAYERS):
-            self._gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
-            self._gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
-            self._act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
-            self._act_b.append(self.model.add_parameters((self.LAYER_SIZE)))
-            self._skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
-            self._skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
-            inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE * 2 + 1)
+            self._fw_gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._fw_gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._fw_act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._fw_act_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._fw_skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._fw_skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._bw_gate_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._bw_gate_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._bw_act_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._bw_act_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            self._bw_skip_w.append(self.model.add_parameters((self.LAYER_SIZE, inp_size)))
+            self._bw_skip_b.append(self.model.add_parameters((self.LAYER_SIZE)))
+            inp_size = self.LAYER_SIZE * (self.WINDOW_SIZE + 1)
+
         self.label2int = {'B': 0, 'I': 1, 'E': 2, 'S': 3, 'X': 4, 'BM': 5, 'IM': 6, 'EM': 7, 'SM': 8, 'T': 9, 'U': 10,
                           'UM': 11}
         self.label_list = ['B', 'I', 'E', 'S', 'X', 'BM', 'IM', 'EM', 'SM', 'T', 'U', 'UM']
         # self.crf = CRFDecoder(self.model, self.LAYER_SIZE, 100, len(self.label_list))
-        self.softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE))
+        self.aux1_softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE))
+        self.aux1_softmax_output_b = self.model.add_parameters((len(self.label_list)))
+        self.aux2_softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE))
+        self.aux2_softmax_output_b = self.model.add_parameters((len(self.label_list)))
+        self.softmax_output_w = self.model.add_parameters((len(self.label_list), self.LAYER_SIZE * 2))
         self.softmax_output_b = self.model.add_parameters((len(self.label_list)))
 
     def _make_input(self, seqs):
@@ -106,7 +126,7 @@ class DummyTokenizer:
         dy.renew_cg()
         chars, tags = self._make_input(conll_sequences)
 
-        outputs = self._forward(chars, lang_id=lang_id)
+        outputs, aux1, aux2 = self._forward(chars, lang_id=lang_id)
         # crf_output = self.crf.tag(outputs)
         tgt_tags = [self.label2int[tag] for tag in tags]
 
@@ -114,8 +134,11 @@ class DummyTokenizer:
         # from ipdb import set_trace
         # set_trace()
 
-        loss = dy.esum([-dy.log(dy.pick(output, tgt)) for output, tgt in zip(outputs, tgt_tags)]) / len(tgt_tags)
+        loss_main = dy.esum([-dy.log(dy.pick(output, tgt)) for output, tgt in zip(outputs, tgt_tags)]) / len(tgt_tags)
+        loss_aux1 = dy.esum([-dy.log(dy.pick(output, tgt)) for output, tgt in zip(aux1, tgt_tags)]) / len(tgt_tags)
+        loss_aux2 = dy.esum([-dy.log(dy.pick(output, tgt)) for output, tgt in zip(aux2, tgt_tags)]) / len(tgt_tags)
 
+        loss = loss_main + 0.5 * loss_aux1 + 0.5 * loss_aux2
         l_val = loss.value() * len(tgt_tags)
         loss.backward()
         self.trainer.update()
@@ -142,7 +165,10 @@ class DummyTokenizer:
 
             copy_chars = chars[start:stop]
             dy.renew_cg()
-            outputs = self._forward(copy_chars, lang_id=lang_id, runtime=True)[offset:offset + cbs]
+            # from ipdb import set_trace
+            # set_trace()
+            outputs, _, _ = self._forward(copy_chars, lang_id=lang_id, runtime=True)
+            outputs = outputs[offset:offset + cbs]
 
             new_tags = [np.argmax(pred.npvalue()) for pred in outputs]
             # new_tags = self.crf.tag(outputs)
@@ -152,7 +178,7 @@ class DummyTokenizer:
 
     def tokenize(self, raw_text, lang_id=0):
         # make sequences of approx 2000-4000 chars
-        BATCH_SIZE = 3000  # len(raw_text)
+        BATCH_SIZE = 1000  # len(raw_text)
         start = 0
         seqs = []
         seq = []
@@ -160,7 +186,7 @@ class DummyTokenizer:
         word = ''
 
         chars = [c for c in raw_text]
-        tags = self._batch_forward(chars, batch_size=1000, lang_id=lang_id)
+        tags = self._batch_forward(chars, batch_size=BATCH_SIZE, lang_id=lang_id)
 
         for index, char, tag in zip(range(len(tags)), chars, tags):
             if not tag.startswith('X'):
@@ -185,13 +211,24 @@ class DummyTokenizer:
 
         return seqs
 
+    def _is_known_word(self, chars, index):
+        max_win_size = 10
+        for zz in range(min(max_win_size, index + 1)):
+            word = ''.join(chars[index - zz:index + 1])
+            if word in self.dict:
+                return dy.scalarInput(1)
+        return dy.scalarInput(0)
+
     def _forward(self, chars, lang_id=0, runtime=True):
-        inp = [dy.inputVector(np.zeros(self.config.char_emb_size + 32 + self.config.lang_emb_size)) for ii in
+        inp_size = self.config.char_emb_size + 32 + self.config.lang_emb_size
+        if self.dict is not None:
+            inp_size += 1
+        inp = [dy.inputVector(np.zeros(inp_size)) for ii in
                range(self.WINDOW_SIZE)]
 
         lang_emb = self.lang_lookup[lang_id]
 
-        for char in chars:
+        for index, char in zip(range(len(chars)), chars):
             case_emb = self.case_lookup[0]
             if char.lower() == char.upper():
                 case_emb = self.case_lookup[1]
@@ -203,30 +240,34 @@ class DummyTokenizer:
             else:
                 char_emb = self.char_lookup[self.encodings.char2int['<UNK>']]
 
-            inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
+            if self.dict is None:
+                inp.append(dy.concatenate([case_emb, char_emb, lang_emb]))
+            else:
+                inp.append(dy.concatenate([case_emb, char_emb, lang_emb, self._is_known_word(chars, index)]))
 
         for ii in range(self.WINDOW_SIZE + 1):
-            inp.append(dy.inputVector(np.zeros((self.config.char_emb_size + 32 + self.config.lang_emb_size))))
+            inp.append(dy.inputVector(np.zeros((inp_size))))
 
         # outputs = []
 
         input = [self._proj_w.expr(update=True) * x + self._proj_b.expr(update=True) for x in inp]
-        inp = input
+        inp_fw = input
 
-        skip_conn = [[] for ii in range(len(chars))]
-        for idx, g_w, g_b, a_w, a_b, skip_w, skip_b in zip(range(len(self._gate_w)), self._gate_w, self._gate_b,
-                                                           self._act_w, self._act_b, self._skip_w, self._skip_b):
+        skip_conn_fw = [[] for ii in range(len(chars))]
+        for idx, g_w, g_b, a_w, a_b, skip_w, skip_b in zip(range(len(self._fw_gate_w)), self._fw_gate_w,
+                                                           self._fw_gate_b,
+                                                           self._fw_act_w, self._fw_act_b, self._fw_skip_w,
+                                                           self._fw_skip_b):
             new_inp = [dy.inputVector(np.zeros(self.LAYER_SIZE)) for ii in
                        range(self.WINDOW_SIZE)]
 
             for ii in range(len(chars)):
-
-                hidden = dy.concatenate(inp[ii:ii + self.WINDOW_SIZE * 2 + 1])
-                skip_conn[ii].append(skip_w.expr(update=True) * hidden + skip_b.expr(update=True))
+                hidden = dy.concatenate(inp_fw[ii:ii + self.WINDOW_SIZE + 1])
+                skip_conn_fw[ii].append(skip_w.expr(update=True) * hidden + skip_b.expr(update=True))
 
                 act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
                 gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
-                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp[ii + self.WINDOW_SIZE])
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp_fw[ii + self.WINDOW_SIZE])
 
                 if not runtime:
                     output = dy.dropout(output, 0.25)
@@ -234,12 +275,53 @@ class DummyTokenizer:
 
             for ii in range(self.WINDOW_SIZE + 1):
                 new_inp.append(dy.inputVector(np.zeros((self.LAYER_SIZE))))
-            inp = new_inp
+            inp_fw = new_inp
+
+        inp_bw = input
+
+        skip_conn_bw = [[] for ii in range(len(chars))]
+        for idx, g_w, g_b, a_w, a_b, skip_w, skip_b in zip(range(len(self._bw_gate_w)), self._bw_gate_w,
+                                                           self._bw_gate_b,
+                                                           self._bw_act_w, self._bw_act_b, self._bw_skip_w,
+                                                           self._bw_skip_b):
+            new_inp = [dy.inputVector(np.zeros(self.LAYER_SIZE)) for ii in
+                       range(self.WINDOW_SIZE)]
+
+            for ii in range(len(chars)):
+                hidden = dy.concatenate(inp_bw[ii + self.WINDOW_SIZE: ii + self.WINDOW_SIZE * 2 + 1])
+                skip_conn_bw[ii].append(skip_w.expr(update=True) * hidden + skip_b.expr(update=True))
+
+                act = dy.tanh(a_w.expr(update=True) * hidden + a_b.expr(update=True))
+                gate = dy.logistic(g_w.expr(update=True) * hidden + g_b.expr(update=True))
+                output = dy.cmult(act, gate) + dy.cmult(1.0 - gate, inp_bw[ii + self.WINDOW_SIZE])
+
+                if not runtime:
+                    output = dy.dropout(output, 0.25)
+                new_inp.append(output)
+
+            for ii in range(self.WINDOW_SIZE + 1):
+                new_inp.append(dy.inputVector(np.zeros((self.LAYER_SIZE))))
+            inp_bw = new_inp
+
+        outputs_aux1 = [
+            dy.softmax(
+                self.aux1_softmax_output_w.expr(update=True) * dy.rectify(
+                    dy.esum(res)) + self.aux1_softmax_output_b.expr(
+                    update=True)) for hidden, res in zip(inp_fw[self.WINDOW_SIZE:], skip_conn_fw)]
+        outputs_aux2 = [
+            dy.softmax(
+                self.aux2_softmax_output_w.expr(update=True) * dy.rectify(
+                    dy.esum(res)) + self.aux2_softmax_output_b.expr(
+                    update=True)) for hidden, res in zip(inp_bw[self.WINDOW_SIZE:], skip_conn_bw)]
+
         outputs = [
-            dy.softmax(self.softmax_output_w.expr(update=True) * dy.rectify(res[-1]) + self.softmax_output_b.expr(
-                update=True)) for hidden, res in zip(inp[self.WINDOW_SIZE:], skip_conn)]
+            dy.softmax(
+                self.softmax_output_w.expr(update=True) * dy.rectify(
+                    dy.concatenate([dy.esum(resfw), dy.esum(resbw)])) + self.softmax_output_b.expr(
+                    update=True)) for hidden, resfw, resbw in
+                    zip(inp_fw[self.WINDOW_SIZE:], skip_conn_fw, skip_conn_bw)]
         # outputs = inp[self.window_size:]
-        return outputs
+        return outputs, outputs_aux1, outputs_aux2
 
     def save(self, filename):
         self.model.save(filename)
