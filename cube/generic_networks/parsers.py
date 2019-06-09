@@ -35,7 +35,8 @@ class BDRNNParser:
         self.model = dy.Model()
 
         # self.trainer = dy.SimpleSGDTrainer(self.model)
-        self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9, beta_2=0.9)
+        # self.trainer = dy.AdamTrainer(self.model, alpha=2e-3, beta_1=0.9, beta_2=0.9)
+        self.trainer = dy.AdamTrainer(self.model)
 
         self.trainer.set_sparse_updates(False)
         self.character_network = CharacterNetwork(100, encodings, rnn_size=200, rnn_layers=1,
@@ -157,7 +158,7 @@ class BDRNNParser:
                 loss_attrs = -dy.log(dy.pick(softmax_morph[2], self.encodings.attrs2int[entry.attrs]))
                 losses.append(loss_attrs * (self.aux_softmax_weight / 3))
 
-        loss = dy.esum(losses)
+        loss = dy.esum(losses) / len(losses)
         self.batch_loss.append(loss)
 
     def _attend(self, input_vectors, state, aux_embeddings):
@@ -375,9 +376,9 @@ class BDRNNParser:
 
     def parse_sequences(self, sequences):
         new_sequences = []
-        for sequence in sequences:
+        for sequence, lang_id in sequences:
             new_sequence = copy.deepcopy(sequence)
-            predicted_tags = self.tag(new_sequence)
+            predicted_tags = self.tag(new_sequence, lang_id=lang_id)
             iOrig, iTags = 0, 0
             while iOrig < len(new_sequence):
                 while new_sequence[iOrig].is_compound_entry:
