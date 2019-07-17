@@ -5,20 +5,24 @@ import random
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_dim, emb_dim, enc_hid_dim, dec_hid_dim, dropout, nn_type=nn.GRU, num_layers=2):
+    def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU, num_layers=2):
         super().__init__()
-
-        self.input_dim = input_dim
-        self.emb_dim = emb_dim
+        assert (input_type == 'int' or input_type == 'float')
+        self.input_type = input_type
+        self.input_dim = input_size
+        self.emb_dim = input_emb_dim
         self.enc_hid_dim = enc_hid_dim
-        self.dec_hid_dim = dec_hid_dim
+        self.dec_hid_dim = output_dim
         self.dropout = dropout
 
-        self.embedding = nn.Embedding(input_dim, emb_dim)
+        if self.input_type == 'int':
+            self.embedding = nn.Embedding(input_size, input_emb_dim)
+        else:
+            self.embedding = nn.Linear(input_size, input_emb_dim)
 
-        self.rnn = nn_type(emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers)
+        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers)
 
-        self.fc = nn.Linear(enc_hid_dim * 2, dec_hid_dim)
+        self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
         self.dropout = nn.Dropout(dropout)
 
