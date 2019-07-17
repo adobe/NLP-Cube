@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.functional as F
+import torch.nn.functional as F
 import random
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU, num_layers=2):
+    def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU,
+                 num_layers=2):
         super().__init__()
         assert (input_type == 'int' or input_type == 'float')
         self.input_type = input_type

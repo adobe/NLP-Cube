@@ -10,9 +10,17 @@ class SelfAttentionNetwork(nn.Module):
         self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, output_size, dropout,
                                nn_type=nn.GRU, num_layers=encoder_layers)
 
-        self.attention = Attention(encoder_size, encoder_size)
+        self.attention = Attention(output_size // 2, encoder_size * 2)
 
     def forward(self, x):
+        # batch_size should be the second column for whatever reason
+        x = x.permute(1, 0)
         output, hidden = self.encoder(x)
-        attention = self.attention(output.squeeze(0)[-1], hidden)
-        return attention
+        attention = self.attention(hidden, output)
+
+        encoder_outputs = output.permute(1, 0, 2)
+        # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
+        weighted = torch.bmm(attention.unsqueeze(1), encoder_outputs)
+        # weighted = [batch size, 1, enc hid dim * 2]
+        weighted = weighted.permute(1, 0, 2)
+        return weighted.squeeze(0)
