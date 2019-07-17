@@ -43,9 +43,23 @@ class Encodings(object):
         if self.verbose:
             sys.stdout.write("Computing encoding maps... ")
             sys.stdout.flush()
-        self.char2int['<UNK>'] = 0
+
+        self.word2int['<PAD>'] = 0
+        self.word2int['<UNK>'] = 1
+        self.hol_word_list.append('<PAD>')
+        self.hol_word_list.append('<UNK>')
+        self.char2int['<PAD>'] = 0
+        self.char2int['<UNK>'] = 1
+        self.char2int[' '] = 2
+        self.upos2int['<PAD>'] = 0
+        self.upos_list.append('<PAD>')
+        self.xpos2int['<PAD>'] = 0
+        self.xpos_list.append('<PAD>')
+        self.attrs2int['<PAD>'] = 0
+        self.attrs_list.append('<PAD>')
+
+        self.characters.append("<PAD>")
         self.characters.append("<UNK>")
-        self.char2int[' '] = 1
         self.characters.append(" ")
         char_count = {}
         word_count = {}
@@ -108,8 +122,6 @@ class Encodings(object):
                 if word not in self.word_list:
                     self.word_list[word] = 1  # word is inside devset only
 
-        self.word2int['<UNK>'] = 0
-        self.hol_word_list.append('<UNK>')
         for word in word_count:
             if word_count[word] >= word_cutoff:
                 self.word2int[word] = len(self.word2int)

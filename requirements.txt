@@ -6,6 +6,7 @@ requests>=2.18.4
 dyNET>=2.0.3
 flask
 beautifulsoup4
+numpy
 
 # Parse XML
 xmltodict==0.11.0

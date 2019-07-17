@@ -11,6 +11,7 @@ class SelfAttentionNetwork(nn.Module):
                                nn_type=nn.GRU, num_layers=encoder_layers)
 
         self.attention = Attention(output_size // 2, encoder_size * 2)
+        self.mlp = nn.Linear(encoder_size * 2, output_size)
 
     def forward(self, x):
         # batch_size should be the second column for whatever reason
@@ -23,4 +24,4 @@ class SelfAttentionNetwork(nn.Module):
         weighted = torch.bmm(attention.unsqueeze(1), encoder_outputs)
         # weighted = [batch size, 1, enc hid dim * 2]
         weighted = weighted.permute(1, 0, 2)
-        return weighted.squeeze(0)
+        return self.mlp(weighted.squeeze(0))
