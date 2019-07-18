@@ -86,7 +86,7 @@ class TextEncoder(nn.Module):
             for entry in sent:
                 if len(entry.word) > max_word_size:
                     max_word_size = len(entry.word)
-        #print(max_sent_size)
+        # print(max_sent_size)
         for sent in x:
             sent_int = []
 
@@ -99,6 +99,8 @@ class TextEncoder(nn.Module):
                 for char in entry.word:
                     if char.lower() in self.encodings.char2int:
                         char_int.append(self.encodings.char2int[char.lower()])
+                    else:
+                        char_int.append(self.encodings.char2int['<UNK>'])
                 for _ in range(max_word_size - len(entry.word)):
                     char_int.append(self.encodings.char2int['<PAD>'])
                 char_batch.append(char_int)
@@ -107,5 +109,4 @@ class TextEncoder(nn.Module):
                 sent_int.append(self.encodings.word2int['<PAD>'])
                 char_batch.append([0 for _ in range(max_word_size)])
             word_batch.append(sent_int)
-
         return torch.tensor(char_batch), torch.tensor(word_batch)

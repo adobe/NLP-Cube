@@ -1,9 +1,13 @@
 import optparse
 import sys
+import random
 
 sys.path.append('')
+import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.data
 from cube2.networks.text import TextEncoder
 from cube2.config import TaggerConfig
 from cube.io_utils.encodings import Encodings
@@ -36,6 +40,18 @@ class Tagger(nn.Module):
         return s_upos, s_xpos, s_attrs
 
 
+class TaggerDataset(torch.utils.data.Dataset):
+    def __init__(self, conll_dataset):
+        super(TaggerDataset, self).__init__()
+        self.sequences = conll_dataset.sequences
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, item):
+        return {'x': self.sequences[item][0]}
+
+
 def _get_tgt_labels(data, encodings):
     max_sent_size = 0
     for sent in data:
@@ -49,9 +65,18 @@ def _get_tgt_labels(data, encodings):
         xpos_int = []
         attrs_int = []
         for entry in sent:
-            upos_int.append(encodings.upos2int[entry.upos])
-            xpos_int.append(encodings.xpos2int[entry.xpos])
-            attrs_int.append(encodings.attrs2int[entry.attrs])
+            if entry.upos in encodings.upos2int:
+                upos_int.append(encodings.upos2int[entry.upos])
+            else:
+                upos_int.append(encodings.upos2int['<UNK>'])
+            if entry.xpos in encodings.xpos2int:
+                xpos_int.append(encodings.xpos2int[entry.xpos])
+            else:
+                xpos_int.append(encodings.xpos2int['<UNK>'])
+            if entry.attrs in encodings.attrs2int:
+                attrs_int.append(encodings.attrs2int[entry.attrs])
+            else:
+                attrs_int.append(encodings.attrs2int['<UNK>'])
         for _ in range(max_sent_size - len(sent)):
             upos_int.append(encodings.upos2int['<PAD>'])
             xpos_int.append(encodings.xpos2int['<PAD>'])
@@ -64,7 +89,110 @@ def _get_tgt_labels(data, encodings):
     return torch.tensor(tgt_upos), torch.tensor(tgt_xpos), torch.tensor(tgt_attrs)
 
 
-def do_debug():
+def _eval(tagger, dataset, encodings):
+    tagger.eval()
+    total = 0
+    upos_ok = 0
+    xpos_ok = 0
+    attrs_ok = 0
+    num_batches = len(dataset.sequences) // params.batch_size
+    if len(dataset.sequences) % params.batch_size != 0:
+        num_batches += 1
+    total_words = 0
+    epoch_loss = 0
+    import tqdm
+    pgb = tqdm.tqdm(range(num_batches), desc='\tEvaluating', ncols=80)
+    tagger.train()
+    for batch_idx in pgb:
+        start = batch_idx * params.batch_size
+        stop = min(len(dataset.sequences), start + params.batch_size)
+        data = []
+        for ii in range(stop - start):
+            data.append(dataset.sequences[start + ii][0])
+            total_words += len(dataset.sequences[start + ii][0])
+        s_upos, s_xpos, s_attrs = tagger(data)
+        tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings)
+        s_upos = s_upos.detach().numpy()
+        s_xpos = s_xpos.detach().numpy()
+        s_attrs = s_attrs.detach().numpy()
+        tgt_upos = tgt_upos.detach().numpy()
+        tgt_xpos = tgt_xpos.detach().numpy()
+        tgt_attrs = tgt_attrs.detach().numpy()
+        for b_idx in range(tgt_upos.shape[0]):
+            for w_idx in range(tgt_upos.shape[1]):
+                pred_upos = np.argmax(s_upos[b_idx, w_idx])
+                pred_xpos = np.argmax(s_xpos[b_idx, w_idx])
+                pred_attrs = np.argmax(s_attrs[b_idx, w_idx])
+
+                if tgt_upos[b_idx, w_idx] != 0:
+                    total += 1
+                    if pred_upos == tgt_upos[b_idx, w_idx]:
+                        upos_ok += 1
+                    if pred_xpos == tgt_xpos[b_idx, w_idx]:
+                        xpos_ok += 1
+                    if pred_attrs == tgt_attrs[b_idx, w_idx]:
+                        attrs_ok += 1
+
+    return upos_ok / total, xpos_ok / total, attrs_ok / total
+
+
+def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer):
+    patience_left = params.patience
+    epoch = 1
+    # tds = TaggerDataset(trainset)
+    # from torch.utils.data import DataLoader
+    # train_loader = DataLoader(tds, batch_size=params.batch_size, shuffle=True, num_workers=4)
+    # acc = _eval(tagger, devset, encodings)
+    # print("\tValidation acc (UPOX, XPOS, ATTRS)=" + str(acc))
+    best_upos = 0
+    best_xpos = 0
+    best_attrs = 0
+    while patience_left > 0:
+        sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
+        random.shuffle(trainset.sequences)
+        num_batches = len(trainset.sequences) // params.batch_size
+        if len(trainset.sequences) % params.batch_size != 0:
+            num_batches += 1
+        total_words = 0
+        epoch_loss = 0
+        import tqdm
+        pgb = tqdm.tqdm(range(num_batches), desc='\tloss=NaN', ncols=80)
+        tagger.train()
+        for batch_idx in pgb:
+            start = batch_idx * params.batch_size
+            stop = min(len(trainset.sequences), start + params.batch_size)
+            data = []
+            for ii in range(stop - start):
+                data.append(trainset.sequences[start + ii][0])
+                total_words += len(trainset.sequences[start + ii][0])
+            s_upos, s_xpos, s_attrs = tagger(data)
+            tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings)
+            loss = criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
+                s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(s_attrs.view(-1, s_attrs.shape[-1]),
+                                                                                  tgt_attrs.view(-1))
+            trainer.zero_grad()
+            loss.backward()
+            trainer.step()
+            epoch_loss += loss.item()
+            # print("\t" + str(loss.item()))
+            pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
+
+        acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
+        if best_upos < acc_upos:
+            best_upos = acc_upos
+            patience_left = params.patience
+        if best_xpos < acc_xpos:
+            best_xpos = acc_xpos
+            patience_left = params.patience
+        if best_attrs < acc_attrs:
+            best_attrs = acc_attrs
+            patience_left = params.patience
+        print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / total_words))
+        print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
+        epoch += 1
+
+
+def do_debug(params):
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
     from cube2.config import TaggerConfig
@@ -82,35 +210,20 @@ def do_debug():
     import torch.nn as nn
     trainer = optim.Adam(tagger.parameters())
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    for ii in range(10):
-
-        epoch_loss = 0
-        import tqdm
-        for batch_idx in tqdm.tqdm(range(len(trainset.sequences) // 20)):
-            data = []
-            for ii in range(20):
-                data.append(trainset.sequences[ii + batch_idx * 20][0])
-            s_upos, s_xpos, s_attrs = tagger(data)
-            tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings)
-            loss = criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
-                s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(s_attrs.view(-1, s_attrs.shape[-1]),
-                                                                                  tgt_attrs.view(-1))
-            trainer.zero_grad()
-            loss.backward()
-            trainer.step()
-            epoch_loss += loss.item()
-            print("\t" + str(loss.item()))
-
-        print("epoch_loss=" + str(epoch_loss))
+    _start_train(params, trainset, devset, encodings, tagger, criterion, trainer)
 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
                       help='Start building a tagger model')
+    parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
+                      help='Number of epochs before early stopping (default=20)')
+    parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
+                      help='Number of epochs before early stopping (default=32)')
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
 
     (params, _) = parser.parse_args(sys.argv)
 
     if params.debug:
-        do_debug()
+        do_debug(params)
