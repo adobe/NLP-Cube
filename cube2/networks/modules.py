@@ -21,7 +21,7 @@ class Encoder(nn.Module):
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
 
-        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers)
+        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
 
         self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
