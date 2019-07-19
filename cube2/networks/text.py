@@ -12,13 +12,14 @@ class TextEncoder(nn.Module):
     config: TaggerConfig
     encodings: Encodings
 
-    def __init__(self, config, encodings, ext_conditioning=None):
+    def __init__(self, config, encodings, ext_conditioning=None, target_device='cpu'):
         super(TextEncoder, self).__init__()
         self.encodings = encodings
         self.config = config
         self.use_conditioning = (ext_conditioning is None)
         if ext_conditioning is None:
             ext_conditioning = 0
+        self._target_device = target_device
 
         self.encoder = Encoder('float', self.config.tagger_embeddings_size + ext_conditioning, 0,
                                self.config.tagger_encoder_size,
@@ -94,10 +95,7 @@ class TextEncoder(nn.Module):
             return 1
 
     def _get_device(self):
-        device = 'cpu'
-        if self.char_emb.is_cuda:
-            device = self.char_emb.get_device()
-        return device
+        return self._target_device
 
     def _create_batches(self, x):
         char_batch = []

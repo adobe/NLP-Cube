@@ -15,7 +15,7 @@ class Tagger(nn.Module):
     encodings: Encodings
     config: TaggerConfig
 
-    def __init__(self, config, encodings, num_languages=1):
+    def __init__(self, config, encodings, num_languages=1, target_device='cpu'):
         super(Tagger, self).__init__()
         self.config = config
         self.encodings = encodings
@@ -25,7 +25,7 @@ class Tagger(nn.Module):
         else:
             lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
-        self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size)
+        self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
         self.output_upos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.upos2int))
         self.output_xpos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.xpos2int))
         self.output_attrs = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.attrs2int))
@@ -198,7 +198,7 @@ def do_debug(params):
     encodings = Encodings()
     encodings.compute(trainset, devset)
     config = TaggerConfig()
-    tagger = Tagger(config, encodings, 1)
+    tagger = Tagger(config, encodings, 1, target_device=params.device)
     if params.device != 'cpu':
         tagger.cuda(params.device)
 
