@@ -21,7 +21,8 @@ class TextEncoder(nn.Module):
             ext_conditioning = 0
         self._target_device = target_device
 
-        self.encoder = Encoder('float', self.config.tagger_embeddings_size + ext_conditioning, 0,
+        self.encoder = Encoder('float', self.config.tagger_embeddings_size + ext_conditioning,
+                               self.config.tagger_embeddings_size,
                                self.config.tagger_encoder_size,
                                self.config.tagger_encoder_size, self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
                                num_layers=self.config.tagger_encoder_layers)
@@ -49,15 +50,18 @@ class TextEncoder(nn.Module):
 
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
-        char_network_output = torch.tanh(self.character_network(char_network_batch))
+        char_network_output = self.character_network(char_network_batch)
         word_emb = self.word_emb(word_network_batch)
         char_emb = char_network_output.view(word_emb.size())
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
-            return torch.tanh(
+            x = torch.tanh(
                 masks_char.unsqueeze(2) * char_emb + masks_word.unsqueeze(2) * word_emb)
         else:
-            return torch.tanh(char_emb + word_emb)
+            x = torch.tanh(char_emb + word_emb)
+        output, _ = self.encoder(x)
+
+        return output
 
     def _compute_masks(self, size, prob):
         m1 = np.ones(size[:-1])

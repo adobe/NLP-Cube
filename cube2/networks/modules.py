@@ -19,7 +19,7 @@ class Encoder(nn.Module):
         if self.input_type == 'int':
             self.embedding = nn.Embedding(input_size, input_emb_dim)
         else:
-            self.embedding = nn.Linear(input_size, input_emb_dim)
+            self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
 
         self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers)
 
@@ -40,6 +40,8 @@ class Encoder(nn.Module):
         # hidden [-1, :, : ] is the last of the backwards RNN
         # initial decoder hidden is final hidden state of the forwards and backwards
         #  encoder RNNs fed through a linear layer
+        if isinstance(hidden, list):  # we have a LSTM:
+            hidden = hidden[1]
         hidden = torch.tanh(self.fc(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)))
         # outputs = [src sent len, batch size, enc hid dim * 2]
         # hidden = [batch size, dec hid dim]
