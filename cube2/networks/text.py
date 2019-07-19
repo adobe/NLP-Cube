@@ -49,7 +49,7 @@ class TextEncoder(nn.Module):
 
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
-        char_network_output = self.character_network(char_network_batch)
+        char_network_output = torch.tanh(self.character_network(char_network_batch))
         word_emb = self.word_emb(word_network_batch)
         char_emb = char_network_output.view(word_emb.size())
         if self.training:
