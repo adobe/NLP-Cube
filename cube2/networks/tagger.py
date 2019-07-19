@@ -187,7 +187,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         if best_attrs < acc_attrs:
             best_attrs = acc_attrs
             patience_left = params.patience
-        print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / total_words))
+        print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
         print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
         epoch += 1
 
