@@ -47,6 +47,7 @@ class TextEncoder(nn.Module):
             nn.Linear(self.config.char_input_embeddings_size + 32, self.config.char_input_embeddings_size),
             nn.Tanh(),
             nn.Dropout(p=self.config.tagger_encoder_dropout))
+        self.proj_output = nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_embeddings_size)
 
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
@@ -59,9 +60,9 @@ class TextEncoder(nn.Module):
                 masks_char.unsqueeze(2) * char_emb + masks_word.unsqueeze(2) * word_emb)
         else:
             x = torch.tanh(char_emb + word_emb)
-        output, _ = self.encoder(x)
+        output, _ = self.encoder(x.permute(1, 0, 2))
 
-        return output
+        return self.proj_output(output.permute(1, 0, 2))
 
     def _compute_masks(self, size, prob):
         m1 = np.ones(size[:-1])

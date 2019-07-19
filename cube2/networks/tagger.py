@@ -31,7 +31,7 @@ class Tagger(nn.Module):
         self.output_attrs = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.attrs2int))
 
     def forward(self, x):
-        emb = self.text_network(x)
+        emb = torch.tanh(self.text_network(x))
         s_upos = self.output_upos(emb)
         s_xpos = self.output_xpos(emb)
         s_attrs = self.output_attrs(emb)

@@ -40,7 +40,7 @@ class Encoder(nn.Module):
         # hidden [-1, :, : ] is the last of the backwards RNN
         # initial decoder hidden is final hidden state of the forwards and backwards
         #  encoder RNNs fed through a linear layer
-        if isinstance(hidden, list):  # we have a LSTM:
+        if isinstance(hidden, list) or isinstance(hidden, tuple):  # we have a LSTM
             hidden = hidden[1]
         hidden = torch.tanh(self.fc(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)))
         # outputs = [src sent len, batch size, enc hid dim * 2]
