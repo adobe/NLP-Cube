@@ -3,10 +3,8 @@ import sys
 import random
 
 sys.path.append('')
-import torch
 import numpy as np
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.utils.data
 from cube2.networks.text import TextEncoder
 from cube2.config import TaggerConfig
@@ -52,7 +50,7 @@ class TaggerDataset(torch.utils.data.Dataset):
         return {'x': self.sequences[item][0]}
 
 
-def _get_tgt_labels(data, encodings):
+def _get_tgt_labels(data, encodings, device='cpu'):
     max_sent_size = 0
     for sent in data:
         if len(sent) > max_sent_size:
@@ -86,10 +84,11 @@ def _get_tgt_labels(data, encodings):
         tgt_attrs.append(attrs_int)
 
     import torch
-    return torch.tensor(tgt_upos), torch.tensor(tgt_xpos), torch.tensor(tgt_attrs)
+    return torch.tensor(tgt_upos, device=device), torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs,
+                                                                                                      device=device)
 
 
-def _eval(tagger, dataset, encodings):
+def _eval(tagger, dataset, encodings, device='cpu'):
     tagger.eval()
     total = 0
     upos_ok = 0
@@ -99,7 +98,6 @@ def _eval(tagger, dataset, encodings):
     if len(dataset.sequences) % params.batch_size != 0:
         num_batches += 1
     total_words = 0
-    epoch_loss = 0
     import tqdm
     pgb = tqdm.tqdm(range(num_batches), desc='\tEvaluating', ncols=80)
     tagger.eval()
@@ -111,13 +109,13 @@ def _eval(tagger, dataset, encodings):
             data.append(dataset.sequences[start + ii][0])
             total_words += len(dataset.sequences[start + ii][0])
         s_upos, s_xpos, s_attrs = tagger(data)
-        tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings)
-        s_upos = s_upos.detach().numpy()
-        s_xpos = s_xpos.detach().numpy()
-        s_attrs = s_attrs.detach().numpy()
-        tgt_upos = tgt_upos.detach().numpy()
-        tgt_xpos = tgt_xpos.detach().numpy()
-        tgt_attrs = tgt_attrs.detach().numpy()
+        tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
+        s_upos = s_upos.detach().cpu().numpy()
+        s_xpos = s_xpos.detach().cpu().numpy()
+        s_attrs = s_attrs.detach().cpu().numpy()
+        tgt_upos = tgt_upos.detach().cpu().numpy()
+        tgt_xpos = tgt_xpos.detach().cpu().numpy()
+        tgt_attrs = tgt_attrs.detach().cpu().numpy()
         for b_idx in range(tgt_upos.shape[0]):
             for w_idx in range(tgt_upos.shape[1]):
                 pred_upos = np.argmax(s_upos[b_idx, w_idx])
@@ -139,11 +137,7 @@ def _eval(tagger, dataset, encodings):
 def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer):
     patience_left = params.patience
     epoch = 1
-    # tds = TaggerDataset(trainset)
-    # from torch.utils.data import DataLoader
-    # train_loader = DataLoader(tds, batch_size=params.batch_size, shuffle=True, num_workers=4)
-    # acc = _eval(tagger, devset, encodings)
-    # print("\tValidation acc (UPOX, XPOS, ATTRS)=" + str(acc))
+
     best_upos = 0
     best_xpos = 0
     best_attrs = 0
@@ -166,7 +160,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 data.append(trainset.sequences[start + ii][0])
                 total_words += len(trainset.sequences[start + ii][0])
             s_upos, s_xpos, s_attrs = tagger(data)
-            tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings)
+            tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
                 s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(s_attrs.view(-1, s_attrs.shape[-1]),
                                                                                   tgt_attrs.view(-1))
@@ -205,11 +199,15 @@ def do_debug(params):
     encodings.compute(trainset, devset)
     config = TaggerConfig()
     tagger = Tagger(config, encodings, 1)
+    if params.device != 'cpu':
+        tagger.cuda(params.device)
 
     import torch.optim as optim
     import torch.nn as nn
     trainer = optim.Adam(tagger.parameters())
     criterion = nn.CrossEntropyLoss(ignore_index=0)
+    if params.device != 'cpu':
+        criterion.cuda(params.device)
     _start_train(params, trainset, devset, encodings, tagger, criterion, trainer)
 
 
@@ -222,6 +220,8 @@ if __name__ == '__main__':
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
+    parser.add_option('--device', action='store', dest='device', default='cpu',
+                      help='What device to use for models: cpu, cuda:0, cuda:1 ...')
 
     (params, _) = parser.parse_args(sys.argv)
 

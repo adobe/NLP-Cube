@@ -58,8 +58,7 @@ class TextEncoder(nn.Module):
         else:
             return torch.tanh(char_emb + word_emb)
 
-    @staticmethod
-    def _compute_masks(size, prob):
+    def _compute_masks(self, size, prob):
         m1 = np.ones(size[:-1])
         m2 = np.ones(size[:-1])
 
@@ -81,7 +80,9 @@ class TextEncoder(nn.Module):
                     mm2 = 1
                 m1[ii, jj] = mm1
                 m2[ii, jj] = mm2
-        return torch.tensor(m1, dtype=torch.float32), torch.tensor(m2, dtype=torch.float32)
+        device = self._get_device()
+        return torch.tensor(m1, dtype=torch.float32, device=device), torch.tensor(m2, dtype=torch.float32,
+                                                                                  device=device)
 
     @staticmethod
     def _case_index(char):
@@ -91,6 +92,12 @@ class TextEncoder(nn.Module):
             return 2
         else:  # uppercase
             return 1
+
+    def _get_device(self):
+        device = 'cpu'
+        if self.char_emb.is_cuda:
+            device = self.char_emb.get_device()
+        return device
 
     def _create_batches(self, x):
         char_batch = []
@@ -134,9 +141,10 @@ class TextEncoder(nn.Module):
                 case_batch.append([0 for _ in range(max_word_size)])
             word_batch.append(sent_int)
 
-        char_batch = self.char_emb(torch.tensor(char_batch))
-        case_batch = self.case_emb(torch.tensor(case_batch))
+        device = self._get_device()
+        char_batch = self.char_emb(torch.tensor(char_batch, device=device))
+        case_batch = self.case_emb(torch.tensor(case_batch, device=device))
 
         char_emb = torch.cat([char_batch, case_batch], dim=2)
         char_batch = self.char_proj(char_emb)
-        return char_batch, torch.tensor(word_batch)
+        return char_batch, torch.tensor(word_batch, device=device)
