@@ -5,7 +5,7 @@ from cube2.networks.modules import Attention
 
 
 class SelfAttentionNetwork(nn.Module):
-    def __init__(self, input_type, input_size, input_emb_size, encoder_size, encoder_layers, output_size, dropout):
+    def __init__(self, input_type, input_size, input_emb_size, encoder_size, encoder_layers, output_size, dropout, nn_type=nn.GRU):
         super(SelfAttentionNetwork, self).__init__()
         self.input_type = input_type
         self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, output_size, dropout,

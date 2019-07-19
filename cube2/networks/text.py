@@ -30,9 +30,9 @@ class TextEncoder(nn.Module):
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout)
+                                                      self.config.tagger_encoder_dropout, nn_type=nn.LSTM)
 
-        mlp_input_size = self.config.tagger_encoder_size*2 + ext_conditioning
+        mlp_input_size = self.config.tagger_encoder_size * 2 + ext_conditioning
         self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, True),
                                  nn.Tanh(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
@@ -40,11 +40,11 @@ class TextEncoder(nn.Module):
         self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
         self.char_emb = nn.Embedding(len(self.encodings.char2int), self.config.char_input_embeddings_size,
                                      padding_idx=0)
-        self.case_emb = nn.Embedding(4, 32,
+        self.case_emb = nn.Embedding(4, 16,
                                      padding_idx=0)
 
         self.char_proj = nn.Sequential(
-            nn.Linear(self.config.char_input_embeddings_size + 32, self.config.char_input_embeddings_size),
+            nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size),
             nn.Tanh(),
             nn.Dropout(p=self.config.tagger_encoder_dropout))
 
