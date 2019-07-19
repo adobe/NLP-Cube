@@ -24,7 +24,7 @@ class TextEncoder(nn.Module):
                                self.config.tagger_encoder_size,
                                self.config.tagger_encoder_size, self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
                                num_layers=self.config.tagger_encoder_layers)
-        self.character_network = SelfAttentionNetwork('int', len(self.encodings.char2int),
+        self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
@@ -36,6 +36,15 @@ class TextEncoder(nn.Module):
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
         self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
+        self.char_emb = nn.Embedding(len(self.encodings.char2int), self.config.char_input_embeddings_size,
+                                     padding_idx=0)
+        self.case_emb = nn.Embedding(4, 32,
+                                     padding_idx=0)
+
+        self.char_proj = nn.Sequential(
+            nn.Linear(self.config.char_input_embeddings_size + 32, self.config.char_input_embeddings_size),
+            nn.Tanh(),
+            nn.Dropout(p=self.config.tagger_encoder_dropout))
 
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
@@ -74,8 +83,18 @@ class TextEncoder(nn.Module):
                 m2[ii, jj] = mm2
         return torch.tensor(m1, dtype=torch.float32), torch.tensor(m2, dtype=torch.float32)
 
+    @staticmethod
+    def _case_index(char):
+        if char.lower() == char.upper():  # symbol
+            return 3
+        elif char.upper() != char:  # lowercase
+            return 2
+        else:  # uppercase
+            return 1
+
     def _create_batches(self, x):
         char_batch = []
+        case_batch = []
         word_batch = []
         max_sent_size = 0
         max_word_size = 0
@@ -92,6 +111,7 @@ class TextEncoder(nn.Module):
 
             for entry in sent:
                 char_int = []
+                case_int = []
                 if entry.word.lower() in self.encodings.word2int:
                     sent_int.append(self.encodings.word2int[entry.word.lower()])
                 else:
@@ -101,12 +121,22 @@ class TextEncoder(nn.Module):
                         char_int.append(self.encodings.char2int[char.lower()])
                     else:
                         char_int.append(self.encodings.char2int['<UNK>'])
+                    case_int.append(self._case_index(char))
                 for _ in range(max_word_size - len(entry.word)):
                     char_int.append(self.encodings.char2int['<PAD>'])
+                    case_int.append(0)
                 char_batch.append(char_int)
+                case_batch.append(case_int)
 
             for _ in range(max_sent_size - len(sent)):
                 sent_int.append(self.encodings.word2int['<PAD>'])
                 char_batch.append([0 for _ in range(max_word_size)])
+                case_batch.append([0 for _ in range(max_word_size)])
             word_batch.append(sent_int)
-        return torch.tensor(char_batch), torch.tensor(word_batch)
+
+        char_batch = self.char_emb(torch.tensor(char_batch))
+        case_batch = self.case_emb(torch.tensor(case_batch))
+
+        char_emb = torch.cat([char_batch, case_batch], dim=2)
+        char_batch = self.char_proj(char_emb)
+        return char_batch, torch.tensor(word_batch)
