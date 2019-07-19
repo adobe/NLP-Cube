@@ -26,12 +26,12 @@ class Tagger(nn.Module):
             lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
-        self.output_upos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.upos2int))
-        self.output_xpos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.xpos2int))
-        self.output_attrs = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.attrs2int))
+        self.output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
+        self.output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
+        self.output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
 
     def forward(self, x):
-        emb = torch.tanh(self.text_network(x))
+        emb = self.text_network(x)
         s_upos = self.output_upos(emb)
         s_xpos = self.output_xpos(emb)
         s_attrs = self.output_attrs(emb)
