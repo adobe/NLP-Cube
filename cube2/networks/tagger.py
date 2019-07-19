@@ -26,7 +26,7 @@ class Tagger(nn.Module):
             lang_emb_size = None
         else:
             lang_emb_size = self.config.tagger_embeddings_size
-            self.lang_emb = nn.Embedding(num_languages, lang_emb_size)
+            self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size)
         self.output_upos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.upos2int))
         self.output_xpos = nn.Linear(self.config.tagger_embeddings_size, len(self.encodings.xpos2int))
@@ -34,9 +34,9 @@ class Tagger(nn.Module):
 
     def forward(self, x):
         emb = self.text_network(x)
-        s_upos = F.softmax(self.output_upos(emb), dim=2)
-        s_xpos = F.softmax(self.output_xpos(emb), dim=2)
-        s_attrs = F.softmax(self.output_attrs(emb), dim=2)
+        s_upos = self.output_upos(emb)
+        s_xpos = self.output_xpos(emb)
+        s_attrs = self.output_attrs(emb)
         return s_upos, s_xpos, s_attrs
 
 
@@ -102,7 +102,7 @@ def _eval(tagger, dataset, encodings):
     epoch_loss = 0
     import tqdm
     pgb = tqdm.tqdm(range(num_batches), desc='\tEvaluating', ncols=80)
-    tagger.train()
+    tagger.eval()
     for batch_idx in pgb:
         start = batch_idx * params.batch_size
         stop = min(len(dataset.sequences), start + params.batch_size)

@@ -35,7 +35,7 @@ class TextEncoder(nn.Module):
                                  nn.Tanh(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
-        self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size)
+        self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
 
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
