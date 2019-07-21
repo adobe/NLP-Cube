@@ -196,7 +196,7 @@ def do_debug(params):
     trainset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
     devset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
     encodings = Encodings()
-    encodings.compute(trainset, devset)
+    encodings.compute(trainset, devset, word_cutoff=2)
     config = TaggerConfig()
     tagger = Tagger(config, encodings, 1, target_device=params.device)
     if params.device != 'cpu':
