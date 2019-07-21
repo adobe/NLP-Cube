@@ -56,7 +56,7 @@ class TextEncoder(nn.Module):
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
             x = torch.cat(
-                (torch.tanh(masks_char.unsqueeze(2) * char_emb), torch.tanh(masks_word.unsqueeze(2) * word_emb)), dim=2)
+                (torch.tanh(masks_char.unsqueeze(2)) * char_emb, torch.tanh(masks_word.unsqueeze(2)) * word_emb), dim=2)
         else:
             x = torch.cat((torch.tang(char_emb), torch.tanh(word_emb)), dim=2)
         output, _ = self.encoder(x.permute(1, 0, 2))
