@@ -9,7 +9,7 @@ class SelfAttentionNetwork(nn.Module):
         super(SelfAttentionNetwork, self).__init__()
         self.input_type = input_type
         self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, output_size, dropout,
-                               nn_type=nn.GRU, num_layers=encoder_layers)
+                               nn_type=nn_type, num_layers=encoder_layers)
 
         self.attention = Attention(output_size // 2, encoder_size * 2)
         self.mlp = nn.Linear(encoder_size * 2 + output_size, output_size)

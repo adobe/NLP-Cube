@@ -33,7 +33,7 @@ class TextEncoder(nn.Module):
                                                       self.config.tagger_encoder_dropout, nn_type=nn.LSTM)
 
         mlp_input_size = self.config.tagger_encoder_size * 2 + ext_conditioning
-        self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, True),
+        self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
                                  nn.Tanh(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
