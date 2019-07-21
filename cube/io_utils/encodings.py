@@ -45,8 +45,8 @@ class Encodings(object):
             sys.stdout.flush()
 
         self.word2int['<PAD>'] = 0
-        self.word2int['<UNK>'] = 1
         self.hol_word_list.append('<PAD>')
+        self.word2int['<UNK>'] = 1
         self.hol_word_list.append('<UNK>')
         self.char2int['<PAD>'] = 0
         self.char2int['<UNK>'] = 1

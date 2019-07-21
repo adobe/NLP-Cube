@@ -161,9 +161,9 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 total_words += len(trainset.sequences[start + ii][0])
             s_upos, s_xpos, s_attrs = tagger(data)
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
-            loss = criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
+            loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
                 s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(s_attrs.view(-1, s_attrs.shape[-1]),
-                                                                                  tgt_attrs.view(-1))
+                                                                                  tgt_attrs.view(-1))) / 3
             trainer.zero_grad()
             loss.backward()
             trainer.step()
