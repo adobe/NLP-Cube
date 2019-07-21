@@ -21,7 +21,7 @@ class TextEncoder(nn.Module):
             ext_conditioning = 0
         self._target_device = target_device
 
-        self.encoder = Encoder('float', self.config.tagger_embeddings_size + ext_conditioning,
+        self.encoder = Encoder('float', self.config.tagger_embeddings_size * 2 + ext_conditioning,
                                self.config.tagger_embeddings_size,
                                self.config.tagger_encoder_size,
                                self.config.tagger_encoder_size, self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
@@ -55,10 +55,10 @@ class TextEncoder(nn.Module):
         char_emb = char_network_output.view(word_emb.size())
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
-            x = torch.tanh(
-                masks_char.unsqueeze(2) * char_emb + masks_word.unsqueeze(2) * word_emb)
+            x = torch.cat(
+                (torch.tanh(masks_char.unsqueeze(2) * char_emb), torch.tanh(masks_word.unsqueeze(2) * word_emb)))
         else:
-            x = torch.tanh(char_emb + word_emb)
+            x = torch.cat((torch.tang(char_emb), torch.tanh(word_emb)))
         output, _ = self.encoder(x.permute(1, 0, 2))
         return self.mlp(output.permute(1, 0, 2))
 
