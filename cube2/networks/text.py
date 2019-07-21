@@ -58,7 +58,7 @@ class TextEncoder(nn.Module):
             x = torch.cat(
                 (torch.tanh(masks_char.unsqueeze(2)) * char_emb, torch.tanh(masks_word.unsqueeze(2)) * word_emb), dim=2)
         else:
-            x = torch.cat((torch.tang(char_emb), torch.tanh(word_emb)), dim=2)
+            x = torch.cat((torch.tanh(char_emb), torch.tanh(word_emb)), dim=2)
         output, _ = self.encoder(x.permute(1, 0, 2))
         return self.mlp(output.permute(1, 0, 2))
 
