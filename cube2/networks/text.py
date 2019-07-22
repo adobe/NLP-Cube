@@ -56,6 +56,15 @@ class TextEncoder(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=self.config.tagger_encoder_dropout))
 
+        for name, param in self.named_parameters():
+            if "weight_hh" in name:
+                nn.init.orthogonal_(param.data)
+            elif "weight_ih" in name:
+                nn.init.xavier_uniform_(param.data)
+            elif "bias" in name and "rnn" in name:  # forget bias
+                nn.init.zeros_(param.data)
+                param.data[param.size()[0] // 4:param.size()[0] // 2] = 1
+
     def forward(self, x, conditioning=None):
         char_network_batch, word_network_batch = self._create_batches(x)
         char_network_output = self.character_network(char_network_batch)
