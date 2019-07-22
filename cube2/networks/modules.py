@@ -64,6 +64,8 @@ class Attention(nn.Module):
         self.v = nn.Parameter(torch.rand(dec_hid_dim))
 
     def forward(self, hidden, encoder_outputs):
+        from ipdb import set_trace
+        set_trace()
         # hidden = [batch size, dec hid dim]
         # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
         batch_size = encoder_outputs.shape[1]
