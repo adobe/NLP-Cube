@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
+from cube2.networks.lstm import LSTM
 
 
 class Encoder(nn.Module):
@@ -20,8 +21,11 @@ class Encoder(nn.Module):
             self.embedding = nn.Embedding(input_size, input_emb_dim)
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
-
-        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
+        if nn_type == nn.LSTM:
+            self.rnn = LSTM(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout,
+                            dropoutw=dropout)
+        else:
+            self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
 
         self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
