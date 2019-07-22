@@ -21,11 +21,18 @@ class TextEncoder(nn.Module):
             ext_conditioning = 0
         self._target_device = target_device
 
-        self.encoder = Encoder('float', self.config.tagger_embeddings_size * 2 + ext_conditioning,
-                               self.config.tagger_embeddings_size,
-                               self.config.tagger_encoder_size,
-                               self.config.tagger_encoder_size, self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
-                               num_layers=self.config.tagger_encoder_layers)
+        self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2 + ext_conditioning,
+                                     self.config.tagger_embeddings_size,
+                                     self.config.tagger_encoder_size,
+                                     self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
+                                     nn_type=nn.LSTM,
+                                     num_layers=self.config.aux_softmax_layer_index)
+        self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
+                                      self.config.tagger_embeddings_size,
+                                      self.config.tagger_encoder_size,
+                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
+                                      nn_type=nn.LSTM,
+                                      num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index)
         self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
@@ -42,6 +49,7 @@ class TextEncoder(nn.Module):
                                      padding_idx=0)
         self.case_emb = nn.Embedding(4, 16,
                                      padding_idx=0)
+        self.encoder_dropout = nn.Dropout(p=self.config.tagger_encoder_dropout)
 
         self.char_proj = nn.Sequential(
             nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size),
@@ -59,8 +67,11 @@ class TextEncoder(nn.Module):
                 (torch.tanh(masks_char.unsqueeze(2)) * char_emb, torch.tanh(masks_word.unsqueeze(2)) * word_emb), dim=2)
         else:
             x = torch.cat((torch.tanh(char_emb), torch.tanh(word_emb)), dim=2)
-        output, _ = self.encoder(x.permute(1, 0, 2))
-        return self.mlp(output.permute(1, 0, 2))
+        output_hidden, hidden = self.first_encoder(x.permute(1, 0, 2))
+        output_hidden = self.encoder_dropout(output_hidden)
+        output, hidden = self.second_encoder(output_hidden)
+        output = self.encoder_dropout(output)
+        return self.mlp(output.permute(1, 0, 2)), output_hidden.permute(1, 0, 2)
 
     def _compute_masks(self, size, prob):
         m1 = np.ones(size[:-1])

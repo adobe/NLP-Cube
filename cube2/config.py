@@ -71,6 +71,8 @@ class TaggerConfig(Config):
         self.char_encoder_size = 300
         self.char_encoder_layers = 2
         self.char_input_embeddings_size = 300
+        self.aux_softmax_layer_index = 2
+        self.aux_softmax_weight = 0.2
         self._valid = True
 
         if filename is None:

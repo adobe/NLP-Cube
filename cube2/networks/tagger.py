@@ -7,6 +7,7 @@ import numpy as np
 import torch.nn as nn
 import torch.utils.data
 from cube2.networks.text import TextEncoder
+from cube2.networks.modules import Encoder
 from cube2.config import TaggerConfig
 from cube.io_utils.encodings import Encodings
 
@@ -26,16 +27,32 @@ class Tagger(nn.Module):
             lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
+
         self.output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
         self.output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
         self.output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
 
+        self.aux_mlp = nn.Sequential(nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
+                                     nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
+        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
+        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
+
     def forward(self, x):
-        emb = self.text_network(x)
+        emb, hidden = self.text_network(x)
         s_upos = self.output_upos(emb)
         s_xpos = self.output_xpos(emb)
         s_attrs = self.output_attrs(emb)
-        return s_upos, s_xpos, s_attrs
+        # aux_emb = torch.cat((hidden[self.config.aux_softmax_layer_index * 2, :, :],
+        #                     hidden[0][self.config.aux_softmax_layer_index * 2 + 1, :, :]), dim=1)
+
+        # from ipdb import set_trace
+        # set_trace()
+        aux_hid = self.aux_mlp(hidden)
+        s_aux_upos = self.aux_output_upos(aux_hid)
+        s_aux_xpos = self.aux_output_xpos(aux_hid)
+        s_aux_attrs = self.aux_output_attrs(aux_hid)
+        return s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs
 
 
 class TaggerDataset(torch.utils.data.Dataset):
@@ -108,7 +125,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
         for ii in range(stop - start):
             data.append(dataset.sequences[start + ii][0])
             total_words += len(dataset.sequences[start + ii][0])
-        s_upos, s_xpos, s_attrs = tagger(data)
+        s_upos, s_xpos, s_attrs, _, _, _ = tagger(data)
         tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
@@ -159,11 +176,18 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             for ii in range(stop - start):
                 data.append(trainset.sequences[start + ii][0])
                 total_words += len(trainset.sequences[start + ii][0])
-            s_upos, s_xpos, s_attrs = tagger(data)
+            s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data)
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
                 s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(s_attrs.view(-1, s_attrs.shape[-1]),
                                                                                   tgt_attrs.view(-1))) / 3
+
+            loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) + criterion(
+                s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) + criterion(
+                s_aux_attrs.view(-1, s_aux_attrs.shape[-1]),
+                tgt_attrs.view(-1))) / 3) * tagger.config.aux_softmax_weight
+
+            loss = loss + loss_aux
             trainer.zero_grad()
             loss.backward()
             trainer.step()
