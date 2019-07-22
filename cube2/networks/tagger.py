@@ -198,12 +198,15 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         if best_upos < acc_upos:
             best_upos = acc_upos
+            sys.stdout.write('\tStoring bestUPOS\n')
             patience_left = params.patience
         if best_xpos < acc_xpos:
             best_xpos = acc_xpos
+            sys.stdout.write('\tStoring bestXPOS\n')
             patience_left = params.patience
         if best_attrs < acc_attrs:
             best_attrs = acc_attrs
+            sys.stdout.write('\tStoring bestATTRS\n')
             patience_left = params.patience
         print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
         print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
