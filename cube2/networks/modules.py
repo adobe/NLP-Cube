@@ -22,7 +22,7 @@ class Encoder(nn.Module):
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
         if nn_type == nn.LSTM:
-            self.rnn = LSTM(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout,
+            self.rnn = LSTM(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropouto=dropout,
                             dropoutw=dropout)
         else:
             self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
