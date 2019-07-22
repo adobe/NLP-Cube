@@ -51,10 +51,7 @@ class TextEncoder(nn.Module):
                                      padding_idx=0)
         self.encoder_dropout = nn.Dropout(p=self.config.tagger_encoder_dropout)
 
-        self.char_proj = nn.Sequential(
-            nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size),
-            nn.Tanh(),
-            nn.Dropout(p=self.config.tagger_encoder_dropout))
+        self.char_proj = nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size)
 
         for name, param in self.named_parameters():
             if "weight_hh" in name:
@@ -153,6 +150,7 @@ class TextEncoder(nn.Module):
                 for _ in range(max_word_size - len(entry.word)):
                     char_int.append(self.encodings.char2int['<PAD>'])
                     case_int.append(0)
+
                 char_batch.append(char_int)
                 case_batch.append(case_int)
 
