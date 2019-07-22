@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import random
-from cube2.networks.lstm import LSTM
 
 
 class Encoder(nn.Module):
@@ -21,11 +20,8 @@ class Encoder(nn.Module):
             self.embedding = nn.Embedding(input_size, input_emb_dim)
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
-        if nn_type == nn.LSTM:
-            self.rnn = LSTM(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropouto=dropout,
-                            dropoutw=dropout)
-        else:
-            self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
+
+        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
 
         self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
@@ -64,8 +60,6 @@ class Attention(nn.Module):
         self.v = nn.Parameter(torch.rand(dec_hid_dim))
 
     def forward(self, hidden, encoder_outputs):
-        from ipdb import set_trace
-        set_trace()
         # hidden = [batch size, dec hid dim]
         # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
         batch_size = encoder_outputs.shape[1]

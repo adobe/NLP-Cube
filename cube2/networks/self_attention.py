@@ -11,6 +11,7 @@ class SelfAttentionNetwork(nn.Module):
         self.input_type = input_type
         self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, output_size, dropout,
                                nn_type=nn_type, num_layers=encoder_layers)
+        self.encoder_dropout = nn.Dropout(dropout)
 
         self.attention = Attention(output_size // 2, encoder_size * 2)
         self.mlp = nn.Linear(encoder_size * 2 + output_size, output_size)
@@ -22,6 +23,8 @@ class SelfAttentionNetwork(nn.Module):
         else:
             x = x.permute(1, 0, 2)
         output, hidden = self.encoder(x)
+        output = self.encoder_dropout(output)
+        hidden = self.encoder_dropout(hidden)
         attention = self.attention(hidden, output)
 
         encoder_outputs = output.permute(1, 0, 2)
