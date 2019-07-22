@@ -63,9 +63,9 @@ class TaggerConfig(Config):
         super().__init__()
         self.tagger_embeddings_size = 300
         self.tagger_encoder_size = 300
-        self.tagger_encoder_layers = 4
+        self.tagger_encoder_layers = 3
         self.tagger_encoder_dropout = 0.33
-        self.tagger_input_dropout_prob = 0.5
+        self.tagger_input_dropout_prob = 0.33
         self.tagger_mlp_layer = 500
         self.tagger_mlp_dropout = 0.5
         self.char_encoder_size = 300
