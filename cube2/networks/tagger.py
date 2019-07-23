@@ -194,7 +194,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
-
+        acc_upos_t, acc_xpos_t, acc_attrs_t = _eval(tagger, trainset, encodings)
         acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         if best_upos < acc_upos:
             best_upos = acc_upos
@@ -209,6 +209,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             sys.stdout.write('\tStoring bestATTRS\n')
             patience_left = params.patience
         print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
+        print("\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
         print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
         epoch += 1
 
