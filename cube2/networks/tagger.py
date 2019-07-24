@@ -181,11 +181,11 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) +
                     criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
-                    criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.3
+                    criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1)))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
-                         criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.3) * \
+                         criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34) * \
                        tagger.config.aux_softmax_weight
 
             loss = loss + loss_aux
