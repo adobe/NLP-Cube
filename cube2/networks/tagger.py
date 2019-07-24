@@ -192,6 +192,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             loss = loss + loss_aux
             trainer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(tagger.parameters(), 1.)
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
@@ -210,7 +211,8 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             sys.stdout.write('\tStoring bestATTRS\n')
             patience_left = params.patience
         print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
-        print("\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
+        print(
+            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
         print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
         epoch += 1
 
@@ -233,7 +235,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tagger.parameters())
+    trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)
