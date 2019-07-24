@@ -125,7 +125,8 @@ def _eval(tagger, dataset, encodings, device='cpu'):
         for ii in range(stop - start):
             data.append(dataset.sequences[start + ii][0])
             total_words += len(dataset.sequences[start + ii][0])
-        s_upos, s_xpos, s_attrs, _, _, _ = tagger(data)
+        with torch.no_grad():
+            s_upos, s_xpos, s_attrs, _, _, _ = tagger(data)
         tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
