@@ -11,6 +11,7 @@ cube/venv/*
 .idea/*
 venv/*
 cube/*.py
+*.json
 
 models/
 tests/scratch/*
