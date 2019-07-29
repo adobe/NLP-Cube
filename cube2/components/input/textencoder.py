@@ -1,47 +1,13 @@
-
+import sys, os
+sys.path.append("../../..")
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import random
-from cube.io_utils.encodings import Encodings
-from cube2.util.config import Config
 
-class TaggerConfig(Config):
-    def __init__(self, filename=None, verbose=False):
-        super().__init__()
-        self.tagger_embeddings_size = 100
-        self.tagger_encoder_size = 200
-        self.tagger_encoder_layers = 2
-        self.tagger_encoder_dropout = 0.33
-        self.tagger_input_dropout_prob = 0.5
-        self.tagger_mlp_layer = 500
-        self.tagger_mlp_dropout = 0.5
-        self.char_encoder_size = 200
-        self.char_encoder_layers = 2
-        self.char_input_embeddings_size = 100
-        self.aux_softmax_layer_index = 1
-        self.aux_softmax_weight = 0.2
-        self._valid = True
-
-        if filename is None:
-            if verbose:
-                sys.stdout.write("No configuration file supplied. Using default values.\n")
-        else:
-            if verbose:
-                sys.stdout.write("Reading configuration file " + filename + " \n")
-            self.load(filename)
-
-        if verbose:
-            print("INPUT SIZE:", self.input_size)
-            print("LAYERS:", self.layers)
-            print("LAYER DROPOUTS:", self.layer_dropouts)
-            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
-            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
-
+from cube2.components.lookup import Lookup
 
 class Encoder(nn.Module):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU,
@@ -119,91 +85,6 @@ class Attention(nn.Module):
         # attention= [batch size, src len]
         return F.softmax(attention, dim=1)
 
-
-class Decoder(nn.Module):
-    def __init__(self, output_dim, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention, nn_type=nn.GRU, num_layers=2):
-        super().__init__()
-
-        self.emb_dim = emb_dim
-        self.enc_hid_dim = enc_hid_dim
-        self.dec_hid_dim = dec_hid_dim
-        self.output_dim = output_dim
-        self.dropout = dropout
-        self.attention = attention
-
-        self.embedding = nn.Embedding(output_dim, emb_dim)
-        self.rnn = nn_type((enc_hid_dim * 2) + emb_dim, dec_hid_dim, num_layers=num_layers)
-        self.out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, input, hidden, encoder_outputs):
-        # input = [batch size]
-        # hidden = [batch size, dec hid dim]
-        # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
-        input = input.unsqueeze(0)
-        # input = [1, batch size]
-        embedded = self.dropout(self.embedding(input))
-        # embedded = [1, batch size, emb dim]
-        a = self.attention(hidden, encoder_outputs)
-        # a = [batch size, src len]
-        a = a.unsqueeze(1)
-        # a = [batch size, 1, src len]
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
-        # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
-        weighted = torch.bmm(a, encoder_outputs)
-        # weighted = [batch size, 1, enc hid dim * 2]
-        weighted = weighted.permute(1, 0, 2)
-        # weighted = [1, batch size, enc hid dim * 2]
-        rnn_input = torch.cat((embedded, weighted), dim=2)
-        # rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]
-        output, hidden = self.rnn(rnn_input, hidden.unsqueeze(0))
-        # output = [sent len, batch size, dec hid dim * n directions]
-        # hidden = [n layers * n directions, batch size, dec hid dim]
-        # sent len, n layers and n directions will always be 1 in this decoder, therefore:
-        # output = [1, batch size, dec hid dim]
-        # hidden = [1, batch size, dec hid dim]
-        # this also means that output == hidden
-        assert (output == hidden).all()
-        embedded = embedded.squeeze(0)
-        output = output.squeeze(0)
-        weighted = weighted.squeeze(0)
-        output = self.out(torch.cat((output, weighted, embedded), dim=1))
-        # output = [bsz, output dim]
-        return output, hidden.squeeze(0)
-
-
-class Seq2Seq(nn.Module):
-    def __init__(self, encoder, decoder, device):
-        super().__init__()
-
-        self.encoder = encoder
-        self.decoder = decoder
-        self.device = device
-
-    def forward(self, src, trg, teacher_forcing_ratio=0.5):
-        # src = [src sent len, batch size]
-        # trg = [trg sent len, batch size]
-        # teacher_forcing_ratio is probability to use teacher forcing
-        # e.g. if teacher_forcing_ratio is 0.75 we use teacher forcing 75% of the time
-        batch_size = src.shape[1]
-        max_len = trg.shape[0]
-        trg_vocab_size = self.decoder.output_dim
-        # tensor to store decoder outputs
-        outputs = torch.zeros(max_len, batch_size, trg_vocab_size).to(self.device)
-        # encoder_outputs is all hidden states of the input sequence, back and forwards
-        # hidden is the final forward and backward hidden states, passed through a linear layer
-        encoder_outputs, hidden = self.encoder(src)
-        # first input to the decoder is the <sos> tokens
-        output = trg[0, :]
-        for t in range(1, max_len):
-            output, hidden = self.decoder(output, hidden, encoder_outputs)
-            outputs[t] = output
-            teacher_force = random.random() < teacher_forcing_ratio
-            top1 = output.max(1)[1]
-            output = (trg[t] if teacher_force else top1)
-
-        return outputs
-
 class SelfAttentionNetwork(nn.Module):
     def __init__(self, input_type, input_size, input_emb_size, encoder_size, encoder_layers, output_size, dropout,
                  nn_type=nn.GRU):
@@ -236,49 +117,59 @@ class SelfAttentionNetwork(nn.Module):
         return self.mlp(pre_mlp)
 
 class TextEncoder(nn.Module):
-    config: TaggerConfig
-    encodings: Encodings
+    lookup: Lookup
 
-    def __init__(self, config, encodings, ext_conditioning=None, target_device='cpu'):
+    def __init__(self, lookup, input_dropout_prob, char_encoder_size, char_encoder_layers, char_input_embeddings_size, input_size, total_layers, aux_softmax_layer_index, output_size, mlp_output_size, dropout, ext_conditioning=None, device='cpu'):
         super(TextEncoder, self).__init__()
-        self.encodings = encodings
-        self.config = config
+        self.lookup = lookup
+        
+        self.input_dropout_prob = input_dropout_prob
+        self.char_encoder_size = char_encoder_size
+        self.char_encoder_layers = char_encoder_layers
+        self.char_input_embeddings_size = char_input_embeddings_size 
+        self.input_size = input_size # self.config.tagger_embeddings_size
+        self.total_layers = total_layers
+        self.aux_softmax_layer_index = aux_softmax_layer_index
+        self.output_size = output_size
+        self.mlp_output_size = mlp_output_size
+        self.dropout = dropout
+        
         self.use_conditioning = (ext_conditioning is None)
         if ext_conditioning is None:
             ext_conditioning = 0
-        self._target_device = target_device
+        self._device = device
 
-        self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2 + ext_conditioning,
-                                     self.config.tagger_embeddings_size,
-                                     self.config.tagger_encoder_size,
-                                     self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
+        self.first_encoder = Encoder('float', self.input_size * 2 + ext_conditioning,
+                                     self.input_size,
+                                     self.output_size,
+                                     self.output_size, self.dropout,
                                      nn_type=nn.LSTM,
-                                     num_layers=self.config.aux_softmax_layer_index)
-        self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
-                                      self.config.tagger_embeddings_size,
-                                      self.config.tagger_encoder_size,
-                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
+                                     num_layers=self.aux_softmax_layer_index)
+        self.second_encoder = Encoder('float', self.output_size * 2,
+                                      self.input_size,
+                                      self.output_size,
+                                      self.output_size, self.dropout,
                                       nn_type=nn.LSTM,
-                                      num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index)
-        self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
-                                                      self.config.char_input_embeddings_size,
-                                                      self.config.char_encoder_size, self.config.char_encoder_layers,
-                                                      self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout, nn_type=nn.LSTM)
+                                      num_layers=self.total_layers - self.aux_softmax_layer_index)
+        self.character_network = SelfAttentionNetwork('float', self.char_input_embeddings_size,
+                                                      self.char_input_embeddings_size,
+                                                      self.char_encoder_size, self.char_encoder_layers,
+                                                      self.input_size,
+                                                      self.dropout, nn_type=nn.LSTM)
 
-        mlp_input_size = self.config.tagger_encoder_size * 2 + ext_conditioning
-        self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
+        mlp_input_size = self.output_size * 2 + ext_conditioning
+        self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.mlp_output_size, bias=True),
                                  nn.Tanh(),
-                                 nn.Dropout(p=self.config.tagger_mlp_dropout))
+                                 nn.Dropout(p=self.dropout))
 
-        self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
-        self.char_emb = nn.Embedding(len(self.encodings.char2int), self.config.char_input_embeddings_size,
+        self.word_emb = nn.Embedding(len(self.lookup.word2int), self.input_size, padding_idx=0)
+        self.char_emb = nn.Embedding(len(self.lookup.char2int), self.char_input_embeddings_size,
                                      padding_idx=0)
-        self.case_emb = nn.Embedding(4, 16,
+        self.case_emb = nn.Embedding(5, 16,
                                      padding_idx=0)
-        self.encoder_dropout = nn.Dropout(p=self.config.tagger_encoder_dropout)
+        self.encoder_dropout = nn.Dropout(p=self.dropout)
 
-        self.char_proj = nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size)
+        self.char_proj = nn.Linear(self.char_input_embeddings_size + 16, self.char_input_embeddings_size)
 
         for name, param in self.named_parameters():
             if "weight_hh" in name:
@@ -290,12 +181,16 @@ class TextEncoder(nn.Module):
                 param.data[param.size()[0] // 4:param.size()[0] // 2] = 1
 
     def forward(self, x, conditioning=None):
+    
+        (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = x
+        
+    
         char_network_batch, word_network_batch = self._create_batches(x)
         char_network_output = self.character_network(char_network_batch)
         word_emb = self.word_emb(word_network_batch)
         char_emb = char_network_output.view(word_emb.size())
         if self.training:
-            masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
+            masks_char, masks_word = self._compute_masks(char_emb.size(), self.input_dropout_prob)
             x = torch.cat(
                 (torch.tanh(masks_char.unsqueeze(2)) * char_emb, torch.tanh(masks_word.unsqueeze(2)) * word_emb), dim=2)
         else:
@@ -342,7 +237,7 @@ class TextEncoder(nn.Module):
             return 1
 
     def _get_device(self):
-        return self._target_device
+        return self._device
 
     def _create_batches(self, x):
         char_batch = []
@@ -364,25 +259,25 @@ class TextEncoder(nn.Module):
             for entry in sent:
                 char_int = []
                 case_int = []
-                if entry.word.lower() in self.encodings.word2int:
-                    sent_int.append(self.encodings.word2int[entry.word.lower()])
+                if entry.word.lower() in self.lookup.word2int:
+                    sent_int.append(self.lookup.word2int[entry.word.lower()])
                 else:
-                    sent_int.append(self.encodings.word2int['<UNK>'])
+                    sent_int.append(self.lookup.word2int['<UNK>'])
                 for char in entry.word:
-                    if char.lower() in self.encodings.char2int:
-                        char_int.append(self.encodings.char2int[char.lower()])
+                    if char.lower() in self.lookup.char2int:
+                        char_int.append(self.lookup.char2int[char.lower()])
                     else:
-                        char_int.append(self.encodings.char2int['<UNK>'])
+                        char_int.append(self.lookup.char2int['<UNK>'])
                     case_int.append(self._case_index(char))
                 for _ in range(max_word_size - len(entry.word)):
-                    char_int.append(self.encodings.char2int['<PAD>'])
+                    char_int.append(self.lookup.char2int['<PAD>'])
                     case_int.append(0)
 
                 char_batch.append(char_int)
                 case_batch.append(case_int)
 
             for _ in range(max_sent_size - len(sent)):
-                sent_int.append(self.encodings.word2int['<PAD>'])
+                sent_int.append(self.lookup.word2int['<PAD>'])
                 char_batch.append([0 for _ in range(max_word_size)])
                 case_batch.append([0 for _ in range(max_word_size)])
             word_batch.append(sent_int)
@@ -395,3 +290,26 @@ class TextEncoder(nn.Module):
         char_batch = self.char_proj(char_emb)
         return char_batch, torch.tensor(word_batch, device=device)
 
+# demo testing        
+if __name__ == "__main__":
+    lookup = Lookup("../../../scratch")
+    
+    from cube2.components.loaders.loaders import getSequenceDataLoader
+    
+    input_list = ["d:\\ud-treebanks-v2.4\\UD_Romanian-RRT\\ro_rrt-ud-train.conllu","d:\\ud-treebanks-v2.4\\UD_Romanian-Nonstandard\\ro_nonstandard-ud-train.conllu"]
+    dataloader = getSequenceDataLoader(input_list, batch_size=2, lookup_object=lookup, num_workers=0, shuffle=False)
+    batch = iter(dataloader).next()
+    (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch
+    print("Batch has {} instances".format(lang_id_sequences_tensor.size(0)))
+    print("First sentence: {}".format(word_sequences_tensor[0]))
+    print("First sentence's char_encoding: {}".format(char_sequences_tensor[0]))
+    print("First sentence's symb_encoding: {}".format(symbol_sequences_tensor[0]))
+    
+    
+    te = TextEncoder(lookup, input_dropout_prob=0.2, char_encoder_size=10, char_encoder_layers=3, char_input_embeddings_size=10, input_size=10, total_layers=4, aux_softmax_layer_index=2, output_size=10, mlp_output_size=10, dropout=0.3, ext_conditioning=None, device='cpu')
+    
+    output=te.forward(batch)
+    
+    
+    
+    
