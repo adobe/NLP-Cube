@@ -13,7 +13,7 @@ venv/*
 cube/*.py
 *.json
 
-models/
+
 tests/scratch/*
 scripts/*.json
 scripts/*.conllu
