@@ -143,9 +143,10 @@ def createLookup(conll_files, minimum_word_frequency_cutoff=7, minimum_char_freq
 
 # demo testing        
 if __name__ == "__main__":
-    lookup = createLookup(["d:\\ud-treebanks-v2.4\\UD_Romanian-RRT\\ro_rrt-ud-train.conllu","d:\\ud-treebanks-v2.4\\UD_Romanian-Nonstandard\\ro_nonstandard-ud-train.conllu"], verbose=True)      
+    lookup = createLookup(["e:\\ud-treebanks-v2.4\\UD_Romanian-RRT\\ro_rrt-ud-train.conllu","e:\\ud-treebanks-v2.4\\UD_Romanian-Nonstandard\\ro_nonstandard-ud-train.conllu"], verbose=True)      
     lookup.save("../../scratch")
     lookup.load("../../scratch")
     print(lookup)
     new_lookup = Lookup("../../scratch")
     print(new_lookup.encode_word("Mere!"))
+    print(new_lookup.encode_word("numai"))
