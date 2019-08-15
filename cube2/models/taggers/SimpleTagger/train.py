@@ -9,6 +9,7 @@ from tqdm import tqdm
 from cube2.models.taggers.SimpleTagger.network import SimpleTagger
 from cube2.components.lookup import Lookup, createLookup
 from cube2.components.loaders.loaders import getSequenceDataLoader
+from cube2.util.utils import pretty_sequences
 
 def get_freer_gpu():
     try:    
@@ -22,26 +23,17 @@ def get_freer_gpu():
 
 def train (network, train_dataloader, dev_dataloader, test_dataloader, optimizer, criterion):    
     current_epoch = 0
-    network.train()
+    
     while True:
+        network.train()
         total_loss, log_average_loss = 0, 0        
         t = tqdm(train_dataloader, ncols=120, mininterval=0.5, desc="Epoch " + str(current_epoch)+" [train]", unit="b")
         for batch_index, batch in enumerate(t):  
             if network.cuda:
-                (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch 
-                lang_id_sequences_tensor = lang_id_sequences_tensor.cuda()
-                seq_lengths = seq_lengths.cuda()
-                word_sequences_tensor = word_sequences_tensor.cuda()
-                char_sequences_tensor = char_sequences_tensor.cuda()
-                symbol_sequences_tensor = symbol_sequences_tensor.cuda()
-                seq_masks = seq_masks.cuda()
-                char_seq_lengths = char_seq_lengths.cuda()
-                symbol_seq_lengths = symbol_seq_lengths.cuda()
-                upos_sequences_tensor = upos_sequences_tensor.cuda()
-                xpos_sequences_tensor = xpos_sequences_tensor.cuda()
-                attrs_sequences_tensor = attrs_sequences_tensor.cuda()
-                batch = (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor)
-            
+                batch = tuple([tensor.cuda() for tensor in batch])
+                # a batch contains (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor)
+            (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch
+                    
             optimizer.zero_grad()
             
             s_upos, s_xpos, s_attrs = network.forward(batch)
@@ -81,24 +73,27 @@ def train (network, train_dataloader, dev_dataloader, test_dataloader, optimizer
             t = tqdm(dev_dataloader, ncols=120, mininterval=0.5, desc="Epoch " + str(current_epoch)+" [valid]", unit="b")
             for batch_index, batch in enumerate(t):         
                 if network.cuda:
-                    (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch 
-                    lang_id_sequences_tensor = lang_id_sequences_tensor.cuda()
-                    seq_lengths = seq_lengths.cuda()
-                    word_sequences_tensor = word_sequences_tensor.cuda()
-                    char_sequences_tensor = char_sequences_tensor.cuda()
-                    symbol_sequences_tensor = symbol_sequences_tensor.cuda()
-                    seq_masks = seq_masks.cuda()
-                    char_seq_lengths = char_seq_lengths.cuda()
-                    symbol_seq_lengths = symbol_seq_lengths.cuda()
-                    upos_sequences_tensor = upos_sequences_tensor.cuda()
-                    xpos_sequences_tensor = xpos_sequences_tensor.cuda()
-                    attrs_sequences_tensor = attrs_sequences_tensor.cuda()
-                    batch = (lang_id_sequences_tensor, seq_lengths, word_sequences_tensor, char_sequences_tensor, symbol_sequences_tensor, seq_masks, char_seq_lengths, symbol_seq_lengths, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor)   
+                    batch = tuple([tensor.cuda() for tensor in batch])
+                    # a batch contains (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor)
                 
+                (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor)    
                 s_upos, s_xpos, s_attrs = network.forward(batch)
                 
                 for b_idx in range(len(batch)):
-                    for w_idx in range(seq_lengths[b_idx]):
+                    if b_idx == 0:
+                        gold = []
+                        pred = []
+                        for w_idx in range(word_seq_lengths[b_idx]):                                            
+                            pred_upos = np.argmax(s_upos[b_idx, w_idx].detach().cpu())                            
+                            pred_xpos = np.argmax(s_xpos[b_idx, w_idx].detach().cpu())
+                            pred_attrs = np.argmax(s_attrs[b_idx, w_idx].detach().cpu())                                                       
+                            pred.append(pred_upos.item())
+                            gold.append(upos_sequences_tensor[b_idx, w_idx].detach().cpu().item())
+                          
+                        print()
+                        pretty_sequences(gold, pred)
+                        
+                    for w_idx in range(word_seq_lengths[b_idx]):
                         total += 1                        
                         pred_upos = np.argmax(s_upos[b_idx, w_idx].detach().cpu())
                         pred_xpos = np.argmax(s_xpos[b_idx, w_idx].detach().cpu())
@@ -121,14 +116,14 @@ def train (network, train_dataloader, dev_dataloader, test_dataloader, optimizer
 # GPU SELECTION ########################################################
 if torch.cuda.is_available():
     freer_gpu = get_freer_gpu()
-    print("Auto-selected GPU {} id {}".format(torch.cuda.get_device_name(freer_gpu),freer_gpu))
+    print("Auto-selected CUDA device #{}: {}".format(freer_gpu, torch.cuda.get_device_name(freer_gpu)))
     torch.cuda.set_device(freer_gpu)
 # ######################################################################
 
 
 print("\n\n\n")
-#lookup = createLookup(["d:\\ud-treebanks-v2.4\\UD_Romanian-RRT\\ro_rrt-ud-train.conllu"], verbose=True)      
-#lookup.save("../../../../scratch")
+lookup = createLookup(["../../../../../ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu"], verbose=True, minimum_word_frequency_cutoff=7)      
+lookup.save("../../../../scratch")
 lookup = Lookup("../../../../scratch")
 
 
@@ -139,7 +134,8 @@ network = SimpleTagger(lookup)
 
 #print(network)
 
-optimizer = torch.optim.SGD(network.parameters(), lr=.1, momentum=0.9)
+#optimizer = torch.optim.SGD(network.parameters(), lr=.1, momentum=0.9)
+optimizer = torch.optim.Adam(network.parameters(), lr=1e-3, amsgrad=True)#, weight_decay=1e-3)
 criterion = nn.CrossEntropyLoss(ignore_index=0)
 
 train(network, train_dataloader, dev_dataloader, None, optimizer, criterion)

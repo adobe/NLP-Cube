@@ -163,10 +163,10 @@ class Attention(nn.Module):
         last lstm layer output.
 
         Args:
-            state_h (tensor): The raw hidden state of the decoder's LSTM 
-                Shape: [num_layers * 1, batch_size, decoder_size].
             enc_output (tensor): The output of the last LSTM encoder layer. 
                 Shape: [batch_size, seq_len, encoder_size].
+            state_h (tensor): The raw hidden state of the decoder's LSTM 
+                Shape: [num_layers * 1, batch_size, decoder_size].            
             mask (tensor): 1 and 0 as for encoder input
                 Shape: [batch_size, seq_len].
 

@@ -35,14 +35,14 @@ class LayeredRNN(nn.Module):
             if input_embedding_size != rnn_input_size:
                 raise Exception("ERROR: input_embedding_size should be equal to rnn_input_size if no initial MLP will be applied!")
                 
-        self.rnns = []
+        rnns_list = []
         layer_input_size = rnn_input_size
         for i in range(rnn_num_layers):  
-            rnn = rnn_type(layer_input_size, rnn_hidden_size, num_layers=1, bidirectional=True, batch_first=True)
-            rnn.to(self.device) 
-            self.rnns.append(rnn)
+            rnn = rnn_type(layer_input_size, rnn_hidden_size, num_layers=1, bidirectional=True, batch_first=True)             
+            rnns_list.append(rnn)
             layer_input_size = rnn_hidden_size * 2
         self.rnn_layer_dropout = nn.Dropout(rnn_dropout)
+        self.rnns = nn.ModuleList(rnns_list)
         
         self.fc = nn.Linear(rnn_hidden_size * 2, output_size)
         self.dropout = nn.Dropout(output_dropout)
@@ -61,13 +61,17 @@ class LayeredRNN(nn.Module):
             layer_input = input
         # input is now [batch_size, seq_len, rnn_input_size] 
         outputs = []
-        hiddens = []        
-        for i in range(self.rnn_num_layers): 
-            pack_padded_rnn_input = torch.nn.utils.rnn.pack_padded_sequence(layer_input, input_lengths, batch_first=True, enforce_sorted=False) # pack everything            
-            pack_padded_rnn_output, layer_hidden = self.rnns[i](pack_padded_rnn_input) # now run through the rnn layer            
-            layer_output, _ = torch.nn.utils.rnn.pad_packed_sequence(pack_padded_rnn_output, batch_first=True) # undo the packing operation
+        hiddens = [] 
+        for rnn in self.rnns: 
+            pack_padded_rnn_input = torch.nn.utils.rnn.pack_padded_sequence(layer_input, input_lengths, batch_first=True, enforce_sorted=False) 
+            pack_padded_rnn_output, layer_hidden = rnn(pack_padded_rnn_input) 
+            layer_output, _ = torch.nn.utils.rnn.pad_packed_sequence(pack_padded_rnn_output, batch_first=True)
             layer_output = self.rnn_layer_dropout(layer_output) # dropout             
             layer_input = layer_output
+            
+            #layer_output, layer_hidden = rnn(layer_input) # now run through the rnn layer    
+            #layer_output = self.rnn_layer_dropout(layer_output)
+            #layer_input = layer_output
             
             if isinstance(layer_hidden, list) or isinstance(layer_hidden, tuple):  # we have an LSTM
                 layer_hidden = layer_hidden[1] # this is the cell state !!, [0] is hidden, [1] is the cell_state
@@ -116,19 +120,23 @@ class SimpleSelfAttentionEncoder(nn.Module):
         #print(rnn_hiddens[-1].size())
         context, _ = self.attention(rnn_outputs[-1], rnn_hiddens[-1])
         # context is [batch_size, hidden_size]
-        print(context.size())
-        print(rnn_outputs[-1].size())
-        weighted = torch.matmul( rnn_outputs[-1], context.unsqueeze(1))
-        print(weighted.size())
-        # run mlp         
-        mlp_input = torch.cat([rnn_outputs[-1], context], dim=2)
         
-        output = self.output_mlp(mlp_input)
+        #print()
+        #print(context.unsqueeze(1).size())
+        #print(rnn_outputs[-1].size())
+        #print(rnn_outputs[-1].size())
+        #weighted = torch.matmul( rnn_outputs[-1], context.unsqueeze(1))
+        #print(weighted.size())
+        # run mlp                 
+        #mlp_input = torch.cat([rnn_outputs[-1], context.unsqueeze(1)], dim=2)        
+        output = self.output_mlp(context)
+        #print(output.size())
         return output
+        # [batch_size, self.character_network.output_size]
         
 class SimpleMHSelfAttentionEncoder(nn.Module):
     def __init__(self, input_size, attention_num_heads, encoder_hidden_size, encoder_num_layers, encoder_rnn_dropout, output_size, encoder_dropout, encoder_rnn_type=nn.GRU, device=torch.device("cpu")):
-        super(SimpleSelfAttentionEncoder, self).__init__()
+        super(SimpleMHSelfAttentionEncoder, self).__init__()
         self.device = device
         
         self.input_size = input_size
@@ -191,6 +199,8 @@ class TokenEncoder(nn.Module):
         #assert (char_embedding_size+symbol_embedding_size)%char_attention_num_heads == 0, "char_embedding_size+symbol_embedding_size must be divisible with attention_num_heads"
         
         """, attention_num_heads = char_attention_num_heads"""
+        
+        #self.character_network = SimpleMHSelfAttentionEncoder(input_size = char_embedding_size+symbol_embedding_size, attention_num_heads = char_attention_num_heads, encoder_hidden_size = char_encoder_hidden_size, encoder_num_layers = char_encoder_num_layers, encoder_rnn_dropout = char_encoder_rnn_dropout, output_size = char_encoder_hidden_size, encoder_dropout = char_encoder_rnn_dropout, encoder_rnn_type=nn.LSTM, device=self.device)
         self.character_network = SimpleSelfAttentionEncoder(input_size = char_embedding_size+symbol_embedding_size, encoder_hidden_size = char_encoder_hidden_size, encoder_num_layers = char_encoder_num_layers, encoder_rnn_dropout = char_encoder_rnn_dropout, output_size = char_encoder_hidden_size, encoder_dropout = char_encoder_rnn_dropout, encoder_rnn_type=nn.LSTM, device=self.device)        
         
         self.encoder_rnn = LayeredRNN(input_embedding_size = word_embedding_size+self.character_network.output_size, rnn_input_size=word_embedding_size, rnn_num_layers=encoder_rnn_num_layers, rnn_dropout=encoder_rnn_dropout, rnn_hidden_size=encoder_rnn_hidden_size, output_size=encoder_rnn_hidden_size, output_dropout=encoder_rnn_dropout, pass_input_through_mlp = True, rnn_type=nn.LSTM, device=self.device)
@@ -209,46 +219,48 @@ class TokenEncoder(nn.Module):
         
         self.to(self.device)
         
-    def forward(self, lang_ids, input_words, input_words_length, input_chars, input_chars_lengths, input_symbols, input_symbols_lengths):
-        assert len(input_words[0]) == len(input_chars[0]), "Sequence lengths invalid!"
-        assert len(input_words[0]) == len(input_symbols[0]), "Sequence lengths invalid!"
+    def forward(self, lang_ids, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks):
+        assert len(word_sequences_tensor[0]) == len(char_sequences_tensor[0]), "Sequence lengths invalid!"
+        assert len(word_sequences_tensor[0]) == len(symbol_sequences_tensor[0]), "Sequence lengths invalid!"
         
         # first, compute character encodings
         batch_size = lang_ids.size(0)
-        seq_len = input_chars.size(1)
-        char_seq_len = input_chars.size(2)
-        symb_seq_len = input_symbols.size(2)
+        seq_len = char_sequences_tensor.size(1)
+        char_seq_len = char_sequences_tensor.size(2)
+        symb_seq_len = symbol_sequences_tensor.size(2)
         
         #print("Batch size {}, seq_len {}, char_len {}, symb_len {}".format(batch_size, seq_len, char_seq_len, symb_seq_len))
         
-        word_emb = self.word_embedding(input_words)
-        char_emb = self.char_embedding(input_chars)        
-        symb_emb = self.symb_embedding(input_symbols)        
+        word_emb = self.word_embedding(word_sequences_tensor)
+        char_emb = self.char_embedding(char_sequences_tensor)        
+        symb_emb = self.symb_embedding(symbol_sequences_tensor)        
         char_emb = torch.cat([char_emb, symb_emb], dim=3) # this is now the concatenation of char and symbol embeddings        
         # char_emb [batch_size, seq_len, char_len, char_embedding_size+symbol_embedding_size]
         
         #print("For each sentence:")
         #print(input_chars)
-        #print(input_chars_lengths)
+        #print(char_seq_lengths)
         char_encodings_list = []
         for index in range(batch_size):
-            word_count = input_words_length[index]
+            word_count = word_seq_lengths[index]
             #print("\nInstance "+str(index)+", # of words {}".format(word_count))
             #print(char_emb[index].size())
-            #print(input_chars_lengths[index].size())
-            #print(input_chars_lengths[index])
+            #print(char_seq_lengths[index].size())
+            #print(char_seq_lengths[index])
             instance_char_emb = char_emb[index][:word_count]
             #print(" after cut:")
             #print(instance_char_emb.size())
-            instance_char_lengths = input_chars_lengths[index][:word_count]
+            instance_char_lengths = char_seq_lengths[index][:word_count]
             #print(instance_char_lengths)
             # instance_char_emb [word_count, char_seq_len, char_embedding_size+symbol_embedding_size]
             
             char_encodings = self.character_network(instance_char_emb, instance_char_lengths) # [word_count, max_char_len(variable), char_encoder_hidden_size]            
             #print(char_encodings.size())
             # we want to have a single encoding per word, so we sum all the characters together
-            char_encodings = torch.sum(char_encodings, dim=1) # [word_count, self.character_network.output_size]
+            #char_encodings = torch.sum(char_encodings, dim=1) # [word_count, self.character_network.output_size]
             #print(char_encodings.size())
+            
+            # without MH attention, char_encodings should have # [word_count, self.character_network.output_size]
             char_encodings_list.append(char_encodings)
         
         # word_emb [batch_size, seq_len, word_embedding_size]
@@ -282,7 +294,7 @@ class TokenEncoder(nn.Module):
         # encode
         # encoder_inputs [batch_size, seq_len, word_embedding_size+self.character_network.output_size]
         
-        outputs, hiddens = self.encoder_rnn(encoder_inputs, input_words_length)
+        outputs, hiddens = self.encoder_rnn(encoder_inputs, word_seq_lengths)
         #print(outputs[-1].size())
         return self.output_dropout(self.output_mlp(outputs[-1])), hiddens[self.encoder_rnn_aux_layer_index]
         
