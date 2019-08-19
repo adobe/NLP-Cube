@@ -5,6 +5,7 @@ import numpy as np
 import time
 import torch
 from tqdm import tqdm
+from collections import OrderedDict
 from cube2.util.utils import parameter_count, pretty_time
 
 
@@ -71,10 +72,12 @@ def train (model, # the network model
             total_loss += loss.item()
 
             # update progress bar
-            t_display_dict = { "loss": (total_loss / (batch_index+1)) }            
+            t_display_dict = OrderedDict()
+            t_display_dict["loss"] = total_loss / (batch_index+1)            
             if isinstance(display_variables, dict):
-                t_display_dict.update(display_variables)                
-            t.set_postfix(t_display_dict)
+                for key in display_variables:
+                    t_display_dict[key] = display_variables[key]                
+            t.set_postfix(ordered_dict = t_display_dict)
             
         del t
         time_train = time.time() - time_start
@@ -107,10 +110,15 @@ def train (model, # the network model
                 upos_accuracy, xpos_accuracy, attrs_accuracy = upos_ok/total, xpos_ok/total, attrs_ok/total                
                 
                 # update progress bar
-                t_display_dict = { "loss": (total_loss / (batch_index+1)), "upos" : upos_accuracy, "xpos": xpos_accuracy, "attrs": attrs_accuracy }            
-                if isinstance(display_variables, dict):
-                    t_display_dict.update(display_variables_1)         
-                t.set_postfix(t_display_dict)
+                t_display_dict = OrderedDict()
+                t_display_dict["loss"] = total_loss / (batch_index+1)
+                t_display_dict["upos"] = upos_accuracy
+                t_display_dict["xpos"] = xpos_accuracy
+                t_display_dict["attrs"] = attrs_accuracy
+                if isinstance(display_variables_1, dict):
+                    for key in display_variables_1:
+                        t_display_dict[key] = display_variables_1[key]                     
+                t.set_postfix(ordered_dict = t_display_dict)
             
             # prep for saving model at end of eval epoch
             extra = {"epoch" : current_epoch, 

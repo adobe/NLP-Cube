@@ -12,7 +12,7 @@ from cube2.components.loaders.loaders import getSequenceDataLoader
 from cube2.util.utils import pretty_sequences, use_gpu
 from cube2.components.trainers.tagger import train
 
-use_gpu() # auto-select GPU if available
+use_gpu(verbose=True) # auto-select GPU if available
 
 print("\n\n\n")
 #lookup = createLookup(["../../../../../ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu"], verbose=True, minimum_word_frequency_cutoff=7)      

@@ -16,8 +16,11 @@ class BaseTagger (nn.Module):
             self.cuda = False
             self.device = torch.device('cpu')
         
-    def run_batch(self, *kargs, **kwargs):
+    def run_batch(self):
         raise Exception("BaseTagger not implemented!")
+        
+    def eval_batch(self):
+        raise Exception("BaseTagger not implemented!")    
         
     def predict(self, input):
         """

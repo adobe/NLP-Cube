@@ -1,10 +1,11 @@
 import sys
 sys.path.append("../../../..")
 
-import random
+from collections import OrderedDict
 import numpy as np
 import torch.nn as nn
 import torch.utils.data
+
 
 from cube2.components.interfaces import BaseTagger
 from cube2.components.input.textencoder import TokenEncoder, LayeredRNN
@@ -78,7 +79,7 @@ class SimpleTagger(BaseTagger):
                 #criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
                 #criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1)))
         
-        display_variables = {}  # ex: "custom":2.5
+        display_variables = OrderedDict()  # ex: "custom":2.5
         return output, loss, display_variables
     
     def predict(self, input):
@@ -158,7 +159,12 @@ class SimpleTagger(BaseTagger):
                 xpos_ok += 1 if xpos[b_idx, w_idx] == g_xpos[b_idx, w_idx] else 0                    
                 attrs_ok += 1 if attrs[b_idx, w_idx] == g_attrs[b_idx, w_idx] else 0
 
-        display_variables = {"upos_ok":upos_ok, "xpos_ok":xpos_ok, "attrs_ok":attrs_ok, "total":total} 
+        display_variables = OrderedDict()
+        display_variables["upos_ok"] = upos_ok
+        display_variables["xpos_ok"] = xpos_ok
+        display_variables["attrs_ok"] = attrs_ok
+        display_variables["total"] = total
+        
         return display_variables
     
     def to_sequences(self, predicted, lenghts):
