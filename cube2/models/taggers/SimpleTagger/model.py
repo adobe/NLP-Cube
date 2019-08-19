@@ -8,10 +8,11 @@ import torch.utils.data
 
 from cube2.components.interfaces import BaseTagger
 from cube2.components.input.textencoder import TokenEncoder, LayeredRNN
+from cube2.util.utils import pretty_sequences
 
 class SimpleTagger(BaseTagger):
     def __init__(self, lookup):
-        super(SimpleTagger, self).__init__()
+        super().__init__() 
         self.name = "SimpleTagger"
         
         self.lookup = lookup
@@ -56,6 +57,30 @@ class SimpleTagger(BaseTagger):
         """
         self.to(self.device)
 
+    def run_batch(self, batch, criterion=None):    
+        """
+            Use run_batch for both train and eval modes:
+                - in TRAIN mode please supply criterion to calculate loss 
+        """
+        (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch 
+        
+        output = self.forward(batch)
+        (s_upos, s_xpos, s_attrs) = output
+        
+        #print(s_upos.size())
+        #print(s_upos.view(-1,len(self.lookup.upos2int)).size())
+        #print(upos_sequences_tensor.view(-1).size())
+        loss = (criterion(s_upos.view(-1,len(self.lookup.upos2int)), upos_sequences_tensor.view(-1)) +
+                criterion(s_xpos.view(-1,len(self.lookup.xpos2int)), xpos_sequences_tensor.view(-1)) +
+                criterion(s_attrs.view(-1,len(self.lookup.attrs2int)), attrs_sequences_tensor.view(-1)))
+        
+        #loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) +
+                #criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
+                #criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1)))
+        
+        display_variables = {}  # ex: "custom":2.5
+        return output, loss, display_variables
+    
     def predict(self, input):
         """
             input is a list of sentences, where each sentence is a list of ConllEntry objects
@@ -63,12 +88,6 @@ class SimpleTagger(BaseTagger):
         """
         raise Exception("BaseTagger not implemented!")
         
-    def save(self, folder):
-        raise Exception("BaseTagger not implemented!")
-        
-    def load(self, folder):
-        raise Exception("BaseTagger not implemented!")
-    
     def forward(self, batch):
         (lang_id_sequences_tensor, word_sequences_tensor, word_seq_lengths, word_seq_masks, char_sequences_tensor, char_seq_lengths, char_seq_masks, symbol_sequences_tensor, symbol_seq_lengths, symbol_seq_masks, upos_sequences_tensor, xpos_sequences_tensor, attrs_sequences_tensor) = batch 
         
@@ -97,5 +116,51 @@ class SimpleTagger(BaseTagger):
         s_aux_attrs = self.aux_output_attrs(aux_hid)
         """
         
-        return s_upos, s_xpos, s_attrs#, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return (s_upos, s_xpos, s_attrs) #, s_aux_upos, s_aux_xpos, s_aux_attrs
 
+    def eval_batch(self, predicted, gold, lengths):
+        """
+            This function calculates accuracy between predictions and gold (both tuples of tensors). 
+            Inputs:
+                predicted (tuple): Tuple of 3 tensors of size [batch_size, seq_lengths, n_class], for UPOS, XPOS and ATTRS
+                gold (tuple): Tuple of 3 gold tensors of size [batch_size, seq_lengths], for UPOS, XPOS and ATTRS
+                lengths (tensor): contains lenghts for each instance, is [batch_size]
+            Outputs: 
+                Returns a dict of key-values.
+        """
+            # get variables
+        (pred_upos, pred_xpos, pred_attrs) = predicted
+        (gold_upos, gold_xpos, gold_attrs) = gold
+        
+        # calculate argmax and move to cpu        
+        upos = torch.argmax(pred_upos, dim=2).detach().cpu() # is now [batch_size, seq_lengths] 
+        xpos = torch.argmax(pred_xpos, dim=2).detach().cpu() # is now [batch_size, seq_lengths] 
+        attrs = torch.argmax(pred_attrs, dim=2).detach().cpu() # is now [batch_size, seq_lengths] 
+        g_upos = gold_upos.detach().cpu()
+        g_xpos = gold_xpos.detach().cpu()
+        g_attrs = gold_attrs.detach().cpu()
+                    
+        total, upos_ok, xpos_ok, attrs_ok = 0,0,0,0            
+        for b_idx in range(len(lengths)): # for each instance
+            # print UPOS for a batch for fun, delete in release
+            if b_idx == 0:
+                print_gold = []
+                print_pred = []
+                for w_idx in range(lengths[b_idx]):                     
+                    print_pred.append(upos[b_idx, w_idx].item())
+                    print_gold.append(g_upos[b_idx, w_idx].item())                      
+                print()
+                pretty_sequences(print_gold, print_pred)
+                
+            for w_idx in range(lengths[b_idx]): # for each token
+                total += 1                        
+                upos_ok += 1 if upos[b_idx, w_idx] == g_upos[b_idx, w_idx] else 0                    
+                xpos_ok += 1 if xpos[b_idx, w_idx] == g_xpos[b_idx, w_idx] else 0                    
+                attrs_ok += 1 if attrs[b_idx, w_idx] == g_attrs[b_idx, w_idx] else 0
+
+        display_variables = {"upos_ok":upos_ok, "xpos_ok":xpos_ok, "attrs_ok":attrs_ok, "total":total} 
+        return display_variables
+    
+    def to_sequences(self, predicted, lenghts):
+    
+        return None

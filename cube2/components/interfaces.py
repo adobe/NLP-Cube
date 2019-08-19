@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 
@@ -15,6 +16,8 @@ class BaseTagger (nn.Module):
             self.cuda = False
             self.device = torch.device('cpu')
         
+    def run_batch(self, *kargs, **kwargs):
+        raise Exception("BaseTagger not implemented!")
         
     def predict(self, input):
         """
@@ -23,8 +26,37 @@ class BaseTagger (nn.Module):
         """
         raise Exception("BaseTagger not implemented!")
         
-    def save(self, folder):
-        raise Exception("BaseTagger not implemented!")
+    def save(self, folder, name, extension, extra={}, optimizer=None, verbose=False):
+        """
+            extra is a dict that contains key-value pairs that will be saved with the model
+        """
+        filename = os.path.join(folder, name + "." + extension)
+        if verbose:
+            print("Saving model to [{}] ... ".format(filename))
+        checkpoint = {}
+        checkpoint["state_dict"] = self.state_dict()
+        checkpoint["optimizer_state_dict"] = optimizer.state_dict()
+        checkpoint["extra"] = extra
+        torch.save(checkpoint, filename)
+
+    def load(self, folder, name, extension, optimizer=None, verbose=False):        
+        """
+            pass optimizer object to load the optimizer's parameters as well
+        """
+        filename = os.path.join(folder, name + "." + extension)
+        if verbose:
+            print("Loading model from [{}] ...".format(filename))        
+        checkpoint = torch.load(filename)
         
-    def load(self, folder):
-        raise Exception("BaseTagger not implemented!")
+        self.load_state_dict(checkpoint["state_dict"])        
+        self.to(self.device)
+    
+        if optimizer is not None: # we also load the optimizer
+            optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            if self.cuda:
+                for state in optimizer.state.values():
+                    for k, v in state.items():
+                        if isinstance(v, torch.Tensor):
+                            state[k] = v.cuda()
+                        
+        return checkpoint["extra"]
