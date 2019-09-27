@@ -160,6 +160,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     best_xpos = 0
     best_attrs = 0
     while patience_left > 0:
+        patience_left-=1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
         random.shuffle(trainset.sequences)
         num_batches = len(trainset.sequences) // params.batch_size
@@ -224,8 +225,8 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    trainset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
-    devset.load_language('corpus/ud-treebanks-v2.2/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
+    trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
+    devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = TaggerConfig()
