@@ -13,8 +13,8 @@ from cube.io_utils.encodings import Encodings
 
 
 class Tagger(nn.Module):
-    encodings: Encodings
-    config: TaggerConfig
+    #encodings: Encodings
+    #config: TaggerConfig
 
     def __init__(self, config, encodings, num_languages=1, target_device='cpu'):
         super(Tagger, self).__init__()

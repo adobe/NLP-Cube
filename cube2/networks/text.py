@@ -9,8 +9,8 @@ from cube2.config import TaggerConfig
 
 
 class TextEncoder(nn.Module):
-    config: TaggerConfig
-    encodings: Encodings
+    #config: TaggerConfig
+    #encodings: Encodings
 
     def __init__(self, config, encodings, ext_conditioning=None, target_device='cpu'):
         super(TextEncoder, self).__init__()
@@ -21,7 +21,7 @@ class TextEncoder(nn.Module):
             ext_conditioning = 0
         self._target_device = target_device
 
-        self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2 + ext_conditioning,
+        self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size,
                                      self.config.tagger_encoder_size,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,

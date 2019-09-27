@@ -6,7 +6,7 @@ import random
 
 class Encoder(nn.Module):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU,
-                 num_layers=2):
+                 num_layers=2, ext_conditioning=0):
         super().__init__()
         assert (input_type == 'int' or input_type == 'float')
         self.input_type = input_type
@@ -21,15 +21,19 @@ class Encoder(nn.Module):
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
 
-        self.rnn = nn_type(input_emb_dim, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
+        self.rnn = nn_type(input_emb_dim+ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
 
         self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, src):
+    def forward(self, src, ext_conditioning=None):
         # src = [src sent len, batch size]
         embedded = self.dropout(self.embedding(src))
+        if ext_conditioning is not None:
+            ext_conditioning=ext_conditioning.permute(0,1)
+            ext_conditioning=ext_conditioning.unsqueeze(1)
+            ext_conditioning=ext_conditioning.repeat(1,src.shape[0],1)
         # embedded = [src sent len, batch size, emb dim]
         outputs, hidden = self.rnn(embedded)
         # outputs = [src sent len, batch size, hid dim * num directions]
