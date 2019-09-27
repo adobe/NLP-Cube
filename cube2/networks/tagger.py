@@ -13,8 +13,8 @@ from cube.io_utils.encodings import Encodings
 
 
 class Tagger(nn.Module):
-    #encodings: Encodings
-    #config: TaggerConfig
+    # encodings: Encodings
+    # config: TaggerConfig
 
     def __init__(self, config, encodings, num_languages=1, target_device='cpu'):
         super(Tagger, self).__init__()
@@ -22,10 +22,12 @@ class Tagger(nn.Module):
         self.encodings = encodings
         self.num_languages = num_languages
         if num_languages == 1:
-            lang_emb_size = None
+            lang_emb_size = 0
+            self.lang_emb = None
         else:
             lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
+
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
         self.output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
@@ -38,8 +40,13 @@ class Tagger(nn.Module):
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
 
-    def forward(self, x):
-        emb, hidden = self.text_network(x)
+    def forward(self, x, lang_ids=None):
+        if lang_ids is not None and self.lang_emb is not None:
+            lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self.text_network._target_device)
+            lang_emb = self.lang_emb(lang_ids)
+        else:
+            lang_emb = None
+        emb, hidden = self.text_network(x, conditioning=lang_emb)
         s_upos = self.output_upos(emb)
         s_xpos = self.output_xpos(emb)
         s_attrs = self.output_attrs(emb)
@@ -160,7 +167,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     best_xpos = 0
     best_attrs = 0
     while patience_left > 0:
-        patience_left-=1
+        patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
         random.shuffle(trainset.sequences)
         num_batches = len(trainset.sequences) // params.batch_size
@@ -175,11 +182,13 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             start = batch_idx * params.batch_size
             stop = min(len(trainset.sequences), start + params.batch_size)
             data = []
+            lang_ids = []
             for ii in range(stop - start):
                 data.append(trainset.sequences[start + ii][0])
+                lang_ids.append(trainset.sequences[start + ii][1])
                 total_words += len(trainset.sequences[start + ii][0])
 
-            s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data)
+            s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) +
                     criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
@@ -219,18 +228,43 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
 
 
 def do_debug(params):
+    train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu']
+
+    dev_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
+
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
     from cube2.config import TaggerConfig
 
     trainset = Dataset()
     devset = Dataset()
-    trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
-    devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
+    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
+        trainset.load_language(train, ii)
+        devset.load_language(dev, ii)
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = TaggerConfig()
-    tagger = Tagger(config, encodings, 1, target_device=params.device)
+    tagger = Tagger(config, encodings, len(train_list), target_device=params.device)
     if params.device != 'cpu':
         tagger.cuda(params.device)
 

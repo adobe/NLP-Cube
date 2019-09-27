@@ -16,13 +16,13 @@ class SelfAttentionNetwork(nn.Module):
         self.attention = Attention(output_size // 2, encoder_size * 2)
         self.mlp = nn.Linear(encoder_size * 2 + output_size, output_size)
 
-    def forward(self, x):
+    def forward(self, x, conditioning=None):
         # batch_size should be the second column for whatever reason
         if self.input_type == 'int':
             x = x.permute(1, 0)
         else:
             x = x.permute(1, 0, 2)
-        output, hidden = self.encoder(x)
+        output, hidden = self.encoder(x, conditioning=conditioning)
         output = self.encoder_dropout(output)
         hidden = self.encoder_dropout(hidden)
         attention = self.attention(hidden, output)

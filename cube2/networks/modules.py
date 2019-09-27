@@ -20,20 +20,23 @@ class Encoder(nn.Module):
             self.embedding = nn.Embedding(input_size, input_emb_dim)
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
-
-        self.rnn = nn_type(input_emb_dim+ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=num_layers, dropout=dropout)
+        self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=num_layers,
+                           dropout=dropout)
 
         self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, src, ext_conditioning=None):
+    def forward(self, src, conditioning=None):
         # src = [src sent len, batch size]
         embedded = self.dropout(self.embedding(src))
-        if ext_conditioning is not None:
-            ext_conditioning=ext_conditioning.permute(0,1)
-            ext_conditioning=ext_conditioning.unsqueeze(1)
-            ext_conditioning=ext_conditioning.repeat(1,src.shape[0],1)
+        #from ipdb import set_trace
+        #set_trace()
+        if conditioning is not None:
+            conditioning = conditioning.permute(0, 1)
+            conditioning = conditioning.unsqueeze(0)
+            conditioning = conditioning.repeat(src.shape[0], 1, 1)
+            embedded = torch.cat((embedded, conditioning), dim=2)
         # embedded = [src sent len, batch size, emb dim]
         outputs, hidden = self.rnn(embedded)
         # outputs = [src sent len, batch size, hid dim * num directions]
