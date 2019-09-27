@@ -21,6 +21,7 @@ class Tagger(nn.Module):
         self.config = config
         self.encodings = encodings
         self.num_languages = num_languages
+        self._target_device = target_device
         if num_languages == 1:
             lang_emb_size = 0
             self.lang_emb = None
@@ -60,6 +61,12 @@ class Tagger(nn.Module):
         s_aux_xpos = self.aux_output_xpos(aux_hid)
         s_aux_attrs = self.aux_output_attrs(aux_hid)
         return s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs
+
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+
+    def load(self, path):
+        self.load_state_dict(torch.load(path, map_location=self._target_device))
 
 
 class TaggerDataset(torch.utils.data.Dataset):
@@ -210,17 +217,25 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
         acc_upos_t, acc_xpos_t, acc_attrs_t = _eval(tagger, trainset, encodings)
         acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
+        fn = '{0}.last'.format(params.store)
+        tagger.save(fn)
         if best_upos < acc_upos:
             best_upos = acc_upos
-            sys.stdout.write('\tStoring bestUPOS\n')
+            sys.stdout.write('\tStoring {0}.bestUPOS\n'.format(params.store))
+            fn = '{0}.bestUPOS'.format(params.store)
+            tagger.save(fn)
             patience_left = params.patience
         if best_xpos < acc_xpos:
             best_xpos = acc_xpos
-            sys.stdout.write('\tStoring bestXPOS\n')
+            sys.stdout.write('\tStoring {0}.bestXPOS\n'.format(params.store))
+            fn = '{0}.bestXPOS'.format(params.store)
+            tagger.save(fn)
             patience_left = params.patience
         if best_attrs < acc_attrs:
             best_attrs = acc_attrs
-            sys.stdout.write('\tStoring bestATTRS\n')
+            sys.stdout.write('\tStoring {0}.bestATTRS\n'.format(params.store))
+            fn = '{0}.bestATTRS'.format(params.store)
+            tagger.save(fn)
             patience_left = params.patience
         print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
         print(
@@ -285,6 +300,7 @@ if __name__ == '__main__':
                       help='Start building a tagger model')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
+    parser.add_option('--store', action='store', dest='store', help='Output base', default='tagger')
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
