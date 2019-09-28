@@ -175,6 +175,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     best_upos = 0
     best_xpos = 0
     best_attrs = 0
+    encodings.save('{0}.encodings'.format(params.store))
     while patience_left > 0:
         patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
@@ -287,7 +288,8 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    #trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(tagger.parameters())
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)
