@@ -294,6 +294,21 @@ def do_debug(params):
     _start_train(params, trainset, devset, encodings, tagger, criterion, trainer)
 
 
+def do_test(params):
+    num_languages = 11
+    from cube2.config import TaggerConfig
+    from cube.io_utils.conll import Dataset
+    dataset = Dataset()
+    dataset.load_language(params.test_file, params.lang_id)
+    encodings = Encodings()
+    encodings.load(params.model_base + '.encodings')
+    config = TaggerConfig()
+    tagger = Tagger(config, encodings, num_languages, target_device=params.device)
+    tagger.load(params.model_base+'.last')
+    upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
+    sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
+
+
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
@@ -306,8 +321,14 @@ if __name__ == '__main__':
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
     parser.add_option('--device', action='store', dest='device', default='cpu',
                       help='What device to use for models: cpu, cuda:0, cuda:1 ...')
+    parser.add_option('--test', action='store_true', dest='test', help='Test the traine model')
+    parser.add_option('--test-file', action='store', dest='test_file')
+    parser.add_option('--lang-id', action='store', dest='lang_id', type='int', default=0)
+    parser.add_option('--model-base', action='store', dest='model_base')
 
     (params, _) = parser.parse_args(sys.argv)
 
     if params.debug:
         do_debug(params)
+    if params.test:
+        do_test(params)
