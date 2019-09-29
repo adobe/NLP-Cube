@@ -31,15 +31,16 @@ class Tagger(nn.Module):
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
-        self.output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
-        self.output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
-        self.output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
+        self.output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
-        self.aux_mlp = nn.Sequential(nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-                                     nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
-        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.upos2int))
-        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.xpos2int))
-        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer, len(self.encodings.attrs2int))
+        self.aux_mlp = nn.Sequential(
+            nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
+            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
@@ -48,18 +49,16 @@ class Tagger(nn.Module):
         else:
             lang_emb = None
         emb, hidden = self.text_network(x, conditioning=lang_emb)
-        s_upos = self.output_upos(emb)
-        s_xpos = self.output_xpos(emb)
-        s_attrs = self.output_attrs(emb)
-        # aux_emb = torch.cat((hidden[self.config.aux_softmax_layer_index * 2, :, :],
-        #                     hidden[0][self.config.aux_softmax_layer_index * 2 + 1, :, :]), dim=1)
 
-        # from ipdb import set_trace
-        # set_trace()
+        lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
+        s_upos = self.output_upos(torch.cat((emb, lang_emb), dim=2))
+        s_xpos = self.output_xpos(torch.cat((emb, lang_emb), dim=2))
+        s_attrs = self.output_attrs(torch.cat((emb, lang_emb), dim=2))
+
         aux_hid = self.aux_mlp(hidden)
-        s_aux_upos = self.aux_output_upos(aux_hid)
-        s_aux_xpos = self.aux_output_xpos(aux_hid)
-        s_aux_attrs = self.aux_output_attrs(aux_hid)
+        s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
+        s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
+        s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
         return s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def save(self, path):
