@@ -288,8 +288,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    #trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
-    trainer = optim.Adam(tagger.parameters())
+    trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)

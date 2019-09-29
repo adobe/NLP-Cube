@@ -61,16 +61,16 @@ class Config(object):
 class TaggerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.tagger_embeddings_size = 300
-        self.tagger_encoder_size = 300
+        self.tagger_embeddings_size = 100
+        self.tagger_encoder_size = 200
         self.tagger_encoder_layers = 2
         self.tagger_encoder_dropout = 0.33
         self.tagger_input_dropout_prob = 0.5
         self.tagger_mlp_layer = 500
         self.tagger_mlp_dropout = 0.5
-        self.char_encoder_size = 300
+        self.char_encoder_size = 200
         self.char_encoder_layers = 2
-        self.char_input_embeddings_size = 300
+        self.char_input_embeddings_size = 100
         self.aux_softmax_layer_index = 1
         self.aux_softmax_weight = 0.2
         self._valid = True
