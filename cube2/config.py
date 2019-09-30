@@ -3,7 +3,7 @@ import ast
 from builtins import object, super
 from cube.misc.misc import fopen
 import collections
-
+import configparser
 
 class Config(object):
     """Generic base class that implements load/save utilities."""
@@ -62,7 +62,7 @@ class TaggerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.tagger_embeddings_size = 100
-        self.tagger_encoder_size = 200
+        self.tagger_encoder_size = 400
         self.tagger_encoder_layers = 2
         self.tagger_encoder_dropout = 0.33
         self.tagger_input_dropout_prob = 0.5

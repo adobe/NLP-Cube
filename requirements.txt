@@ -16,3 +16,4 @@ nose2==0.7.3
 regex
 torch
 tqdm
+configparser

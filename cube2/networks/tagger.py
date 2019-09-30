@@ -175,9 +175,12 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     best_xpos = 0
     best_attrs = 0
     encodings.save('{0}.encodings'.format(params.store))
+    tagger.config.num_languages=tagger.num_languages
+    tagger.config.save('{0}.conf'.format(params.store))
     while patience_left > 0:
         patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
+        sys.stdout.flush()
         random.shuffle(trainset.sequences)
         num_batches = len(trainset.sequences) // params.batch_size
         if len(trainset.sequences) % params.batch_size != 0:
@@ -222,25 +225,31 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         if best_upos < acc_upos:
             best_upos = acc_upos
             sys.stdout.write('\tStoring {0}.bestUPOS\n'.format(params.store))
+            sys.stdout.flush()
             fn = '{0}.bestUPOS'.format(params.store)
             tagger.save(fn)
             patience_left = params.patience
         if best_xpos < acc_xpos:
             best_xpos = acc_xpos
             sys.stdout.write('\tStoring {0}.bestXPOS\n'.format(params.store))
+            sys.stdout.flush()
             fn = '{0}.bestXPOS'.format(params.store)
             tagger.save(fn)
             patience_left = params.patience
         if best_attrs < acc_attrs:
             best_attrs = acc_attrs
             sys.stdout.write('\tStoring {0}.bestATTRS\n'.format(params.store))
+            sys.stdout.flush()
             fn = '{0}.bestATTRS'.format(params.store)
             tagger.save(fn)
             patience_left = params.patience
-        print("\tAVG Epoch loss = {0:.6f}".format(epoch_loss / num_batches))
-        print(
-            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
-        print("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}".format(acc_upos, acc_xpos, acc_attrs))
+        sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
+        sys.stdout.flush()
+        sys.stdout.write(
+            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
+        sys.stdout.flush()
+        sys.stdout.write("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos, acc_attrs))
+        sys.stdout.flush()
         epoch += 1
 
 
