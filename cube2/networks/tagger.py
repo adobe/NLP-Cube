@@ -304,7 +304,6 @@ def do_debug(params):
 
 
 def do_test(params):
-    num_languages = 11
     from cube2.config import TaggerConfig
     from cube.io_utils.conll import Dataset
     dataset = Dataset()
@@ -312,7 +311,8 @@ def do_test(params):
     encodings = Encodings()
     encodings.load(params.model_base + '.encodings')
     config = TaggerConfig()
-    tagger = Tagger(config, encodings, num_languages, target_device=params.device)
+    config.load(params.model_base+'.conf')
+    tagger = Tagger(config, encodings, config.num_languages, target_device=params.device)
     tagger.load(params.model_base+'.last')
     upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
     sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
