@@ -27,7 +27,8 @@ class Tagger(nn.Module):
             self.lang_emb = None
         else:
             lang_emb_size = self.config.tagger_embeddings_size
-            self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
+            # zero is ignored, so we add one to language embeddings
+            self.lang_emb = nn.Embedding(num_languages + 1, lang_emb_size, padding_idx=0)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
@@ -44,7 +45,8 @@ class Tagger(nn.Module):
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
-            lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self.text_network._target_device)
+            l_ids = [x + 1 for x in lang_ids]
+            lang_ids = torch.tensor(l_ids, dtype=torch.long, device=self.text_network._target_device)
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
