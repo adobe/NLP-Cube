@@ -175,7 +175,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     best_xpos = 0
     best_attrs = 0
     encodings.save('{0}.encodings'.format(params.store))
-    tagger.config.num_languages=tagger.num_languages
+    tagger.config.num_languages = tagger.num_languages
     tagger.config.save('{0}.conf'.format(params.store))
     while patience_left > 0:
         patience_left -= 1
@@ -247,9 +247,11 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
         sys.stdout.flush()
         sys.stdout.write(
-            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos_t, acc_xpos_t, acc_attrs_t))
+            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos_t, acc_xpos_t,
+                                                                                     acc_attrs_t))
         sys.stdout.flush()
-        sys.stdout.write("\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos, acc_attrs))
+        sys.stdout.write(
+            "\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos, acc_attrs))
         sys.stdout.flush()
         epoch += 1
 
@@ -291,6 +293,8 @@ def do_debug(params):
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = TaggerConfig()
+    if params.config_file:
+        config.load(params.config_file)
     tagger = Tagger(config, encodings, len(train_list), target_device=params.device)
     if params.device != 'cpu':
         tagger.cuda(params.device)
@@ -312,9 +316,9 @@ def do_test(params):
     encodings = Encodings()
     encodings.load(params.model_base + '.encodings')
     config = TaggerConfig()
-    config.load(params.model_base+'.conf')
+    config.load(params.model_base + '.conf')
     tagger = Tagger(config, encodings, config.num_languages, target_device=params.device)
-    tagger.load(params.model_base+'.last')
+    tagger.load(params.model_base + '.last')
     upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
     sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
 
@@ -323,6 +327,8 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
                       help='Start building a tagger model')
+    parser.add_option('--config', action='store', dest='config_file',
+                      help='Use this configuration file for tagger')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
     parser.add_option('--store', action='store', dest='store', help='Output base', default='tagger')
