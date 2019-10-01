@@ -25,16 +25,16 @@ import numpy as np
 import torch.nn as nn
 import torch.utils.data
 from cube2.networks.text import TextEncoder
-from cube2.config import TaggerConfig
+from cube2.config import ParserConfig
 from cube.io_utils.encodings import Encodings
 
 
-class Tagger(nn.Module):
+class Parser(nn.Module):
     encodings: Encodings
-    config: TaggerConfig
+    config: ParserConfig
 
     def __init__(self, config, encodings, num_languages=1, target_device='cpu'):
-        super(Tagger, self).__init__()
+        super(Parser, self).__init__()
         self.config = config
         self.encodings = encodings
         self.num_languages = num_languages
@@ -43,27 +43,28 @@ class Tagger(nn.Module):
             lang_emb_size = 0
             self.lang_emb = None
         else:
-            lang_emb_size = self.config.tagger_embeddings_size
-            # zero is ignored, so we add one to language embeddings
-            self.lang_emb = nn.Embedding(num_languages + 1, lang_emb_size, padding_idx=0)
+            lang_emb_size = self.config.parser_embeddings_size
+            self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
-        self.output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
-        self.output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
-        self.output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+        self.proj_arc = nn.Sequential(
+            nn.Linear(self.config.parser_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh())
+        self.proj_label = nn.Sequential(
+            nn.Linear(self.config.parser_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh())
+        self.output_label = nn.Linear(self.config.parser_label_proj_size * 2, len(self.encodings.xpos2int))
+        self.output_head = nn.Linear(self.config.parser_arc_proj_size * 2, len(self.encodings.attrs2int))
 
         self.aux_mlp = nn.Sequential(
-            nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
-        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
-        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
-        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+            nn.Linear(self.config.parser_encoder_size * 2, self.config.parser_mlp_layer),
+            nn.Tanh(), nn.Dropout(p=self.config.parser_mlp_dropout))
+        self.aux_output_upos = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.aux_output_xpos = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.aux_output_attrs = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
-            l_ids = [x + 1 for x in lang_ids]
-            lang_ids = torch.tensor(l_ids, dtype=torch.long, device=self.text_network._target_device)
+            lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self.text_network._target_device)
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
@@ -241,7 +242,6 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         fn = '{0}.last'.format(params.store)
         tagger.save(fn)
-        sys.stderr.flush()
         if best_upos < acc_upos:
             best_upos = acc_upos
             sys.stdout.write('\tStoring {0}.bestUPOS\n'.format(params.store))
@@ -312,8 +312,6 @@ def do_debug(params):
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = TaggerConfig()
-    if params.config_file:
-        config.load(params.config_file)
     tagger = Tagger(config, encodings, len(train_list), target_device=params.device)
     if params.device != 'cpu':
         tagger.cuda(params.device)
@@ -328,6 +326,7 @@ def do_debug(params):
 
 
 def do_test(params):
+    num_languages = 11
     from cube2.config import TaggerConfig
     from cube.io_utils.conll import Dataset
     dataset = Dataset()
@@ -335,8 +334,7 @@ def do_test(params):
     encodings = Encodings()
     encodings.load(params.model_base + '.encodings')
     config = TaggerConfig()
-    config.load(params.model_base + '.conf')
-    tagger = Tagger(config, encodings, config.num_languages, target_device=params.device)
+    tagger = Tagger(config, encodings, num_languages, target_device=params.device)
     tagger.load(params.model_base + '.last')
     upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
     sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
@@ -346,8 +344,6 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
                       help='Start building a tagger model')
-    parser.add_option('--config', action='store', dest='config_file',
-                      help='Use this configuration file for tagger')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
     parser.add_option('--store', action='store', dest='store', help='Output base', default='tagger')

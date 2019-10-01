@@ -5,6 +5,7 @@ from cube.misc.misc import fopen
 import collections
 import configparser
 
+
 class Config(object):
     """Generic base class that implements load/save utilities."""
 
@@ -72,6 +73,43 @@ class TaggerConfig(Config):
         self.char_encoder_layers = 2
         self.char_input_embeddings_size = 100
         self.aux_softmax_layer_index = 1
+        self.aux_softmax_weight = 0.2
+        self._valid = True
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
+
+        if verbose:
+            print("INPUT SIZE:", self.input_size)
+            print("LAYERS:", self.layers)
+            print("LAYER DROPOUTS:", self.layer_dropouts)
+            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
+            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
+            print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
+            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
+
+
+class ParserConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.parser_embeddings_size = 100
+        self.parser_encoder_size = 600
+        self.parser_encoder_layers = 5
+        self.parser_encoder_dropout = 0.33
+        self.parser_input_dropout_prob = 0.5
+        self.parser_mlp_layer = 500
+        self.parser_mlp_dropout = 0.33
+        self.parser_arc_proj_size = 100
+        self.parser_label_proj_size = 400
+        self.char_encoder_size = 200
+        self.char_encoder_layers = 2
+        self.char_input_embeddings_size = 100
+        self.aux_softmax_layer_index = 2
         self.aux_softmax_weight = 0.2
         self._valid = True
 
