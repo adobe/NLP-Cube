@@ -222,6 +222,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         fn = '{0}.last'.format(params.store)
         tagger.save(fn)
+        sys.stderr.flush()
         if best_upos < acc_upos:
             best_upos = acc_upos
             sys.stdout.write('\tStoring {0}.bestUPOS\n'.format(params.store))
