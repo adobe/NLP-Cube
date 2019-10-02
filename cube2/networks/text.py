@@ -39,13 +39,11 @@ class TextEncoder(nn.Module):
 
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size,
-                                     self.config.tagger_encoder_size,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
                                      nn_type=nn.LSTM,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
                                       self.config.tagger_embeddings_size,
-                                      self.config.tagger_encoder_size,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
                                       nn_type=nn.LSTM,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,

@@ -23,7 +23,7 @@ import random
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, output_dim, dropout, nn_type=nn.GRU,
+    def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, dropout, nn_type=nn.GRU,
                  num_layers=2, ext_conditioning=0):
         super().__init__()
         assert (input_type == 'int' or input_type == 'float')
@@ -31,7 +31,6 @@ class Encoder(nn.Module):
         self.input_dim = input_size
         self.emb_dim = input_emb_dim
         self.enc_hid_dim = enc_hid_dim
-        self.dec_hid_dim = output_dim
         self.dropout = dropout
 
         if self.input_type == 'int':
@@ -40,8 +39,6 @@ class Encoder(nn.Module):
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
         self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=num_layers,
                            dropout=dropout)
-
-        self.fc = nn.Linear(enc_hid_dim * 2, output_dim)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -67,7 +64,7 @@ class Encoder(nn.Module):
         #  encoder RNNs fed through a linear layer
         if isinstance(hidden, list) or isinstance(hidden, tuple):  # we have a LSTM
             hidden = hidden[1]
-        hidden = torch.tanh(self.fc(torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)))
+        hidden = torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)
         # outputs = [src sent len, batch size, enc hid dim * 2]
         # hidden = [batch size, dec hid dim]
 

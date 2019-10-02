@@ -27,12 +27,12 @@ class SelfAttentionNetwork(nn.Module):
                  nn_type=nn.GRU, ext_conditioning=0):
         super(SelfAttentionNetwork, self).__init__()
         self.input_type = input_type
-        self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, output_size, dropout,
+        self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, dropout,
                                nn_type=nn_type, num_layers=encoder_layers, ext_conditioning=ext_conditioning)
         self.encoder_dropout = nn.Dropout(dropout)
 
-        self.attention = Attention(output_size // 2, encoder_size * 2)
-        self.mlp = nn.Linear(encoder_size * 2 + output_size, output_size)
+        self.attention = Attention(encoder_size, encoder_size * 2)
+        self.mlp = nn.Linear(encoder_size * 4 + ext_conditioning, output_size)
 
     def forward(self, x, conditioning=None):
         # batch_size should be the second column for whatever reason
@@ -50,5 +50,5 @@ class SelfAttentionNetwork(nn.Module):
         weighted = torch.bmm(attention.unsqueeze(1), encoder_outputs)
         # weighted = [batch size, 1, enc hid dim * 2]
         weighted = weighted.permute(1, 0, 2)
-        pre_mlp = torch.cat([weighted, hidden.unsqueeze(0)], dim=2)
-        return self.mlp(pre_mlp)
+        pre_mlp = torch.cat([weighted, hidden.unsqueeze(0), conditioning.unsqueeze(0)], dim=2)
+        return torch.tanh(self.mlp(pre_mlp))
