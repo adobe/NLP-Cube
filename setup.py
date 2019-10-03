@@ -12,7 +12,7 @@ setuptools.setup(
     version="0.1.0.7",
     author="Multiple authors",
     author_email="tiberiu44@gmail.com",
-    description="Natural Language Procecssing Toolkit with support for tokenization, sentence splitting, lemmatization, tagging and parsing for more than 60 languages",
+    description="Natural Language Processing Toolkit with support for tokenization, sentence splitting, lemmatization, tagging and parsing for more than 60 languages",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/adobe/NLP-Cube",
