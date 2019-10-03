@@ -76,7 +76,7 @@ class Parser(nn.Module):
 
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
         hidden_output = torch.cat((emb, lang_emb), dim=2)
-        
+
         proj_arc = self.proj_arc(hidden_output)
         proj_label = self.proj_label(hidden_output)
         w_stack = []
@@ -92,7 +92,7 @@ class Parser(nn.Module):
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return arcs[:, 1:, :], proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return torch.log(arcs[:, 1:, :]), proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -246,7 +246,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
 
             s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_arc, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
-            loss = (criterion(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
@@ -325,7 +325,7 @@ def do_debug(params):
     import torch.nn as nn
     trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    criterionNLL = nn.CrossEntropyLoss(ignore_index=-1)
+    criterionNLL = nn.NLLLoss(ignore_index=-1)
     if params.device != 'cpu':
         criterion.cuda(params.device)
     _start_train(params, trainset, devset, encodings, tagger, [criterion, criterionNLL], trainer)
