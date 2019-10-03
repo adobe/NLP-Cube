@@ -51,7 +51,7 @@ cube.load("en")                 # select the desired language (it will auto-down
 text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
 sentences=cube(text)            # call with your own text (string) to obtain the annotations
 ```
-The ``sentences`` object now contains the annotated text, one sentence at a time. To print the third words's POS (in the first sentence), just run:
+The ``sentences`` object now contains the annotated text, one sentence at a time. To print the third word's POS (in the first sentence), just run:
 ```
 print(sentences[0][2].upos) # [0] is the first sentence and [2] is the third word
 ```
