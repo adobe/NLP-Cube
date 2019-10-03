@@ -63,6 +63,10 @@ class Encodings(object):
         self.xpos_list.append('<UNK>')
         self.attrs2int['<UNK>'] = 1
         self.attrs_list.append('<PAD>')
+        self.label2int['<PAD>']=0
+        self.labels.append('<PAD>')
+        self.label2int['<UNK>']=1
+        self.labels.append('<UNK>')
 
         self.characters.append("<PAD>")
         self.characters.append("<UNK>")
@@ -90,15 +94,8 @@ class Encodings(object):
 
                         # if char not in self.char2int:
                         #    self.char2int[char] = len(self.char2int)
-                label = None
-                if tag_type == 'upos':
-                    label = entry.upos
-                elif tag_type == 'xpos':
-                    label = entry.xpos
-                elif tag_type == 'attrs':
-                    label = entry.attrs
-                elif tag_type == 'label':
-                    label = entry.label
+
+                label = entry.label
 
                 if CUPT_format and tag_type == 'label':
                     if entry.label != "*":

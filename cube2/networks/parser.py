@@ -82,11 +82,13 @@ class Parser(nn.Module):
         w_stack = []
         proj_arc = torch.cat(
             (torch.zeros((proj_arc.shape[0], 1, proj_arc.shape[2]), device=self._target_device), proj_arc), dim=1)
+        proj_label = torch.cat(
+            (torch.zeros((proj_label.shape[0], 1, proj_label.shape[2]), device=self._target_device), proj_label), dim=1)
         proj_arc = proj_arc.permute((1, 0, 2))
         for ii in range(proj_arc.shape[0]):
             att = self.attention(proj_arc[ii, :], proj_arc)
             w_stack.append(att.unsqueeze(1))
-        arcs = torch.cat(w_stack, dim=1)#.permute(1, 0, 2)
+        arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
@@ -122,11 +124,13 @@ def _get_tgt_labels(data, encodings, device='cpu'):
     tgt_xpos = []
     tgt_attrs = []
     tgt_arcs = []
+    tgt_labels = []
     for sent in data:
         upos_int = []
         xpos_int = []
         attrs_int = []
         arc_int = []
+        label_int = []
         for entry in sent:
             arc_int.append(entry.head)
             if entry.upos in encodings.upos2int:
@@ -141,19 +145,26 @@ def _get_tgt_labels(data, encodings, device='cpu'):
                 attrs_int.append(encodings.attrs2int[entry.attrs])
             else:
                 attrs_int.append(encodings.attrs2int['<UNK>'])
+            if entry.label in encodings.label2int:
+                label_int.append(encodings.label2int[entry.label])
+            else:
+                label_int.append(encodings.label2int['<UNK>'])
         for _ in range(max_sent_size - len(sent)):
             upos_int.append(encodings.upos2int['<PAD>'])
             xpos_int.append(encodings.xpos2int['<PAD>'])
             attrs_int.append(encodings.attrs2int['<PAD>'])
             arc_int.append(0)
+            label_int.append(0)
         tgt_upos.append(upos_int)
         tgt_xpos.append(xpos_int)
         tgt_attrs.append(attrs_int)
         tgt_arcs.append(arc_int)
+        tgt_labels.append(label_int)
 
     import torch
-    return torch.tensor(tgt_arcs, device=device), torch.tensor(tgt_upos, device=device), \
-           torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs, device=device)
+    return torch.tensor(tgt_arcs, device=device), torch.tensor(tgt_labels, device=device), \
+           torch.tensor(tgt_upos, device=device), torch.tensor(tgt_xpos, device=device), \
+           torch.tensor(tgt_attrs, device=device)
 
 
 def _eval(tagger, dataset, encodings, device='cpu'):
@@ -181,8 +192,8 @@ def _eval(tagger, dataset, encodings, device='cpu'):
             lang_ids.append(dataset.sequences[start + ii][1])
         with torch.no_grad():
             s_arcs, label_proj, s_upos, s_xpos, s_attrs = tagger(data, lang_ids=lang_ids)
-        tgt_arcs, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
-        s_arcs = s_upos.detach().cpu().numpy()
+        tgt_arcs, tgt_labels, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
+        s_arcs = s_arcs.detach().cpu().numpy()
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
         s_attrs = s_attrs.detach().cpu().numpy()
@@ -245,7 +256,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 total_words += len(trainset.sequences[start + ii][0])
 
             s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
-            tgt_arc, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
+            tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
@@ -263,6 +274,8 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         acc_arc, acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         fn = '{0}.last'.format(params.store)
         tagger.save(fn)
+        sys.stdout.flush()
+        sys.stderr.flush()
         if best_arc < acc_arc:
             best_arc = acc_arc
             sys.stdout.write('\tStoring {0}.bestUAS\n'.format(params.store))

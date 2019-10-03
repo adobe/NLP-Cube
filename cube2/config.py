@@ -98,10 +98,10 @@ class ParserConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.tagger_embeddings_size = 100
-        self.tagger_encoder_size = 600
+        self.tagger_encoder_size = 300
         self.tagger_encoder_layers = 5
         self.tagger_encoder_dropout = 0.33
-        self.tagger_input_dropout_prob = 0.5
+        self.tagger_input_dropout_prob = 0.33
         self.tagger_mlp_layer = 500
         self.tagger_mlp_dropout = 0.33
         self.parser_arc_proj_size = 100
