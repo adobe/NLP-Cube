@@ -27,6 +27,7 @@ import torch.utils.data
 from cube2.networks.text import TextEncoder
 from cube2.config import ParserConfig
 from cube.io_utils.encodings import Encodings
+from cube2.networks.modules import Attention
 
 
 class Parser(nn.Module):
@@ -63,6 +64,7 @@ class Parser(nn.Module):
         self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+        self.attention = Attention(self.config.parser_arc_proj_size // 2, self.config.parser_arc_proj_size)
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
@@ -79,25 +81,19 @@ class Parser(nn.Module):
         proj_arc = self.proj_arc(hidden_output)
         proj_label = self.proj_label(hidden_output)
         w_stack = []
-        for ii in range(emb.shape[1]):
-            head_probs = [
-                torch.tensor([0 for _ in range(emb.shape[0])], dtype=torch.float, device=self._target_device).unsqueeze(
-                    1)]
-            for jj in range(emb.shape[1]):
-                w1_arc_proj = proj_arc[:, ii, :]
-                w2_arc_proj = proj_arc[:, jj, :]
-                w_arc = self.output_head(torch.cat((w1_arc_proj, w2_arc_proj), dim=1))
-                head_probs.append(w_arc)
-            w_stack.append(torch.cat(head_probs, dim=1))
+        proj_arc = torch.cat((torch.zeros((proj_arc.shape[0], 1, proj_arc.shape[2])), proj_arc), dim=1)
+        proj_arc = proj_arc.permute((1, 0, 2))
+        for ii in range(proj_arc.shape[0]):
+            att = self.attention(proj_arc[ii, :], proj_arc)
+            w_stack.append(att)
+        arcs = torch.stack(w_stack).permute(1, 0, 2)
         # from ipdb import set_trace
         # set_trace()
-        arcs = torch.stack(w_stack).permute(1, 0, 2)
-
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return arcs, proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return arcs[:,1:,:], proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -224,6 +220,8 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     tagger.config.num_languages = tagger.num_languages
     tagger.config.save('{0}.conf'.format(params.store))
     # _eval(tagger, devset, encodings, device=params.device)
+    criterionNLL = criterion[1]
+    criterion = criterion[0]
     while patience_left > 0:
         patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
@@ -328,9 +326,10 @@ def do_debug(params):
     import torch.nn as nn
     trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
+    criterionNLL = nn.CrossEntropyLoss(ignore_index=-1)
     if params.device != 'cpu':
         criterion.cuda(params.device)
-    _start_train(params, trainset, devset, encodings, tagger, criterion, trainer)
+    _start_train(params, trainset, devset, encodings, tagger, [criterion, criterionNLL], trainer)
 
 
 def do_test(params):
