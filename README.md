@@ -1,5 +1,5 @@
 [![Downloads](https://pepy.tech/badge/nlpcube)](https://pepy.tech/project/nlpcube) [![Downloads](https://pepy.tech/badge/nlpcube/month)](https://pepy.tech/project/nlpcube/month) ![Weekly](https://img.shields.io/pypi/dw/nlpcube.svg) ![daily](https://img.shields.io/pypi/dd/nlpcube.svg)
-![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) 
+![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) [![GitHub stars](https://img.shields.io/github/stars/adobe/NLP-Cube.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/NLP-Cube/stargazers/)
 
 ## News
 
