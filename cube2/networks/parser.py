@@ -76,24 +76,23 @@ class Parser(nn.Module):
 
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
         hidden_output = torch.cat((emb, lang_emb), dim=2)
-        # from ipdb import set_trace
-        # set_trace()
+        
         proj_arc = self.proj_arc(hidden_output)
         proj_label = self.proj_label(hidden_output)
         w_stack = []
-        proj_arc = torch.cat((torch.zeros((proj_arc.shape[0], 1, proj_arc.shape[2])), proj_arc), dim=1)
+        proj_arc = torch.cat(
+            (torch.zeros((proj_arc.shape[0], 1, proj_arc.shape[2]), device=self._target_device), proj_arc), dim=1)
         proj_arc = proj_arc.permute((1, 0, 2))
         for ii in range(proj_arc.shape[0]):
             att = self.attention(proj_arc[ii, :], proj_arc)
-            w_stack.append(att)
-        arcs = torch.stack(w_stack).permute(1, 0, 2)
-        # from ipdb import set_trace
-        # set_trace()
+            w_stack.append(att.unsqueeze(1))
+        arcs = torch.cat(w_stack, dim=1)#.permute(1, 0, 2)
+
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return arcs[:,1:,:], proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return arcs[:, 1:, :], proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def save(self, path):
         torch.save(self.state_dict(), path)
