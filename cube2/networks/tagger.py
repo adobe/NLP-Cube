@@ -306,7 +306,7 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list)), train_list[:2], dev_list):
+    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
         trainset.load_language(train, ii)
         devset.load_language(dev, ii)
     encodings = Encodings()
