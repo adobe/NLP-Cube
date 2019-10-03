@@ -78,22 +78,20 @@ class Parser(nn.Module):
         # set_trace()
         proj_arc = self.proj_arc(hidden_output)
         proj_label = self.proj_label(hidden_output)
-        arc_batches = []
-        for batch_idx in range(emb.shape[0]):
-            arc_batch = []
-            for ii in range(emb.shape[1]):
-                head_probs = [torch.tensor([0.0], dtype=torch.float, device=self._target_device)]
-                for jj in range(emb.shape[1]):
-                    w1_arc_proj = proj_arc[batch_idx, ii]
-                    w2_arc_proj = proj_arc[batch_idx, jj]
-                    w_arc = self.output_head(torch.cat((w1_arc_proj, w2_arc_proj), dim=0))
-                    head_probs.append(w_arc)
-                arc_batch.append(torch.cat(head_probs, dim=0))
-            arc_batches.append(torch.stack(arc_batch))
-
-        arcs = torch.stack(arc_batches)
+        w_stack = []
+        for ii in range(emb.shape[1]):
+            head_probs = [
+                torch.tensor([0 for _ in range(emb.shape[0])], dtype=torch.float, device=self._target_device).unsqueeze(
+                    1)]
+            for jj in range(emb.shape[1]):
+                w1_arc_proj = proj_arc[:, ii, :]
+                w2_arc_proj = proj_arc[:, jj, :]
+                w_arc = self.output_head(torch.cat((w1_arc_proj, w2_arc_proj), dim=1))
+                head_probs.append(w_arc)
+            w_stack.append(torch.cat(head_probs, dim=1))
         # from ipdb import set_trace
         # set_trace()
+        arcs = torch.stack(w_stack).permute(1, 0, 2)
 
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
@@ -225,7 +223,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     encodings.save('{0}.encodings'.format(params.store))
     tagger.config.num_languages = tagger.num_languages
     tagger.config.save('{0}.conf'.format(params.store))
-    #_eval(tagger, devset, encodings, device=params.device)
+    # _eval(tagger, devset, encodings, device=params.device)
     while patience_left > 0:
         patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
@@ -251,7 +249,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
 
             s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_arc, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
-            loss = (criterion(s_arcs.view(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            loss = (criterion(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
