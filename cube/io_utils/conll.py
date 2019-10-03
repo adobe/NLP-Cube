@@ -34,18 +34,18 @@ class Dataset:
 
         self.sequences = []
 
-    def load_language(self, file, lang_id):
+    def load_language(self, file, lang_id, ignore_compound=False):
         sys.stdout.write("Reading " + file + "... ")
         sys.stdout.flush()
         with fopen(file, "r") as f:
             lines = f.readlines()
 
-        ns = self._make_sequences(lines, lang_id=lang_id)
+        ns = self._make_sequences(lines, lang_id=lang_id, ignore_compound=ignore_compound)
         for [seq, l_id] in ns:
             self.sequences.append([seq, l_id])
         sys.stdout.write("found " + str(len(ns)) + " sequences\n")
 
-    def _make_sequences(self, lines, lang_id=0):
+    def _make_sequences(self, lines, lang_id=0, ignore_compound=False):
         sequences = []
         in_sequence = False
         seq = []
@@ -56,7 +56,8 @@ class Dataset:
                 parts = line.split("\t")
                 s = ConllEntry(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8],
                                parts[9])
-                seq.append(s)
+                if not ignore_compound or not s.is_compound_entry:
+                    seq.append(s)
                 in_sequence = True
             elif line == "":
                 in_sequence = False

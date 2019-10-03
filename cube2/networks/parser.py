@@ -325,8 +325,8 @@ def do_debug(params):
     trainset = Dataset()
     devset = Dataset()
     for ii, train, dev in zip(range(len(train_list[:2])), train_list, dev_list):
-        trainset.load_language(train, ii)
-        devset.load_language(dev, ii)
+        trainset.load_language(train, ii, ignore_compound=True)
+        devset.load_language(dev, ii, ignore_compound=True)
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = ParserConfig()

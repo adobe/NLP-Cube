@@ -63,9 +63,9 @@ class Encodings(object):
         self.xpos_list.append('<UNK>')
         self.attrs2int['<UNK>'] = 1
         self.attrs_list.append('<PAD>')
-        self.label2int['<PAD>']=0
+        self.label2int['<PAD>'] = 0
         self.labels.append('<PAD>')
-        self.label2int['<UNK>']=1
+        self.label2int['<UNK>'] = 1
         self.labels.append('<UNK>')
 
         self.characters.append("<PAD>")
