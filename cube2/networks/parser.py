@@ -43,24 +43,26 @@ class Parser(nn.Module):
             lang_emb_size = 0
             self.lang_emb = None
         else:
-            lang_emb_size = self.config.parser_embeddings_size
+            lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
         self.proj_arc = nn.Sequential(
-            nn.Linear(self.config.parser_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh())
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh(),
+            nn.Dropout(self.config.tagger_mlp_dropout))
         self.proj_label = nn.Sequential(
-            nn.Linear(self.config.parser_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh())
-        self.output_label = nn.Linear(self.config.parser_label_proj_size * 2, len(self.encodings.xpos2int))
-        self.output_head = nn.Linear(self.config.parser_arc_proj_size * 2, len(self.encodings.attrs2int))
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh(),
+            nn.Dropout(self.config.tagger_mlp_dropout))
+        self.output_label = nn.Linear(self.config.parser_label_proj_size * 2, len(self.encodings.label2int))
+        self.output_head = nn.Linear(self.config.parser_arc_proj_size * 2, 1)
 
         self.aux_mlp = nn.Sequential(
-            nn.Linear(self.config.parser_encoder_size * 2, self.config.parser_mlp_layer),
-            nn.Tanh(), nn.Dropout(p=self.config.parser_mlp_dropout))
-        self.aux_output_upos = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
-        self.aux_output_xpos = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
-        self.aux_output_attrs = nn.Linear(self.config.parser_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+            nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
+            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
@@ -71,15 +73,33 @@ class Parser(nn.Module):
         emb, hidden = self.text_network(x, conditioning=lang_emb)
 
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        s_upos = self.output_upos(torch.cat((emb, lang_emb), dim=2))
-        s_xpos = self.output_xpos(torch.cat((emb, lang_emb), dim=2))
-        s_attrs = self.output_attrs(torch.cat((emb, lang_emb), dim=2))
+        hidden_output = torch.cat((emb, lang_emb), dim=2)
+        # from ipdb import set_trace
+        # set_trace()
+        proj_arc = self.proj_arc(hidden_output)
+        proj_label = self.proj_label(hidden_output)
+        arc_batches = []
+        for batch_idx in range(emb.shape[0]):
+            arc_batch = []
+            for ii in range(emb.shape[1]):
+                head_probs = [torch.tensor([0.0], dtype=torch.float, device=self._target_device)]
+                for jj in range(emb.shape[1]):
+                    w1_arc_proj = proj_arc[batch_idx, ii]
+                    w2_arc_proj = proj_arc[batch_idx, jj]
+                    w_arc = self.output_head(torch.cat((w1_arc_proj, w2_arc_proj), dim=0))
+                    head_probs.append(w_arc)
+                arc_batch.append(torch.cat(head_probs, dim=0))
+            arc_batches.append(torch.stack(arc_batch))
+
+        arcs = torch.stack(arc_batches)
+        # from ipdb import set_trace
+        # set_trace()
 
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return arcs, proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -108,11 +128,14 @@ def _get_tgt_labels(data, encodings, device='cpu'):
     tgt_upos = []
     tgt_xpos = []
     tgt_attrs = []
+    tgt_arcs = []
     for sent in data:
         upos_int = []
         xpos_int = []
         attrs_int = []
+        arc_int = []
         for entry in sent:
+            arc_int.append(entry.head)
             if entry.upos in encodings.upos2int:
                 upos_int.append(encodings.upos2int[entry.upos])
             else:
@@ -129,13 +152,15 @@ def _get_tgt_labels(data, encodings, device='cpu'):
             upos_int.append(encodings.upos2int['<PAD>'])
             xpos_int.append(encodings.xpos2int['<PAD>'])
             attrs_int.append(encodings.attrs2int['<PAD>'])
+            arc_int.append(0)
         tgt_upos.append(upos_int)
         tgt_xpos.append(xpos_int)
         tgt_attrs.append(attrs_int)
+        tgt_arcs.append(arc_int)
 
     import torch
-    return torch.tensor(tgt_upos, device=device), torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs,
-                                                                                                      device=device)
+    return torch.tensor(tgt_arcs, device=device), torch.tensor(tgt_upos, device=device), \
+           torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs, device=device)
 
 
 def _eval(tagger, dataset, encodings, device='cpu'):
@@ -144,6 +169,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
     upos_ok = 0
     xpos_ok = 0
     attrs_ok = 0
+    arcs_ok = 0
     num_batches = len(dataset.sequences) // params.batch_size
     if len(dataset.sequences) % params.batch_size != 0:
         num_batches += 1
@@ -161,8 +187,9 @@ def _eval(tagger, dataset, encodings, device='cpu'):
             total_words += len(dataset.sequences[start + ii][0])
             lang_ids.append(dataset.sequences[start + ii][1])
         with torch.no_grad():
-            s_upos, s_xpos, s_attrs, _, _, _ = tagger(data, lang_ids=lang_ids)
-        tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
+            s_arcs, label_proj, s_upos, s_xpos, s_attrs = tagger(data, lang_ids=lang_ids)
+        tgt_arcs, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
+        s_arcs = s_upos.detach().cpu().numpy()
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
         s_attrs = s_attrs.detach().cpu().numpy()
@@ -171,6 +198,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
         tgt_attrs = tgt_attrs.detach().cpu().numpy()
         for b_idx in range(tgt_upos.shape[0]):
             for w_idx in range(tgt_upos.shape[1]):
+                pred_arc = np.argmax(s_arcs[b_idx, w_idx])
                 pred_upos = np.argmax(s_upos[b_idx, w_idx])
                 pred_xpos = np.argmax(s_xpos[b_idx, w_idx])
                 pred_attrs = np.argmax(s_attrs[b_idx, w_idx])
@@ -183,20 +211,21 @@ def _eval(tagger, dataset, encodings, device='cpu'):
                         xpos_ok += 1
                     if pred_attrs == tgt_attrs[b_idx, w_idx]:
                         attrs_ok += 1
+                    if pred_arc == tgt_arcs[b_idx, w_idx]:
+                        arcs_ok += 1
 
-    return upos_ok / total, xpos_ok / total, attrs_ok / total
+    return arcs_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
 
 
 def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer):
     patience_left = params.patience
     epoch = 1
 
-    best_upos = 0
-    best_xpos = 0
-    best_attrs = 0
+    best_arc = 0
     encodings.save('{0}.encodings'.format(params.store))
     tagger.config.num_languages = tagger.num_languages
     tagger.config.save('{0}.conf'.format(params.store))
+    #_eval(tagger, devset, encodings, device=params.device)
     while patience_left > 0:
         patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
@@ -220,11 +249,9 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 lang_ids.append(trainset.sequences[start + ii][1])
                 total_words += len(trainset.sequences[start + ii][0])
 
-            s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
-            tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
-            loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) +
-                    criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
-                    criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1)))
+            s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
+            tgt_arc, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
+            loss = (criterion(s_arcs.view(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
@@ -238,39 +265,22 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
-        acc_upos_t, acc_xpos_t, acc_attrs_t = _eval(tagger, trainset, encodings)
-        acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
+        acc_arc, acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         fn = '{0}.last'.format(params.store)
         tagger.save(fn)
-        if best_upos < acc_upos:
-            best_upos = acc_upos
-            sys.stdout.write('\tStoring {0}.bestUPOS\n'.format(params.store))
+        if best_arc < acc_arc:
+            best_arc = acc_arc
+            sys.stdout.write('\tStoring {0}.bestUAS\n'.format(params.store))
             sys.stdout.flush()
             fn = '{0}.bestUPOS'.format(params.store)
             tagger.save(fn)
             patience_left = params.patience
-        if best_xpos < acc_xpos:
-            best_xpos = acc_xpos
-            sys.stdout.write('\tStoring {0}.bestXPOS\n'.format(params.store))
-            sys.stdout.flush()
-            fn = '{0}.bestXPOS'.format(params.store)
-            tagger.save(fn)
-            patience_left = params.patience
-        if best_attrs < acc_attrs:
-            best_attrs = acc_attrs
-            sys.stdout.write('\tStoring {0}.bestATTRS\n'.format(params.store))
-            sys.stdout.flush()
-            fn = '{0}.bestATTRS'.format(params.store)
-            tagger.save(fn)
-            patience_left = params.patience
+
         sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
         sys.stdout.flush()
         sys.stdout.write(
-            "\tTrainset accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos_t, acc_xpos_t,
-                                                                                     acc_attrs_t))
-        sys.stdout.flush()
-        sys.stdout.write(
-            "\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos, acc_attrs))
+            "\tValidation accuracy ARC={3:.4}, UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos,
+                                                                                                   acc_attrs, acc_arc))
         sys.stdout.flush()
         epoch += 1
 
@@ -302,17 +312,17 @@ def do_debug(params):
 
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
-    from cube2.config import TaggerConfig
+    from cube2.config import ParserConfig
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
+    for ii, train, dev in zip(range(len(train_list[:2])), train_list, dev_list):
         trainset.load_language(train, ii)
         devset.load_language(dev, ii)
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
-    config = TaggerConfig()
-    tagger = Tagger(config, encodings, len(train_list), target_device=params.device)
+    config = ParserConfig()
+    tagger = Parser(config, encodings, len(train_list), target_device=params.device)
     if params.device != 'cpu':
         tagger.cuda(params.device)
 
@@ -333,8 +343,8 @@ def do_test(params):
     dataset.load_language(params.test_file, params.lang_id)
     encodings = Encodings()
     encodings.load(params.model_base + '.encodings')
-    config = TaggerConfig()
-    tagger = Tagger(config, encodings, num_languages, target_device=params.device)
+    config = ParserConfig()
+    tagger = Parser(config, encodings, num_languages, target_device=params.device)
     tagger.load(params.model_base + '.last')
     upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
     sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
