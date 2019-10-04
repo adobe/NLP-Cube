@@ -28,6 +28,7 @@ from cube2.networks.text import TextEncoder
 from cube2.config import ParserConfig
 from cube.io_utils.encodings import Encodings
 from cube2.networks.modules import Attention
+from cube.graph.decoders import GreedyDecoder
 
 
 class Parser(nn.Module):
@@ -40,6 +41,7 @@ class Parser(nn.Module):
         self.encodings = encodings
         self.num_languages = num_languages
         self._target_device = target_device
+        self._decoder = GreedyDecoder()
         if num_languages == 1:
             lang_emb_size = 0
             self.lang_emb = None
@@ -95,6 +97,10 @@ class Parser(nn.Module):
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
         return torch.log(arcs[:, 1:, :]), proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
+
+    def get_tree(self, arcs, lens, proj_label):
+        heads = self._decoder.decode(np.exp(arcs), lens)
+        return heads, []
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -174,6 +180,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
     xpos_ok = 0
     attrs_ok = 0
     arcs_ok = 0
+    labels_ok = 0
     num_batches = len(dataset.sequences) // params.batch_size
     if len(dataset.sequences) % params.batch_size != 0:
         num_batches += 1
@@ -192,8 +199,13 @@ def _eval(tagger, dataset, encodings, device='cpu'):
             lang_ids.append(dataset.sequences[start + ii][1])
         with torch.no_grad():
             s_arcs, label_proj, s_upos, s_xpos, s_attrs = tagger(data, lang_ids=lang_ids)
+
         tgt_arcs, tgt_labels, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
         s_arcs = s_arcs.detach().cpu().numpy()
+        s_lens = []
+        for ii in range(len(data)):
+            s_lens.append(len(data[ii]))
+        pred_heads, labels = tagger.get_tree(s_arcs, s_lens, label_proj)
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
         s_attrs = s_attrs.detach().cpu().numpy()
@@ -202,12 +214,19 @@ def _eval(tagger, dataset, encodings, device='cpu'):
         tgt_attrs = tgt_attrs.detach().cpu().numpy()
         for b_idx in range(tgt_upos.shape[0]):
             for w_idx in range(tgt_upos.shape[1]):
-                pred_arc = np.argmax(s_arcs[b_idx, w_idx])
+                # np.argmax(s_arcs[b_idx, w_idx])
                 pred_upos = np.argmax(s_upos[b_idx, w_idx])
                 pred_xpos = np.argmax(s_xpos[b_idx, w_idx])
                 pred_attrs = np.argmax(s_attrs[b_idx, w_idx])
 
                 if tgt_upos[b_idx, w_idx] != 0:
+                    if w_idx >= len(pred_heads[b_idx]):
+                        print(b_idx, w_idx)
+                        print("\n\n")
+                        print(pred_heads)
+                        print(data[b_idx])
+
+                    pred_arc = pred_heads[b_idx][w_idx]
                     total += 1
                     if pred_upos == tgt_upos[b_idx, w_idx]:
                         upos_ok += 1
@@ -218,7 +237,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
                     if pred_arc == tgt_arcs[b_idx, w_idx]:
                         arcs_ok += 1
 
-    return arcs_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
+    return arcs_ok / total, labels_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
 
 
 def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer):
@@ -271,7 +290,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
-        acc_arc, acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
+        acc_arc, acc_label, acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
         fn = '{0}.last'.format(params.store)
         tagger.save(fn)
         sys.stdout.flush()
@@ -346,17 +365,19 @@ def do_debug(params):
 
 def do_test(params):
     num_languages = 11
-    from cube2.config import TaggerConfig
+    from cube2.config import ParserConfig
     from cube.io_utils.conll import Dataset
     dataset = Dataset()
     dataset.load_language(params.test_file, params.lang_id)
     encodings = Encodings()
     encodings.load(params.model_base + '.encodings')
     config = ParserConfig()
+    config.load(params.model_base + '.conf')
     tagger = Parser(config, encodings, num_languages, target_device=params.device)
     tagger.load(params.model_base + '.last')
-    upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
-    sys.stdout.write('UPOS={0}, XPOS={1}, ATTRS={2}\n'.format(upos_acc, xpos_acc, attrs_acc))
+    uas, las, upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
+    sys.stdout.write(
+        'UAS={0}, LAS={1}, UPOS={2}, XPOS={3}, ATTRS={4}\n'.format(uas, las, upos_acc, xpos_acc, attrs_acc))
 
 
 if __name__ == '__main__':

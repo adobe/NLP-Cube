@@ -65,16 +65,22 @@ class GreedyDecoder:
             lst[tail] = head
         return lst[1:]
 
-    def decode(self, norm_score):
-        nWords = len(norm_score)
-        g = []
-        for iSrc in range(1, nWords):
-            for iDst in range(1, nWords):
-                if iDst != iSrc:
-                    a = Arc(iSrc, norm_score[iSrc][iDst].value(), iDst)
-                    g.append(a)
-        tree = self._greedy_tree(g)
-        best_tree = self._make_ordered_list(tree, nWords)
-        return best_tree
-
-
+    def decode(self, score, lens):
+        best_tree_list = []
+        for ii in range(score.shape[0]):
+            # norm_score = score[ii, :lens[ii], :lens[ii]]
+            norm_score = np.zeros((lens[ii] + 1, lens[ii] + 1))
+            for wii in range(lens[ii]):
+                for wjj in range(lens[ii] + 1):
+                    norm_score[wii + 1, wjj] = score[ii, wii, wjj]
+            nWords = norm_score.shape[0]  # len(norm_score)
+            g = []
+            for iSrc in range(1, nWords):
+                for iDst in range(1, nWords):
+                    if iDst != iSrc:
+                        a = Arc(iSrc, norm_score[iSrc][iDst], iDst)
+                        g.append(a)
+            tree = self._greedy_tree(g)
+            best_tree = self._make_ordered_list(tree, nWords)
+            best_tree_list.append(best_tree)
+        return best_tree_list
