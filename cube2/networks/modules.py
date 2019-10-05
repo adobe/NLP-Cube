@@ -37,16 +37,27 @@ class Encoder(nn.Module):
             self.embedding = nn.Embedding(input_size, input_emb_dim)
         else:
             self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
-        self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=num_layers,
+
+        self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
                            dropout=dropout)
+
+        if num_layers > 1:
+            top_layers = []
+            for ii in range(num_layers - 1):
+                top_layers.append(
+                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
+                            dropout=dropout))
+            self.top_layers = nn.ModuleList(top_layers)
+        else:
+            self.top_layers = None
 
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, conditioning=None):
         # src = [src sent len, batch size]
         embedded = self.dropout(self.embedding(src))
-        #from ipdb import set_trace
-        #set_trace()
+        # from ipdb import set_trace
+        # set_trace()
         if conditioning is not None:
             conditioning = conditioning.permute(0, 1)
             conditioning = conditioning.unsqueeze(0)
@@ -54,6 +65,10 @@ class Encoder(nn.Module):
             embedded = torch.cat((embedded, conditioning), dim=2)
         # embedded = [src sent len, batch size, emb dim]
         outputs, hidden = self.rnn(embedded)
+        if self.top_layers is not None:
+            for rnn_layer in self.top_layers:
+                outputs, hidden = rnn_layer(torch.cat((outputs, conditioning), dim=2))
+
         # outputs = [src sent len, batch size, hid dim * num directions]
         # hidden = [n layers * num directions, batch size, hid dim]
         # hidden is stacked [forward_1, backward_1, forward_2, backward_2, ...]
