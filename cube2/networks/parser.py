@@ -47,7 +47,7 @@ class Parser(nn.Module):
             self.lang_emb = None
         else:
             lang_emb_size = self.config.tagger_embeddings_size
-            self.lang_emb = nn.Embedding(num_languages, lang_emb_size, padding_idx=0)
+            self.lang_emb = nn.Embedding(num_languages, lang_emb_size)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
@@ -343,7 +343,7 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list[:2])), train_list, dev_list):
+    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
         trainset.load_language(train, ii, ignore_compound=True)
         devset.load_language(dev, ii, ignore_compound=True)
     encodings = Encodings()
