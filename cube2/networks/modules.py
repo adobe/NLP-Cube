@@ -67,7 +67,10 @@ class Encoder(nn.Module):
         outputs, hidden = self.rnn(embedded)
         if self.top_layers is not None:
             for rnn_layer in self.top_layers:
-                outputs, hidden = rnn_layer(torch.cat((self.dropout(outputs), conditioning), dim=2))
+                if conditioning is not None:
+                    outputs, hidden = rnn_layer(torch.cat((self.dropout(outputs), conditioning), dim=2))
+                else:
+                    outputs, hidden = rnn_layer(self.dropout(outputs))
 
         # outputs = [src sent len, batch size, hid dim * num directions]
         # hidden = [n layers * num directions, batch size, hid dim]

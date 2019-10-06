@@ -52,17 +52,16 @@ class Parser(nn.Module):
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
         self.proj_arc = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.ReLU(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.proj_label = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.ReLU(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.output_label = nn.Linear(self.config.parser_label_proj_size * 2, len(self.encodings.label2int))
-        self.output_head = nn.Linear(self.config.parser_arc_proj_size * 2, 1)
 
         self.aux_mlp = nn.Sequential(
             nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+            nn.ReLU(), nn.Dropout(p=self.config.tagger_mlp_dropout))
         self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
@@ -98,9 +97,25 @@ class Parser(nn.Module):
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
         return torch.log(arcs[:, 1:, :]), proj_label, s_aux_upos, s_aux_xpos, s_aux_attrs
 
-    def get_tree(self, arcs, lens, proj_label):
-        heads = self._decoder.decode(np.exp(arcs), lens)
-        return heads, []
+    def get_tree(self, arcs, lens, proj_labels, gs_heads=None):
+        if gs_heads is not None:
+            heads = gs_heads
+        else:
+            heads = self._decoder.decode(np.exp(arcs), lens)
+
+        labels = []
+        for idx_batch in range(proj_labels.shape[0]):
+            sent_labels = []
+            if gs_heads is not None:
+                s_len = proj_labels.shape[1]
+            else:
+                s_len = lens[idx_batch]
+            for idx_word in range(s_len):
+                hidden = torch.cat(
+                    (proj_labels[idx_batch, idx_word, :], proj_labels[idx_batch, heads[idx_batch, idx_word], :]), dim=0)
+                sent_labels.append(self.output_label(hidden).unsqueeze(0))
+            labels.append(torch.cat(sent_labels, dim=0).unsqueeze(0))
+        return heads, torch.cat(labels, dim=0)
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -212,12 +227,14 @@ def _eval(tagger, dataset, encodings, device='cpu'):
         tgt_upos = tgt_upos.detach().cpu().numpy()
         tgt_xpos = tgt_xpos.detach().cpu().numpy()
         tgt_attrs = tgt_attrs.detach().cpu().numpy()
+        s_labels = labels.detach().cpu().numpy()
         for b_idx in range(tgt_upos.shape[0]):
             for w_idx in range(tgt_upos.shape[1]):
                 # np.argmax(s_arcs[b_idx, w_idx])
                 pred_upos = np.argmax(s_upos[b_idx, w_idx])
                 pred_xpos = np.argmax(s_xpos[b_idx, w_idx])
                 pred_attrs = np.argmax(s_attrs[b_idx, w_idx])
+                pred_labels = np.argmax(s_labels[b_idx, w_idx])
 
                 if tgt_upos[b_idx, w_idx] != 0:
                     if w_idx >= len(pred_heads[b_idx]):
@@ -236,6 +253,8 @@ def _eval(tagger, dataset, encodings, device='cpu'):
                         attrs_ok += 1
                     if pred_arc == tgt_arcs[b_idx, w_idx]:
                         arcs_ok += 1
+                    if pred_labels == tgt_labels[b_idx, w_idx]:
+                        labels_ok += 1
 
     return arcs_ok / total, labels_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
 
@@ -276,14 +295,17 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
 
             s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
+
+            pred_labels = tagger.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
                          criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34) * \
                        tagger.config.aux_softmax_weight
 
-            loss = loss + loss_aux
+            loss = loss + loss_aux + loss_label
             trainer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(tagger.parameters(), 1.)
@@ -306,8 +328,9 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
         sys.stdout.flush()
         sys.stdout.write(
-            "\tValidation accuracy ARC={3:.4}, UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos,
-                                                                                                   acc_attrs, acc_arc))
+            "\tValidation accuracy ARC={3:.4}, LABEL={4:.4f}, UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(
+                acc_upos, acc_xpos,
+                acc_attrs, acc_arc, acc_label))
         sys.stdout.flush()
         epoch += 1
 
