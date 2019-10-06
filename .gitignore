@@ -18,6 +18,9 @@ scripts/*.json
 scripts/*.conllu
 scripts/*.md
 
+# Mac OS .DS_Store is a file that stores custom attributes of its containing folder
+.DS_Store
+
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*
 examples/.ipynb_checkpoints
