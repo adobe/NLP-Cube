@@ -100,19 +100,27 @@ class Parser(nn.Module):
     def get_tree(self, arcs, lens, proj_labels, gs_heads=None):
         if gs_heads is not None:
             heads = gs_heads
+            max_sent_size = gs_heads.shape[1]
         else:
             heads = self._decoder.decode(np.exp(arcs), lens)
-
+            max_sent_size = max([len(vect) for vect in heads])
         labels = []
         for idx_batch in range(proj_labels.shape[0]):
             sent_labels = []
             if gs_heads is not None:
-                s_len = proj_labels.shape[1]
+                s_len = proj_labels.shape[1] - 1
             else:
                 s_len = lens[idx_batch]
             for idx_word in range(s_len):
+                if gs_heads is not None:
+                    head_index = heads[idx_batch, idx_word]
+                else:
+                    head_index = heads[idx_batch][idx_word]
                 hidden = torch.cat(
-                    (proj_labels[idx_batch, idx_word, :], proj_labels[idx_batch, heads[idx_batch, idx_word], :]), dim=0)
+                    (proj_labels[idx_batch, idx_word + 1, :], proj_labels[idx_batch, head_index, :]),
+                    dim=0)
+                sent_labels.append(self.output_label(hidden).unsqueeze(0))
+            for _ in range(max_sent_size - s_len):
                 sent_labels.append(self.output_label(hidden).unsqueeze(0))
             labels.append(torch.cat(sent_labels, dim=0).unsqueeze(0))
         return heads, torch.cat(labels, dim=0)
@@ -296,7 +304,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
-            pred_labels = tagger.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
+            pred_heads, pred_labels = tagger.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
