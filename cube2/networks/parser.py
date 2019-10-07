@@ -344,7 +344,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
         sys.stdout.flush()
         sys.stdout.write(
-            "\tValidation accuracy ARC={3:.4}, LABEL={4:.4f}, UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(
+            "\tValidation accuracy UAS={3:.4}, LAS={4:.4f}, UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(
                 acc_upos, acc_xpos,
                 acc_attrs, acc_arc, acc_label))
         sys.stdout.flush()
