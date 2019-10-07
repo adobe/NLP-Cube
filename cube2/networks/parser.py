@@ -280,6 +280,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
     epoch = 1
 
     best_arc = 0
+    best_label = 0
     encodings.save('{0}.encodings'.format(params.store))
     tagger.config.num_languages = tagger.num_languages
     tagger.config.save('{0}.conf'.format(params.store))
@@ -337,7 +338,15 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             best_arc = acc_arc
             sys.stdout.write('\tStoring {0}.bestUAS\n'.format(params.store))
             sys.stdout.flush()
-            fn = '{0}.bestUPOS'.format(params.store)
+            fn = '{0}.bestUAS'.format(params.store)
+            tagger.save(fn)
+            patience_left = params.patience
+
+        if best_label < acc_label:
+            best_label = acc_label
+            sys.stdout.write('\tStoring {0}.bestLAS\n'.format(params.store))
+            sys.stdout.flush()
+            fn = '{0}.bestLAS'.format(params.store)
             tagger.save(fn)
             patience_left = params.patience
 
