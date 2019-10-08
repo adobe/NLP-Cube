@@ -51,13 +51,19 @@ class Parser(nn.Module):
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
-        self.proj_arc = nn.Sequential(
+        self.proj_arc_head = nn.Sequential(
             nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.ReLU(),
             nn.Dropout(self.config.tagger_mlp_dropout))
-        self.proj_label = nn.Sequential(
+        self.proj_arc_dep = nn.Sequential(
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.ReLU(),
+            nn.Dropout(self.config.tagger_mlp_dropout))
+        self.proj_label_head = nn.Sequential(
             nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.ReLU(),
             nn.Dropout(self.config.tagger_mlp_dropout))
-        self.output_label = nn.Linear(self.config.parser_label_proj_size * 2 + lang_emb_size * 2,
+        self.proj_label_dep = nn.Sequential(
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.ReLU(),
+            nn.Dropout(self.config.tagger_mlp_dropout))
+        self.output_label = nn.Linear(self.config.parser_label_proj_size * 2 + lang_emb_size,
                                       len(self.encodings.label2int))
 
         self.aux_mlp = nn.Sequential(
@@ -79,23 +85,34 @@ class Parser(nn.Module):
         emb, hidden = self.text_network(x, conditioning=lang_emb)
         lang_emb_parsing = lang_emb.unsqueeze(1).repeat(1, emb.shape[1] + 1, 1)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        hidden_output = self.dropout(torch.cat((emb, lang_emb), dim=2))
+        hidden_output = torch.cat((emb, lang_emb), dim=2)
 
-        proj_arc = self.proj_arc(hidden_output)
-        proj_label = self.proj_label(hidden_output)
+        proj_arc_head = self.proj_arc_head(hidden_output)
+        proj_label_head = self.proj_label_head(hidden_output)
+        proj_arc_dep = self.proj_arc_dep(hidden_output)
+        proj_label_dep = self.proj_label_dep(hidden_output)
         w_stack = []
-        proj_arc = torch.cat(
-            (torch.zeros((proj_arc.shape[0], 1, proj_arc.shape[2]), device=self._target_device), proj_arc), dim=1)
-        proj_label = torch.cat(
-            (torch.zeros((proj_label.shape[0], 1, proj_label.shape[2]), device=self._target_device), proj_label), dim=1)
+        proj_arc_head = torch.cat(
+            (torch.zeros((proj_arc_head.shape[0], 1, proj_arc_head.shape[2]), device=self._target_device),
+             proj_arc_head), dim=1)
+        proj_label_head = torch.cat(
+            (torch.zeros((proj_label_head.shape[0], 1, proj_label_head.shape[2]), device=self._target_device),
+             proj_label_head), dim=1)
+
+        proj_arc_dep = torch.cat(
+            (torch.zeros((proj_arc_dep.shape[0], 1, proj_arc_dep.shape[2]), device=self._target_device),
+             proj_arc_dep), dim=1)
+        proj_label_dep = torch.cat(
+            (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._target_device),
+             proj_label_dep), dim=1)
 
         # from ipdb import set_trace
         # set_trace()
-        proj_arc_lang = torch.cat((proj_arc, lang_emb_parsing), dim=2).permute(1, 0, 2)
-        proj_arc = proj_arc.permute((1, 0, 2))
+        proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2).permute(1, 0, 2)
+        proj_arc_dep = proj_arc_dep.permute((1, 0, 2))
 
-        for ii in range(proj_arc.shape[0]):
-            att = self.attention(proj_arc[ii, :], proj_arc_lang)
+        for ii in range(proj_arc_head_lang.shape[0]):
+            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang)
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
@@ -103,10 +120,10 @@ class Parser(nn.Module):
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label, lang_emb_parsing),
-                                                    dim=2), s_aux_upos, s_aux_xpos, s_aux_attrs
+        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label_head, lang_emb_parsing),
+                                                    dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
-    def get_tree(self, arcs, lens, proj_labels, gs_heads=None):
+    def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
         if gs_heads is not None:
             heads = gs_heads
             max_sent_size = gs_heads.shape[1]
@@ -114,10 +131,10 @@ class Parser(nn.Module):
             heads = self._decoder.decode(np.exp(arcs), lens)
             max_sent_size = max([len(vect) for vect in heads])
         labels = []
-        for idx_batch in range(proj_labels.shape[0]):
+        for idx_batch in range(proj_label_head.shape[0]):
             sent_labels = []
             if gs_heads is not None:
-                s_len = proj_labels.shape[1] - 1
+                s_len = proj_label_head.shape[1] - 1
             else:
                 s_len = lens[idx_batch]
             for idx_word in range(s_len):
@@ -126,7 +143,7 @@ class Parser(nn.Module):
                 else:
                     head_index = heads[idx_batch][idx_word]
                 hidden = torch.cat(
-                    (proj_labels[idx_batch, idx_word + 1, :], proj_labels[idx_batch, head_index, :]),
+                    (proj_label_head[idx_batch, idx_word + 1, :], proj_label_dep[idx_batch, head_index, :]),
                     dim=0)
                 sent_labels.append(self.output_label(hidden).unsqueeze(0))
             for _ in range(max_sent_size - s_len):
@@ -230,14 +247,14 @@ def _eval(parser, dataset, encodings, device='cpu'):
             total_words += len(dataset.sequences[start + ii][0])
             lang_ids.append(dataset.sequences[start + ii][1])
         with torch.no_grad():
-            s_arcs, label_proj, s_upos, s_xpos, s_attrs = parser(data, lang_ids=lang_ids)
+            s_arcs, label_proj_head, label_proj_dep, s_upos, s_xpos, s_attrs = parser(data, lang_ids=lang_ids)
 
         tgt_arcs, tgt_labels, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
         s_arcs = s_arcs.detach().cpu().numpy()
         s_lens = []
         for ii in range(len(data)):
             s_lens.append(len(data[ii]))
-        pred_heads, labels = parser.get_tree(s_arcs, s_lens, label_proj)
+        pred_heads, labels = parser.get_tree(s_arcs, s_lens, label_proj_head, label_proj_dep)
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
         s_attrs = s_attrs.detach().cpu().numpy()
@@ -311,10 +328,11 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
                 lang_ids.append(trainset.sequences[start + ii][1])
                 total_words += len(trainset.sequences[start + ii][0])
 
-            s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = parser(data, lang_ids=lang_ids)
+            s_arcs, proj_label_head, proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs = parser(data,
+                                                                                                  lang_ids=lang_ids)
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
-            pred_heads, pred_labels = parser.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
+            pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
