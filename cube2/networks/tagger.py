@@ -55,10 +55,11 @@ class Tagger(nn.Module):
 
         self.aux_mlp = nn.Sequential(
             nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+            nn.ReLU(), nn.Dropout(p=self.config.tagger_mlp_dropout))
         self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+        self.dropout = nn.Dropout(self.config.tagger_encoder_dropout)
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
@@ -70,9 +71,10 @@ class Tagger(nn.Module):
         emb, hidden = self.text_network(x, conditioning=lang_emb)
 
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        s_upos = self.output_upos(torch.cat((emb, lang_emb), dim=2))
-        s_xpos = self.output_xpos(torch.cat((emb, lang_emb), dim=2))
-        s_attrs = self.output_attrs(torch.cat((emb, lang_emb), dim=2))
+        hid_main = self.dropout(torch.cat((emb, lang_emb), dim=2))
+        s_upos = self.output_upos(hid_main)
+        s_xpos = self.output_xpos(hid_main)
+        s_attrs = self.output_attrs(hid_main)
 
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
@@ -276,6 +278,34 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
 
 
 def do_debug(params):
+    # train_list = ['corpus/ud-treebanks-v2.4/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Danish-DDT/da_ddt-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Dutch-Alpino/nl_alpino-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Dutch-LassySmall/nl_lassysmall-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_English-EWT/en_ewt-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_English-GUM/en_gum-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_English-LinES/en_lines-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_German-GSD/de_gsd-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Gothic-PROIEL/got_proiel-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Swedish-LinES/sv_lines-ud-train.conllu',
+    #               'corpus/ud-treebanks-v2.4/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu']
+    #
+    # dev_list = ['corpus/ud-treebanks-v2.4/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Danish-DDT/da_ddt-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_English-EWT/en_ewt-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_English-GUM/en_gum-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_English-LinES/en_lines-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_German-GSD/de_gsd-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Swedish-LinES/sv_lines-ud-dev.conllu',
+    #             'corpus/ud-treebanks-v2.4/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu']
+
     train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
                   'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
                   'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',

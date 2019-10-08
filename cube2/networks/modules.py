@@ -27,6 +27,8 @@ class Encoder(nn.Module):
                  num_layers=2, ext_conditioning=0):
         super().__init__()
         assert (input_type == 'int' or input_type == 'float')
+        if input_type == 'float':
+            assert (input_size == input_emb_dim)
         self.input_type = input_type
         self.input_dim = input_size
         self.emb_dim = input_emb_dim
@@ -34,19 +36,17 @@ class Encoder(nn.Module):
         self.dropout = dropout
 
         if self.input_type == 'int':
-            self.embedding = nn.Embedding(input_size, input_emb_dim)
+            self.embedding = nn.Sequential(nn.Embedding(input_size, input_emb_dim), nn.Dropout(self.dropout))
         else:
-            self.embedding = nn.Sequential(nn.Linear(input_size, input_emb_dim), nn.Tanh())
+            self.embedding = nn.Dropout(self.dropout)
 
-        self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                           dropout=dropout)
+        self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1)
 
         if num_layers > 1:
             top_layers = []
             for ii in range(num_layers - 1):
                 top_layers.append(
-                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                            dropout=dropout))
+                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1))
             self.top_layers = nn.ModuleList(top_layers)
         else:
             self.top_layers = None
@@ -55,7 +55,7 @@ class Encoder(nn.Module):
 
     def forward(self, src, conditioning=None):
         # src = [src sent len, batch size]
-        embedded = self.dropout(self.embedding(src))
+        embedded = self.embedding(src)
         # from ipdb import set_trace
         # set_trace()
         if conditioning is not None:

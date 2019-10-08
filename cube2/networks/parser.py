@@ -68,6 +68,7 @@ class Parser(nn.Module):
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
         self.attention = Attention(self.config.parser_arc_proj_size // 2,
                                    self.config.parser_arc_proj_size + lang_emb_size)
+        self.dropout = nn.Dropout(self.config.tagger_encoder_dropout)
 
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
@@ -78,7 +79,7 @@ class Parser(nn.Module):
         emb, hidden = self.text_network(x, conditioning=lang_emb)
         lang_emb_parsing = lang_emb.unsqueeze(1).repeat(1, emb.shape[1] + 1, 1)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        hidden_output = torch.cat((emb, lang_emb), dim=2)
+        hidden_output = self.dropout(torch.cat((emb, lang_emb), dim=2))
 
         proj_arc = self.proj_arc(hidden_output)
         proj_label = self.proj_label(hidden_output)
@@ -98,7 +99,7 @@ class Parser(nn.Module):
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
-        aux_hid = self.aux_mlp(hidden)
+        aux_hid = self.aux_mlp(self.dropout(hidden))
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
@@ -204,8 +205,8 @@ def _get_tgt_labels(data, encodings, device='cpu'):
            torch.tensor(tgt_attrs, device=device)
 
 
-def _eval(tagger, dataset, encodings, device='cpu'):
-    tagger.eval()
+def _eval(parser, dataset, encodings, device='cpu'):
+    parser.eval()
     total = 0
     upos_ok = 0
     xpos_ok = 0
@@ -218,7 +219,7 @@ def _eval(tagger, dataset, encodings, device='cpu'):
     total_words = 0
     import tqdm
     pgb = tqdm.tqdm(range(num_batches), desc='\tEvaluating', ncols=80)
-    tagger.eval()
+    parser.eval()
     for batch_idx in pgb:
         start = batch_idx * params.batch_size
         stop = min(len(dataset.sequences), start + params.batch_size)
@@ -229,14 +230,14 @@ def _eval(tagger, dataset, encodings, device='cpu'):
             total_words += len(dataset.sequences[start + ii][0])
             lang_ids.append(dataset.sequences[start + ii][1])
         with torch.no_grad():
-            s_arcs, label_proj, s_upos, s_xpos, s_attrs = tagger(data, lang_ids=lang_ids)
+            s_arcs, label_proj, s_upos, s_xpos, s_attrs = parser(data, lang_ids=lang_ids)
 
         tgt_arcs, tgt_labels, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=device)
         s_arcs = s_arcs.detach().cpu().numpy()
         s_lens = []
         for ii in range(len(data)):
             s_lens.append(len(data[ii]))
-        pred_heads, labels = tagger.get_tree(s_arcs, s_lens, label_proj)
+        pred_heads, labels = parser.get_tree(s_arcs, s_lens, label_proj)
         s_upos = s_upos.detach().cpu().numpy()
         s_xpos = s_xpos.detach().cpu().numpy()
         s_attrs = s_attrs.detach().cpu().numpy()
@@ -275,15 +276,15 @@ def _eval(tagger, dataset, encodings, device='cpu'):
     return arcs_ok / total, labels_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
 
 
-def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer):
+def _start_train(params, trainset, devset, encodings, parser, criterion, trainer):
     patience_left = params.patience
     epoch = 1
 
     best_arc = 0
     best_label = 0
     encodings.save('{0}.encodings'.format(params.store))
-    tagger.config.num_languages = tagger.num_languages
-    tagger.config.save('{0}.conf'.format(params.store))
+    parser.config.num_languages = parser.num_languages
+    parser.config.save('{0}.conf'.format(params.store))
     # _eval(tagger, devset, encodings, device=params.device)
     criterionNLL = criterion[1]
     criterion = criterion[0]
@@ -299,7 +300,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         epoch_loss = 0
         import tqdm
         pgb = tqdm.tqdm(range(num_batches), desc='\tloss=NaN', ncols=80)
-        tagger.train()
+        parser.train()
         for batch_idx in pgb:
             start = batch_idx * params.batch_size
             stop = min(len(trainset.sequences), start + params.batch_size)
@@ -310,28 +311,28 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 lang_ids.append(trainset.sequences[start + ii][1])
                 total_words += len(trainset.sequences[start + ii][0])
 
-            s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
+            s_arcs, proj_labels, s_aux_upos, s_aux_xpos, s_aux_attrs = parser(data, lang_ids=lang_ids)
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
-            pred_heads, pred_labels = tagger.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
+            pred_heads, pred_labels = parser.get_tree(None, None, proj_labels, gs_heads=tgt_arc)
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
                          criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34) * \
-                       tagger.config.aux_softmax_weight
+                       parser.config.aux_softmax_weight
 
             loss = loss + loss_aux + loss_label
             trainer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(tagger.parameters(), 1.)
+            torch.nn.utils.clip_grad_norm_(parser.parameters(), 1.)
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
-        acc_arc, acc_label, acc_upos, acc_xpos, acc_attrs = _eval(tagger, devset, encodings)
+        acc_arc, acc_label, acc_upos, acc_xpos, acc_attrs = _eval(parser, devset, encodings)
         fn = '{0}.last'.format(params.store)
-        tagger.save(fn)
+        parser.save(fn)
         sys.stdout.flush()
         sys.stderr.flush()
         if best_arc < acc_arc:
@@ -339,7 +340,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             sys.stdout.write('\tStoring {0}.bestUAS\n'.format(params.store))
             sys.stdout.flush()
             fn = '{0}.bestUAS'.format(params.store)
-            tagger.save(fn)
+            parser.save(fn)
             patience_left = params.patience
 
         if best_label < acc_label:
@@ -347,7 +348,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             sys.stdout.write('\tStoring {0}.bestLAS\n'.format(params.store))
             sys.stdout.flush()
             fn = '{0}.bestLAS'.format(params.store)
-            tagger.save(fn)
+            parser.save(fn)
             patience_left = params.patience
 
         sys.stdout.write("\tAVG Epoch loss = {0:.6f}\n".format(epoch_loss / num_batches))
@@ -397,18 +398,18 @@ def do_debug(params):
     encodings = Encodings()
     encodings.compute(trainset, devset, word_cutoff=2)
     config = ParserConfig()
-    tagger = Parser(config, encodings, len(train_list), target_device=params.device)
+    parser = Parser(config, encodings, len(train_list), target_device=params.device)
     if params.device != 'cpu':
-        tagger.cuda(params.device)
+        parser.cuda(params.device)
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(parser.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     criterionNLL = nn.NLLLoss(ignore_index=-1)
     if params.device != 'cpu':
         criterion.cuda(params.device)
-    _start_train(params, trainset, devset, encodings, tagger, [criterion, criterionNLL], trainer)
+    _start_train(params, trainset, devset, encodings, parser, [criterion, criterionNLL], trainer)
 
 
 def do_test(params):
@@ -421,9 +422,9 @@ def do_test(params):
     encodings.load(params.model_base + '.encodings')
     config = ParserConfig()
     config.load(params.model_base + '.conf')
-    tagger = Parser(config, encodings, num_languages, target_device=params.device)
-    tagger.load(params.model_base + '.last')
-    uas, las, upos_acc, xpos_acc, attrs_acc = _eval(tagger, dataset, encodings, device=params.device)
+    parser = Parser(config, encodings, num_languages, target_device=params.device)
+    parser.load(params.model_base + '.last')
+    uas, las, upos_acc, xpos_acc, attrs_acc = _eval(parser, dataset, encodings, device=params.device)
     sys.stdout.write(
         'UAS={0}, LAS={1}, UPOS={2}, XPOS={3}, ATTRS={4}\n'.format(uas, las, upos_acc, xpos_acc, attrs_acc))
 
@@ -431,10 +432,10 @@ def do_test(params):
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
-                      help='Start building a tagger model')
+                      help='Start building a parser model')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
-    parser.add_option('--store', action='store', dest='store', help='Output base', default='tagger')
+    parser.add_option('--store', action='store', dest='store', help='Output base', default='parser')
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')

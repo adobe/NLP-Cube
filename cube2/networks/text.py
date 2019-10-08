@@ -38,12 +38,12 @@ class TextEncoder(nn.Module):
         self._target_device = target_device
 
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
-                                     self.config.tagger_embeddings_size,
+                                     self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
                                      nn_type=nn.LSTM,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
-                                      self.config.tagger_embeddings_size,
+                                      self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
                                       nn_type=nn.LSTM,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,
@@ -57,7 +57,7 @@ class TextEncoder(nn.Module):
 
         mlp_input_size = self.config.tagger_encoder_size * 2
         self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
-                                 nn.Tanh(),
+                                 nn.ReLU(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
         self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
@@ -86,9 +86,9 @@ class TextEncoder(nn.Module):
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
             x = torch.cat(
-                (torch.tanh(masks_char.unsqueeze(2)) * char_emb, torch.tanh(masks_word.unsqueeze(2)) * word_emb), dim=2)
+                (torch.relu(masks_char.unsqueeze(2)) * char_emb, torch.relu(masks_word.unsqueeze(2)) * word_emb), dim=2)
         else:
-            x = torch.cat((torch.tanh(char_emb), torch.tanh(word_emb)), dim=2)
+            x = torch.cat((torch.relu(char_emb), torch.relu(word_emb)), dim=2)
         output_hidden, hidden = self.first_encoder(x.permute(1, 0, 2), conditioning=conditioning)
         output_hidden = self.encoder_dropout(output_hidden)
         output, hidden = self.second_encoder(output_hidden, conditioning=conditioning)
