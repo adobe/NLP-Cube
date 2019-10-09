@@ -145,11 +145,11 @@ class Parser(nn.Module):
                 hidden = torch.cat(
                     (proj_label_head[idx_batch, idx_word + 1, :], proj_label_dep[idx_batch, head_index, :]),
                     dim=0)
-                sent_labels.append(self.output_label(hidden).unsqueeze(0))
+                sent_labels.append(hidden.unsqueeze(0))
             for _ in range(max_sent_size - s_len):
-                sent_labels.append(self.output_label(hidden).unsqueeze(0))
+                sent_labels.append(hidden.unsqueeze(0))
             labels.append(torch.cat(sent_labels, dim=0).unsqueeze(0))
-        return heads, torch.cat(labels, dim=0)
+        return heads, self.output_label(torch.cat(labels, dim=0))
 
     def save(self, path):
         torch.save(self.state_dict(), path)
