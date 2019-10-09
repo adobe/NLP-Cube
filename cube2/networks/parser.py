@@ -82,7 +82,7 @@ class Parser(nn.Module):
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
-        emb, hidden = self.text_network(x, conditioning=lang_emb)
+        emb, _ = self.text_network(x, conditioning=lang_emb)
         lang_emb_parsing = lang_emb.unsqueeze(1).repeat(1, emb.shape[1] + 1, 1)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
         hidden_output = torch.cat((emb, lang_emb), dim=2)
@@ -116,7 +116,7 @@ class Parser(nn.Module):
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
-        aux_hid = self.aux_mlp(self.dropout(hidden))
+        aux_hid = emb  # self.aux_mlp(self.dropout(emb))
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
@@ -302,7 +302,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
     encodings.save('{0}.encodings'.format(params.store))
     parser.config.num_languages = parser.num_languages
     parser.config.save('{0}.conf'.format(params.store))
-    # _eval(tagger, devset, encodings, device=params.device)
+    _eval(parser, devset, encodings, device=params.device)
     criterionNLL = criterion[1]
     criterion = criterion[0]
     while patience_left > 0:
