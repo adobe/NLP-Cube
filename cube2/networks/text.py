@@ -86,7 +86,7 @@ class TextEncoder(nn.Module):
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
             x = torch.cat(
-                (torch.relu(masks_char.unsqueeze(2)) * char_emb, torch.relu(masks_word.unsqueeze(2)) * word_emb), dim=2)
+                (torch.relu(masks_char.unsqueeze(2) * char_emb), torch.relu(masks_word.unsqueeze(2) * word_emb)), dim=2)
         else:
             x = torch.cat((torch.relu(char_emb), torch.relu(word_emb)), dim=2)
         output_hidden, hidden = self.first_encoder(x.permute(1, 0, 2), conditioning=conditioning)
