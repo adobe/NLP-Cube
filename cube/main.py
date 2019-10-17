@@ -101,9 +101,9 @@ if __name__ == '__main__':
 
     memory = int(params.memory)
     
-    if params.random_seed != None:
+    if params.random_seed:
         random_seed = int(params.random_seed)
-        if random_seed == 0:
+        if not random_seed:
                 print("[Warning] While Python and Numpy's seeds are now set to 0, DyNet uses 0 to reset the seed generator (fully random). Use any non-zero int value to set DyNet to a fixed random seed.")            
         # set python random seed
         import random
@@ -703,7 +703,7 @@ if params.run:
     if "all" in params.run:
         params.run = "tokenizer,compound,parser,tagger,lemmatizer"
     components = params.run.split(",")
-    if len(components) == 0:
+    if not len(components):
         print ("--run needs a list of components")
         valid = False
     if not params.embeddings:
