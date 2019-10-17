@@ -160,4 +160,4 @@ class ConllEntry:
     def __repr__(self):
         return "\t".join([str(self.index), self.word if isinstance(self.word, str) else self.word.encode('utf-8'),
                           self.lemma if isinstance(self.lemma, str) else self.lemma.encode('utf-8'), self.upos,
-                          self.xpos, self.attrs, str(self.head), self.label, self.deps, self.space_after, "\n"])
+                          self.xpos, self.attrs, str(self.head), self.label, self.deps, self.space_after]) + '\n'

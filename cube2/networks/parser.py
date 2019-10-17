@@ -293,6 +293,61 @@ def _eval(parser, dataset, encodings, device='cpu'):
     return arcs_ok / total, labels_ok / total, upos_ok / total, xpos_ok / total, attrs_ok / total
 
 
+def _parse(parser, dataset, encodings, device='cpu'):
+    parser.eval()
+    num_batches = len(dataset.sequences) // params.batch_size
+    if len(dataset.sequences) % params.batch_size != 0:
+        num_batches += 1
+    total_words = 0
+    import tqdm
+    pgb = tqdm.tqdm(range(num_batches), desc='\tEvaluating', ncols=80)
+    parser.eval()
+    import copy
+    new_dataset = copy.deepcopy(dataset)
+    sent_id = 0
+    word_id = 0
+    for batch_idx in pgb:
+        start = batch_idx * params.batch_size
+        stop = min(len(dataset.sequences), start + params.batch_size)
+        data = []
+        lang_ids = []
+        for ii in range(stop - start):
+            data.append(dataset.sequences[start + ii][0])
+            total_words += len(dataset.sequences[start + ii][0])
+            lang_ids.append(dataset.sequences[start + ii][1])
+        with torch.no_grad():
+            s_arcs, label_proj_head, label_proj_dep, s_upos, s_xpos, s_attrs = parser(data, lang_ids=lang_ids)
+
+        s_arcs = s_arcs.detach().cpu().numpy()
+        s_lens = []
+        for ii in range(len(data)):
+            s_lens.append(len(data[ii]))
+        pred_heads, labels = parser.get_tree(s_arcs, s_lens, label_proj_head, label_proj_dep)
+        s_upos = s_upos.detach().cpu().numpy()
+        s_xpos = s_xpos.detach().cpu().numpy()
+        s_attrs = s_attrs.detach().cpu().numpy()
+        s_labels = labels.detach().cpu().numpy()
+        for b_idx in range(s_upos.shape[0]):
+            for w_idx in range(len(pred_heads[b_idx])):
+                # np.argmax(s_arcs[b_idx, w_idx])
+                pred_upos = np.argmax(s_upos[b_idx, w_idx])
+                pred_xpos = np.argmax(s_xpos[b_idx, w_idx])
+                pred_attrs = np.argmax(s_attrs[b_idx, w_idx])
+                pred_labels = np.argmax(s_labels[b_idx, w_idx])
+
+                if word_id < len(data[b_idx]):
+                    new_dataset.sequences[sent_id][0][word_id].upos = encodings.upos_list[pred_upos]
+                    new_dataset.sequences[sent_id][0][word_id].xpos = encodings.xpos_list[pred_xpos]
+                    new_dataset.sequences[sent_id][0][word_id].attrs = encodings.attrs_list[pred_attrs]
+                    new_dataset.sequences[sent_id][0][word_id].label = encodings.labels[pred_labels]
+                    new_dataset.sequences[sent_id][0][word_id].head = pred_heads[b_idx][w_idx]
+                    word_id += 1
+            sent_id += 1
+            word_id = 0
+
+    return new_dataset
+
+
 def _start_train(params, trainset, devset, encodings, parser, criterion, trainer):
     patience_left = params.patience
     epoch = 1
@@ -447,6 +502,26 @@ def do_test(params):
         'UAS={0}, LAS={1}, UPOS={2}, XPOS={3}, ATTRS={4}\n'.format(uas, las, upos_acc, xpos_acc, attrs_acc))
 
 
+def do_parse(params):
+    num_languages = 11
+    from cube2.config import ParserConfig
+    from cube.io_utils.conll import Dataset
+    dataset = Dataset()
+    dataset.load_language(params.test_file, params.lang_id)
+    encodings = Encodings()
+    encodings.load(params.model_base + '.encodings')
+    config = ParserConfig()
+    config.load(params.model_base + '.conf')
+    parser = Parser(config, encodings, num_languages, target_device=params.device)
+    parser.load(params.model_base + '.last')
+    new_dataset = _parse(parser, dataset, encodings, device=params.device)
+
+    for seq in new_dataset.sequences:
+        for entry in seq[0]:
+            sys.stdout.write(str(entry))
+        print()
+
+
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--train', action='store_true', dest='train',
@@ -463,6 +538,7 @@ if __name__ == '__main__':
     parser.add_option('--test-file', action='store', dest='test_file')
     parser.add_option('--lang-id', action='store', dest='lang_id', type='int', default=0)
     parser.add_option('--model-base', action='store', dest='model_base')
+    parser.add_option('--process', action='store_true')
 
     (params, _) = parser.parse_args(sys.argv)
 
@@ -470,3 +546,5 @@ if __name__ == '__main__':
         do_debug(params)
     if params.test:
         do_test(params)
+    if params.process:
+        do_parse(params)
