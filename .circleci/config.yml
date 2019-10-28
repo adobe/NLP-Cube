@@ -12,7 +12,7 @@ jobs:
       - run:
           name: install requirements
           command: |
-            apt-get install libblas3 liblapack3 liblapack-dev libblas-dev
+            sudo apt-get install -y libblas3 liblapack3 liblapack-dev libblas-dev
             cd /home/circleci/project/
             pip3 install --user -r requirements.txt
       - run:
