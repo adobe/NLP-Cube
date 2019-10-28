@@ -82,10 +82,10 @@ class Parser(nn.Module):
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
-        emb, _ = self.text_network(x, conditioning=lang_emb)
+        emb, hidden = self.text_network(x, conditioning=lang_emb)
         lang_emb_parsing = lang_emb.unsqueeze(1).repeat(1, emb.shape[1] + 1, 1)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        hidden_output = torch.cat((emb, lang_emb), dim=2)
+        hidden_output = torch.cat((self.aux_mlp(hidden), lang_emb), dim=2)
 
         proj_arc_head = self.proj_arc_head(hidden_output)
         proj_label_head = self.proj_label_head(hidden_output)
@@ -496,7 +496,7 @@ def do_test(params):
     config = ParserConfig()
     config.load(params.model_base + '.conf')
     parser = Parser(config, encodings, num_languages, target_device=params.device)
-    parser.load(params.model_base + '.last')
+    parser.load(params.model_base + '.bestUAS')
     uas, las, upos_acc, xpos_acc, attrs_acc = _eval(parser, dataset, encodings, device=params.device)
     sys.stdout.write(
         'UAS={0}, LAS={1}, UPOS={2}, XPOS={3}, ATTRS={4}\n'.format(uas, las, upos_acc, xpos_acc, attrs_acc))
