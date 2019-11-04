@@ -116,11 +116,11 @@ class Parser(nn.Module):
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
-        head_bias = self.head_bias(proj_arc_head_lang).permute(1, 0, 2)
-        dep_bias = self.dep_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
+        head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
+        dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
         dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
         head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
-        arcs = arcs + head_bias + dep_bias
+        arcs = arcs + head_bias #+ dep_bias
         aux_hid = emb  # self.aux_mlp(self.dropout(emb))
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
@@ -470,7 +470,7 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list)), train_list[:2], dev_list):
+    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
         trainset.load_language(train, ii, ignore_compound=True)
         devset.load_language(dev, ii, ignore_compound=True)
     encodings = Encodings()
