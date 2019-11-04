@@ -513,7 +513,7 @@ def do_parse(params):
     config = ParserConfig()
     config.load(params.model_base + '.conf')
     parser = Parser(config, encodings, num_languages, target_device=params.device)
-    parser.load(params.model_base + '.last')
+    parser.load(params.model_base + '.bestUAS')
     new_dataset = _parse(parser, dataset, encodings, device=params.device)
 
     for seq in new_dataset.sequences:
