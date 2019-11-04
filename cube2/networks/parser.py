@@ -120,7 +120,7 @@ class Parser(nn.Module):
         dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
         dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
         head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
-        arcs = arcs + head_bias #+ dep_bias
+        arcs = arcs + dep_bias
         aux_hid = emb  # self.aux_mlp(self.dropout(emb))
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
