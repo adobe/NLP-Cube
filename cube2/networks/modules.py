@@ -99,7 +99,7 @@ class Attention(nn.Module):
         self.attn = nn.Linear((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
         self.v = nn.Parameter(torch.rand(dec_hid_dim))
 
-    def forward(self, hidden, encoder_outputs):
+    def forward(self, hidden, encoder_outputs, return_softmax=True):
         # hidden = [batch size, dec hid dim]
         # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
         batch_size = encoder_outputs.shape[1]
@@ -118,7 +118,10 @@ class Attention(nn.Module):
         # v = [batch size, 1, dec hid dim]
         attention = torch.bmm(v, energy).squeeze(1)
         # attention= [batch size, src len]
-        return F.softmax(attention, dim=1)
+        if return_softmax:
+            return F.softmax(attention, dim=1)
+        else:
+            return attention
 
 
 class Decoder(nn.Module):
