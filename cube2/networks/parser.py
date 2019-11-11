@@ -112,7 +112,7 @@ class Parser(nn.Module):
         proj_arc_dep = proj_arc_dep.permute((1, 0, 2))
 
         for ii in range(proj_arc_head_lang.shape[0]):
-            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang, return_softmax=False)
+            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang, return_softmax=True)
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
@@ -125,7 +125,7 @@ class Parser(nn.Module):
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return arcs[:, 1:, :], torch.cat((proj_label_head, lang_emb_parsing),
+        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label_head, lang_emb_parsing),
                                          dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
@@ -483,7 +483,7 @@ def do_debug(params):
     import torch.optim as optim
     import torch.nn as nn
     trainer = optim.Adam(parser.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
-    criterion = nn.CrossEntropyLoss(ignore_index=0)
+    criterion = nn.NLLLoss(ignore_index=-1)
     criterionNLL = nn.CrossEntropyLoss(ignore_index=-1)
     if params.device != 'cpu':
         criterion.cuda(params.device)
