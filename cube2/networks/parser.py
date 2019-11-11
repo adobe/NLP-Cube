@@ -112,7 +112,7 @@ class Parser(nn.Module):
         proj_arc_dep = proj_arc_dep.permute((1, 0, 2))
 
         for ii in range(proj_arc_head_lang.shape[0]):
-            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang, return_softmax=True)
+            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang, return_logsoftmax=True)
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
@@ -125,8 +125,8 @@ class Parser(nn.Module):
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label_head, lang_emb_parsing),
-                                         dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return arcs[:, 1:, :], torch.cat((proj_label_head, lang_emb_parsing),
+                                                    dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
         if gs_heads is not None:
@@ -362,7 +362,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
     encodings.save('{0}.encodings'.format(params.store))
     parser.config.num_languages = parser.num_languages
     parser.config.save('{0}.conf'.format(params.store))
-    _eval(parser, devset, encodings, device=params.device)
+    # _eval(parser, devset, encodings, device=params.device)
     criterionNLL = criterion[1]
     criterion = criterion[0]
     while patience_left > 0:
@@ -393,6 +393,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
             pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
+
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
