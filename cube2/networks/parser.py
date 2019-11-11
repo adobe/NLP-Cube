@@ -31,6 +31,10 @@ from cube2.networks.modules import Attention
 from cube.graph.decoders import GreedyDecoder
 
 
+def nll_loss(logs, targets):
+    out = torch.diag(logs[:,targets])
+    return -torch.mean(out)
+
 class Parser(nn.Module):
     encodings: Encodings
     config: ParserConfig
@@ -65,8 +69,8 @@ class Parser(nn.Module):
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.output_label = nn.Linear(self.config.parser_label_proj_size * 2 + lang_emb_size,
                                       len(self.encodings.label2int))
-        self.head_bias = nn.Linear(self.config.parser_arc_proj_size + lang_emb_size, 1)
-        self.dep_bias = nn.Linear(self.config.parser_arc_proj_size + lang_emb_size, 1)
+        # self.head_bias = nn.Linear(self.config.parser_arc_proj_size + lang_emb_size, 1)
+        # self.dep_bias = nn.Linear(self.config.parser_arc_proj_size + lang_emb_size, 1)
 
         self.aux_mlp = nn.Sequential(
             nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
@@ -116,11 +120,11 @@ class Parser(nn.Module):
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
-        head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
-        dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
-        dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
-        head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
-        arcs = arcs + dep_bias
+        #head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
+        #dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
+        #dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
+        #head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
+        #arcs = arcs + dep_bias
         aux_hid = emb  # self.aux_mlp(self.dropout(emb))
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
@@ -394,7 +398,8 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
 
             pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
 
-            loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            # loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            loss = nll_loss(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
