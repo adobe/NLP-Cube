@@ -483,8 +483,8 @@ def do_debug(params):
     import torch.optim as optim
     import torch.nn as nn
     trainer = optim.Adam(parser.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
-    criterion = nn.NLLLoss(ignore_index=-1)
-    criterionNLL = nn.CrossEntropyLoss(ignore_index=-1)
+    criterion = nn.CrossEntropyLoss(ignore_index=0)
+    criterionNLL = nn.NLLLoss(ignore_index=-1)
     if params.device != 'cpu':
         criterion.cuda(params.device)
     _start_train(params, trainset, devset, encodings, parser, [criterion, criterionNLL], trainer)
