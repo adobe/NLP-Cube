@@ -406,11 +406,12 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
                          criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34) * \
                        parser.config.aux_softmax_weight
+            # loss_aux = criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) * parser.config.aux_softmax_weight
 
             loss = loss + loss_aux + loss_label
             trainer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(parser.parameters(), 1.)
+            torch.nn.utils.clip_grad_norm_(parser.parameters(), 5.)
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
