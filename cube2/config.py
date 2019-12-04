@@ -129,3 +129,25 @@ class ParserConfig(Config):
             print("INPUT DROPOUT PROB:", self.input_dropout_prob)
             print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
             print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
+
+
+class TokenizerConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 100
+        self.ss_conv_layers = 10
+        self.ss_conv_kernel = 5
+        self.ss_conv_filters = 512
+        self.lang_emb_size = 100
+        self._valid = True
+        self.tok_conv_layers = 10
+        self.tok_conv_kernel = 5
+        self.tok_conv_filters = 512
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
