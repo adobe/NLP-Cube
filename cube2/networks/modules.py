@@ -35,15 +35,14 @@ class Encoder(nn.Module):
         self.input_dim = input_size
         self.emb_dim = input_emb_dim
         self.enc_hid_dim = enc_hid_dim
-        self.dropout = dropout
 
         if self.input_type == 'int':
-            self.embedding = nn.Sequential(nn.Embedding(input_size, input_emb_dim), nn.Dropout(self.dropout))
+            self.embedding = nn.Sequential(nn.Embedding(input_size, input_emb_dim), nn.Dropout(dropout))
         else:
-            self.embedding = nn.Dropout(self.dropout)
+            self.embedding = nn.Dropout(dropout)
         if nn_type == VariationalLSTM:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                               dropoutw=dropout)
+                               dropoutw=dropout, dropouto=dropout)
             self.dropout = nn.Dropout(0)
         else:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1)
