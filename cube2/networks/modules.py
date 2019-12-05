@@ -42,7 +42,7 @@ class Encoder(nn.Module):
             self.embedding = nn.Dropout(dropout)
         if nn_type == VariationalLSTM:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                               dropoutw=dropout, dropouto=dropout)
+                               dropoutw=dropout, dropouto=dropout, dropouti=dropout)
             self.dropout = nn.Dropout(0)
         else:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1)
@@ -239,7 +239,10 @@ class VariationalDropout(nn.Module):
             max_batch_size = int(batch_sizes[0])
         else:
             batch_sizes = None
-            max_batch_size = x.size(0)
+            if self.batch_first:
+                max_batch_size = x.size(0)
+            else:
+                max_batch_size = x.size(1)
 
         # Drop same mask across entire sequence
         if self.batch_first:
