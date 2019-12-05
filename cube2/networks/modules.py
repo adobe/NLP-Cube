@@ -44,8 +44,10 @@ class Encoder(nn.Module):
         if nn_type == VariationalLSTM:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
                                dropoutw=dropout)
+            self.dropout = nn.Dropout(0)
         else:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1)
+            self.dropout = nn.Dropout(dropout)
 
         if num_layers > 1:
             top_layers = []
@@ -55,8 +57,6 @@ class Encoder(nn.Module):
             self.top_layers = nn.ModuleList(top_layers)
         else:
             self.top_layers = None
-
-        self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, conditioning=None):
         # src = [src sent len, batch size]
