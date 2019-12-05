@@ -24,6 +24,7 @@ from cube2.networks.self_attention import SelfAttentionNetwork
 from cube2.networks.modules import Encoder
 from cube.io_utils.encodings import Encodings
 from cube2.config import TaggerConfig
+from cube2.networks.modules import VariationalLSTM
 
 
 class TextEncoder(nn.Module):
@@ -40,19 +41,19 @@ class TextEncoder(nn.Module):
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                     nn_type=nn.LSTM,
+                                     nn_type=VariationalLSTM,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                      nn_type=nn.LSTM,
+                                      nn_type=VariationalLSTM,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,
                                       ext_conditioning=ext_conditioning)
         self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
+                                                      self.config.tagger_encoder_dropout, nn_type=VariationalLSTM,
                                                       ext_conditioning=ext_conditioning)
 
         mlp_input_size = self.config.tagger_encoder_size * 2
