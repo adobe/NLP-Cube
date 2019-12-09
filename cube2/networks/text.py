@@ -41,20 +41,23 @@ class TextEncoder(nn.Module):
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                     nn_type=VariationalLSTM,
+                                     nn_type=nn.LSTM,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                      nn_type=VariationalLSTM,
+                                      nn_type=nn.LSTM,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,
                                       ext_conditioning=ext_conditioning)
         self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout, nn_type=VariationalLSTM,
+                                                      self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
                                                       ext_conditioning=ext_conditioning)
+
+        self.i2h = nn.Linear(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
+        self.i2o = nn.Linear(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
 
         mlp_input_size = self.config.tagger_encoder_size * 2
         self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
@@ -91,8 +94,14 @@ class TextEncoder(nn.Module):
         else:
             x = torch.cat((torch.relu(char_emb), torch.relu(word_emb)), dim=2)
         output_hidden, hidden = self.first_encoder(x.permute(1, 0, 2), conditioning=conditioning)
+
+        i2h = self.i2h(x).permute(1, 0, 2)
+        i2o = self.i2o(x).permute(1, 0, 2)
+        output_hidden = output_hidden + i2h
+
         output_hidden = self.encoder_dropout(output_hidden)
         output, hidden = self.second_encoder(output_hidden, conditioning=conditioning)
+        output = output + i2o
         output = self.encoder_dropout(output)
         return self.mlp(output.permute(1, 0, 2)), output_hidden.permute(1, 0, 2)
 
