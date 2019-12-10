@@ -91,12 +91,12 @@ class Parser(nn.Module):
         emb, hidden = self.text_network(x, conditioning=lang_emb)
         lang_emb_parsing = lang_emb.unsqueeze(1).repeat(1, emb.shape[1] + 1, 1)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        hidden_output = torch.cat((self.aux_mlp(hidden), lang_emb), dim=2)
+        emb_output = torch.cat((emb, lang_emb), dim=2)
 
-        proj_arc_head = self.proj_arc_head(hidden_output)
-        proj_label_head = self.proj_label_head(hidden_output)
-        proj_arc_dep = self.proj_arc_dep(hidden_output)
-        proj_label_dep = self.proj_label_dep(hidden_output)
+        proj_arc_head = self.proj_arc_head(emb_output)
+        proj_label_head = self.proj_label_head(emb_output)
+        proj_arc_dep = self.proj_arc_dep(emb_output)
+        proj_label_dep = self.proj_label_dep(emb_output)
         w_stack = []
         proj_arc_head = torch.cat(
             (torch.zeros((proj_arc_head.shape[0], 1, proj_arc_head.shape[2]), device=self._target_device),
@@ -125,7 +125,7 @@ class Parser(nn.Module):
         #dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
         #head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
         #arcs = arcs + dep_bias
-        aux_hid = emb  # self.aux_mlp(self.dropout(emb))
+        aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
