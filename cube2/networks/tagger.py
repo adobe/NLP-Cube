@@ -25,6 +25,7 @@ import numpy as np
 import torch.nn as nn
 import torch.utils.data
 from cube2.networks.text import TextEncoder
+from cube2.networks.modules import LinearNorm
 from cube2.config import TaggerConfig
 from cube.io_utils.encodings import Encodings
 
@@ -49,16 +50,16 @@ class Tagger(nn.Module):
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
-        self.output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
-        self.output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
-        self.output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+        self.output_upos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.output_xpos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.output_attrs = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
         self.aux_mlp = nn.Sequential(
-            nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
+            LinearNorm(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
             nn.ReLU(), nn.Dropout(p=self.config.tagger_mlp_dropout))
-        self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
-        self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
-        self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
+        self.aux_output_upos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
+        self.aux_output_xpos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
+        self.aux_output_attrs = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
         self.dropout = nn.Dropout(self.config.tagger_encoder_dropout)
 
     def forward(self, x, lang_ids=None):
@@ -336,7 +337,7 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
+    for ii, train, dev in zip(range(len(train_list[:1])), train_list, dev_list):
         trainset.load_language(train, ii)
         devset.load_language(dev, ii)
     encodings = Encodings()

@@ -24,6 +24,18 @@ from torch.nn.utils.rnn import PackedSequence
 from typing import *
 
 
+class LinearNorm(torch.nn.Module):
+    def __init__(self, in_dim, out_dim, bias=True, w_init_gain='linear'):
+        super(LinearNorm, self).__init__()
+        self.linear_layer = torch.LinearNorm(in_dim, out_dim, bias=bias)
+
+        torch.nn.init.xavier_normal_(
+            self.linear_layer.weight,
+            gain=torch.nn.init.calculate_gain(w_init_gain))
+
+    def forward(self, x):
+        return self.linear_layer(x)
+
 class Encoder(nn.Module):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, dropout, nn_type=nn.GRU,
                  num_layers=2, ext_conditioning=0):
@@ -100,7 +112,7 @@ class Attention(nn.Module):
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
 
-        self.attn = nn.Linear((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
+        self.attn = LinearNorm((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
         self.v = nn.Parameter(torch.rand(dec_hid_dim))
 
     def forward(self, hidden, encoder_outputs, return_logsoftmax=False):
@@ -123,6 +135,8 @@ class Attention(nn.Module):
         attention = torch.bmm(v, energy).squeeze(1)
         # attention= [batch size, src len]
         if return_logsoftmax:
+            from ipdb import set_trace
+            set_trace()
             return F.log_softmax(attention, dim=1)
         else:
             return F.softmax(attention, dim=1)
@@ -141,7 +155,7 @@ class Decoder(nn.Module):
 
         self.embedding = nn.Embedding(output_dim, emb_dim)
         self.rnn = nn_type((enc_hid_dim * 2) + emb_dim, dec_hid_dim, num_layers=num_layers)
-        self.out = nn.Linear((enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
+        self.out = LinearNorm((enc_hid_dim * 2) + dec_hid_dim + emb_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, input, hidden, encoder_outputs):

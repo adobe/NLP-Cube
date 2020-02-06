@@ -18,8 +18,7 @@
 
 import torch
 import torch.nn as nn
-from cube2.networks.modules import Encoder
-from cube2.networks.modules import Attention
+from cube2.networks.modules import Attention, LinearNorm, Encoder
 
 
 class SelfAttentionNetwork(nn.Module):
@@ -32,7 +31,7 @@ class SelfAttentionNetwork(nn.Module):
         self.encoder_dropout = nn.Dropout(dropout)
 
         self.attention = Attention(encoder_size, encoder_size * 2)
-        self.mlp = nn.Linear(encoder_size * 4 + ext_conditioning, output_size)
+        self.mlp = LinearNorm(encoder_size * 4 + ext_conditioning, output_size)
 
     def forward(self, x, conditioning=None):
         # batch_size should be the second column for whatever reason

@@ -21,7 +21,7 @@ import random
 import torch.nn as nn
 import numpy as np
 from cube2.networks.self_attention import SelfAttentionNetwork
-from cube2.networks.modules import Encoder
+from cube2.networks.modules import Encoder, LinearNorm
 from cube.io_utils.encodings import Encodings
 from cube2.config import TaggerConfig
 from cube2.networks.modules import VariationalLSTM
@@ -56,11 +56,11 @@ class TextEncoder(nn.Module):
                                                       self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
                                                       ext_conditioning=ext_conditioning)
 
-        self.i2h = nn.Linear(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
-        self.i2o = nn.Linear(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
+        self.i2h = LinearNorm(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
+        self.i2o = LinearNorm(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
 
         mlp_input_size = self.config.tagger_encoder_size * 2
-        self.mlp = nn.Sequential(nn.Linear(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
+        self.mlp = nn.Sequential(LinearNorm(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
                                  nn.ReLU(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
@@ -71,7 +71,7 @@ class TextEncoder(nn.Module):
                                      padding_idx=0)
         self.encoder_dropout = nn.Dropout(p=self.config.tagger_encoder_dropout)
 
-        self.char_proj = nn.Linear(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size)
+        self.char_proj = LinearNorm(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size)
 
         for name, param in self.named_parameters():
             if "weight_hh" in name:

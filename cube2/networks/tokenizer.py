@@ -18,6 +18,7 @@
 
 import torch
 import torch.nn as nn
+from cube2.networks.modules import LinearNorm
 
 
 class SentenceSplitter(nn.Module):
@@ -44,7 +45,7 @@ class SentenceSplitter(nn.Module):
 
         self.conv = nn.ModuleList(conv_list)
 
-        self.output = nn.Linear(self.config.ss_conv_filters, 3)
+        self.output = LinearNorm(self.config.ss_conv_filters, 3)
 
     def forward(self, char_idx, lang_idx=None):
         char_emb = self.char_lookup(char_idx)
@@ -75,4 +76,3 @@ class SentenceSplitter(nn.Module):
 
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location='cpu'))
-
