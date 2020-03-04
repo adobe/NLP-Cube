@@ -137,7 +137,7 @@ class TokenizerConfig(Config):
         self.char_emb_size = 100
         self.ss_conv_layers = 10
         self.ss_conv_kernel = 5
-        self.ss_conv_filters = 512
+        self.ss_conv_filters = 64
         self.lang_emb_size = 100
         self._valid = True
         self.tok_conv_layers = 10
