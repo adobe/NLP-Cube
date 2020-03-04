@@ -178,6 +178,9 @@ def do_debug(params):
     if params.device != 'cpu':
         criterion.cuda(params.device)
 
+    config.save(params.store + '.conf')
+    encodings.save(params.store + '.encodings')
+
     _start_train(params, tokenizer, trainset, devset, criterion, trainer)
 
 
@@ -319,6 +322,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         f_sent, f_token = _eval(tokenizer, devset)
         sys.stdout.write('\tTrainset avg loss = {0:.6f}\n'.format(total_loss))
         sys.stdout.write('\tDevset sent_fscore = {0:.6f} tok_fscore={1:.6f}\n'.format(f_sent, f_token))
+        tokenizer.save(params.store + '.last')
 
 
 def do_test(params):
@@ -326,7 +330,88 @@ def do_test(params):
 
 
 def do_tokenize(params):
-    pass
+    from cube.io_utils.encodings import Encodings
+
+    encodings = Encodings()
+    encodings.load(params.model_base + '.encodings')
+
+    from cube2.networks.tokenizer import Tokenizer
+    from cube2.config import TokenizerConfig
+
+    config = TokenizerConfig()
+    config.load(params.model_base + '.conf')
+
+    tokenizer = Tokenizer(config, encodings, num_languages=1)
+    tokenizer.load(params.model_base + '.last')
+    if params.device != 'cpu':
+        tokenizer.to(params.device)
+    tokenizer.eval()
+
+    text = open(params.test_file).read()
+    text = text.replace('\r', '')
+    text = text.replace('\n', '')
+    new_text = text.replace('  ', ' ')
+    while new_text != text:
+        text = new_text
+        new_text = text.replace('  ', ' ')
+
+    with torch.no_grad():
+        x = [[ch for ch in text]]
+        pred_y = tokenizer(x)
+        pred_y = torch.argmax(pred_y, dim=-1)[0].detach().cpu().numpy()
+
+    p_y = [_tok_labels[yy] for yy in pred_y]
+
+    cw = ''
+    seqs = []
+    cs = []
+    from cube.io_utils.conll import ConllEntry
+    w_index = 1
+    for index, x, y in zip(range(len(text)), text, p_y):
+        if y.startswith('B') and cw != '':
+            if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
+                spcA = 'SpaceAfter=no'
+            else:
+                spcA = ''
+            entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
+            cs.append(entry)
+            cw = ''
+            w_index += 1
+
+        if not y.startswith('N'):
+            cw += x
+        if y.startswith('E'):
+            if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
+                spcA = 'SpaceAfter=no'
+            else:
+                spcA = ''
+            entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
+            cs.append(entry)
+            cw = ''
+            w_index += 1
+
+        if y.endswith('S'):
+            if cw != '':
+                if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
+                    spcA = 'SpaceAfter=no'
+                else:
+                    spcA = ''
+                entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
+                cs.append(entry)
+                cw = ''
+
+            w_index = 1
+            seqs.append(cs)
+            cs = []
+            cw = ''
+
+    if len(cs) > 0:
+        seqs.append(cs)
+
+    for seq in seqs:
+        for entry in seq:
+            sys.stdout.write(str(entry))
+        print("")
 
 
 if __name__ == '__main__':
