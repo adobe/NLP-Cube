@@ -58,6 +58,8 @@ class Tokenizer(nn.Module):
                                        self.config.conv_filters,
                                        self.config.conv_kernel,
                                        padding=self.config.conv_kernel // 2))
+            torch.nn.init.xavier_normal_(
+                conv_list[-1].weight, gain=torch.nn.init.calculate_gain('tanh'))
 
         self.conv = nn.ModuleList(conv_list)
 
