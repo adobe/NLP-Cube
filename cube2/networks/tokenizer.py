@@ -326,7 +326,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         for x, y in tqdm.tqdm(zip(batches_x, batches_y), total=len(batches_y)):
             y_pred = tokenizer(x)
             y_target = _compute_target(y)
-            y_target = torch.tensor(y_target, dtype=torch.long)
+            y_target = torch.tensor(y_target, dtype=torch.long, device=params.device)
             y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], -1)
             y_target = y_target.reshape(y_pred.shape[0])
             loss = criterion(y_pred, y_target)
