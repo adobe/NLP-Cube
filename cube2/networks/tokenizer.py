@@ -102,7 +102,7 @@ class Tokenizer(nn.Module):
         hidden = hidden.permute(0, 2, 1)
 
         output_rnn, hidden_rnn = self.rnn(hidden)
-        output_rnn += self.res(hidden)
+        output_rnn = output_rnn + self.res(hidden)
         output_rnn = torch.dropout(output_rnn, 0.5, self.training)
 
         output = self.output(output_rnn)
