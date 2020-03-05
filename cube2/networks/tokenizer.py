@@ -43,7 +43,7 @@ class Tokenizer(nn.Module):
             self.lang_lookup = nn.Embedding(config.num_languages, config.lang_emb_size, padding_idx=0)
             input_emb_size += config.lang_emb_size
 
-        self.rnn = nn.GRU(input_emb_size, 100, 1, batch_first=True)
+        self.rnn = nn.LSTM(input_emb_size, 200, 2, batch_first=True)
 
         conv_list = [nn.Conv1d(input_emb_size,
                                self.config.ss_conv_filters,
@@ -57,8 +57,7 @@ class Tokenizer(nn.Module):
 
         self.conv = nn.ModuleList(conv_list)
 
-        self.output = nn.Sequential(nn.Dropout(0.5),
-                                    LinearNorm(self.config.ss_conv_filters + 100, 100),
+        self.output = nn.Sequential(LinearNorm(self.config.ss_conv_filters + 200, 100),
                                     nn.Tanh(),
                                     nn.Dropout(0.5),
                                     LinearNorm(100, len(_tok_labels)))
@@ -87,12 +86,13 @@ class Tokenizer(nn.Module):
             else:
                 hidden = c_out
             res = c_out
-            hidden = torch.dropout(torch.relu(hidden), 0.5, self.training)
+            hidden = torch.dropout(torch.tanh(hidden), 0.5, self.training)
 
         hidden = hidden.permute(0, 2, 1)
 
         input_rnn = input_emb.permute(0, 2, 1)
         output_rnn, hidden_rnn = self.rnn(input_rnn)
+        output_rnn = torch.dropout(output_rnn, 0.5, self.training)
 
         output = self.output(torch.cat((hidden, output_rnn), dim=-1))
         return output
@@ -388,7 +388,7 @@ def do_tokenize(params):
     from cube.io_utils.conll import ConllEntry
     w_index = 1
     for index, x, y in zip(range(len(text)), text, p_y):
-        if y.startswith('B') and cw != '':
+        if y.startswith('B') and cw.strip() != '':
             if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
                 spcA = 'SpaceAfter=no'
             else:
@@ -405,13 +405,14 @@ def do_tokenize(params):
                 spcA = 'SpaceAfter=no'
             else:
                 spcA = ''
-            entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
-            cs.append(entry)
-            cw = ''
-            w_index += 1
+            if cw.strip() != '':
+                entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
+                cs.append(entry)
+                cw = ''
+                w_index += 1
 
         if y.endswith('S'):
-            if cw != '':
+            if cw.strip() != '':
                 if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
                     spcA = 'SpaceAfter=no'
                 else:
