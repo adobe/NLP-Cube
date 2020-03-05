@@ -68,10 +68,15 @@ class Tokenizer(nn.Module):
 
         self.res = nn.Linear(self.config.conv_filters, self.config.rnn_size * 2)
 
+    def _get_device(self):
+        if self.char_lookup.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self.char_lookup.weight.device.type, str(self.char_lookup.weight.device.index))
+
     def forward(self, chars, lang_idx=None):
         char_idx, case_idx = self._to_index(chars)
-        char_idx = torch.tensor(char_idx, dtype=torch.long)
-        case_idx = torch.tensor(case_idx, dtype=torch.long)
+        char_idx = torch.tensor(char_idx, dtype=torch.long, device=self._get_device())
+        case_idx = torch.tensor(case_idx, dtype=torch.long, device=self._get_device())
         char_emb = self.char_lookup(char_idx)
         case_emb = self.case_lookup(case_idx)
 
