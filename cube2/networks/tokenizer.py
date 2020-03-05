@@ -43,24 +43,30 @@ class Tokenizer(nn.Module):
             self.lang_lookup = nn.Embedding(config.num_languages, config.lang_emb_size, padding_idx=0)
             input_emb_size += config.lang_emb_size
 
-        self.rnn = nn.LSTM(input_emb_size, 200, 2, batch_first=True, bidirectional=True)
+        self.rnn = nn.LSTM(self.config.conv_filters,
+                           self.config.rnn_size,
+                           self.config.rnn_layers,
+                           batch_first=True,
+                           bidirectional=True)
 
         conv_list = [nn.Conv1d(input_emb_size,
-                               self.config.ss_conv_filters,
-                               self.config.ss_conv_kernel,
-                               padding=self.config.ss_conv_kernel // 2)]
-        for _ in range(self.config.ss_conv_layers - 1):
-            conv_list.append(nn.Conv1d(self.config.ss_conv_filters,
-                                       self.config.ss_conv_filters,
-                                       self.config.ss_conv_kernel,
-                                       padding=self.config.ss_conv_kernel // 2))
+                               self.config.conv_filters,
+                               self.config.conv_kernel,
+                               padding=self.config.conv_kernel // 2)]
+        for _ in range(self.config.conv_layers - 1):
+            conv_list.append(nn.Conv1d(self.config.conv_filters,
+                                       self.config.conv_filters,
+                                       self.config.conv_kernel,
+                                       padding=self.config.conv_kernel // 2))
 
         self.conv = nn.ModuleList(conv_list)
 
-        self.output = nn.Sequential(LinearNorm(self.config.ss_conv_filters + 400, 100),
+        self.output = nn.Sequential(LinearNorm(self.config.rnn_size * 2, 100),
                                     nn.Tanh(),
                                     nn.Dropout(0.5),
                                     LinearNorm(100, len(_tok_labels)))
+
+        self.res = nn.Linear(self.config.conv_filters, self.config.rnn_size * 2)
 
     def forward(self, chars, lang_idx=None):
         char_idx, case_idx = self._to_index(chars)
@@ -90,11 +96,11 @@ class Tokenizer(nn.Module):
 
         hidden = hidden.permute(0, 2, 1)
 
-        input_rnn = input_emb.permute(0, 2, 1)
-        output_rnn, hidden_rnn = self.rnn(input_rnn)
+        output_rnn, hidden_rnn = self.rnn(hidden)
+        output_rnn += self.res(hidden)
         output_rnn = torch.dropout(output_rnn, 0.5, self.training)
 
-        output = self.output(torch.cat((hidden, output_rnn), dim=-1))
+        output = self.output(output_rnn)
         return output
 
     def _to_index(self, chars):
@@ -156,10 +162,10 @@ def do_debug(params):
                 'corpus/ud-treebanks-v2.2/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
                 'corpus/ud-treebanks-v2.2/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
 
-    # trainset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-train.conllu', 0)
-    # devset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-dev.conllu', 0)
-    trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
-    devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
+    trainset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-train.conllu', 0)
+    devset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-dev.conllu', 0)
+    # trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
+    # devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
 
     from cube.io_utils.encodings import Encodings
 
@@ -205,7 +211,7 @@ def _make_batches(dataset, batch_size=32, seq_len=1000):
                     y.append('I')
                 if iChar == len(entry.word) - 1 and iWord == len(seq) - 1:
                     y[-1] += 'S'
-            if not "spaceafter=no" in entry.space_after.lower():
+            if "spaceafter=no" not in entry.space_after.lower():
                 x.append(' ')
                 y.append('N')
     batches_x = []
@@ -388,11 +394,12 @@ def do_tokenize(params):
     from cube.io_utils.conll import ConllEntry
     w_index = 1
     for index, x, y in zip(range(len(text)), text, p_y):
+        if (index == len(text) - 1) or (text[index + 1] != ' '):
+            spcA = 'SpaceAfter=no'
+        else:
+            spcA = ''
+
         if y.startswith('B') and cw.strip() != '':
-            if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
-                spcA = 'SpaceAfter=no'
-            else:
-                spcA = ''
             entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
             cs.append(entry)
             cw = ''
@@ -401,10 +408,6 @@ def do_tokenize(params):
         if not y.startswith('N'):
             cw += x
         if y.startswith('E'):
-            if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
-                spcA = 'SpaceAfter=no'
-            else:
-                spcA = ''
             if cw.strip() != '':
                 entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
                 cs.append(entry)
@@ -413,10 +416,6 @@ def do_tokenize(params):
 
         if y.endswith('S'):
             if cw.strip() != '':
-                if (index >= len(text) - 1) or (not p_y[index + 1].startswith('N')):
-                    spcA = 'SpaceAfter=no'
-                else:
-                    spcA = ''
                 entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
                 cs.append(entry)
 

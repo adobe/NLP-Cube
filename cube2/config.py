@@ -135,14 +135,13 @@ class TokenizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
         self.char_emb_size = 100
-        self.ss_conv_layers = 10
-        self.ss_conv_kernel = 5
-        self.ss_conv_filters = 64
+        self.conv_layers = 5
+        self.conv_kernel = 5
+        self.conv_filters = 64
         self.lang_emb_size = 100
+        self.rnn_size = 100
+        self.rnn_layers = 2
         self._valid = True
-        self.tok_conv_layers = 10
-        self.tok_conv_kernel = 5
-        self.tok_conv_filters = 512
 
         if filename is None:
             if verbose:
