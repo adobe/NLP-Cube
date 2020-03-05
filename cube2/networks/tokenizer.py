@@ -43,7 +43,7 @@ class Tokenizer(nn.Module):
             self.lang_lookup = nn.Embedding(config.num_languages, config.lang_emb_size, padding_idx=0)
             input_emb_size += config.lang_emb_size
 
-        self.rnn = nn.LSTM(input_emb_size, 200, 2, batch_first=True)
+        self.rnn = nn.LSTM(input_emb_size, 200, 2, batch_first=True, bidirectional=True)
 
         conv_list = [nn.Conv1d(input_emb_size,
                                self.config.ss_conv_filters,
@@ -57,7 +57,7 @@ class Tokenizer(nn.Module):
 
         self.conv = nn.ModuleList(conv_list)
 
-        self.output = nn.Sequential(LinearNorm(self.config.ss_conv_filters + 200, 100),
+        self.output = nn.Sequential(LinearNorm(self.config.ss_conv_filters + 400, 100),
                                     nn.Tanh(),
                                     nn.Dropout(0.5),
                                     LinearNorm(100, len(_tok_labels)))
