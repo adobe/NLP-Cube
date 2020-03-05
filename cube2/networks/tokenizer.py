@@ -57,7 +57,11 @@ class Tokenizer(nn.Module):
 
         self.conv = nn.ModuleList(conv_list)
 
-        self.output = LinearNorm(self.config.ss_conv_filters + 100, len(_tok_labels))
+        self.output = nn.Sequential(nn.Dropout(0.5),
+                                    LinearNorm(self.config.ss_conv_filters + 100, 100),
+                                    nn.Tanh(),
+                                    nn.Dropout(0.5),
+                                    LinearNorm(100, len(_tok_labels)))
 
     def forward(self, chars, lang_idx=None):
         char_idx, case_idx = self._to_index(chars)
@@ -299,6 +303,8 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
     patience_left = params.patience
     f_sent, f_token = _eval(tokenizer, devset)
     print(f_sent, f_token)
+    best_sent = 0
+    best_tok = 0
     while patience_left > 0:
         patience_left -= 1
         random.shuffle(trainset.sequences)
@@ -322,7 +328,21 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         f_sent, f_token = _eval(tokenizer, devset)
         sys.stdout.write('\tTrainset avg loss = {0:.6f}\n'.format(total_loss))
         sys.stdout.write('\tDevset sent_fscore = {0:.6f} tok_fscore={1:.6f}\n'.format(f_sent, f_token))
-        tokenizer.save(params.store + '.last')
+        if f_sent > best_sent:
+            best_sent = f_sent
+            patience_left = params.patience
+            fname = '{0}.bestSS'.format(params.store)
+            sys.stdout.write('\tStoring {0}\n'.format(fname))
+            tokenizer.save(fname)
+        if f_token > best_tok:
+            best_tok = f_token
+            patience_left = params.patience
+            fname = '{0}.bestTOK'.format(params.store)
+            sys.stdout.write('\tStoring {0}\n'.format(fname))
+            tokenizer.save(fname)
+        fname = '{0}.last'.format(params.store)
+        sys.stdout.write('\tStoring {0}\n'.format(fname))
+        tokenizer.save(fname)
 
 
 def do_test(params):
@@ -348,8 +368,8 @@ def do_tokenize(params):
     tokenizer.eval()
 
     text = open(params.test_file).read()
-    text = text.replace('\r', '')
-    text = text.replace('\n', '')
+    text = text.replace('\r', ' ')
+    text = text.replace('\n', ' ')
     new_text = text.replace('  ', ' ')
     while new_text != text:
         text = new_text
@@ -398,7 +418,6 @@ def do_tokenize(params):
                     spcA = ''
                 entry = ConllEntry(w_index, cw, '_', '_', '_', '_', 0, '_', '_', spcA)
                 cs.append(entry)
-                cw = ''
 
             w_index = 1
             seqs.append(cs)
