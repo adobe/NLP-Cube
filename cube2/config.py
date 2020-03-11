@@ -150,3 +150,11 @@ class TokenizerConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
+
+
+class CharLMConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 100
+        self.rnn_size = 150
+        self.rnn_layers = 2

@@ -18,6 +18,7 @@ tests/scratch/*
 scripts/*.json
 scripts/*.conllu
 scripts/*.md
+scripts/wikiextractor.py
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*
