@@ -29,15 +29,19 @@ _tok_label2int = {_tok_labels[ii]: ii for ii in range(len(_tok_labels))}
 
 
 class Tokenizer(nn.Module):
-    def __init__(self, config, encodings, num_languages=1):
+    def __init__(self, config, encodings, num_languages=1, char_network=None):
         super(Tokenizer, self).__init__()
         self.config = config
         self.encodings = encodings
+        self.char_network = char_network
 
         self.char_lookup = nn.Embedding(len(encodings.char2int), config.char_emb_size, padding_idx=0)
+        input_emb_size = config.char_emb_size + 16
+        if char_network is not None:
+            input_emb_size += self.char_network._config.rnn_size * 2
+
         self.case_lookup = nn.Embedding(4, 16, padding_idx=0)
 
-        input_emb_size = config.char_emb_size + 16
         config.num_languages = num_languages
         if config.num_languages != 1:
             self.lang_lookup = nn.Embedding(config.num_languages, config.lang_emb_size, padding_idx=0)
@@ -87,6 +91,12 @@ class Tokenizer(nn.Module):
             input_emb = torch.cat((char_emb, lang_emb), dim=-1)
         else:
             input_emb = char_emb
+
+        if self.char_network is not None:
+            with torch.no_grad():
+                ext_char_emb, _, _ = self.char_network(chars)
+                ext_char_emb = ext_char_emb.detach()
+            input_emb = torch.cat((input_emb, ext_char_emb), dim=-1)
 
         input_emb = torch.cat((input_emb, case_emb), dim=-1)
         input_emb = input_emb.permute(0, 2, 1)
@@ -174,10 +184,18 @@ def do_debug(params):
     #     devset.load_language(d, i)
     trainset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-train.conllu', 0)
     devset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-dev.conllu', 0)
+    from cube.io_utils.encodings import Encodings
+    from cube2.config import CharLMConfig
+    conf_char = CharLMConfig('corpus/ja-lm.conf')
+    enc_char = Encodings()
+    enc_char.load('corpus/ja-lm.encodings')
+    from cube2.networks.charlm import CharLM
+    char_lm = CharLM(conf_char, enc_char)
+    char_lm.load('corpus/ja-lm.last')
+    char_lm.to(params.device)
+    char_lm.eval()
     # trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
     # devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
-
-    from cube.io_utils.encodings import Encodings
 
     encodings = Encodings()
     encodings.compute(trainset, devset, char_cutoff=2)
@@ -187,7 +205,7 @@ def do_debug(params):
 
     config = TokenizerConfig()
 
-    tokenizer = Tokenizer(config, encodings, num_languages=1)
+    tokenizer = Tokenizer(config, encodings, num_languages=1, char_network=char_lm)
     if params.device != 'cpu':
         tokenizer.to(params.device)
 

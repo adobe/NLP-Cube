@@ -63,7 +63,7 @@ class CharLM(nn.Module):
         output_fw = self._output_softmax(hidden_fw)
         output_bw = self._output_softmax(hidden_bw)
 
-        return torch.cat((hidden_fw, hidden_bw), dim=-1), output_fw, output_bw
+        return torch.cat((hidden_fw, hidden_bw), dim=-1)[:, 1:-1, :], output_fw, output_bw
 
     def _get_device(self):
         if self._case_emb.weight.device.type == 'cpu':
