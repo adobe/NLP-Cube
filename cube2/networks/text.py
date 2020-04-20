@@ -41,19 +41,19 @@ class TextEncoder(nn.Module):
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                     nn_type=nn.LSTM,
+                                     nn_type=VariationalLSTM,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                      nn_type=nn.LSTM,
+                                      nn_type=VariationalLSTM,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,
                                       ext_conditioning=ext_conditioning)
         self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout, nn_type=nn.LSTM,
+                                                      self.config.tagger_encoder_dropout, nn_type=VariationalLSTM,
                                                       ext_conditioning=ext_conditioning)
 
         self.i2h = LinearNorm(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
@@ -93,17 +93,17 @@ class TextEncoder(nn.Module):
                 (torch.relu(masks_char.unsqueeze(2) * char_emb), torch.relu(masks_word.unsqueeze(2) * word_emb)), dim=2)
         else:
             x = torch.cat((torch.relu(char_emb), torch.relu(word_emb)), dim=2)
-        output_hidden, hidden = self.first_encoder(x.permute(1, 0, 2), conditioning=conditioning)
+        output_hidden, hidden = self.first_encoder(x, conditioning=conditioning)
 
-        i2h = self.i2h(x).permute(1, 0, 2)
-        i2o = self.i2o(x).permute(1, 0, 2)
+        i2h = self.i2h(x)
+        i2o = self.i2o(x)
         output_hidden = output_hidden + i2h
 
         output_hidden = self.encoder_dropout(output_hidden)
         output, hidden = self.second_encoder(output_hidden, conditioning=conditioning)
         output = output + i2o
         output = self.encoder_dropout(output)
-        return self.mlp(output.permute(1, 0, 2)), output_hidden.permute(1, 0, 2)
+        return self.mlp(output), output_hidden
 
     def _compute_masks(self, size, prob):
         m1 = np.ones(size[:-1])

@@ -36,6 +36,7 @@ class LinearNorm(torch.nn.Module):
     def forward(self, x):
         return self.linear_layer(x)
 
+
 class Encoder(nn.Module):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, dropout, nn_type=nn.GRU,
                  num_layers=2, ext_conditioning=0):
@@ -54,17 +55,19 @@ class Encoder(nn.Module):
             self.embedding = nn.Dropout(dropout)
         if nn_type == VariationalLSTM:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                               dropoutw=dropout, dropouto=dropout, dropouti=dropout)
+                               dropoutw=dropout, dropouto=0, dropouti=0, batch_first=True)
             self.dropout = nn.Dropout(0)
         else:
-            self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1)
+            self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
+                               batch_first=True)
             self.dropout = nn.Dropout(dropout)
 
         if num_layers > 1:
             top_layers = []
             for ii in range(num_layers - 1):
                 top_layers.append(
-                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1))
+                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
+                            batch_first=True))
             self.top_layers = nn.ModuleList(top_layers)
         else:
             self.top_layers = None
@@ -75,9 +78,9 @@ class Encoder(nn.Module):
         # from ipdb import set_trace
         # set_trace()
         if conditioning is not None:
-            conditioning = conditioning.permute(0, 1)
-            conditioning = conditioning.unsqueeze(0)
-            conditioning = conditioning.repeat(src.shape[0], 1, 1)
+            # conditioning = conditioning.permute(0, 1)
+            conditioning = conditioning.unsqueeze(1)
+            conditioning = conditioning.repeat(1, src.shape[1], 1)
             embedded = torch.cat((embedded, conditioning), dim=2)
         # embedded = [src sent len, batch size, emb dim]
         outputs, hidden = self.rnn(embedded)
@@ -118,11 +121,11 @@ class Attention(nn.Module):
     def forward(self, hidden, encoder_outputs, return_logsoftmax=False):
         # hidden = [batch size, dec hid dim]
         # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
-        batch_size = encoder_outputs.shape[1]
-        src_len = encoder_outputs.shape[0]
+        batch_size = encoder_outputs.shape[0]
+        src_len = encoder_outputs.shape[1]
         # repeat encoder hidden state src_len times
         hidden = hidden.unsqueeze(1).repeat(1, src_len, 1)
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
+        encoder_outputs = encoder_outputs
         # hidden = [batch size, src sent len, dec hid dim]
         # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
         energy = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2)))
@@ -170,11 +173,11 @@ class Decoder(nn.Module):
         # a = [batch size, src len]
         a = a.unsqueeze(1)
         # a = [batch size, 1, src len]
-        encoder_outputs = encoder_outputs.permute(1, 0, 2)
+        encoder_outputs = encoder_outputs
         # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
         weighted = torch.bmm(a, encoder_outputs)
         # weighted = [batch size, 1, enc hid dim * 2]
-        weighted = weighted.permute(1, 0, 2)
+        weighted = weighted
         # weighted = [1, batch size, enc hid dim * 2]
         rnn_input = torch.cat((embedded, weighted), dim=2)
         # rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]
@@ -274,7 +277,7 @@ class VariationalDropout(nn.Module):
 class VariationalLSTM(nn.LSTM):
     def __init__(self, *args, dropouti: float = 0.,
                  dropoutw: float = 0., dropouto: float = 0.,
-                 batch_first=False, unit_forget_bias=True, **kwargs):
+                 batch_first=True, unit_forget_bias=True, **kwargs):
         super().__init__(*args, **kwargs, batch_first=batch_first)
         self.unit_forget_bias = unit_forget_bias
         self.dropoutw = dropoutw
@@ -307,6 +310,7 @@ class VariationalLSTM(nn.LSTM):
 
     def forward(self, input, hx=None):
         self._drop_weights()
+        self.flatten_parameters()
         input = self.input_drop(input)
         seq, state = super().forward(input, hx=hx)
         return self.output_drop(seq), state

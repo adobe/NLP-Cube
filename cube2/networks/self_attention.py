@@ -35,19 +35,15 @@ class SelfAttentionNetwork(nn.Module):
 
     def forward(self, x, conditioning=None):
         # batch_size should be the second column for whatever reason
-        if self.input_type == 'int':
-            x = x.permute(1, 0)
-        else:
-            x = x.permute(1, 0, 2)
         output, hidden = self.encoder(x, conditioning=conditioning)
         output = self.encoder_dropout(output)
         hidden = self.encoder_dropout(hidden)
         attention = self.attention(hidden, output)
 
-        encoder_outputs = output.permute(1, 0, 2)
+        encoder_outputs = output
         # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
         weighted = torch.bmm(attention.unsqueeze(1), encoder_outputs)
         # weighted = [batch size, 1, enc hid dim * 2]
-        weighted = weighted.permute(1, 0, 2)
-        pre_mlp = torch.cat([weighted, hidden.unsqueeze(0), conditioning.unsqueeze(0)], dim=2)
+
+        pre_mlp = torch.cat([weighted, hidden.unsqueeze(1), conditioning.unsqueeze(1)], dim=2)
         return torch.tanh(self.mlp(pre_mlp))
