@@ -55,8 +55,8 @@ class Encoder(nn.Module):
             self.embedding = nn.Dropout(dropout)
         if nn_type == VariationalLSTM:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                               dropoutw=dropout, dropouto=0, dropouti=0, batch_first=True)
-            self.dropout = nn.Dropout(0)
+                               dropoutw=dropout, dropouto=dropout, dropouti=dropout, batch_first=True)
+            self.dropout = nn.Identity()
         else:
             self.rnn = nn_type(input_emb_dim + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
                                batch_first=True)
@@ -65,24 +65,28 @@ class Encoder(nn.Module):
         if num_layers > 1:
             top_layers = []
             for ii in range(num_layers - 1):
-                top_layers.append(
-                    nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
-                            batch_first=True))
+                if nn_type == VariationalLSTM:
+                    top_layers.append(
+                        nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
+                                batch_first=True, dropoutw=dropout, dropouto=dropout, dropouti=dropout))
+                else:
+                    top_layers.append(
+                        nn_type(enc_hid_dim * 2 + ext_conditioning, enc_hid_dim, bidirectional=True, num_layers=1,
+                                batch_first=True))
+
             self.top_layers = nn.ModuleList(top_layers)
         else:
             self.top_layers = None
 
     def forward(self, src, conditioning=None):
-        # src = [src sent len, batch size]
         embedded = self.embedding(src)
-        # from ipdb import set_trace
-        # set_trace()
+
         if conditioning is not None:
             # conditioning = conditioning.permute(0, 1)
             conditioning = conditioning.unsqueeze(1)
             conditioning = conditioning.repeat(1, src.shape[1], 1)
             embedded = torch.cat((embedded, conditioning), dim=2)
-        # embedded = [src sent len, batch size, emb dim]
+
         outputs, hidden = self.rnn(embedded)
         if self.top_layers is not None:
             for rnn_layer in self.top_layers:
@@ -90,33 +94,24 @@ class Encoder(nn.Module):
                     outputs, hidden = rnn_layer(torch.cat((self.dropout(outputs), conditioning), dim=2))
                 else:
                     outputs, hidden = rnn_layer(self.dropout(outputs))
-
-        # outputs = [src sent len, batch size, hid dim * num directions]
-        # hidden = [n layers * num directions, batch size, hid dim]
-        # hidden is stacked [forward_1, backward_1, forward_2, backward_2, ...]
-        # outputs are always from the last layer
-        # hidden [-2, :, : ] is the last of the forwards RNN
-        # hidden [-1, :, : ] is the last of the backwards RNN
-        # initial decoder hidden is final hidden state of the forwards and backwards
-        #  encoder RNNs fed through a linear layer
         if isinstance(hidden, list) or isinstance(hidden, tuple):  # we have a LSTM
             hidden = hidden[1]
-        hidden = torch.cat((hidden[-2, :, :], hidden[-1, :, :]), dim=1)
-        # outputs = [src sent len, batch size, enc hid dim * 2]
-        # hidden = [batch size, dec hid dim]
+        hidden = torch.cat((hidden[-1, :, :], hidden[0, :, :]), dim=1)
 
         return outputs, hidden
 
 
 class Attention(nn.Module):
-    def __init__(self, enc_hid_dim, dec_hid_dim):
+    def __init__(self, enc_hid_dim, dec_hid_dim, att_proj_size=100):
         super().__init__()
 
         self.enc_hid_dim = enc_hid_dim
         self.dec_hid_dim = dec_hid_dim
 
-        self.attn = LinearNorm((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
-        self.v = nn.Parameter(torch.rand(dec_hid_dim))
+        # self.attn = LinearNorm((enc_hid_dim * 2) + dec_hid_dim, dec_hid_dim)
+        self.attn = ConvNorm(enc_hid_dim * 2 + dec_hid_dim, att_proj_size, kernel_size=5,
+                             w_init_gain='tanh')
+        self.v = nn.Parameter(torch.rand(att_proj_size))
 
     def forward(self, hidden, encoder_outputs, return_logsoftmax=False):
         # hidden = [batch size, dec hid dim]
@@ -128,9 +123,11 @@ class Attention(nn.Module):
         encoder_outputs = encoder_outputs
         # hidden = [batch size, src sent len, dec hid dim]
         # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
-        energy = torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2)))
-        # energy = [batch size, src sent len, dec hid dim]
+        energy = torch.dropout(
+            torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2).permute(0, 2, 1)).permute(0, 2, 1)), 0.5,
+            self.training)
         energy = energy.permute(0, 2, 1)
+        # energy = [batch size, src sent len, dec hid dim]
         # energy = [batch size, dec hid dim, src sent len]
         # v = [dec hid dim]
         v = self.v.repeat(batch_size, 1).unsqueeze(1)
@@ -162,38 +159,21 @@ class Decoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, input, hidden, encoder_outputs):
-        # input = [batch size]
-        # hidden = [batch size, dec hid dim]
-        # encoder_outputs = [src sent len, batch size, enc hid dim * 2]
         input = input.unsqueeze(0)
-        # input = [1, batch size]
         embedded = self.dropout(self.embedding(input))
-        # embedded = [1, batch size, emb dim]
         a = self.attention(hidden, encoder_outputs)
-        # a = [batch size, src len]
         a = a.unsqueeze(1)
-        # a = [batch size, 1, src len]
         encoder_outputs = encoder_outputs
-        # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
         weighted = torch.bmm(a, encoder_outputs)
-        # weighted = [batch size, 1, enc hid dim * 2]
         weighted = weighted
-        # weighted = [1, batch size, enc hid dim * 2]
         rnn_input = torch.cat((embedded, weighted), dim=2)
-        # rnn_input = [1, batch size, (enc hid dim * 2) + emb dim]
         output, hidden = self.rnn(rnn_input, hidden.unsqueeze(0))
-        # output = [sent len, batch size, dec hid dim * n directions]
-        # hidden = [n layers * n directions, batch size, dec hid dim]
-        # sent len, n layers and n directions will always be 1 in this decoder, therefore:
-        # output = [1, batch size, dec hid dim]
-        # hidden = [1, batch size, dec hid dim]
-        # this also means that output == hidden
+
         assert (output == hidden).all()
         embedded = embedded.squeeze(0)
         output = output.squeeze(0)
         weighted = weighted.squeeze(0)
         output = self.out(torch.cat((output, weighted, embedded), dim=1))
-        # output = [bsz, output dim]
         return output, hidden.squeeze(0)
 
 
@@ -314,3 +294,24 @@ class VariationalLSTM(nn.LSTM):
         input = self.input_drop(input)
         seq, state = super().forward(input, hx=hx)
         return self.output_drop(seq), state
+
+
+class ConvNorm(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1,
+                 padding=None, dilation=1, bias=True, w_init_gain='linear'):
+        super(ConvNorm, self).__init__()
+        if padding is None:
+            assert (kernel_size % 2 == 1)
+            padding = int(dilation * (kernel_size - 1) / 2)
+
+        self.conv = torch.nn.Conv1d(in_channels, out_channels,
+                                    kernel_size=kernel_size, stride=stride,
+                                    padding=padding, dilation=dilation,
+                                    bias=bias)
+
+        torch.nn.init.xavier_normal_(
+            self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
+
+    def forward(self, signal):
+        conv_signal = self.conv(signal)
+        return conv_signal

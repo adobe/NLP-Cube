@@ -24,7 +24,7 @@ from cube2.networks.self_attention import SelfAttentionNetwork
 from cube2.networks.modules import Encoder, LinearNorm
 from cube.io_utils.encodings import Encodings
 from cube2.config import TaggerConfig
-from cube2.networks.modules import VariationalLSTM
+from cube2.networks.modules import VariationalLSTM, ConvNorm
 
 
 class TextEncoder(nn.Module):
@@ -61,7 +61,7 @@ class TextEncoder(nn.Module):
 
         mlp_input_size = self.config.tagger_encoder_size * 2
         self.mlp = nn.Sequential(LinearNorm(mlp_input_size, self.config.tagger_mlp_layer, bias=True),
-                                 nn.ReLU(),
+                                 nn.Tanh(),
                                  nn.Dropout(p=self.config.tagger_mlp_dropout))
 
         self.word_emb = nn.Embedding(len(self.encodings.word2int), self.config.tagger_embeddings_size, padding_idx=0)
@@ -73,36 +73,31 @@ class TextEncoder(nn.Module):
 
         self.char_proj = LinearNorm(self.config.char_input_embeddings_size + 16, self.config.char_input_embeddings_size)
 
-        for name, param in self.named_parameters():
-            if "weight_hh" in name:
-                nn.init.orthogonal_(param.data)
-            elif "weight_ih" in name:
-                nn.init.xavier_uniform_(param.data)
-            elif "bias" in name and "rnn" in name:  # forget bias
-                nn.init.zeros_(param.data)
-                param.data[param.size()[0] // 4:param.size()[0] // 2] = 1
-
     def forward(self, x, conditioning=None):
         char_network_batch, char_network_cond_batch, word_network_batch = self._create_batches(x, conditioning)
+
         char_network_output = self.character_network(char_network_batch, conditioning=char_network_cond_batch)
+
         word_emb = self.word_emb(word_network_batch)
         char_emb = char_network_output.view(word_emb.size())
         if self.training:
             masks_char, masks_word = self._compute_masks(char_emb.size(), self.config.tagger_input_dropout_prob)
             x = torch.cat(
-                (torch.relu(masks_char.unsqueeze(2) * char_emb), torch.relu(masks_word.unsqueeze(2) * word_emb)), dim=2)
+                (torch.tanh(masks_char.unsqueeze(2) * char_emb), torch.tanh(masks_word.unsqueeze(2) * word_emb)), dim=2)
+            # x = torch.cat(
+            #    (torch.tanh(0 * char_emb), torch.tanh(1 * word_emb)), dim=2)
         else:
-            x = torch.cat((torch.relu(char_emb), torch.relu(word_emb)), dim=2)
+            x = torch.cat((torch.tanh(char_emb), torch.tanh(word_emb)), dim=2)
         output_hidden, hidden = self.first_encoder(x, conditioning=conditioning)
 
         i2h = self.i2h(x)
         i2o = self.i2o(x)
         output_hidden = output_hidden + i2h
 
-        output_hidden = self.encoder_dropout(output_hidden)
+        # output_hidden = self.encoder_dropout(output_hidden)
         output, hidden = self.second_encoder(output_hidden, conditioning=conditioning)
         output = output + i2o
-        output = self.encoder_dropout(output)
+        # output = self.encoder_dropout(output)
         return self.mlp(output), output_hidden
 
     def _compute_masks(self, size, prob):

@@ -18,7 +18,7 @@
 
 import torch
 import torch.nn as nn
-from cube2.networks.modules import Attention, LinearNorm, Encoder
+from cube2.networks.modules import Attention, LinearNorm, Encoder, ConvNorm
 
 
 class SelfAttentionNetwork(nn.Module):
@@ -26,15 +26,35 @@ class SelfAttentionNetwork(nn.Module):
                  nn_type=nn.GRU, ext_conditioning=0):
         super(SelfAttentionNetwork, self).__init__()
         self.input_type = input_type
-        self.encoder = Encoder(input_type, input_size, input_emb_size, encoder_size, dropout,
+        self.encoder = Encoder(input_type, 512, 512, encoder_size, dropout,
                                nn_type=nn_type, num_layers=encoder_layers, ext_conditioning=ext_conditioning)
         self.encoder_dropout = nn.Dropout(dropout)
 
         self.attention = Attention(encoder_size, encoder_size * 2)
         self.mlp = LinearNorm(encoder_size * 4 + ext_conditioning, output_size)
 
+        convolutions = []
+        cs_inp = input_emb_size
+        for _ in range(3):
+            conv_layer = nn.Sequential(
+                ConvNorm(cs_inp,
+                         512,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='relu'),
+                nn.BatchNorm1d(512))
+            convolutions.append(conv_layer)
+            cs_inp = 512
+        self.convolutions = nn.ModuleList(convolutions)
+
     def forward(self, x, conditioning=None):
         # batch_size should be the second column for whatever reason
+        x = x.permute(0, 2, 1)
+        for conv in self.convolutions:
+            x = torch.dropout(torch.relu(conv(x)), 0.5, self.training)
+
+        x = x.permute(0, 2, 1)
+
         output, hidden = self.encoder(x, conditioning=conditioning)
         output = self.encoder_dropout(output)
         hidden = self.encoder_dropout(hidden)

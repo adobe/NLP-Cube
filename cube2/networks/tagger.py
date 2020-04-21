@@ -55,8 +55,8 @@ class Tagger(nn.Module):
         self.output_attrs = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
 
         self.aux_mlp = nn.Sequential(
-            LinearNorm(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-            nn.ReLU(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+            LinearNorm(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer, w_init_gain='tanh'),
+            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
         self.aux_output_upos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
         self.aux_output_attrs = LinearNorm(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
@@ -69,10 +69,11 @@ class Tagger(nn.Module):
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
+
         emb, hidden = self.text_network(x, conditioning=lang_emb)
 
         lang_emb = lang_emb.unsqueeze(1).repeat(1, emb.shape[1], 1)
-        hid_main = self.dropout(torch.cat((emb, lang_emb), dim=2))
+        hid_main = torch.cat((emb, lang_emb), dim=2)
         s_upos = self.output_upos(hid_main)
         s_xpos = self.output_xpos(hid_main)
         s_attrs = self.output_attrs(hid_main)
@@ -226,7 +227,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
             loss = (criterion(s_upos.view(-1, s_upos.shape[-1]), tgt_upos.view(-1)) +
                     criterion(s_xpos.view(-1, s_xpos.shape[-1]), tgt_xpos.view(-1)) +
-                    criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1)))
+                    criterion(s_attrs.view(-1, s_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
@@ -236,7 +237,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             loss = loss + loss_aux
             trainer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(tagger.parameters(), 1.)
+            torch.nn.utils.clip_grad_norm_(tagger.parameters(), 5.)
             trainer.step()
             epoch_loss += loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
@@ -337,7 +338,7 @@ def do_debug(params):
 
     trainset = Dataset()
     devset = Dataset()
-    for ii, train, dev in zip(range(len(train_list[:2])), train_list, dev_list):
+    for ii, train, dev in zip(range(len(train_list)), train_list, dev_list):
         trainset.load_language(train, ii)
         devset.load_language(dev, ii)
     encodings = Encodings()
@@ -351,7 +352,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tagger.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(tagger.parameters(), lr=2e-3, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)
