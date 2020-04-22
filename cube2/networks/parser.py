@@ -116,7 +116,7 @@ class Parser(nn.Module):
         proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
         proj_arc_dep = proj_arc_dep  # .permute((1, 0, 2))
 
-        for ii in range(proj_arc_head_lang.shape[0]):
+        for ii in range(proj_arc_head_lang.shape[1]):
             att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang, return_logsoftmax=True)
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
@@ -367,7 +367,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
     encodings.save('{0}.encodings'.format(params.store))
     parser.config.num_languages = parser.num_languages
     parser.config.save('{0}.conf'.format(params.store))
-    # _eval(parser, devset, encodings, device=params.device)
+    _eval(parser, devset, encodings, device=params.device)
     criterionNLL = criterion[1]
     criterion = criterion[0]
     while patience_left > 0:
