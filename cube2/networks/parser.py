@@ -57,16 +57,16 @@ class Parser(nn.Module):
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
         self.proj_arc_head = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.ReLU(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.proj_arc_dep = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.ReLU(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.proj_label_head = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.ReLU(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.proj_label_dep = nn.Sequential(
-            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.ReLU(),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_label_proj_size), nn.Tanh(),
             nn.Dropout(self.config.tagger_mlp_dropout))
         self.output_label = nn.Linear(self.config.parser_label_proj_size * 2 + lang_emb_size,
                                       len(self.encodings.label2int))
@@ -75,7 +75,7 @@ class Parser(nn.Module):
 
         self.aux_mlp = nn.Sequential(
             nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
-            nn.ReLU(), nn.Dropout(p=self.config.tagger_mlp_dropout))
+            nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
         self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
         self.aux_output_attrs = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.attrs2int))
@@ -113,12 +113,14 @@ class Parser(nn.Module):
             (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._target_device),
              proj_label_dep), dim=1)
 
+
         proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
         proj_arc_dep = proj_arc_dep  # .permute((1, 0, 2))
 
         for ii in range(proj_arc_head_lang.shape[1]):
             att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang, return_logsoftmax=True)
             w_stack.append(att.unsqueeze(1))
+
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
         # head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
@@ -399,8 +401,8 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
 
             pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
 
-            # loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
-            loss = nll_loss(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1))
+            loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+            # loss = nll_loss(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
             loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
@@ -490,7 +492,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(parser.parameters(), lr=1e-4)  # , amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(parser.parameters(), lr=1e-3)  # , amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     criterionNLL = nn.NLLLoss(ignore_index=-1)
     if params.device != 'cpu':
