@@ -124,9 +124,9 @@ class Attention(nn.Module):
         # hidden = [batch size, src sent len, dec hid dim]
         # encoder_outputs = [batch size, src sent len, enc hid dim * 2]
         energy = torch.dropout(
-            torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2).permute(0, 2, 1)).permute(0, 2, 1)), 0.5,
+            torch.tanh(self.attn(torch.cat((hidden, encoder_outputs), dim=2).transpose(1, 2)).transpose(1, 2)), 0.1,
             self.training)
-        energy = energy.permute(0, 2, 1)
+        energy = energy.transpose(1, 2)
         # energy = [batch size, src sent len, dec hid dim]
         # energy = [batch size, dec hid dim, src sent len]
         # v = [dec hid dim]

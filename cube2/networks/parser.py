@@ -74,7 +74,7 @@ class Parser(nn.Module):
         # self.dep_bias = nn.Linear(self.config.parser_arc_proj_size + lang_emb_size, 1)
 
         self.aux_mlp = nn.Sequential(
-            nn.Linear(self.config.tagger_encoder_size * 2, self.config.tagger_mlp_layer),
+            nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.tagger_mlp_layer),
             nn.Tanh(), nn.Dropout(p=self.config.tagger_mlp_dropout))
         self.aux_output_upos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.upos2int))
         self.aux_output_xpos = nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, len(self.encodings.xpos2int))
@@ -113,12 +113,11 @@ class Parser(nn.Module):
             (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._target_device),
              proj_label_dep), dim=1)
 
-
         proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
         proj_arc_dep = proj_arc_dep  # .permute((1, 0, 2))
 
         for ii in range(proj_arc_head_lang.shape[1]):
-            att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang, return_logsoftmax=True)
+            att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang)
             w_stack.append(att.unsqueeze(1))
 
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
@@ -128,12 +127,12 @@ class Parser(nn.Module):
         # dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
         # head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
         # arcs = arcs + dep_bias
-        aux_hid = self.aux_mlp(hidden)
+        aux_hid = self.aux_mlp(emb_output)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return arcs[:, 1:, :], torch.cat((proj_label_head, lang_emb_parsing),
-                                         dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
+        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label_head, lang_emb_parsing),
+                                                    dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
         if gs_heads is not None:
@@ -369,7 +368,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
     encodings.save('{0}.encodings'.format(params.store))
     parser.config.num_languages = parser.num_languages
     parser.config.save('{0}.conf'.format(params.store))
-    _eval(parser, devset, encodings, device=params.device)
+    # _eval(parser, devset, encodings, device=params.device)
     criterionNLL = criterion[1]
     criterion = criterion[0]
     while patience_left > 0:
@@ -400,7 +399,6 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
             pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
-
             loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             # loss = nll_loss(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
@@ -411,12 +409,12 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
                        parser.config.aux_softmax_weight
             # loss_aux = criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) * parser.config.aux_softmax_weight
 
-            loss = loss + loss_aux + loss_label
+            total_loss = loss + loss_aux + loss_label
             trainer.zero_grad()
-            loss.backward()
+            total_loss.backward()
             torch.nn.utils.clip_grad_norm_(parser.parameters(), 5.)
             trainer.step()
-            epoch_loss += loss.item()
+            epoch_loss += total_loss.item()
             pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
         acc_arc, acc_label, acc_upos, acc_xpos, acc_attrs = _eval(parser, devset, encodings)
         fn = '{0}.last'.format(params.store)
@@ -492,9 +490,9 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(parser.parameters(), lr=1e-3)  # , amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(parser.parameters(), lr=1e-4)  # lr=2e-3, amsgrad=False, weight_decay=0.01, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
-    criterionNLL = nn.NLLLoss(ignore_index=-1)
+    criterionNLL = nn.NLLLoss()
     if params.device != 'cpu':
         criterion.cuda(params.device)
     _start_train(params, trainset, devset, encodings, parser, [criterion, criterionNLL], trainer)

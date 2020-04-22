@@ -99,7 +99,7 @@ class ParserConfig(Config):
         super().__init__()
         self.tagger_embeddings_size = 100
         self.tagger_encoder_size = 400
-        self.tagger_encoder_layers = 4
+        self.tagger_encoder_layers = 3
         self.tagger_encoder_dropout = 0.33
         self.tagger_input_dropout_prob = 0.33
         self.tagger_mlp_layer = 500
@@ -109,7 +109,7 @@ class ParserConfig(Config):
         self.char_encoder_size = 200
         self.char_encoder_layers = 2
         self.char_input_embeddings_size = 100
-        self.aux_softmax_layer_index = 2
+        self.aux_softmax_layer_index = 1
         self.aux_softmax_weight = 0.01
         self._valid = True
 
