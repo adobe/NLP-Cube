@@ -54,7 +54,8 @@ class Parser(nn.Module):
             lang_emb_size = self.config.tagger_embeddings_size
             self.lang_emb = nn.Embedding(num_languages, lang_emb_size)
 
-        self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
+        self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device,
+                                        nn_type=nn.LSTM)
 
         self.proj_arc_head = nn.Sequential(
             nn.Linear(self.config.tagger_mlp_layer + lang_emb_size, self.config.parser_arc_proj_size), nn.Tanh(),
@@ -121,6 +122,8 @@ class Parser(nn.Module):
             w_stack.append(att.unsqueeze(1))
 
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
+        # from ipdb import set_trace
+        # set_trace()
 
         # head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
         # dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
@@ -415,7 +418,7 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
             torch.nn.utils.clip_grad_norm_(parser.parameters(), 5.)
             trainer.step()
             epoch_loss += total_loss.item()
-            pgb.set_description('\tloss={0:.4f}'.format(loss.item()))
+            pgb.set_description('\tloss={0:.4f}'.format(total_loss.item()))
         acc_arc, acc_label, acc_upos, acc_xpos, acc_attrs = _eval(parser, devset, encodings)
         fn = '{0}.last'.format(params.store)
         parser.save(fn)

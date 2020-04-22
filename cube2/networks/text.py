@@ -31,7 +31,7 @@ class TextEncoder(nn.Module):
     # config: TaggerConfig
     # encodings: Encodings
 
-    def __init__(self, config, encodings, ext_conditioning=0, target_device='cpu'):
+    def __init__(self, config, encodings, ext_conditioning=0, nn_type=VariationalLSTM, target_device='cpu'):
         super(TextEncoder, self).__init__()
         self.encodings = encodings
         self.config = config
@@ -41,19 +41,19 @@ class TextEncoder(nn.Module):
         self.first_encoder = Encoder('float', self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_embeddings_size * 2,
                                      self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                     nn_type=VariationalLSTM,
+                                     nn_type=nn_type,
                                      num_layers=self.config.aux_softmax_layer_index, ext_conditioning=ext_conditioning)
         self.second_encoder = Encoder('float', self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size * 2,
                                       self.config.tagger_encoder_size, self.config.tagger_encoder_dropout,
-                                      nn_type=VariationalLSTM,
+                                      nn_type=nn_type,
                                       num_layers=self.config.tagger_encoder_layers - self.config.aux_softmax_layer_index,
                                       ext_conditioning=ext_conditioning)
         self.character_network = SelfAttentionNetwork('float', self.config.char_input_embeddings_size,
                                                       self.config.char_input_embeddings_size,
                                                       self.config.char_encoder_size, self.config.char_encoder_layers,
                                                       self.config.tagger_embeddings_size,
-                                                      self.config.tagger_encoder_dropout, nn_type=VariationalLSTM,
+                                                      self.config.tagger_encoder_dropout, nn_type=nn_type,
                                                       ext_conditioning=ext_conditioning)
 
         self.i2h = LinearNorm(self.config.tagger_embeddings_size * 2, self.config.tagger_encoder_size * 2)
