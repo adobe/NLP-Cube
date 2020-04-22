@@ -32,8 +32,9 @@ from cube.graph.decoders import GreedyDecoder
 
 
 def nll_loss(logs, targets):
-    out = torch.diag(logs[:,targets])
+    out = torch.diag(logs[:, targets])
     return -torch.mean(out)
+
 
 class Parser(nn.Module):
     encodings: Encodings
@@ -112,25 +113,25 @@ class Parser(nn.Module):
             (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._target_device),
              proj_label_dep), dim=1)
 
-        proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2).permute(1, 0, 2)
-        proj_arc_dep = proj_arc_dep.permute((1, 0, 2))
+        proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
+        proj_arc_dep = proj_arc_dep  # .permute((1, 0, 2))
 
         for ii in range(proj_arc_head_lang.shape[0]):
-            att = self.attention(proj_arc_dep[ii, :], proj_arc_head_lang, return_logsoftmax=True)
+            att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang, return_logsoftmax=True)
             w_stack.append(att.unsqueeze(1))
         arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
 
-        #head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
-        #dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
-        #dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
-        #head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
-        #arcs = arcs + dep_bias
+        # head_bias = self.head_bias(torch.cat((proj_arc_dep, lang_emb_parsing.permute(1, 0, 2)), dim=2)).permute(1, 0, 2)
+        # dep_bias = self.dep_bias(proj_arc_head_lang).permute(1, 0, 2)
+        # dep_bias = dep_bias.unsqueeze(1).squeeze(3).repeat(1, dep_bias.shape[1], 1)
+        # head_bias = head_bias.repeat(1, 1, head_bias.shape[1])
+        # arcs = arcs + dep_bias
         aux_hid = self.aux_mlp(hidden)
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
         return arcs[:, 1:, :], torch.cat((proj_label_head, lang_emb_parsing),
-                                                    dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
+                                         dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
         if gs_heads is not None:
@@ -489,7 +490,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(parser.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(parser.parameters(), lr=1e-4)  # , amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     criterionNLL = nn.NLLLoss(ignore_index=-1)
     if params.device != 'cpu':

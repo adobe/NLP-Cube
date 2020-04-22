@@ -135,8 +135,6 @@ class Attention(nn.Module):
         attention = torch.bmm(v, energy).squeeze(1)
         # attention= [batch size, src len]
         if return_logsoftmax:
-            from ipdb import set_trace
-            set_trace()
             return F.log_softmax(attention, dim=1)
         else:
             return F.softmax(attention, dim=1)
