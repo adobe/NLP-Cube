@@ -111,6 +111,7 @@ class ParserConfig(Config):
         self.char_input_embeddings_size = 100
         self.aux_softmax_layer_index = 1
         self.aux_softmax_weight = 0.01
+        self.warming_epochs = 2
         self._valid = True
 
         if filename is None:
@@ -137,9 +138,9 @@ class TokenizerConfig(Config):
         self.char_emb_size = 100
         self.conv_layers = 5
         self.conv_kernel = 5
-        self.conv_filters = 64
+        self.conv_filters = 128
         self.lang_emb_size = 100
-        self.rnn_size = 100
+        self.rnn_size = 200
         self.rnn_layers = 2
         self._valid = True
 

@@ -29,23 +29,18 @@ _tok_label2int = {_tok_labels[ii]: ii for ii in range(len(_tok_labels))}
 
 
 class Tokenizer(nn.Module):
-    def __init__(self, config, encodings, num_languages=1, char_network=None):
+    def __init__(self, config, encodings, num_languages=1):
         super(Tokenizer, self).__init__()
         self.config = config
         self.encodings = encodings
-        self.char_network = char_network
 
         self.char_lookup = nn.Embedding(len(encodings.char2int), config.char_emb_size, padding_idx=0)
-        input_emb_size = config.char_emb_size + 16
-        if char_network is not None:
-            input_emb_size += self.char_network._config.rnn_size * 2
-
         self.case_lookup = nn.Embedding(4, 16, padding_idx=0)
 
+        input_emb_size = config.char_emb_size + 16
         config.num_languages = num_languages
-        if config.num_languages != 1:
-            self.lang_lookup = nn.Embedding(config.num_languages, config.lang_emb_size, padding_idx=0)
-            input_emb_size += config.lang_emb_size
+        self.lang_lookup = nn.Embedding(config.num_languages + 1, config.lang_emb_size, padding_idx=0)
+        input_emb_size += config.lang_emb_size
 
         self.rnn = nn.LSTM(self.config.conv_filters,
                            self.config.rnn_size,
@@ -79,24 +74,15 @@ class Tokenizer(nn.Module):
             return 'cpu'
         return '{0}:{1}'.format(self.char_lookup.weight.device.type, str(self.char_lookup.weight.device.index))
 
-    def forward(self, chars, lang_idx=None):
-        char_idx, case_idx = self._to_index(chars)
+    def forward(self, chars):
+        char_idx, case_idx, lang_idx = self._to_index(chars)
         char_idx = torch.tensor(char_idx, dtype=torch.long, device=self._get_device())
         case_idx = torch.tensor(case_idx, dtype=torch.long, device=self._get_device())
+        lang_idx = torch.tensor(lang_idx, dtype=torch.long, device=self._get_device())
         char_emb = self.char_lookup(char_idx)
         case_emb = self.case_lookup(case_idx)
-
-        if lang_idx is not None:
-            lang_emb = self.lang_lookup(lang_idx)
-            input_emb = torch.cat((char_emb, lang_emb), dim=-1)
-        else:
-            input_emb = char_emb
-
-        if self.char_network is not None:
-            with torch.no_grad():
-                ext_char_emb, _, _ = self.char_network(chars)
-                ext_char_emb = ext_char_emb.detach()
-            input_emb = torch.cat((input_emb, ext_char_emb), dim=-1)
+        lang_emb = self.lang_lookup(lang_idx)
+        input_emb = torch.cat((char_emb, lang_emb), dim=-1)
 
         input_emb = torch.cat((input_emb, case_emb), dim=-1)
         input_emb = input_emb.permute(0, 2, 1)
@@ -124,10 +110,12 @@ class Tokenizer(nn.Module):
         max_len = max([len(ex) for ex in chars])
         char_idx = np.zeros((len(chars), max_len))
         case_idx = np.zeros((len(chars), max_len))
+        lang_idx = np.zeros((len(chars), max_len))
         for ii in range(char_idx.shape[0]):
             for jj in range(char_idx.shape[1]):
                 if jj < len(chars[ii]):
-                    c = chars[ii][jj]
+                    c = chars[ii][jj][0]
+                    l_id = chars[ii][jj][1]
                     if c.lower() == c.upper():
                         case_id = 1
                     elif c.lower() != c:
@@ -142,8 +130,9 @@ class Tokenizer(nn.Module):
 
                     char_idx[ii, jj] = char_id
                     case_idx[ii, jj] = case_id
+                    lang_idx[ii, jj] = l_id + 1
 
-        return char_idx, case_idx
+        return char_idx, case_idx, lang_idx
 
     def save(self, path):
         torch.save(self.state_dict(), path)
@@ -158,6 +147,7 @@ def do_debug(params):
     devset = Dataset()
 
     train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
+                  'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
                   'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
                   'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-train.conllu',
                   'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
@@ -169,6 +159,7 @@ def do_debug(params):
                   'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu']
 
     dev_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
+                'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu',
                 'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-dev.conllu',
                 'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-dev.conllu',
                 'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
@@ -179,23 +170,15 @@ def do_debug(params):
                 'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
                 'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
 
-    # for i, t, d in zip(range(len(train_list)), train_list, dev_list):
-    #     trainset.load_language(t, i)
-    #     devset.load_language(d, i)
-    trainset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-train.conllu', 0)
-    devset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-dev.conllu', 0)
-    from cube.io_utils.encodings import Encodings
-    from cube2.config import CharLMConfig
-    conf_char = CharLMConfig('corpus/ja-lm.conf')
-    enc_char = Encodings()
-    enc_char.load('corpus/ja-lm.encodings')
-    from cube2.networks.charlm import CharLM
-    char_lm = CharLM(conf_char, enc_char)
-    char_lm.load('corpus/ja-lm.last')
-    char_lm.to(params.device)
-    char_lm.eval()
+    for i, t, d in zip(range(len(train_list)), train_list, dev_list):
+        trainset.load_language(t, i)
+        devset.load_language(d, i)
+    # trainset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-train.conllu', 0)
+    # devset.load_language('corpus/ud-treebanks-v2.4/UD_Japanese-GSD/ja_gsd-ud-dev.conllu', 0)
     # trainset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu', 0)
     # devset.load_language('corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu', 0)
+
+    from cube.io_utils.encodings import Encodings
 
     encodings = Encodings()
     encodings.compute(trainset, devset, char_cutoff=2)
@@ -205,13 +188,13 @@ def do_debug(params):
 
     config = TokenizerConfig()
 
-    tokenizer = Tokenizer(config, encodings, num_languages=1, char_network=char_lm)
+    tokenizer = Tokenizer(config, encodings, num_languages=len(train_list))
     if params.device != 'cpu':
         tokenizer.to(params.device)
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tokenizer.parameters(), lr=2e-3, amsgrad=True, betas=(0.9, 0.9))
+    trainer = optim.Adam(tokenizer.parameters(), lr=1e-4)  # , amsgrad=True, betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)
@@ -230,7 +213,7 @@ def _make_batches(dataset, batch_size=32, seq_len=1000):
         seq = example[0]
         for iWord, entry in zip(range(len(seq)), seq):
             for iChar, char in zip(range(len(entry.word)), entry.word):
-                x.append(char)
+                x.append((char, lang))
                 if iChar == 0:
                     y.append('B')
                 elif iChar == len(entry.word) - 1:
@@ -240,7 +223,7 @@ def _make_batches(dataset, batch_size=32, seq_len=1000):
                 if iChar == len(entry.word) - 1 and iWord == len(seq) - 1:
                     y[-1] += 'S'
             if "spaceafter=no" not in entry.space_after.lower():
-                x.append(' ')
+                x.append((' ', lang))
                 y.append('N')
     batches_x = []
     batches_y = []
@@ -288,32 +271,37 @@ def _eval(tokenizer, dataset):
     actual_s = 0
     actual_t = 0
 
-    batch_x, batch_y = _make_batches(dataset, batch_size=1, seq_len=-1)
+    batch_x, batch_y = _make_batches(dataset, batch_size=8, seq_len=1000)
     tokenizer.eval()
-    target_y = batch_y[0][0]
-    with torch.no_grad():
-        p_y = tokenizer(batch_x[0])
+    for x, target_y in zip(batch_x, batch_y):
+        with torch.no_grad():
+            p_y = tokenizer(x)
 
-    p_y = torch.argmax(p_y, dim=-1).detach().cpu().numpy()
+        p_y = torch.argmax(p_y, dim=-1).detach().cpu().numpy()
 
-    pred_y = []
-    for index in range(p_y.shape[1]):
-        pred_y.append(_tok_labels[p_y[0, index]])
+        pred_y = []
+        for iBatch in range(p_y.shape[0]):
+            for index in range(p_y.shape[1]):
+                pred_y.append(_tok_labels[p_y[iBatch, index]])
+        flat_target = []
+        for batch in target_y:
+            for yy in batch:
+                flat_target.append(yy)
 
-    for y_target, y_pred in zip(target_y, pred_y):
-        if y_target.endswith('S'):
-            actual_s += 1
-        if y_pred.endswith('S'):
-            pred_s += 1
-        if y_pred.endswith('S') and y_target.endswith('S'):
-            ok_s += 1
+        for y_target, y_pred in zip(flat_target, pred_y):
+            if y_target.endswith('S'):
+                actual_s += 1
+            if y_pred.endswith('S'):
+                pred_s += 1
+            if y_pred.endswith('S') and y_target.endswith('S'):
+                ok_s += 1
 
-        if y_target.startswith('B'):
-            actual_t += 1
-        if y_pred.startswith('B'):
-            pred_t += 1
-        if y_pred.startswith('B') and y_target.startswith('B'):
-            ok_t += 1
+            if y_target.startswith('B'):
+                actual_t += 1
+            if y_pred.startswith('B'):
+                pred_t += 1
+            if y_pred.startswith('B') and y_target.startswith('B'):
+                ok_t += 1
 
     if ok_s == 0:
         f_sent = 0
@@ -339,10 +327,13 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
     print(f_sent, f_token)
     best_sent = 0
     best_tok = 0
+    epoch = 0
     while patience_left > 0:
+        epoch += 1
+        print("Epoch {0}".format(epoch))
         patience_left -= 1
         random.shuffle(trainset.sequences)
-        batches_x, batches_y = _make_batches(trainset)
+        batches_x, batches_y = _make_batches(trainset, batch_size=params.batch_size)
         tokenizer.train()
         total_loss = 0
         cnt = 0
@@ -395,8 +386,8 @@ def do_tokenize(params):
     config = TokenizerConfig()
     config.load(params.model_base + '.conf')
 
-    tokenizer = Tokenizer(config, encodings, num_languages=1)
-    tokenizer.load(params.model_base + '.last')
+    tokenizer = Tokenizer(config, encodings, num_languages=config.num_languages)
+    tokenizer.load(params.model_base + '.bestTOK')
     if params.device != 'cpu':
         tokenizer.to(params.device)
     tokenizer.eval()
@@ -410,9 +401,14 @@ def do_tokenize(params):
         new_text = text.replace('  ', ' ')
 
     with torch.no_grad():
-        x = [[ch for ch in text]]
+        x = [[(ch, params.lang_id) for ch in text]]
         pred_y = tokenizer(x)
-        pred_y = torch.argmax(pred_y, dim=-1)[0].detach().cpu().numpy()
+        # mask void output for NON-WHITESPACE
+        pred_y = pred_y[0].detach().cpu().numpy()
+        for i in range(pred_y.shape[0]):
+            if x[0][i][0] != ' ':
+                pred_y[i][4] = -1000000
+        pred_y = np.argmax(pred_y, axis=1)
 
     p_y = [_tok_labels[yy] for yy in pred_y]
 
