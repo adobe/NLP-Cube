@@ -135,12 +135,12 @@ class ParserConfig(Config):
 class TokenizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.char_emb_size = 100
+        self.char_emb_size = 200
         self.conv_layers = 5
         self.conv_kernel = 5
-        self.conv_filters = 128
+        self.conv_filters = 256
         self.lang_emb_size = 100
-        self.rnn_size = 200
+        self.rnn_size = 400
         self.rnn_layers = 2
         self._valid = True
 

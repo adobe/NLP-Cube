@@ -318,6 +318,28 @@ def _eval(tokenizer, dataset):
 
     return f_sent, f_tok
 
+def _shuffle_train(examples):
+    lang2seq={}
+    for ii in range (len(examples)):
+        lang_id=examples[ii][1]
+        seq=examples[ii][0]
+        if lang_id not in lang2seq:
+            lang2seq[lang_id]=[]
+        lang2seq[lang_id].append(seq)
+
+    import random
+    for lang_id in lang2seq:
+        random.shuffle(lang2seq[lang_id])
+
+    result=[]
+    langs=[l_id for l_id in lang2seq]
+    random.shuffle(langs)
+    for lang_id in langs:
+        for seq in lang2seq[lang_id]:
+            result.append([seq, lang_id])
+    return result
+
+
 
 def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
     import tqdm
@@ -332,7 +354,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         epoch += 1
         print("Epoch {0}".format(epoch))
         patience_left -= 1
-        random.shuffle(trainset.sequences)
+        trainset.sequences=_shuffle_train(trainset.sequences)
         batches_x, batches_y = _make_batches(trainset, batch_size=params.batch_size)
         tokenizer.train()
         total_loss = 0
@@ -387,7 +409,7 @@ def do_tokenize(params):
     config.load(params.model_base + '.conf')
 
     tokenizer = Tokenizer(config, encodings, num_languages=config.num_languages)
-    tokenizer.load(params.model_base + '.bestTOK')
+    tokenizer.load(params.model_base + '.bestSS')
     if params.device != 'cpu':
         tokenizer.to(params.device)
     tokenizer.eval()
