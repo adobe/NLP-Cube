@@ -1,0 +1,17 @@
+[
+    [
+        "grc_perseus",
+        "corpus/ud-treebanks-v2.5/UD_Ancient_Greek-Perseus/grc_perseus-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Ancient_Greek-Perseus/grc_perseus-ud-dev.conllu"
+    ],
+    [
+        "grc_proiel",
+        "corpus/ud-treebanks-v2.5/UD_Ancient_Greek-PROIEL/grc_proiel-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Ancient_Greek-PROIEL/grc_proiel-ud-dev.conllu"
+    ],
+    [
+        "el_gdt",
+        "corpus/ud-treebanks-v2.5/UD_Greek-GDT/el_gdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Greek-GDT/el_gdt-ud-dev.conllu"
+    ]
+]

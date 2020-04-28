@@ -1,0 +1,17 @@
+[
+    [
+        "hi_hdtb",
+        "corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu"
+    ],
+    [
+        "mr_ufal",
+        "corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu"
+    ],
+    [
+        "ur_udtb",
+        "corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-dev.conllu"
+    ]
+]

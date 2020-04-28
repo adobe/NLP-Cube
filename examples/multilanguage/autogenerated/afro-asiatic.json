@@ -1,0 +1,27 @@
+[
+    [
+        "ar_padt",
+        "corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu"
+    ],
+    [
+        "ar_nyuad",
+        "corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-dev.conllu"
+    ],
+    [
+        "cop_scriptorium",
+        "corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-dev.conllu"
+    ],
+    [
+        "he_htb",
+        "corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu"
+    ],
+    [
+        "mt_mudt",
+        "corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu"
+    ]
+]
