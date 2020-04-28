@@ -141,34 +141,18 @@ class Tokenizer(nn.Module):
         self.load_state_dict(torch.load(path, map_location='cpu'))
 
 
-def do_debug(params):
+def do_train(params):
     from cube.io_utils.conll import Dataset
     trainset = Dataset()
     devset = Dataset()
 
-    train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu']
-
-    dev_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
+    import json
+    ds_list = json.load(open(params.train_file))
+    train_list = []
+    dev_list = []
+    for ii in range(len(ds_list)):
+        train_list.append(ds_list[ii][1])
+        dev_list.append(ds_list[ii][2])
 
     for i, t, d in zip(range(len(train_list)), train_list, dev_list):
         trainset.load_language(t, i)
@@ -318,27 +302,27 @@ def _eval(tokenizer, dataset):
 
     return f_sent, f_tok
 
+
 def _shuffle_train(examples):
-    lang2seq={}
-    for ii in range (len(examples)):
-        lang_id=examples[ii][1]
-        seq=examples[ii][0]
+    lang2seq = {}
+    for ii in range(len(examples)):
+        lang_id = examples[ii][1]
+        seq = examples[ii][0]
         if lang_id not in lang2seq:
-            lang2seq[lang_id]=[]
+            lang2seq[lang_id] = []
         lang2seq[lang_id].append(seq)
 
     import random
     for lang_id in lang2seq:
         random.shuffle(lang2seq[lang_id])
 
-    result=[]
-    langs=[l_id for l_id in lang2seq]
+    result = []
+    langs = [l_id for l_id in lang2seq]
     random.shuffle(langs)
     for lang_id in langs:
         for seq in lang2seq[lang_id]:
             result.append([seq, lang_id])
     return result
-
 
 
 def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
@@ -354,7 +338,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         epoch += 1
         print("Epoch {0}".format(epoch))
         patience_left -= 1
-        trainset.sequences=_shuffle_train(trainset.sequences)
+        trainset.sequences = _shuffle_train(trainset.sequences)
         batches_x, batches_y = _make_batches(trainset, batch_size=params.batch_size)
         tokenizer.train()
         total_loss = 0
@@ -484,14 +468,13 @@ if __name__ == '__main__':
     import sys
 
     parser = optparse.OptionParser()
-    parser.add_option('--train', action='store_true', dest='train',
+    parser.add_option('--train', action='store', dest='train_file',
                       help='Start building a parser model')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
     parser.add_option('--store', action='store', dest='store', help='Output base', default='parser')
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
-    parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
     parser.add_option('--device', action='store', dest='device', default='cpu',
                       help='What device to use for models: cpu, cuda:0, cuda:1 ...')
     parser.add_option('--test', action='store_true', dest='test', help='Test the traine model')
@@ -502,8 +485,8 @@ if __name__ == '__main__':
 
     (params, _) = parser.parse_args(sys.argv)
 
-    if params.debug:
-        do_debug(params)
+    if params.train_file:
+        do_train(params)
     if params.test:
         do_test(params)
     if params.process:

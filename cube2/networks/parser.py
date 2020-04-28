@@ -84,7 +84,7 @@ class Parser(nn.Module):
                                    self.config.parser_arc_proj_size + lang_emb_size)
         self.dropout = nn.Dropout(self.config.tagger_encoder_dropout)
 
-    def forward(self, x, lang_ids=None):
+    def forward(self, x, lang_ids=None, warmup=False):
         if lang_ids is not None and self.lang_emb is not None:
             lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self.text_network._target_device)
             lang_emb = self.lang_emb(lang_ids)
@@ -117,11 +117,12 @@ class Parser(nn.Module):
         proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
         proj_arc_dep = proj_arc_dep  # .permute((1, 0, 2))
 
-        for ii in range(proj_arc_head_lang.shape[1]):
-            att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang)
-            w_stack.append(att.unsqueeze(1))
+        if not warmup:
+            for ii in range(proj_arc_head_lang.shape[1]):
+                att = self.attention(proj_arc_dep[:, ii, :], proj_arc_head_lang)
+                w_stack.append(att.unsqueeze(1))
 
-        arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
+            arcs = torch.cat(w_stack, dim=1)  # .permute(1, 0, 2)
         # from ipdb import set_trace
         # set_trace()
 
@@ -134,8 +135,12 @@ class Parser(nn.Module):
         s_aux_upos = self.aux_output_upos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_xpos = self.aux_output_xpos(torch.cat((aux_hid, lang_emb), dim=2))
         s_aux_attrs = self.aux_output_attrs(torch.cat((aux_hid, lang_emb), dim=2))
-        return torch.log(arcs[:, 1:, :]), torch.cat((proj_label_head, lang_emb_parsing),
-                                                    dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
+        if warmup:
+            out_arcs = None
+        else:
+            out_arcs = torch.log(arcs[:, 1:, :])
+        return out_arcs, torch.cat((proj_label_head, lang_emb_parsing),
+                                   dim=2), proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs
 
     def get_tree(self, arcs, lens, proj_label_head, proj_label_dep, gs_heads=None):
         if gs_heads is not None:
@@ -375,7 +380,8 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
     criterionNLL = criterion[1]
     criterion = criterion[0]
     while patience_left > 0:
-        patience_left -= 1
+        if epoch > parser.config.warming_epochs:
+            patience_left -= 1
         sys.stdout.write('\n\nStarting epoch ' + str(epoch) + '\n')
         sys.stdout.flush()
         random.shuffle(trainset.sequences)
@@ -387,6 +393,8 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
         import tqdm
         pgb = tqdm.tqdm(range(num_batches), desc='\tloss=NaN', ncols=80)
         parser.train()
+        if epoch == parser.config.warming_epochs:
+            print("Warming done")
         for batch_idx in pgb:
             start = batch_idx * params.batch_size
             stop = min(len(trainset.sequences), start + params.batch_size)
@@ -398,21 +406,24 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
                 total_words += len(trainset.sequences[start + ii][0])
 
             s_arcs, proj_label_head, proj_label_dep, s_aux_upos, s_aux_xpos, s_aux_attrs = parser(data,
-                                                                                                  lang_ids=lang_ids)
+                                                                                                  lang_ids=lang_ids,
+                                                                                                  warmup=epoch < parser.config.warming_epochs)
             tgt_arc, tgt_label, tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
 
             pred_heads, pred_labels = parser.get_tree(None, None, proj_label_head, proj_label_dep, gs_heads=tgt_arc)
-            loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
             # loss = nll_loss(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1))
             loss_label = criterion(pred_labels.view(-1, pred_labels.shape[-1]), tgt_label.view(-1))
 
-            loss_aux = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
+            if epoch < parser.config.warming_epochs:
+                loss = ((criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) +
                          criterion(s_aux_xpos.view(-1, s_aux_xpos.shape[-1]), tgt_xpos.view(-1)) +
-                         criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34) * \
-                       parser.config.aux_softmax_weight
+                         criterion(s_aux_attrs.view(-1, s_aux_attrs.shape[-1]), tgt_attrs.view(-1))) * 0.34)
+            else:
+                loss = (criterionNLL(s_arcs.reshape(-1, s_arcs.shape[-1]), tgt_arc.view(-1)))
+
             # loss_aux = criterion(s_aux_upos.view(-1, s_aux_upos.shape[-1]), tgt_upos.view(-1)) * parser.config.aux_softmax_weight
 
-            total_loss = loss + loss_aux + loss_label
+            total_loss = loss + loss_label
             trainer.zero_grad()
             total_loss.backward()
             torch.nn.utils.clip_grad_norm_(parser.parameters(), 5.)
@@ -450,30 +461,14 @@ def _start_train(params, trainset, devset, encodings, parser, criterion, trainer
         epoch += 1
 
 
-def do_debug(params):
-    train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu']
-
-    dev_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
+def do_train(params):
+    import json
+    ds_list = json.load(open(params.train_file))
+    train_list = []
+    dev_list = []
+    for ii in range(len(ds_list)):
+        train_list.append(ds_list[ii][1])
+        dev_list.append(ds_list[ii][2])
 
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
@@ -485,9 +480,14 @@ def do_debug(params):
         trainset.load_language(train, ii, ignore_compound=True)
         devset.load_language(dev, ii, ignore_compound=True)
     encodings = Encodings()
-    encodings.compute(trainset, devset, word_cutoff=2)
+    if params.resume:
+        encodings.load('{0}.encodings'.format(params.store))
+    else:
+        encodings.compute(trainset, devset, word_cutoff=2)
     config = ParserConfig()
     parser = Parser(config, encodings, len(train_list), target_device=params.device)
+    if params.resume:
+        parser.load('{0}.last'.format(params.store))
     if params.device != 'cpu':
         parser.cuda(params.device)
 
@@ -540,14 +540,13 @@ def do_parse(params):
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('--train', action='store_true', dest='train',
+    parser.add_option('--train', action='store', dest='train_file',
                       help='Start building a parser model')
     parser.add_option('--patience', action='store', type='int', default=20, dest='patience',
                       help='Number of epochs before early stopping (default=20)')
     parser.add_option('--store', action='store', dest='store', help='Output base', default='parser')
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
-    parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
     parser.add_option('--device', action='store', dest='device', default='cpu',
                       help='What device to use for models: cpu, cuda:0, cuda:1 ...')
     parser.add_option('--test', action='store_true', dest='test', help='Test the traine model')
@@ -555,11 +554,12 @@ if __name__ == '__main__':
     parser.add_option('--lang-id', action='store', dest='lang_id', type='int', default=0)
     parser.add_option('--model-base', action='store', dest='model_base')
     parser.add_option('--process', action='store_true')
+    parser.add_option('--resume', action='store_true', dest='resume')
 
     (params, _) = parser.parse_args(sys.argv)
 
-    if params.debug:
-        do_debug(params)
+    if params.train_file:
+        do_train(params)
     if params.test:
         do_test(params)
     if params.process:

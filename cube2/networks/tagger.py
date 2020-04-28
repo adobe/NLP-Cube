@@ -279,62 +279,17 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         epoch += 1
 
 
-def do_debug(params):
-    # train_list = ['corpus/ud-treebanks-v2.4/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Danish-DDT/da_ddt-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Dutch-Alpino/nl_alpino-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Dutch-LassySmall/nl_lassysmall-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_English-EWT/en_ewt-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_English-GUM/en_gum-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_English-LinES/en_lines-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_German-GSD/de_gsd-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Gothic-PROIEL/got_proiel-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Swedish-LinES/sv_lines-ud-train.conllu',
-    #               'corpus/ud-treebanks-v2.4/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu']
-    #
-    # dev_list = ['corpus/ud-treebanks-v2.4/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Danish-DDT/da_ddt-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_English-EWT/en_ewt-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_English-GUM/en_gum-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_English-LinES/en_lines-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_German-GSD/de_gsd-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Swedish-LinES/sv_lines-ud-dev.conllu',
-    #             'corpus/ud-treebanks-v2.4/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu']
-
-    train_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-train.conllu',
-                  'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu']
-
-    dev_list = ['corpus/ud-treebanks-v2.4/UD_Romanian-RRT/ro_rrt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Sequoia/fr_sequoia-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-GSD/fr_gsd-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Spanish-AnCora/es_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_French-Spoken/fr_spoken-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Galician-CTG/gl_ctg-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-ISDT/it_isdt-ud-dev.conllu',
-                'corpus/ud-treebanks-v2.4/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu']
-
+def do_train(params):
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
     from cube2.config import TaggerConfig
+    import json
+    ds_list = json.load(open(params.train_file))
+    train_list = []
+    dev_list = []
+    for ii in range(len(ds_list)):
+        train_list.append(ds_list[ii][1])
+        dev_list.append(ds_list[ii][2])
 
     trainset = Dataset()
     devset = Dataset()
@@ -352,7 +307,7 @@ def do_debug(params):
 
     import torch.optim as optim
     import torch.nn as nn
-    trainer = optim.Adam(tagger.parameters(), lr=1e-4) #, betas=(0.9, 0.9))
+    trainer = optim.Adam(tagger.parameters(), lr=1e-4)  # , betas=(0.9, 0.9))
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     if params.device != 'cpu':
         criterion.cuda(params.device)
@@ -376,7 +331,7 @@ def do_test(params):
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('--train', action='store_true', dest='train',
+    parser.add_option('--train', action='store', dest='train_file',
                       help='Start building a tagger model')
     parser.add_option('--config', action='store', dest='config_file',
                       help='Use this configuration file for tagger')
@@ -395,7 +350,7 @@ if __name__ == '__main__':
 
     (params, _) = parser.parse_args(sys.argv)
 
-    if params.debug:
-        do_debug(params)
-    if params.test:
+    if params.train_file:
+        do_train(params)
+    elif params.test:
         do_test(params)
