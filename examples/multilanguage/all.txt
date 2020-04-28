@@ -1,0 +1,92 @@
+ Afrikaans 1 49K  IE, Germanic
+ Akkadian 1 1K  Afro-Asiatic, Semitic
+ Albanian 1 <1K  IE, Albanian
+ Amharic 1 10K  Afro-Asiatic, Semitic
+ Ancient_Greek 2 416K  IE, Greek
+ Arabic 3 1,042K  Afro-Asiatic, Semitic
+ Armenian 1 52K  IE, Armenian
+ Assyrian 1 <1K  Afro-Asiatic, Semitic
+ Bambara 1 13K  Mande
+ Basque 1 121K  Basque
+ Belarusian 1 13K  IE, Slavic
+ Bhojpuri 2 4K  IE, Indic
+ Breton 1 10K  IE, Celtic
+ Bulgarian 1 156K  IE, Slavic
+ Buryat 1 10K  Mongolic
+ Cantonese 1 13K  Sino-Tibetan
+ Catalan 1 531K  IE, Romance
+ Chinese 5 285K  Sino-Tibetan
+ Classical_Chinese 1 74K  Sino-Tibetan
+ Coptic 1 40K  Afro-Asiatic, Egyptian
+ Croatian 1 199K  IE, Slavic
+ Czech 5 2,222K  IE, Slavic
+ Danish 2 100K  IE, Germanic
+ Dutch 2 306K  IE, Germanic
+ English 9 620K  IE, Germanic
+ Erzya 1 15K  Uralic, Mordvin
+ Estonian 2 465K  Uralic, Finnic
+ Faroese 1 10K  IE, Germanic
+ Finnish 3 377K  Uralic, Finnic
+ French 8 1,157K  IE, Romance
+ Galician 2 164K  IE, Romance
+ German 4 3,753K  IE, Germanic
+ Gothic 1 55K  IE, Germanic
+ Greek 1 63K  IE, Greek
+ Hebrew 1 161K  Afro-Asiatic, Semitic
+ Hindi 2 375K  IE, Indic
+ Hindi_English 1 26K  Indic
+ Hungarian 1 42K  Uralic, Ugric
+ Indonesian 2 141K  Austronesian, Malayo-Sumbawan
+ Irish 1 40K  IE, Celtic
+ Italian 6 811K  IE, Romance
+ Japanese 5 1,688K  Japanese
+ Karelian 1 3K  Uralic, Finnic
+ Kazakh 1 10K  Turkic, Northwestern
+ Komi_Permyak 1 <1K  Uralic, Permic
+ Komi_Zyrian 2 3K  Uralic, Permic
+ Korean 5 446K  Korean
+ Kurmanji 1 10K  IE, Iranian
+ Latin 4 582K  IE, Latin
+ Latvian 1 220K  IE, Baltic
+ Lithuanian 2 75K  IE, Baltic
+ Livvi 1 1K  Uralic, Finnic
+ Magahi 1 7K  IE, Indic
+ Maltese 1 44K  Afro-Asiatic, Semitic
+ Marathi 1 3K  IE, Indic
+ Mbya_Guarani 2 13K  Tupian
+ Moksha 1 <1K  Uralic, Mordvin
+ Naija 1 12K  Creole
+ North_Sami 1 26K  Uralic, Sami
+ Norwegian 3 666K  IE, Germanic
+ Old_Church_Slavonic 1 57K  IE, Slavic
+ Old_French 1 170K  IE, Romance
+ Old_Russian 2 168K  IE, Slavic
+ Persian 1 152K  IE, Iranian
+ Polish 3 499K  IE, Slavic
+ Portuguese 3 570K  IE, Romance
+ Romanian 3 551K  IE, Romance
+ Russian 4 1,263K  IE, Slavic
+ Sanskrit 1 1K  IE, Indic
+ Scottish_Gaelic 1 42K  IE, Celtic
+ Serbian 1 97K  IE, Slavic
+ Skolt Sami 1 <1K  Uralic, Sami
+ Slovak 1 106K  IE, Slavic
+ Slovenian 2 170K  IE, Slavic
+ Spanish 3 1,004K  IE, Romance
+ Swedish 3 206K  IE, Germanic
+ Swedish_Sign_Language 1 1K  Sign_Language
+ Swiss_German 1 1K  IE, Germanic
+ Tagalog 2 <1K  Austronesian, Central Philippine
+ Tamil 1 9K  Dravidian, Southern
+ Telugu 1 6K  Dravidian, South Central
+ Thai 1 22K  Tai-Kadai
+ Turkish 4 91K  Turkic, Southwestern
+ Ukrainian 1 122K  IE, Slavic
+ Upper Sorbian 1 11K  IE, Slavic
+ Urdu 1 138K  IE, Indic
+ Uyghur 1 40K  Turkic, Southeastern
+ Vietnamese 1 43K  Austro-Asiatic, Viet-Muong
+ Warlpiri 1 <1K  Pama-Nyungan
+ Welsh 1 16K  IE, Celtic
+ Wolof 1 44K  Niger-Congo, Northern Atlantic
+ Yoruba 1 2K  Niger-Congo, Defoid
