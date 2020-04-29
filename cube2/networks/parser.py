@@ -47,12 +47,8 @@ class Parser(nn.Module):
         self.num_languages = num_languages
         self._target_device = target_device
         self._decoder = GreedyDecoder()
-        if num_languages == 1:
-            lang_emb_size = 0
-            self.lang_emb = None
-        else:
-            lang_emb_size = self.config.tagger_embeddings_size
-            self.lang_emb = nn.Embedding(num_languages, lang_emb_size)
+        lang_emb_size = self.config.tagger_embeddings_size
+        self.lang_emb = nn.Embedding(num_languages, lang_emb_size)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device,
                                         nn_type=nn.LSTM)

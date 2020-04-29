@@ -40,13 +40,10 @@ class Tagger(nn.Module):
         self.encodings = encodings
         self.num_languages = num_languages
         self._target_device = target_device
-        if num_languages == 1:
-            lang_emb_size = 0
-            self.lang_emb = None
-        else:
-            lang_emb_size = self.config.tagger_embeddings_size
-            # zero is ignored, so we add one to language embeddings
-            self.lang_emb = nn.Embedding(num_languages + 1, lang_emb_size, padding_idx=0)
+
+        lang_emb_size = self.config.tagger_embeddings_size
+        # zero is ignored, so we add one to language embeddings
+        self.lang_emb = nn.Embedding(num_languages + 1, lang_emb_size, padding_idx=0)
 
         self.text_network = TextEncoder(config, encodings, ext_conditioning=lang_emb_size, target_device=target_device)
 
