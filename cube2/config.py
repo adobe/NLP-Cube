@@ -159,3 +159,25 @@ class CharLMConfig(Config):
         self.char_emb_size = 100
         self.rnn_size = 150
         self.rnn_layers = 2
+
+
+class LemmatizerConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.encoder_layers = 2
+        self.encoder_size = 200
+        self.decoder_layers = 2
+        self.decoder_size = 400
+        self.att_proj_size = 100
+        self.upos_emb_size = 100
+        self.lang_emb_size = 100
+        self.char_emb_size = 100
+        self._valid = True
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
