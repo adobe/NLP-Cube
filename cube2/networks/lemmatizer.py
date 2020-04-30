@@ -20,6 +20,10 @@ class Lemmatizer(nn.Module):
         self._config = config
         self._encodings = encodings
         self._num_languages = num_languages
+
+        self._char_list = ['' for char in encodings.char2int]
+        for char in encodings.char2int:
+            self._char_list[encodings.char2int[char]] = char
         self._lang_emb = nn.Embedding(num_languages + 1, config.lang_emb_size, padding_idx=0)
         self._upos_emb = nn.Embedding(len(encodings.upos2int), config.upos_emb_size, padding_idx=0)
         self._char_emb = nn.Embedding(len(encodings.char2int) + 2, config.char_emb_size,
@@ -94,7 +98,7 @@ class Lemmatizer(nn.Module):
                     break
             elif np.sum(done) == encoder_output.shape[0]:
                 break
-            elif step == encoder_output.shape[1] * 10:  # failsafe
+            elif step == encoder_output.shape[1] * 20:  # failsafe
                 break
 
             att = self._attention(decoder_hidden[-1][-1, :, :], encoder_output)
@@ -194,11 +198,21 @@ def _eval(lemmatizer, dataset):
             y_char_pred = torch.argmax(y_char_pred, dim=-1).cpu().numpy()
             y_case_pred = torch.argmax(y_case_pred, dim=-1).cpu().numpy()
             for ii in range(y_char_target.shape[0]):
-                for jj in range(y_char_target.shape[1]):
-                    if jj >= y_char_pred.shape[1]:
-                        good[ii] = 0
-                    elif y_char_pred[ii, jj] != y_char_target[ii, jj] or y_case_pred[ii, jj] != y_case_target[ii, jj]:
-                        good[ii] = 0
+                lemma_target = batch[ii][3]
+                lemma_pred = ''
+                for jj in range(y_char_pred.shape[1]):
+                    if y_char_pred[ii, jj] == 0:
+                        break
+                    else:
+                        char = lemmatizer._char_list[y_char_pred[ii, jj].item()]
+                        if y_case_pred[ii, jj] == 1:
+                            char = char.upper()
+                        lemma_pred += char
+                if lemma_target == lemma_pred:
+                    good[ii] = 1
+                else:
+                    good[ii] = 0
+
             total += y_char_target.shape[0]
             ok += np.sum(good)
             sys.stderr.flush()
