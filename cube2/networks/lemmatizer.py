@@ -292,6 +292,9 @@ def _start_train(lemmatizer, trainset, devset, params):
     devset = _extract_data(devset, unique=True)
     epoch = 0
     best_score = 0  # _eval(lemmatizer, devset)
+    
+    lemmatizer._config.save('{0}.conf'.format(params.store))
+    lemmatizer._encodings.save('{0}.encodings'.format(params.store))
     sys.stdout.write('Devset accuracy {0}\n'.format(best_score))
     sys.stdout.flush()
 
