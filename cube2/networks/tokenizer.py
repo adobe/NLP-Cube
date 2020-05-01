@@ -337,6 +337,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
     while patience_left > 0:
         epoch += 1
         print("Epoch {0}".format(epoch))
+        sys.stdout.flush()
         patience_left -= 1
         trainset.sequences = _shuffle_train(trainset.sequences)
         batches_x, batches_y = _make_batches(trainset, batch_size=params.batch_size)
@@ -355,9 +356,10 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
             loss.backward()
             optimizer.step()
             cnt += 1
+            sys.stderr.flush()
         total_loss /= cnt
         f_sent, f_token = _eval(tokenizer, devset)
-        sys.stdout.write('\tTrainset avg loss = {0:.6f}\n'.format(total_loss))
+        sys.stdout.write('\n\tTrainset avg loss = {0:.6f}\n'.format(total_loss))
         sys.stdout.write('\tDevset sent_fscore = {0:.6f} tok_fscore={1:.6f}\n'.format(f_sent, f_token))
         if f_sent > best_sent:
             best_sent = f_sent
@@ -374,6 +376,7 @@ def _start_train(params, tokenizer, trainset, devset, criterion, optimizer):
         fname = '{0}.last'.format(params.store)
         sys.stdout.write('\tStoring {0}\n'.format(fname))
         tokenizer.save(fname)
+        sys.stdout.flush()
 
 
 def do_test(params):
