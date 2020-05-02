@@ -35,11 +35,6 @@
         "corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-dev.conllu"
     ],
     [
-        "en_esl",
-        "corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-train.conllu",
-        "corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-dev.conllu"
-    ],
-    [
         "en_ewt",
         "corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu",
         "corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu"
