@@ -15,6 +15,11 @@
         "corpus/ud-treebanks-v2.5/UD_Old_French-SRCMF/fro_srcmf-ud-dev.conllu"
     ],
     [
+        "fr_ftb",
+        "corpus/ud-treebanks-v2.5/UD_French-FTB/fr_ftb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_French-FTB/fr_ftb-ud-dev.conllu"
+    ],
+    [
         "fr_spoken",
         "corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-train.conllu",
         "corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-dev.conllu"
