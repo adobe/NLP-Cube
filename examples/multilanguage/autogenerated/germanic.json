@@ -25,11 +25,6 @@
         "corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu"
     ],
     [
-        "qhe_hiencs",
-        "corpus/ud-treebanks-v2.5/UD_Hindi_English-HIENCS/qhe_hiencs-ud-train.conllu",
-        "corpus/ud-treebanks-v2.5/UD_Hindi_English-HIENCS/qhe_hiencs-ud-dev.conllu"
-    ],
-    [
         "en_gum",
         "corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-train.conllu",
         "corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-dev.conllu"
