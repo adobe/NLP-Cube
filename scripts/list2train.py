@@ -5,6 +5,19 @@ import optparse
 sys.path.append('')
 
 
+def _is_complete_corpus(filename):
+    from cube.io_utils.conll import Dataset
+    dataset = Dataset()
+    dataset.load_language(filename, 0)
+    ok = False
+    for entry in dataset.sequences[0][0]:
+        word = entry.word.replace('_', '').strip()
+        if word != '':
+            ok = True
+            break
+    return ok
+
+
 def _get_list_of_folders_containing(dirName, pattern):
     import os
     listOfFile = os.listdir(dirName)
@@ -58,7 +71,10 @@ def _process_single(params):
             dev_file = _get_file(params.train_base, line, 'test')
         if train_file != '' and dev_file != '':
             lang_id = _get_lang_id(train_file)
-            combined.append([lang_id, train_file, dev_file])
+            if _is_complete_corpus(dev_file):
+                combined.append([lang_id, train_file, dev_file])
+            else:
+                sys.stdout.write('Removing incomplete languge: "{0}"\n'.format(lang_id))
 
     json.dump(combined, open(params.output_file, 'w'))
 
@@ -124,10 +140,22 @@ def _process_multi(params):
                         dev_file = _get_file(params.train_base, folder, 'test')
                     if train_file != '' and dev_file != '':
                         lang_id = _get_lang_id(train_file)
-                        family2dataset[family].append([lang_id, train_file, dev_file])
+                        if _is_complete_corpus(dev_file):
+                            family2dataset[family].append([lang_id, train_file, dev_file])
+                        else:
+                            sys.stdout.write('Removing incomplete languge: "{0}"\n'.format(lang_id))
     for fam in family2dataset:
         out_file = '{1}/{0}.json'.format(fam.lower().replace(' ', '_'), params.output_file)
         json.dump(family2dataset[fam], open(out_file, 'w'), indent=4)
+
+    # list of all languages
+    all = []
+    for fam in family2dataset:
+        for entry in family2dataset[fam]:
+            all.append(entry)
+
+    out_file = '{0}/all.json'.format(params.output_file)
+    json.dump(all, open(out_file, 'w'), indent=4)
 
 
 if __name__ == '__main__':
