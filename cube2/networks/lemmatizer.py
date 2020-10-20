@@ -230,7 +230,10 @@ def _extract_data(dataset, unique=True):
             key = '{0}_{1}_{2}'.format(lang_id, entry.upos, entry.word)
             if not unique or key not in visited:
                 visited[key] = 1
-                data.append([entry.word, entry.upos, lang_id, entry.lemma])
+                if len(entry.word) < 100 and len(entry.lemma) < 100:
+                    data.append([entry.word, entry.upos, lang_id, entry.lemma])
+                else:
+                    print(entry.word, lang_id)
 
     return data
 
@@ -292,7 +295,7 @@ def _start_train(lemmatizer, trainset, devset, params):
     devset = _extract_data(devset, unique=True)
     epoch = 0
     best_score = 0  # _eval(lemmatizer, devset)
-    
+
     lemmatizer._config.save('{0}.conf'.format(params.store))
     lemmatizer._encodings.save('{0}.encodings'.format(params.store))
     sys.stdout.write('Devset accuracy {0}\n'.format(best_score))
