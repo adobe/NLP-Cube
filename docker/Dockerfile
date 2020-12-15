@@ -37,5 +37,5 @@ RUN pip3 install Flask
 RUN pip3 install bs4
 
 # Start webserver
-CMD cd /work/NLP-Cube/cube/ && python3 webserver.py --port 8080 --lang=en --lang=fr --lang=de --lang=sk
+CMD cd /work/NLP-Cube/cube/ && python3 webserver.py --port 8080 --lang=en --lang=fr --lang=de
 
