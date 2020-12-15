@@ -1,5 +1,5 @@
 FROM ubuntu
-
+ENV DEBIAN_FRONTEND noninteractive
 
 # Installing build dependencies
 RUN apt-get update && apt-get install -y build-essential automake make cmake g++ wget git mercurial python3-pip curl
@@ -15,17 +15,7 @@ RUN wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCT
     apt-get install -y intel-mkl-64bit-2018.2-046
 
 # Installing DyNET
-RUN mkdir dynet-base && \
-    cd dynet-base && \
-    git clone https://github.com/clab/dynet.git && \
-    hg clone https://bitbucket.org/eigen/eigen -r b2e267d && \
-    cd dynet && \
-    mkdir build && \
-    cd build && \
-    cmake .. -DEIGEN3_INCLUDE_DIR=../../eigen -DPYTHON=/usr/bin/python3 -DMKL_ROOT=/opt/intel/mkl && \
-    make -j 2 && \
-    cd python && \
-    python3 ../../setup.py build --build-dir=.. --skip-build install
+RUN pip3 install dynet
 
 # Prepare environment UTF-8
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales
@@ -43,7 +33,9 @@ RUN mkdir /work && \
 
 # Prepare notebook
 RUN pip3 install jupyter
+RUN pip3 install Flask
+RUN pip3 install bs4
 
-# Start notebook
-CMD cd /work/NLP-Cube/ && python3 -m "notebook" --allow-root --ip=0.0.0.0 --no-browser
+# Start webserver
+CMD cd /work/NLP-Cube/cube/ && python3 webserver.py --port 8080 --lang=en --lang=fr --lang=de
 
