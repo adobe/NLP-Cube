@@ -1,31 +1,9 @@
-#
-# Authors: Tiberiu Boros, Stefan Daniel Dumitrescu
-#
-# Copyright (c) 2018 Adobe Systems Incorporated. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 import sys
 import ast
 from builtins import object, super
 from cube.misc.misc import fopen
 import collections
-
-if sys.version_info[0] == 2:
-    import ConfigParser
-else:
-    import configparser
+import configparser
 
 
 class Config(object):
@@ -81,36 +59,22 @@ class Config(object):
             self.__dict__[k] = self._auto_cast(v)
 
 
-class TokenizerConfig(Config):
-    def __init__(self, filename=None, verbose=False):
-        super().__init__()
-        self.lstm_layers = [200, 200]
-        self.lang_emb_size = 100
-        self.char_emb_size = 100
-
-        if filename is None:
-            if verbose:
-                sys.stdout.write("No configuration file supplied. Using default values.\n")
-        else:
-            if verbose:
-                sys.stdout.write("Reading configuration file " + filename + " \n")
-            self.load(filename)
-
-        self._valid = True
-
-
 class TaggerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.layers = [200, 200]
-        self.layer_dropouts = [0.5, 0.5]
-        self.aux_softmax_layer = 1
+        self.tagger_embeddings_size = 100
+        self.tagger_encoder_size = 400
+        self.tagger_encoder_layers = 2
+        self.tagger_encoder_dropout = 0.33
+        self.tagger_input_dropout_prob = 0.3
+        self.tagger_mlp_layer = 500
+        self.tagger_mlp_dropout = 0.3
+        self.char_encoder_size = 100
+        self.char_encoder_layers = 1
+        self.char_input_embeddings_size = 100
+        self.aux_softmax_layer_index = 1
+        self.aux_softmax_weight = 0
         self._valid = True
-        self.input_dropout_prob = 0.33
-        self.presoftmax_mlp_layers = [500]
-        self.presoftmax_mlp_dropouts = [0.5]
-        self.input_size = 100
-        self.language_embedding_size = 100
 
         if filename is None:
             if verbose:
@@ -129,25 +93,26 @@ class TaggerConfig(Config):
             print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
             print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
 
-        if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print(
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
-            self._valid = False
-
 
 class ParserConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.layers = [300, 300, 200, 200, 200]
-        self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
-        self.aux_softmax_layer = 2
+        self.tagger_embeddings_size = 100
+        self.tagger_encoder_size = 400
+        self.tagger_encoder_layers = 3
+        self.tagger_encoder_dropout = 0.33
+        self.tagger_input_dropout_prob = 0.33
+        self.tagger_mlp_layer = 500
+        self.tagger_mlp_dropout = 0.33
+        self.parser_arc_proj_size = 100
+        self.parser_label_proj_size = 400
+        self.char_encoder_size = 200
+        self.char_encoder_layers = 2
+        self.char_input_embeddings_size = 100
+        self.aux_softmax_layer_index = 1
+        self.aux_softmax_weight = 0.01
+        self.warming_epochs = 2
         self._valid = True
-        self.input_dropout_prob = 0.33
-        self.arc_proj_size = 100
-        self.label_proj_size = 400
-        self.presoftmax_mlp_dropout = 0.33
-        self.predict_morphology = True
-        self.input_embeddings_size = 100
 
         if filename is None:
             if verbose:
@@ -158,109 +123,56 @@ class ParserConfig(Config):
             self.load(filename)
 
         if verbose:
+            print("INPUT SIZE:", self.input_size)
             print("LAYERS:", self.layers)
             print("LAYER DROPOUTS:", self.layer_dropouts)
             print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
             print("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print("ARC PROJECTION SIZE:", self.arc_proj_size)
-            print("LABEL PROJECTION SIZE:", self.label_proj_size)
-            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
-            print("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
-            print("USE MORPHOLOGY AS INPUT:", self.use_morphology)
-            print("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
+            print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
+            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
 
-        if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print(
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
-            self._valid = False
+
+class TokenizerConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 200
+        self.conv_layers = 5
+        self.conv_kernel = 5
+        self.conv_filters = 256
+        self.lang_emb_size = 100
+        self.rnn_size = 400
+        self.rnn_layers = 2
+        self._valid = True
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
+
+
+class CharLMConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 100
+        self.rnn_size = 150
+        self.rnn_layers = 2
 
 
 class LemmatizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.rnn_size = 200
-        self.rnn_layers = 2
-        self.char_embeddings = 100
-        self.char_rnn_size = 200
-        self.char_rnn_layers = 2
-        self.tag_embeddings_size = 100
-
-        if filename is None:
-            if verbose:
-                sys.stdout.write("No configuration file supplied. Using default values.\n")
-        else:
-            if verbose:
-                sys.stdout.write("Reading configuration file " + filename + " \n")
-            self.load(filename)
-
-
-class NMTConfig(Config):
-    def __init__(self, filename=None):
-        super().__init__()
-        self.encoder_layers = [300, 300]
-        self.encoder_layer_dropouts = [0.33, 0.33]
-        self.decoder_layers = 2
-        self.decoder_size = 300
-        self.decoder_dropout = 0.33
-        self.input_size = 100
-        self.aux_we_layer_size = 100
-        self.input_dropout_prob = 0.33
-
-        if filename is None:
-            sys.stdout.write("No configuration file supplied. Using default values.\n")
-        else:
-            sys.stdout.write("Reading configuration file " + filename + " \n")
-            self.load(filename)
-
-
-class TieredTokenizerConfig(Config):
-    def __init__(self, filename=None, verbose=False):
-        super().__init__()
-        # sentece splitting
-        self.ss_char_embeddings_size = 100
-        self.ss_char_peek_count = 5
-        self.ss_mlp_layers = [100]
-        self.ss_mlp_dropouts = [0.33]
-        self.ss_lstm_size = 64
-        self.ss_lstm_layers = 1
-        self.ss_lstm_dropout = 0.33
-        self.ss_peek_lstm_size = 64
-        self.ss_peek_lstm_layers = 1
-        self.ss_peek_lstm_dropout = 0.33
-        # tokenization
-        self.tok_char_embeddings_size = 100
-        self.tok_word_embeddings_size = 100
-        self.tok_mlp_layers = [100]
-        self.tok_mlp_dropouts = [0.33]
-        self.tok_char_lstm_layers = 2
-        self.tok_char_lstm_size = 200
-        self.tok_char_lstm_dropout = 0.33
-        self.tok_word_lstm_layers = 2
-        self.tok_word_lstm_size = 200
-        self.tok_word_lstm_dropout = 0.33
-        self.tok_char_peek_lstm_layers = 2
-        self.tok_char_peek_lstm_size = 200
-        self.tok_char_peek_lstm_dropout = 0.33
-
-        if filename is None:
-            if verbose:
-                sys.stdout.write("No configuration file supplied. Using default values.\n")
-        else:
-            if verbose:
-                sys.stdout.write("Reading configuration file " + filename + " \n")
-            self.load(filename)
-
-        self._valid = True
-
-
-class CompoundWordConfig(Config):
-    def __init__(self, filename=None, verbose=False):
-        super().__init__()
-        self.character_embeddings_size = 100
-        self.encoder_size = 200
         self.encoder_layers = 2
-        self.decoder_size = 200
+        self.encoder_size = 200
         self.decoder_layers = 2
+        self.decoder_size = 400
+        self.att_proj_size = 100
+        self.upos_emb_size = 100
+        self.lang_emb_size = 100
+        self.char_emb_size = 100
+        self._valid = True
 
         if filename is None:
             if verbose:
@@ -270,17 +182,17 @@ class CompoundWordConfig(Config):
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
 
-
-class GDBConfig(Config):
+class CompoundConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.use_char_embeddings = True
-        self.char_rnn_layers = 2
-        self.char_rnn_size = 100
-        self.embeddings_size = 100
-        self.arc_rnn_layers = [200, 200]
-        self.label_rnn_size = 100
-        self.proj_size = 100
+        self.encoder_layers = 2
+        self.encoder_size = 200
+        self.decoder_layers = 2
+        self.decoder_size = 400
+        self.att_proj_size = 100
+        self.lang_emb_size = 100
+        self.char_emb_size = 100
+        self._valid = True
 
         if filename is None:
             if verbose:
@@ -289,5 +201,3 @@ class GDBConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-
-        self._valid = True

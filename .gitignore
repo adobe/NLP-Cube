@@ -1,4 +1,7 @@
 data/*
+nlp-cube-models/*
+corpus/
+scripts/packer
 *.pyc
 build/
 dist/

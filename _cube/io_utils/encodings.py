@@ -23,7 +23,7 @@ from cube.misc.misc import fopen
 
 class Encodings(object):
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=True):
         self.word_list = {}
         self.hol_word_list = []
         self.char2int = {}
