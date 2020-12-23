@@ -26,7 +26,7 @@ import torch.nn as nn
 import torch.utils.data
 from cube.networks.text import TextEncoder
 from cube.networks.modules import LinearNorm
-from cube.config import TaggerConfig
+from cube.io_utils.config import TaggerConfig
 from cube.io_utils.encodings import Encodings
 
 
@@ -87,6 +87,25 @@ class Tagger(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
 
+    def process(self, sequences, upos = False, xpos = False, attrs = False):
+        self.eval()
+        with torch.no_grad():
+            s_upos, s_xpos, s_attrs, _, _, _ = self.forward(sequences, lang_ids=[0])
+
+            s_upos = np.argmax(s_upos.detach().cpu().numpy(), axis = 2) # (1, # of words)
+            s_xpos = np.argmax(s_xpos.detach().cpu().numpy(), axis = 2)
+            s_attrs = np.argmax(s_attrs.detach().cpu().numpy(), axis = 2)
+
+        for batch_index, sequence in enumerate(sequences):
+            for word_index in range(len(sequences[batch_index])):
+                if upos:
+                    sequences[batch_index][word_index].upos = self.encodings.upos_list[s_upos[batch_index][word_index]]
+                if xpos:
+                   sequences[batch_index][word_index].xpos = self.encodings.xpos_list[s_xpos[batch_index][word_index]]
+                if attrs:
+                    sequences[batch_index][word_index].attrs = self.encodings.attrs_list[s_attrs[batch_index][word_index]]
+
+        return sequences
 
 class TaggerDataset(torch.utils.data.Dataset):
     def __init__(self, conll_dataset):
@@ -136,7 +155,6 @@ def _get_tgt_labels(data, encodings, device='cpu'):
     import torch
     return torch.tensor(tgt_upos, device=device), torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs,
                                                                                                       device=device)
-
 
 def _eval(tagger, dataset, encodings, device='cpu'):
     tagger.eval()
@@ -219,6 +237,13 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
                 data.append(trainset.sequences[start + ii][0])
                 lang_ids.append(trainset.sequences[start + ii][1])
                 total_words += len(trainset.sequences[start + ii][0])
+            """print(len(data))
+            for elem in data[0]:
+                print(type(elem))
+                print(elem)
+                break            
+            input("asd")
+            """
 
             s_upos, s_xpos, s_attrs, s_aux_upos, s_aux_xpos, s_aux_attrs = tagger(data, lang_ids=lang_ids)
             tgt_upos, tgt_xpos, tgt_attrs = _get_tgt_labels(data, encodings, device=params.device)
@@ -275,11 +300,10 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
         sys.stdout.flush()
         epoch += 1
 
-
 def do_train(params):
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
-    from cube.config import TaggerConfig
+    from cube.io_utils.config import TaggerConfig
     import json
     ds_list = json.load(open(params.train_file))
     train_list = []

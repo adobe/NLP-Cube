@@ -25,7 +25,7 @@ import numpy as np
 import torch.nn as nn
 import torch.utils.data
 from cube.networks.text import TextEncoder
-from cube.config import ParserConfig
+from cube.io_utils.config import ParserConfig
 from cube.io_utils.encodings import Encodings
 from cube.networks.modules import Attention
 from cube.networks.decoders import GreedyDecoder

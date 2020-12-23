@@ -20,7 +20,7 @@ class ModelStore ():
 
         # check local catalog and download if not present
         catalog = ModelStore._get_catalog(url = "https://raw.githubusercontent.com/adobe/NLP-Cube-Models/2.0/catalog.json")
-        catalog = catalog["default"] # for future use, default path
+        catalog = catalog["default"]
 
         # get model filename
         model_name = None
@@ -79,8 +79,7 @@ class ModelStore ():
         # parser paths
         if os.path.exists(os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.bestUAS".format(model_name))):
             paths["parser"] = {
-                "model_UAS": os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.bestUAS".format(model_name)),
-                "model_LAS" : os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.bestLAS".format(model_name)),
+                "model": os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.bestUAS".format(model_name)),
                 "config" : os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.conf".format(model_name)),
                 "encodings" : os.path.join(ModelStore.root_path, "models", model_name, "parser-{}.encodings".format(model_name)),
             }

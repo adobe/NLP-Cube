@@ -140,12 +140,12 @@ class Tokenizer(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location='cpu'))
 
-    def __call__(self, input_string):
+    def process(self, input_string):
         self.eval()
 
         with torch.no_grad():
-            x = [[(ch, params.lang_id) for ch in input_string]]
-            pred_y = tokenizer(x)
+            x = [[(ch, 0) for ch in input_string]]
+            pred_y = self.forward(x)
             # mask void output for NON-WHITESPACE
             pred_y = pred_y[0].detach().cpu().numpy()
             for i in range(pred_y.shape[0]):
@@ -160,8 +160,8 @@ class Tokenizer(nn.Module):
         cs = []
         from cube.io_utils.conll import ConllEntry
         w_index = 1
-        for index, x, y in zip(range(len(text)), text, p_y):
-            if (index == len(text) - 1) or (text[index + 1] != ' '):
+        for index, x, y in zip(range(len(input_string)), input_string, p_y):
+            if (index == len(input_string) - 1) or (input_string[index + 1] != ' '):
                 spcA = 'SpaceAfter=no'
             else:
                 spcA = ''
@@ -194,6 +194,8 @@ class Tokenizer(nn.Module):
         if len(cs) > 0:
             seqs.append(cs)
 
+        return seqs
+
 
 def do_train(params):
     from cube.io_utils.conll import Dataset
@@ -222,7 +224,7 @@ def do_train(params):
     encodings.compute(trainset, devset, char_cutoff=2)
 
     from cube.networks.tokenizer import Tokenizer
-    from cube.config import TokenizerConfig
+    from cube.io_utils.config import TokenizerConfig
 
     config = TokenizerConfig()
 

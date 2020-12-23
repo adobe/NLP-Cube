@@ -29,13 +29,13 @@ class Cube(object):
         self.tagger_UPOS = None
         self.tagger_XPOS = None
         self.tagger_ATTRS = None
-        self.parser_UAS = None
-        self.parser_LAS = None
+        self.parser = None
+
 
         if "tokenizer" in component_paths:
             from cube.networks.tokenizer import Tokenizer
             from cube.io_utils.encodings import Encodings
-            from cube.config import TokenizerConfig
+            from cube.io_utils.config import TokenizerConfig
             tokenizer_config = TokenizerConfig(filename=component_paths["tokenizer"]["config"])
             encodings = Encodings()
             encodings.load(filename=component_paths["tokenizer"]["encodings"])
@@ -43,7 +43,7 @@ class Cube(object):
             self.tokenizer.load(path=component_paths["tokenizer"]["model"])
 
         if "lemmatizer" in component_paths:
-            from cube.config import LemmatizerConfig
+            from cube.io_utils.config import LemmatizerConfig
             from cube.io_utils.encodings import Encodings
             from cube.networks.lemmatizer import Lemmatizer
             lemmatizer_config = LemmatizerConfig(filename=component_paths["lemmatizer"]["config"])
@@ -53,7 +53,7 @@ class Cube(object):
             self.lemmatizer.load(path=component_paths["lemmatizer"]["model"])
 
         if "tagger" in component_paths:
-            from cube.config import TaggerConfig
+            from cube.io_utils.config import TaggerConfig
             from cube.io_utils.encodings import Encodings
             from cube.networks.tagger import Tagger
             tagger_config = TaggerConfig(filename=component_paths["tagger"]["config"])
@@ -67,28 +67,24 @@ class Cube(object):
             self.tagger_ATTRS.load(path=component_paths["tagger"]["model_ATTRS"])
 
         if "parser" in component_paths:
-            from cube.config import ParserConfig
+            from cube.io_utils.config import ParserConfig
             from cube.io_utils.encodings import Encodings
             from cube.networks.parser import Parser
             parser_config = ParserConfig(filename=component_paths["parser"]["config"])
             encodings = Encodings()
             encodings.load(filename=component_paths["parser"]["encodings"])
-            self.parser_UAS = Parser(config=parser_config, encodings=encodings)
-            self.parser_UAS.load(path=component_paths["parser"]["model_UAS"])
-            self.parser_LAS = Parser(config=parser_config, encodings=encodings)
-            self.parser_LAS.load(path=component_paths["parser"]["model_LAS"])
-
+            self.parser = Parser(config=parser_config, encodings=encodings)
+            self.parser.load(path=component_paths["parser"]["model"])
 
     def __call__(self, text):
-
         sequences = []
-        if self._tokenizer:
+        if self.tokenizer:
             if not isinstance(text, str):
                 raise Exception("The text argument must be a string!")
             # split text by lines
             input_lines = text.split("\n")
             for input_line in input_lines:                
-                sequences+=self.tokenizer(input_line)
+                sequences+=self.tokenizer.process(input_line)
         else:
             if not isinstance(text, list):
                 raise Exception("The text argument must be a list of lists of tokens!")
@@ -105,26 +101,30 @@ class Cube(object):
         #if self.parser_UAS:
         #    sequences = self.parser.parse_sequences(sequences)
 
-        if self._tagger or self._lemmatizer:
+        if self.tagger_UPOS or self.lemmatizer:
             import copy
             new_sequences = []
-            for sequence in sequences:                
-                new_sequence = copy.deepcopy(sequence)                
-                predicted_tags_UPOS = self._tagger[0].tag(new_sequence)
-                predicted_tags_XPOS = self._tagger[1].tag(new_sequence)
-                predicted_tags_ATTRS = self._tagger[2].tag(new_sequence)
-                for entryIndex in range(len(new_sequence)):
-                    new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
-                    new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
-                    new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
+            for sequence in sequences: # this should be batched!
+                new_sequence = [copy.deepcopy(sequence)]
+                new_sequence = self.tagger_UPOS.process(new_sequence, upos=True)
+                new_sequence = self.tagger_XPOS.process(new_sequence, xpos=True)
+                new_sequence = self.tagger_ATTRS.process(new_sequence, attrs=True)
                 new_sequences.append(new_sequence)
             sequences = new_sequences
 
-        if self._lemmatizer:
-            sequences = self._lemmatizer.lemmatize_sequences(sequences)
+        for seq in sequences:
+            for entry in seq:
+                sys.stdout.write(str(entry))
+            print("")
+
+        if self.lemmatizer:
+            sequences = self.lemmatizer.process(sequences)
 
         return sequences
 
 
 if __name__ == "__main__":
-   pass
+   nlp = load("hy")
+
+   #r = nlp("This is a test.")
+   r = nlp("Պարտությունը չունի բարոյականություն և չունի հայրենիք, ինչպես` քաոսը2")

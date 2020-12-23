@@ -7,7 +7,7 @@ sys.path.append('')
 import torch.nn as nn
 import numpy as np
 from cube.io_utils.encodings import Encodings
-from cube.config import LemmatizerConfig
+from cube.io_utils.config import LemmatizerConfig
 from cube.networks.modules import LinearNorm, ConvNorm, Attention
 
 

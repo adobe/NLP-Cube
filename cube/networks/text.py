@@ -23,7 +23,7 @@ import numpy as np
 from cube.networks.self_attention import SelfAttentionNetwork
 from cube.networks.modules import Encoder, LinearNorm
 from cube.io_utils.encodings import Encodings
-from cube.config import TaggerConfig
+from cube.io_utils.config import TaggerConfig
 from cube.networks.modules import VariationalLSTM, ConvNorm
 
 
