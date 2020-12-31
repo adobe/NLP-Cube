@@ -7,8 +7,8 @@ sys.path.append('')
 import torch.nn as nn
 import numpy as np
 from cube.io_utils.encodings import Encodings
-from cube2.config import CompoundConfig
-from cube2.networks.modules import LinearNorm, ConvNorm, Attention
+from cube.io_utils.config import CompoundConfig
+from cube.networks.modules import LinearNorm, ConvNorm, Attention
 
 
 class Compound(nn.Module):
@@ -131,7 +131,7 @@ class Compound(nn.Module):
         torch.save(self.state_dict(), path)
 
     def load(self, path):
-        self.load_state_dict(torch.load(path, map_location=self._target_device))
+        self.load_state_dict(torch.load(path, map_location='cpu'))
 
     def _get_device(self):
         if self._char_emb.weight.device.type == 'cpu':
@@ -147,9 +147,9 @@ class Compound(nn.Module):
             for jj in range(x_char.shape[1]):
                 if jj == 0:
                     x_char[ii, jj] = self._start_index
-                elif jj == len(x_chars[ii]):
+                elif jj == len(x_chars[ii]) + 1:
                     x_char[ii, jj] = self._stop_index
-                elif jj < len(x_chars[ii]):
+                elif jj < len(x_chars[ii]) + 1:
                     char = x_chars[ii][jj - 1]
                     case = _get_case(char)
                     lang = x_langs[ii] + 1
@@ -160,6 +160,8 @@ class Compound(nn.Module):
                     x_char[ii, jj] = char
                     x_case[ii, jj] = case
                     x_lang[ii, jj] = lang
+        # from ipdb import set_trace
+        # set_trace()
         x_char = torch.tensor(x_char, dtype=torch.long, device=self._get_device())
         x_case = torch.tensor(x_case, dtype=torch.long, device=self._get_device())
         x_lang = torch.tensor(x_lang, dtype=torch.long, device=self._get_device())
@@ -184,7 +186,6 @@ def _eval(lemmatizer, dataset):
             for ii in range(len(batch)):
                 x_chars.append(batch[ii][0])
                 x_lang.append(batch[ii][1])
-
             y_char_target, y_case_target = _get_targets(batch, lemmatizer._encodings)
             y_char_pred, y_case_pred = lemmatizer(x_chars, x_lang)
             good = np.ones(y_char_target.shape[0])
@@ -301,7 +302,7 @@ def _start_train(compound, trainset, devset, params):
     trainset = _extract_data(trainset, unique=True)
     devset = _extract_data(devset, unique=True)
     epoch = 0
-    best_score = 0  # _eval(lemmatizer, devset)
+    best_score = 0  # _eval(compound, devset)
 
     compound._config.save('{0}.conf'.format(params.store))
     compound._encodings.save('{0}.encodings'.format(params.store))

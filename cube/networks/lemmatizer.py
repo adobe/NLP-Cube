@@ -151,9 +151,9 @@ class Lemmatizer(nn.Module):
             for jj in range(x_char.shape[1]):
                 if jj == 0:
                     x_char[ii, jj] = self._start_index
-                elif jj == len(x_chars[ii]):
+                elif jj == len(x_chars[ii]) + 1:
                     x_char[ii, jj] = self._stop_index
-                elif jj < len(x_chars[ii]):
+                elif jj < len(x_chars[ii]) + 1:
                     char = x_chars[ii][jj - 1]
                     case = _get_case(char)
                     lang = x_langs[ii] + 1
