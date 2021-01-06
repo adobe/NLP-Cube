@@ -173,6 +173,39 @@ class Compound(nn.Module):
         return torch.tensor(target_char, dtype=torch.long, device=self._get_device())
 
 
+    def process (self, sequences, lang_id):
+        x_chars, x_lang = [], []
+
+        for seq in sequences:
+            for elem in seq:
+                x_chars.append(elem.word)
+                x_lang.append(lang_id)
+
+        y_char_pred, y_case_pred = self.forward(x_chars, x_lang)
+        y_char_pred = torch.argmax(y_char_pred, dim=-1).cpu().numpy()
+        y_case_pred = torch.argmax(y_case_pred, dim=-1).cpu().numpy()
+
+        lemmas = []
+        for ii in range(y_char_pred.shape[0]):
+            lemma_pred = ''
+            for jj in range(y_char_pred.shape[1]):
+                if y_char_pred[ii, jj] == 0:
+                    break
+                else:
+                    char = self._char_list[y_char_pred[ii, jj].item()]
+                    if y_case_pred[ii, jj] == 1:
+                        char = char.upper()
+                    lemma_pred += char
+            lemmas.append(lemma_pred)
+
+        cnt = 0
+        for seq in sequences:
+            for elem in seq:
+                elem.lemma = lemmas[cnt]
+                cnt += 1
+
+        return sequences
+
 def _eval(lemmatizer, dataset):
     ok = 0
     total = 0

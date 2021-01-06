@@ -11,7 +11,7 @@ from cube.io_utils.modelstore import ModelStore
 from cube.io_utils.objects import Doc, Sentence, Word, Token
 from typing import Optional
 
-def load(lang:str,  log_level:str = "ERROR", use_gpu=True) :
+def load(lang:str, log_level:str = "ERROR", use_gpu=True) :
     # TODO set log level
 
     # gets components (by download or use from local cache)
@@ -24,13 +24,14 @@ def load(lang:str,  log_level:str = "ERROR", use_gpu=True) :
 
 class Cube(object):
     def __init__(self, component_paths:dict):
+        self.lang_id = 0
         self.tokenizer = None
+        self.compound = None
         self.lemmatizer = None
         self.tagger_UPOS = None
         self.tagger_XPOS = None
         self.tagger_ATTRS = None
         self.parser = None
-
 
         if "tokenizer" in component_paths:
             from cube.networks.tokenizer import Tokenizer
@@ -41,6 +42,16 @@ class Cube(object):
             encodings.load(filename=component_paths["tokenizer"]["encodings"])
             self.tokenizer = Tokenizer(config=tokenizer_config, encodings=encodings)
             self.tokenizer.load(path=component_paths["tokenizer"]["model"])
+
+        if "compound" in component_paths:
+            from cube.networks.compound import Compound
+            from cube.io_utils.encodings import Encodings
+            from cube.io_utils.config import CompoundConfig
+            compound_config = CompoundConfig(filename=component_paths["compound"]["config"])
+            encodings = Encodings()
+            encodings.load(filename=component_paths["compound"]["encodings"])
+            self.compound = Compound(config=compound_config, encodings=encodings)
+            self.compound.load(path=component_paths["compound"]["model"])
 
         if "lemmatizer" in component_paths:
             from cube.io_utils.config import LemmatizerConfig
@@ -84,33 +95,25 @@ class Cube(object):
             # split text by lines
             input_lines = text.split("\n")
             for input_line in input_lines:                
-                sequences+=self.tokenizer.process(input_line)
+                sequences+=self.tokenizer.process(input_line, self.lang_id)
         else:
             if not isinstance(text, list):
                 raise Exception("The text argument must be a list of lists of tokens!")
             sequences = text  # the input should already be tokenized
 
-        for seq in sequences:
-            for entry in seq:
-                sys.stdout.write(str(entry))
-            print("")
+        if self.compound:
+            sequences = self.compound.process(sequences, self.lang_id)
 
-        #if self._compound_word_expander:
-        #    sequences = self._compound_word_expander.expand_sequences(sequences)
-
-        #if self.parser_UAS:
-        #    sequences = self.parser.parse_sequences(sequences)
+        if self.parser:
+            sequences = self.parser.process(sequences, self.lang_id)
 
         if self.tagger_UPOS or self.lemmatizer:
-            import copy
-            new_sequences = []
-            for sequence in sequences: # this should be batched!
-                new_sequence = [copy.deepcopy(sequence)]
-                new_sequence = self.tagger_UPOS.process(new_sequence, upos=True)
-                new_sequence = self.tagger_XPOS.process(new_sequence, xpos=True)
-                new_sequence = self.tagger_ATTRS.process(new_sequence, attrs=True)
-                new_sequences.append(new_sequence)
-            sequences = new_sequences
+            sequences = self.tagger_UPOS.process(sequences, upos=True, lang_id = self.lang_id)
+            sequences = self.tagger_XPOS.process(sequences, xpos=True, lang_id = self.lang_id)
+            sequences = self.tagger_ATTRS.process(sequences, attrs=True, lang_id = self.lang_id)
+
+        #from ipdb import set_trace
+        #set_trace()
 
         for seq in sequences:
             for entry in seq:
@@ -118,7 +121,12 @@ class Cube(object):
             print("")
 
         if self.lemmatizer:
-            sequences = self.lemmatizer.process(sequences)
+            sequences = self.lemmatizer.process(sequences, self.lang_id)
+
+        for seq in sequences:
+            for entry in seq:
+                sys.stdout.write(str(entry))
+            print("")
 
         return sequences
 

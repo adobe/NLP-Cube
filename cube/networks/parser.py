@@ -172,6 +172,48 @@ class Parser(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
 
+    def process(self, sequences, lang_id):
+        batch_size = 16
+        self.eval()
+        num_batches = len(sequences) // batch_size
+        if len(sequences) % batch_size != 0:
+            num_batches += 1
+        total_words = 0
+
+        import copy
+        sent_id = 0
+        word_id = 0
+        for batch_idx in range(num_batches):
+            start = batch_idx * batch_size
+            stop = min(len(sequences), start + batch_size)
+            data = []
+            lang_ids = []
+            for ii in range(stop - start):
+                data.append(sequences[start + ii])
+                total_words += len(sequences[start + ii])
+                lang_ids.append(lang_id)
+            with torch.no_grad():
+                s_arcs, label_proj_head, label_proj_dep, s_upos, s_xpos, s_attrs = self.forward(data, lang_ids=lang_ids)
+
+            s_arcs = s_arcs.detach().cpu().numpy()
+            s_lens = []
+            for ii in range(len(data)):
+                s_lens.append(len(data[ii]))
+            pred_heads, labels = self.get_tree(s_arcs, s_lens, label_proj_head, label_proj_dep)
+
+            s_labels = labels.detach().cpu().numpy()
+            for b_idx in range(s_upos.shape[0]):
+                for w_idx in range(len(pred_heads[b_idx])):
+                    pred_labels = np.argmax(s_labels[b_idx, w_idx])
+
+                    if word_id < len(data[b_idx]):
+                        sequences[sent_id][word_id].label = self.encodings.labels[pred_labels]
+                        sequences[sent_id][word_id].head = pred_heads[b_idx][w_idx]
+                        word_id += 1
+                sent_id += 1
+                word_id = 0
+
+        return sequences
 
 class TaggerDataset(torch.utils.data.Dataset):
     def __init__(self, conll_dataset):

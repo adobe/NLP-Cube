@@ -140,11 +140,12 @@ class Tokenizer(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location='cpu'))
 
-    def process(self, input_string):
+    def process(self, input_string, lang_id):
+        # TODO test languages with no space after .
+        #
         self.eval()
-
         with torch.no_grad():
-            x = [[(ch, 0) for ch in input_string]]
+            x = [[(ch, lang_id) for ch in input_string]]
             pred_y = self.forward(x)
             # mask void output for NON-WHITESPACE
             pred_y = pred_y[0].detach().cpu().numpy()

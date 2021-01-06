@@ -87,10 +87,10 @@ class Tagger(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
 
-    def process(self, sequences, upos = False, xpos = False, attrs = False):
+    def process(self, sequences, upos = False, xpos = False, attrs = False, lang_id = 0):
         self.eval()
         with torch.no_grad():
-            s_upos, s_xpos, s_attrs, _, _, _ = self.forward(sequences, lang_ids=[0])
+            s_upos, s_xpos, s_attrs, _, _, _ = self.forward(sequences, lang_ids=[lang_id]*len(sequences))
 
             s_upos = np.argmax(s_upos.detach().cpu().numpy(), axis = 2) # (1, # of words)
             s_xpos = np.argmax(s_xpos.detach().cpu().numpy(), axis = 2)
@@ -101,7 +101,7 @@ class Tagger(nn.Module):
                 if upos:
                     sequences[batch_index][word_index].upos = self.encodings.upos_list[s_upos[batch_index][word_index]]
                 if xpos:
-                   sequences[batch_index][word_index].xpos = self.encodings.xpos_list[s_xpos[batch_index][word_index]]
+                    sequences[batch_index][word_index].xpos = self.encodings.xpos_list[s_xpos[batch_index][word_index]]
                 if attrs:
                     sequences[batch_index][word_index].attrs = self.encodings.attrs_list[s_attrs[batch_index][word_index]]
 

@@ -116,7 +116,7 @@ class ModelStore ():
             while True:
                 current_file = os.path.join(temp_folder, "{}.{}".format(model_name,file_counter))
                 current_url = "{}.{}?raw=true".format(model_url, file_counter)
-                logger.info("Fetching model part {} from {} ...".format(file_counter, current_url))
+                #logger.info("Fetching model part {} from {} ...".format(file_counter, current_url))
                 # no more files to download
                 desc = "Downloading model part {}".format(file_counter)
                 if ModelStore.__download_file(current_url, current_file, desc = desc) != 200:
