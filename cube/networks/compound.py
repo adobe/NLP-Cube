@@ -196,8 +196,7 @@ class Compound(nn.Module):
                         char = char.upper()
                     lemma_pred += char
             lemmas.append(lemma_pred)
-        from ipdb import set_trace
-        set_trace()
+
         cnt = 0
         new_seqs = []
         for seq in sequences:
