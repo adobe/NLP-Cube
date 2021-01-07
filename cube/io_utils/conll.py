@@ -49,6 +49,8 @@ class Dataset:
         sequences = []
         in_sequence = False
         seq = []
+        seq_ok = True
+        skipped_sequences = 0
         for line in lines:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
@@ -56,16 +58,24 @@ class Dataset:
                 parts = line.split("\t")
                 s = ConllEntry(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7], parts[8],
                                parts[9])
+                if len(parts[1]) > 60:
+                    seq_ok = False
+                    print("Skipping sentence due to word length: {}".format(parts[1]))
+
                 if not ignore_compound or not s.is_compound_entry:
                     if "." not in parts[0]:
                         seq.append(s)
                 in_sequence = True
             elif line == "":
                 in_sequence = False
-                if len(seq) > 0:
+                if seq_ok is False:
+                    skipped_sequences += 1
+                if len(seq) > 0 and seq_ok is True:
                     sequences.append([seq, lang_id])
                 seq = []
-
+                seq_ok = True
+        if skipped_sequences>0:
+            print("\n\t ... skipped {} invalid sentences in this dataset.".format(skipped_sequences))
         return sequences
 
     def write(self, filename):
