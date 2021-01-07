@@ -69,6 +69,8 @@ class ModelStore():
             paths["compound"] = {
                 "model": os.path.join(ModelStore.root_path, "models", model_name,
                                       "compound-{}.best".format(model_name)),
+                "dict": os.path.join(ModelStore.root_path, "models", model_name,
+                                      "compound-{}.list".format(model_name)),
                 "config": os.path.join(ModelStore.root_path, "models", model_name,
                                        "compound-{}.conf".format(model_name)),
                 "encodings": os.path.join(ModelStore.root_path, "models", model_name,

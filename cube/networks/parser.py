@@ -193,27 +193,43 @@ class Parser(nn.Module):
                 total_words += len(sequences[start + ii])
                 lang_ids.append(lang_id)
             with torch.no_grad():
-                s_arcs, label_proj_head, label_proj_dep, s_upos, s_xpos, s_attrs = self.forward(data, lang_ids=lang_ids)
+                new_seqs = []
+                for seq in data:
+                    new_seq = []
+                    for elem in seq:
+                        if not elem.is_compound_entry:
+                            new_seq.append(elem)
+                    new_seqs.append(new_seq)
+                s_arcs, label_proj_head, label_proj_dep, s_upos, s_xpos, s_attrs = self.forward(new_seqs,
+                                                                                                lang_ids=lang_ids)
 
             s_arcs = s_arcs.detach().cpu().numpy()
             s_lens = []
             for ii in range(len(data)):
-                s_lens.append(len(data[ii]))
+                s_lens.append(len(new_seqs[ii]))
             pred_heads, labels = self.get_tree(s_arcs, s_lens, label_proj_head, label_proj_dep)
 
             s_labels = labels.detach().cpu().numpy()
+            e_idx = 0
             for b_idx in range(s_upos.shape[0]):
-                for w_idx in range(len(pred_heads[b_idx])):
-                    pred_labels = np.argmax(s_labels[b_idx, w_idx])
+                for w_idx in range(len(sequences[sent_id])):
+                    if w_idx >= len(pred_heads[b_idx]):
+                        continue
+                    while sequences[sent_id][word_id].is_compound_entry:
+                        sequences[sent_id][word_id].head = '_'
+                        word_id += 1
+                    pred_labels = np.argmax(s_labels[b_idx, e_idx])
 
                     if word_id < len(data[b_idx]):
                         sequences[sent_id][word_id].label = self.encodings.labels[pred_labels]
-                        sequences[sent_id][word_id].head = pred_heads[b_idx][w_idx]
-                        word_id += 1
+                        sequences[sent_id][word_id].head = pred_heads[b_idx][e_idx]
+                    e_idx += 1
+                    word_id += 1
                 sent_id += 1
                 word_id = 0
 
         return sequences
+
 
 class TaggerDataset(torch.utils.data.Dataset):
     def __init__(self, conll_dataset):

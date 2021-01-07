@@ -87,25 +87,37 @@ class Tagger(nn.Module):
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
 
-    def process(self, sequences, upos = False, xpos = False, attrs = False, lang_id = 0):
+    def process(self, sequences, upos=False, xpos=False, attrs=False, lang_id=0):
         self.eval()
+        new_seqs = []
+        for seq in sequences:
+            new_seq = []
+            for elem in seq:
+                if not elem.is_compound_entry:
+                    new_seq.append(elem)
+            new_seqs.append(new_seq)
         with torch.no_grad():
-            s_upos, s_xpos, s_attrs, _, _, _ = self.forward(sequences, lang_ids=[lang_id]*len(sequences))
+            s_upos, s_xpos, s_attrs, _, _, _ = self.forward(new_seqs, lang_ids=[lang_id] * len(sequences))
 
-            s_upos = np.argmax(s_upos.detach().cpu().numpy(), axis = 2) # (1, # of words)
-            s_xpos = np.argmax(s_xpos.detach().cpu().numpy(), axis = 2)
-            s_attrs = np.argmax(s_attrs.detach().cpu().numpy(), axis = 2)
+            s_upos = np.argmax(s_upos.detach().cpu().numpy(), axis=2)  # (1, # of words)
+            s_xpos = np.argmax(s_xpos.detach().cpu().numpy(), axis=2)
+            s_attrs = np.argmax(s_attrs.detach().cpu().numpy(), axis=2)
 
         for batch_index, sequence in enumerate(sequences):
+            elem_id = 0
             for word_index in range(len(sequences[batch_index])):
-                if upos:
-                    sequences[batch_index][word_index].upos = self.encodings.upos_list[s_upos[batch_index][word_index]]
-                if xpos:
-                    sequences[batch_index][word_index].xpos = self.encodings.xpos_list[s_xpos[batch_index][word_index]]
-                if attrs:
-                    sequences[batch_index][word_index].attrs = self.encodings.attrs_list[s_attrs[batch_index][word_index]]
+                if not sequences[batch_index][word_index].is_compound_entry:
+                    if upos:
+                        sequences[batch_index][word_index].upos = self.encodings.upos_list[s_upos[batch_index][elem_id]]
+                    if xpos:
+                        sequences[batch_index][word_index].xpos = self.encodings.xpos_list[s_xpos[batch_index][elem_id]]
+                    if attrs:
+                        sequences[batch_index][word_index].attrs = self.encodings.attrs_list[
+                            s_attrs[batch_index][elem_id]]
+                    elem_id += 1
 
         return sequences
+
 
 class TaggerDataset(torch.utils.data.Dataset):
     def __init__(self, conll_dataset):
@@ -155,6 +167,7 @@ def _get_tgt_labels(data, encodings, device='cpu'):
     import torch
     return torch.tensor(tgt_upos, device=device), torch.tensor(tgt_xpos, device=device), torch.tensor(tgt_attrs,
                                                                                                       device=device)
+
 
 def _eval(tagger, dataset, encodings, device='cpu'):
     tagger.eval()
@@ -299,6 +312,7 @@ def _start_train(params, trainset, devset, encodings, tagger, criterion, trainer
             "\tValidation accuracy UPOS={0:.4f}, XPOS={1:.4f}, ATTRS={2:.4f}\n".format(acc_upos, acc_xpos, acc_attrs))
         sys.stdout.flush()
         epoch += 1
+
 
 def do_train(params):
     from cube.io_utils.conll import Dataset

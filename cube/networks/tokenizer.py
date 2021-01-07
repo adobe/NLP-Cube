@@ -143,18 +143,50 @@ class Tokenizer(nn.Module):
     def process(self, input_string, lang_id):
         # TODO test languages with no space after .
         #
-        self.eval()
-        with torch.no_grad():
-            x = [[(ch, lang_id) for ch in input_string]]
-            pred_y = self.forward(x)
-            # mask void output for NON-WHITESPACE
-            pred_y = pred_y[0].detach().cpu().numpy()
-            for i in range(pred_y.shape[0]):
-                if x[0][i][0] != ' ':
-                    pred_y[i][4] = -1000000
-            pred_y = np.argmax(pred_y, axis=1)
 
-        p_y = [_tok_labels[yy] for yy in pred_y]
+        SEQ_LEN = 1000
+        OVERLAP = 200
+        # make batches
+        batches = []
+        num_seqs = len(input_string) // SEQ_LEN
+        if len(input_string) % SEQ_LEN != 0:
+            num_seqs += 1
+        seqs = []
+        boundaries = []
+        for ii in range(num_seqs):
+            start = max(0, ii * SEQ_LEN - OVERLAP)
+            stop = min(ii * SEQ_LEN + SEQ_LEN + OVERLAP, len(input_string))
+
+            if ii == 0:
+                b_start = 0
+            else:
+                b_start = OVERLAP
+
+            seqs.append(input_string[start:stop])
+            boundaries.append(b_start)
+
+        self.eval()
+
+        p_y = []
+        cnt = 0
+
+        for seq, boundary in zip(seqs, boundaries):
+            with torch.no_grad():
+                x = [[(ch, lang_id) for ch in seq]]
+                pred_y = self.forward(x)
+                # mask void output for NON-WHITESPACE
+                pred_y = pred_y[0].detach().cpu().numpy()
+                for i in range(pred_y.shape[0]):
+                    if x[0][i][0] != ' ':
+                        pred_y[i][4] = -1000000
+                pred_y = np.argmax(pred_y, axis=1)
+
+            p_y_tmp = [_tok_labels[yy] for yy in pred_y]
+            p_y_tmp = p_y_tmp[boundary:]
+            for ii in range(min(len(p_y_tmp), SEQ_LEN)):
+                if cnt < len(input_string):
+                    p_y.append(p_y_tmp[ii])
+                    cnt += 1
 
         cw = ''
         seqs = []
@@ -188,7 +220,8 @@ class Tokenizer(nn.Module):
                     cs.append(entry)
 
                 w_index = 1
-                seqs.append(cs)
+                if len(cs) > 0:
+                    seqs.append(cs)
                 cs = []
                 cw = ''
 
@@ -245,6 +278,7 @@ def do_train(params):
 
     _start_train(params, tokenizer, trainset, devset, criterion, trainer)
 
+
 def _make_batches(dataset, batch_size=32, seq_len=1000):
     x = []
     y = []
@@ -292,6 +326,7 @@ def _make_batches(dataset, batch_size=32, seq_len=1000):
         batches_y.append(mby)
     return batches_x, batches_y
 
+
 def _compute_target(y):
     max_len = max([len(seq) for seq in y])
     y_target = np.zeros((len(y), max_len))
@@ -300,6 +335,7 @@ def _compute_target(y):
             if jj < len(y[ii]):
                 y_target[ii, jj] = _tok_label2int[y[ii][jj]]
     return y_target
+
 
 def _eval(tokenizer, dataset):
     pred_s = 0

@@ -30,6 +30,7 @@ class Compound(nn.Module):
         self._case_emb = nn.Embedding(5, 16, padding_idx=0)  # 0-pad 1-upper 2-lower 3-symbol 4-number
         self._start_index = len(encodings.char2int)
         self._stop_index = len(encodings.char2int) + 1
+        self._dict = None
         convolutions = []
         cs_inp = config.char_emb_size + config.lang_emb_size + 16
         for _ in range(3):
@@ -130,8 +131,19 @@ class Compound(nn.Module):
     def save(self, path):
         torch.save(self.state_dict(), path)
 
-    def load(self, path):
+    def load(self, path, dict_file=None):
         self.load_state_dict(torch.load(path, map_location='cpu'))
+        if dict_file is not None:
+            self._dict = {}
+            f = open(dict_file)
+            for line in f.readlines():
+                parts = line.strip().split('\t')
+                if len(parts) != 3:
+                    continue
+                key = (parts[0], int(parts[1]))
+                if key not in self._dict:
+                    self._dict[key] = parts[2]
+            f.close()
 
     def _get_device(self):
         if self._char_emb.weight.device.type == 'cpu':
@@ -173,6 +185,7 @@ class Compound(nn.Module):
         return torch.tensor(target_char, dtype=torch.long, device=self._get_device())
 
     def process(self, sequences, lang_id):
+        self.eval()
         x_chars, x_lang = [], []
 
         for seq in sequences:
@@ -180,39 +193,50 @@ class Compound(nn.Module):
                 x_chars.append(elem.word)
                 x_lang.append(lang_id)
 
-        y_char_pred, y_case_pred = self.forward(x_chars, x_lang)
+        with torch.no_grad():
+            y_char_pred, y_case_pred = self.forward(x_chars, x_lang)
         y_char_pred = torch.argmax(y_char_pred, dim=-1).detach().cpu().numpy()
         y_case_pred = torch.argmax(y_case_pred, dim=-1).detach().cpu().numpy()
 
         lemmas = []
         for ii in range(y_char_pred.shape[0]):
-            lemma_pred = ''
-            for jj in range(y_char_pred.shape[1]):
-                if y_char_pred[ii, jj] == 0:
-                    break
-                else:
-                    char = self._char_list[y_char_pred[ii, jj].item()]
-                    if y_case_pred[ii, jj] == 1:
-                        char = char.upper()
-                    lemma_pred += char
+            found = False
+            if self._dict is not None:
+                key = (x_chars[ii], lang_id)
+                if key in self._dict:
+                    lemma_pred = self._dict[key]
+                    found = True
+            if not found:
+                lemma_pred = ''
+                for jj in range(y_char_pred.shape[1]):
+                    if y_char_pred[ii, jj] == 0:
+                        break
+                    else:
+                        char = self._char_list[y_char_pred[ii, jj].item()]
+                        if y_case_pred[ii, jj] == 1:
+                            char = char.upper()
+                        lemma_pred += char
             lemmas.append(lemma_pred)
 
         cnt = 0
         new_seqs = []
         for seq in sequences:
             new_seq = []
-            w_index = 0
+            w_index = 1
             for elem in seq:
-                w_index += 1
                 wexp = lemmas[cnt]
                 parts = wexp.split(' ')
                 if len(parts) == 1:
+                    elem.index = w_index
                     new_seq.append(elem)
+                    w_index += 1
                 else:
+                    # w_index += 1
                     elem.is_compound_entry = True
                     start = w_index
                     stop = w_index + len(parts) - 1
                     elem.index = '{0}-{1}'.format(start, stop)
+                    new_seq.append(elem)
                     for part in parts:
                         from cube.io_utils.conll import ConllEntry
                         new_seq.append(ConllEntry(w_index, part, '_', '_', '_', '_', '_', '_', '_', '_'))
@@ -351,6 +375,12 @@ def _start_train(compound, trainset, devset, params):
     critetion = torch.nn.CrossEntropyLoss()
     # prepare dataset
     trainset = _extract_data(trainset, unique=True)
+    f = open('{0}.list'.format(params.store), 'w')
+    for example in trainset:
+        if ' ' in example[2] and ' ' not in example[0]:
+            f.write('{0}\t{1}\t{2}\n'.format(example[0], example[1], example[2]))
+    f.close()
+    sys.exit(0)
     devset = _extract_data(devset, unique=True)
     epoch = 0
     best_score = 0  # _eval(compound, devset)

@@ -165,7 +165,8 @@ class Lemmatizer(nn.Module):
                         char = self._encodings.char2int['<UNK>']
                     x_char[ii, jj] = char
                     x_case[ii, jj] = case
-                    x_upos[ii, jj] = self._encodings.upos2int[upos]
+                    if upos in self._encodings.upos2int:
+                        x_upos[ii, jj] = self._encodings.upos2int[upos]
                     x_lang[ii, jj] = lang
         x_char = torch.tensor(x_char, dtype=torch.long, device=self._get_device())
         x_case = torch.tensor(x_case, dtype=torch.long, device=self._get_device())
@@ -179,15 +180,17 @@ class Lemmatizer(nn.Module):
         return torch.tensor(target_char, dtype=torch.long, device=self._get_device())
 
     def process(self, sequences, lang_id):
+        self.eval()
         x_chars, x_upos, x_lang = [], [], []
 
         for seq in sequences:
             for elem in seq:
-                x_chars.append(elem.word)
-                x_upos.append(elem.upos)
-                x_lang.append(lang_id)
-
-        y_char_pred, y_case_pred = self.forward(x_chars, x_lang, x_upos)
+                if not elem.is_compound_entry:
+                    x_chars.append(elem.word)
+                    x_upos.append(elem.upos)
+                    x_lang.append(lang_id)
+        with torch.no_grad():
+            y_char_pred, y_case_pred = self.forward(x_chars, x_lang, x_upos)
         y_char_pred = torch.argmax(y_char_pred, dim=-1).detach().cpu().numpy()
         y_case_pred = torch.argmax(y_case_pred, dim=-1).detach().cpu().numpy()
 
@@ -207,8 +210,9 @@ class Lemmatizer(nn.Module):
         cnt = 0
         for seq in sequences:
             for elem in seq:
-                elem.lemma = lemmas[cnt]
-                cnt += 1
+                if not elem.is_compound_entry:
+                    elem.lemma = lemmas[cnt]
+                    cnt += 1
 
         return sequences
 
