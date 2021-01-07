@@ -375,12 +375,17 @@ def _start_train(compound, trainset, devset, params):
     critetion = torch.nn.CrossEntropyLoss()
     # prepare dataset
     trainset = _extract_data(trainset, unique=True)
+    num_ex = 0
+    for example in trainset:
+        if ' ' in example[2] and ' ' not in example[0]:
+            num_ex += 1
+    if num_ex == 0:
+        sys.exit(0)
     f = open('{0}.list'.format(params.store), 'w')
     for example in trainset:
         if ' ' in example[2] and ' ' not in example[0]:
             f.write('{0}\t{1}\t{2}\n'.format(example[0], example[1], example[2]))
     f.close()
-    sys.exit(0)
     devset = _extract_data(devset, unique=True)
     epoch = 0
     best_score = 0  # _eval(compound, devset)
