@@ -172,8 +172,7 @@ class Compound(nn.Module):
         target_char, target_case = _get_targets(tmp, self._encodings)
         return torch.tensor(target_char, dtype=torch.long, device=self._get_device())
 
-
-    def process (self, sequences, lang_id):
+    def process(self, sequences, lang_id):
         x_chars, x_lang = [], []
 
         for seq in sequences:
@@ -182,8 +181,8 @@ class Compound(nn.Module):
                 x_lang.append(lang_id)
 
         y_char_pred, y_case_pred = self.forward(x_chars, x_lang)
-        y_char_pred = torch.argmax(y_char_pred, dim=-1).cpu().numpy()
-        y_case_pred = torch.argmax(y_case_pred, dim=-1).cpu().numpy()
+        y_char_pred = torch.argmax(y_char_pred, dim=-1).detach().cpu().numpy()
+        y_case_pred = torch.argmax(y_case_pred, dim=-1).detach().cpu().numpy()
 
         lemmas = []
         for ii in range(y_char_pred.shape[0]):
@@ -199,12 +198,31 @@ class Compound(nn.Module):
             lemmas.append(lemma_pred)
 
         cnt = 0
+        new_seqs = []
         for seq in sequences:
+            new_seq = []
+            w_index = 0
             for elem in seq:
-                elem.lemma = lemmas[cnt]
+                w_index += 1
+                wexp = lemmas[cnt]
+                parts = wexp.split(' ')
+                if len(parts) == 1:
+                    new_seq.append(elem)
+                else:
+                    elem.is_compound_entry = True
+                    start = w_index
+                    stop = w_index + len(parts) - 1
+                    elem.index = '{0}-{1}'.format(start, stop)
+                    for part in parts:
+                        from cube.io_utils.conll import ConllEntry
+                        new_seq.append(ConllEntry(w_index, part, '_', '_', '_', '_', '_', '_', '_', '_'))
+                        w_index += 1
+                # elem.lemma = lemmas[cnt]
                 cnt += 1
+            new_seqs.append(new_seq)
 
-        return sequences
+        return new_seqs
+
 
 def _eval(lemmatizer, dataset):
     ok = 0
@@ -222,8 +240,8 @@ def _eval(lemmatizer, dataset):
             y_char_target, y_case_target = _get_targets(batch, lemmatizer._encodings)
             y_char_pred, y_case_pred = lemmatizer(x_chars, x_lang)
             good = np.ones(y_char_target.shape[0])
-            y_char_pred = torch.argmax(y_char_pred, dim=-1).cpu().numpy()
-            y_case_pred = torch.argmax(y_case_pred, dim=-1).cpu().numpy()
+            y_char_pred = torch.argmax(y_char_pred, dim=-1).detach().cpu().numpy()
+            y_case_pred = torch.argmax(y_case_pred, dim=-1).detach().cpu().numpy()
             for ii in range(y_char_target.shape[0]):
                 lemma_target = batch[ii][2]
                 lemma_pred = ''

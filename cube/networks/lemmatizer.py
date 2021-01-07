@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('')
 
 import optparse
@@ -177,7 +178,7 @@ class Lemmatizer(nn.Module):
         target_char, target_case = _get_targets(tmp, self._encodings)
         return torch.tensor(target_char, dtype=torch.long, device=self._get_device())
 
-    def process (self, sequences, lang_id):
+    def process(self, sequences, lang_id):
         x_chars, x_upos, x_lang = [], [], []
 
         for seq in sequences:
@@ -187,8 +188,8 @@ class Lemmatizer(nn.Module):
                 x_lang.append(lang_id)
 
         y_char_pred, y_case_pred = self.forward(x_chars, x_lang, x_upos)
-        y_char_pred = torch.argmax(y_char_pred, dim=-1).cpu().numpy()
-        y_case_pred = torch.argmax(y_case_pred, dim=-1).cpu().numpy()
+        y_char_pred = torch.argmax(y_char_pred, dim=-1).detach().cpu().numpy()
+        y_case_pred = torch.argmax(y_case_pred, dim=-1).detach().cpu().numpy()
 
         lemmas = []
         for ii in range(y_char_pred.shape[0]):
@@ -207,7 +208,7 @@ class Lemmatizer(nn.Module):
         for seq in sequences:
             for elem in seq:
                 elem.lemma = lemmas[cnt]
-                cnt+=1
+                cnt += 1
 
         return sequences
 
