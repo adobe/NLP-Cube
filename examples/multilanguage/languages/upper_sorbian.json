@@ -1,0 +1,7 @@
+[
+    [
+        "hsb_ufal",
+        "corpus/ud-treebanks-v2.5/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu"
+    ]
+]

@@ -1,0 +1,12 @@
+[
+    [
+        "pt_bosque",
+        "corpus/ud-treebanks-v2.5/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu"
+    ],
+    [
+        "pt_gsd",
+        "corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-dev.conllu"
+    ]
+]

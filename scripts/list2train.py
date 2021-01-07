@@ -158,19 +158,61 @@ def _process_multi(params):
     json.dump(all, open(out_file, 'w'), indent=4)
 
 
+def _process_langs(params):
+    def _extract_lang_and_flavour(name):
+        name = name[3:]
+        parts = name.split('-')
+        lang = parts[0]
+        flavour = parts[1]
+        return lang, flavour
+
+    lines = open(params.input_file).readlines()
+    lang2flavour = {}
+    for line in lines:
+        dataset_name = line.strip().split(' ')[-1]
+
+        train_file = _get_file(params.train_base, dataset_name, 'train')
+        dev_file = _get_file(params.train_base, dataset_name, 'dev')
+        if dev_file == '':
+            dev_file = _get_file(params.train_base, dataset_name, 'test')
+        if train_file != '' and dev_file != '':
+            lang_id = _get_lang_id(train_file)
+            if _is_complete_corpus(dev_file):
+                lang, flavour = _extract_lang_and_flavour(dataset_name)
+                if lang not in lang2flavour:
+                    lang2flavour[lang] = [(flavour, lang_id, train_file, dev_file)]
+                else:
+                    lang2flavour[lang].append((flavour, lang_id, train_file, dev_file))
+    for lang in lang2flavour:
+        trainset = []
+        for item in lang2flavour[lang]:
+            # flavour = item[0]
+            lang_id = item[1]
+            train_file = item[2]
+            dev_file = item[3]
+            trainset.append([lang_id, train_file, dev_file])
+        output_file = '{0}/{1}.json'.format(params.output_file, lang.lower())
+        f = open(output_file, 'w')
+        json.dump(trainset, f, indent=4)
+        f.close()
+        sys.stdout.write('python3 cube/networks/model.py --batch-size=32 --device=cuda:0 --store=data/lemmatizer-{0} --train=examples/multilanguage/languages/{0}.json\n'.format(lang.lower()))
+
+
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--input-file', action='store', dest='input_file')
     parser.add_option('--output-file', action='store', dest='output_file')
     parser.add_option('--train-base', action='store', dest='train_base')
-    parser.add_option('--auto', action='store_true', dest='automatic')
+    parser.add_option('--type', action='store', dest='type', choices=['single', 'family', 'language'])
 
     (params, _) = parser.parse_args(sys.argv)
 
     if params.input_file and params.output_file and params.train_base:
-        if not params.automatic:
+        if params.type == 'single':
             _process_single(params)
-        else:
+        elif params.type == 'family':
             _process_multi(params)
+        elif params.type == 'language':
+            _process_langs(params)
     else:
         parser.print_help()

@@ -1,0 +1,7 @@
+[
+    [
+        "sk_snk",
+        "corpus/ud-treebanks-v2.5/UD_Slovak-SNK/sk_snk-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Slovak-SNK/sk_snk-ud-dev.conllu"
+    ]
+]

@@ -1,0 +1,7 @@
+[
+    [
+        "fa_seraji",
+        "corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-dev.conllu"
+    ]
+]

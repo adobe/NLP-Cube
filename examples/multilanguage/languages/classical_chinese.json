@@ -1,0 +1,7 @@
+[
+    [
+        "lzh_kyoto",
+        "corpus/ud-treebanks-v2.5/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-dev.conllu"
+    ]
+]

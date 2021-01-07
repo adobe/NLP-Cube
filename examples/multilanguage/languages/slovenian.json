@@ -1,0 +1,12 @@
+[
+    [
+        "sl_ssj",
+        "corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-dev.conllu"
+    ],
+    [
+        "sl_sst",
+        "corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-test.conllu"
+    ]
+]

@@ -1,0 +1,7 @@
+[
+    [
+        "be_hse",
+        "corpus/ud-treebanks-v2.5/UD_Belarusian-HSE/be_hse-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Belarusian-HSE/be_hse-ud-dev.conllu"
+    ]
+]

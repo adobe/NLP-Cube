@@ -1,0 +1,7 @@
+[
+    [
+        "tr_imst",
+        "corpus/ud-treebanks-v2.5/UD_Turkish-IMST/tr_imst-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Turkish-IMST/tr_imst-ud-dev.conllu"
+    ]
+]

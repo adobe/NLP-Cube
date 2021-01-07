@@ -1,0 +1,17 @@
+[
+    [
+        "no_bokmaal",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu"
+    ],
+    [
+        "no_nynorsk",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu"
+    ],
+    [
+        "no_nynorsklia",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu"
+    ]
+]

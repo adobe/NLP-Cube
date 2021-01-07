@@ -1,0 +1,7 @@
+[
+    [
+        "he_htb",
+        "corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu"
+    ]
+]

@@ -1,0 +1,22 @@
+[
+    [
+        "en_ewt",
+        "corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu"
+    ],
+    [
+        "en_gum",
+        "corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-dev.conllu"
+    ],
+    [
+        "en_lines",
+        "corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu"
+    ],
+    [
+        "en_partut",
+        "corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-dev.conllu"
+    ]
+]

@@ -1,0 +1,7 @@
+[
+    [
+        "mt_mudt",
+        "corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu"
+    ]
+]

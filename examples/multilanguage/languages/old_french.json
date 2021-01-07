@@ -1,0 +1,7 @@
+[
+    [
+        "fro_srcmf",
+        "corpus/ud-treebanks-v2.5/UD_Old_French-SRCMF/fro_srcmf-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Old_French-SRCMF/fro_srcmf-ud-dev.conllu"
+    ]
+]

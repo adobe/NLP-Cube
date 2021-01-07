@@ -1,0 +1,12 @@
+[
+    [
+        "ro_nonstandard",
+        "corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu"
+    ],
+    [
+        "ro_rrt",
+        "corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu"
+    ]
+]

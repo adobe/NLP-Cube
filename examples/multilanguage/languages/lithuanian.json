@@ -1,0 +1,12 @@
+[
+    [
+        "lt_alksnis",
+        "corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-dev.conllu"
+    ],
+    [
+        "lt_hse",
+        "corpus/ud-treebanks-v2.5/UD_Lithuanian-HSE/lt_hse-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Lithuanian-HSE/lt_hse-ud-dev.conllu"
+    ]
+]

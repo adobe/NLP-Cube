@@ -1,0 +1,7 @@
+[
+    [
+        "sme_giella",
+        "corpus/ud-treebanks-v2.5/UD_North_Sami-Giella/sme_giella-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_North_Sami-Giella/sme_giella-ud-test.conllu"
+    ]
+]

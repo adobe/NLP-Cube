@@ -1,0 +1,7 @@
+[
+    [
+        "cop_scriptorium",
+        "corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-dev.conllu"
+    ]
+]

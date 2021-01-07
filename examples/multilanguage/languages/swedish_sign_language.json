@@ -1,0 +1,7 @@
+[
+    [
+        "swl_sslc",
+        "corpus/ud-treebanks-v2.5/UD_Swedish_Sign_Language-SSLC/swl_sslc-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Swedish_Sign_Language-SSLC/swl_sslc-ud-dev.conllu"
+    ]
+]
