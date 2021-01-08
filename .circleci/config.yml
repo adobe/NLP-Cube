@@ -1,14 +1,19 @@
 version: 2.1
-  jobs:
-    test:
-      docker:
-        - image: circleci/python
-      steps:
-        - checkout
-        - run: echo "done"
+
+orbs:
+  python: circleci/python@0.2.1
+
+jobs:
+  build-and-test:
+    executor: python/default
+    steps:
+      - checkout
+      - python/load-cache
+      - python/install-deps
+      - python/save-cache
+      - run: echo "done"
 
 workflows:
-  version: 2.1
-    quick_test:
-      jobs:
-        - test:
+  main:
+    jobs:
+      - build-and-test
