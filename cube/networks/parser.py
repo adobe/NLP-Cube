@@ -526,7 +526,7 @@ def do_train(params):
 
     from cube.io_utils.conll import Dataset
     from cube.io_utils.encodings import Encodings
-    from cube.config import ParserConfig
+    from cube.io_utils.config import ParserConfig
 
     trainset = Dataset()
     devset = Dataset()
