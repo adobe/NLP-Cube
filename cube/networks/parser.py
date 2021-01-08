@@ -563,7 +563,7 @@ def do_train(params):
 
 def do_test(params):
     num_languages = 11
-    from cube.config import ParserConfig
+    from cube.io_utils.config import ParserConfig
     from cube.io_utils.conll import Dataset
     dataset = Dataset()
     dataset.load_language(params.test_file, params.lang_id)
