@@ -1,3 +1,4 @@
+lightning_logs
 data/*
 nlp-cube-models/*
 corpus/
