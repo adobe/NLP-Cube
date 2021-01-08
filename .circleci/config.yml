@@ -1,12 +1,14 @@
-jobs:
-  test:
-    docker:
-      - image: circleci/python
-    steps:
-      - checkout
-      - run: echo "done"
+version: 2.1
+  jobs:
+    test:
+      docker:
+        - image: circleci/python
+      steps:
+        - checkout
+        - run: echo "done"
 
 workflows:
-  quick_test:
-    jobs:
-      - test:
+  version: 2.1
+    quick_test:
+      jobs:
+        - test:
