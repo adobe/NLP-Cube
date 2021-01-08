@@ -62,7 +62,7 @@ class Tagger(nn.Module):
     def forward(self, x, lang_ids=None):
         if lang_ids is not None and self.lang_emb is not None:
             l_ids = [x + 1 for x in lang_ids]
-            lang_ids = torch.tensor(l_ids, dtype=torch.long, device=self.text_network._target_device)
+            lang_ids = torch.tensor(l_ids, dtype=torch.long, device=self._get_device())
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
@@ -86,6 +86,12 @@ class Tagger(nn.Module):
 
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
+
+    def _get_device(self):
+        if self.text_network.i2h.linear_layer.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self.text_network.i2h.linear_layer.weight.device.type,
+                                str(self.text_network.i2h.linear_layer.weight.device.index))
 
     def process(self, sequences, upos=False, xpos=False, attrs=False, lang_id=0):
         self.eval()
@@ -337,6 +343,8 @@ def do_train(params):
     if params.config_file:
         config.load(params.config_file)
     tagger = Tagger(config, encodings, len(train_list), target_device=params.device)
+    if params.resume:
+        tagger.load('{0}.last'.format(params.store))
     if params.device != 'cpu':
         tagger.cuda(params.device)
 
@@ -376,6 +384,7 @@ if __name__ == '__main__':
     parser.add_option('--batch-size', action='store', type='int', default=32, dest='batch_size',
                       help='Number of epochs before early stopping (default=32)')
     parser.add_option('--debug', action='store_true', dest='debug', help='Do some standard stuff to debug the model')
+    parser.add_option('--resume', action='store_true', dest='resume', help='Resume training')
     parser.add_option('--device', action='store', dest='device', default='cpu',
                       help='What device to use for models: cpu, cuda:0, cuda:1 ...')
     parser.add_option('--test', action='store_true', dest='test', help='Test the traine model')

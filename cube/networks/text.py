@@ -136,7 +136,10 @@ class TextEncoder(nn.Module):
             return 1
 
     def _get_device(self):
-        return self._target_device
+        if self.i2h.linear_layer.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self.i2h.linear_layer.weight.device.type,
+                                str(self.i2h.linear_layer.weight.device.index))
 
     def _create_batches(self, x, conditioning):
         char_batch = []

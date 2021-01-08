@@ -14,21 +14,21 @@ from cube.io_utils.objects import Doc, Sentence, Word, Token
 from typing import Optional
 
 
-def load(lang: str, log_level: str = "ERROR", use_gpu=True):
+def load(lang: str, log_level: str = "ERROR", device="cpu"):
     # TODO set log level
 
     # gets components (by download or use from local cache)
     paths, lang_id = ModelStore.solve(lang)
 
     # instantiate cube object and load components
-    cube = Cube(component_paths=paths)
+    cube = Cube(component_paths=paths, device=device)
     cube.lang_id = lang_id
 
     return cube
 
 
 class Cube(object):
-    def __init__(self, component_paths: dict):
+    def __init__(self, component_paths: dict, device="cpu"):
         self.lang_id = 0
         self.tokenizer = None
         self.compound = None
@@ -48,6 +48,7 @@ class Cube(object):
             self.tokenizer = Tokenizer(config=tokenizer_config, encodings=encodings,
                                        num_languages=tokenizer_config.num_languages)
             self.tokenizer.load(path=component_paths["tokenizer"]["model"])
+            self.tokenizer.to(device)
 
         if "compound" in component_paths:
             from cube.networks.compound import Compound
@@ -59,6 +60,7 @@ class Cube(object):
             self.compound = Compound(config=compound_config, encodings=encodings,
                                      num_languages=compound_config.num_languages)
             self.compound.load(path=component_paths["compound"]["model"], dict_file=component_paths["compound"]["dict"])
+            self.compound.to(device)
 
         if "lemmatizer" in component_paths:
             from cube.io_utils.config import LemmatizerConfig
@@ -70,6 +72,7 @@ class Cube(object):
             self.lemmatizer = Lemmatizer(config=lemmatizer_config, encodings=encodings,
                                          num_languages=lemmatizer_config.num_languages)
             self.lemmatizer.load(path=component_paths["lemmatizer"]["model"])
+            self.lemmatizer.to(device)
 
         if "tagger" in component_paths:
             from cube.io_utils.config import TaggerConfig
@@ -87,6 +90,9 @@ class Cube(object):
             self.tagger_ATTRS = Tagger(config=tagger_config, encodings=encodings,
                                        num_languages=tagger_config.num_languages)
             self.tagger_ATTRS.load(path=component_paths["tagger"]["model_ATTRS"])
+            self.tagger_UPOS.to(device)
+            self.tagger_XPOS.to(device)
+            self.tagger_ATTRS.to(device)
 
         if "parser" in component_paths:
             from cube.io_utils.config import ParserConfig
@@ -97,6 +103,7 @@ class Cube(object):
             encodings.load(filename=component_paths["parser"]["encodings"])
             self.parser = Parser(config=parser_config, encodings=encodings, num_languages=parser_config.num_languages)
             self.parser.load(path=component_paths["parser"]["model"])
+            self.parser.to(device)
 
     def __call__(self, text):
         sequences = []
@@ -157,7 +164,7 @@ class Cube(object):
 
 
 if __name__ == "__main__":
-    nlp = load("ro")
+    nlp = load("ro_rrt", device="cuda:0")
 
     r = nlp(
         "Acesta este un simplu test. Ana are mere dar nu are pere și mănâncă banane.\nHai să vedem ce face când dă de ENTER. Știu că avea și o problemă cu băiatul, băieții sau băieților, din cauza corpusului de antrenare.")
@@ -175,10 +182,11 @@ if __name__ == "__main__":
     # nlp = load('fr')
     # r = nlp(
     #     open('corpus/ud-treebanks-v2.5/UD_French-GSD/fr_gsd-ud-test.txt').read().replace('\n', ' ').replace('\r', ' '))
-    # nlp = load('ro')
-    # r = nlp(
-    #     open('corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-test.txt').read().replace('\n', ' ').replace('\r', ' '))
-    # for seq in r:
-    #     for entry in seq:
-    #         sys.stdout.write(str(entry))
-    #     print("")
+    nlp = load('ro_rrt')
+    r = nlp(
+        open('corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-test.txt').read().replace('\n', ' ').replace('\r',
+                                                                                                              ' '))
+    for seq in r:
+        for entry in seq:
+            sys.stdout.write(str(entry))
+        print("")

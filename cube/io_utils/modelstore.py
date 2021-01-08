@@ -56,7 +56,7 @@ class ModelStore():
                 os.path.join(ModelStore.root_path, "models", model_name, "tokenizer-{}.bestTOK".format(model_name))):
             paths["tokenizer"] = {
                 "model": os.path.join(ModelStore.root_path, "models", model_name,
-                                      "tokenizer-{}.bestTOK".format(model_name)),
+                                      "tokenizer-{}.bestSS".format(model_name)),
                 "config": os.path.join(ModelStore.root_path, "models", model_name,
                                        "tokenizer-{}.conf".format(model_name)),
                 "encodings": os.path.join(ModelStore.root_path, "models", model_name,

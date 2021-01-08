@@ -82,7 +82,7 @@ class Parser(nn.Module):
 
     def forward(self, x, lang_ids=None, warmup=False):
         if lang_ids is not None and self.lang_emb is not None:
-            lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self.text_network._target_device)
+            lang_ids = torch.tensor(lang_ids, dtype=torch.long, device=self._get_device())
             lang_emb = self.lang_emb(lang_ids)
         else:
             lang_emb = None
@@ -97,17 +97,17 @@ class Parser(nn.Module):
         proj_label_dep = self.proj_label_dep(emb_output)
         w_stack = []
         proj_arc_head = torch.cat(
-            (torch.zeros((proj_arc_head.shape[0], 1, proj_arc_head.shape[2]), device=self._target_device),
+            (torch.zeros((proj_arc_head.shape[0], 1, proj_arc_head.shape[2]), device=self._get_device()),
              proj_arc_head), dim=1)
         proj_label_head = torch.cat(
-            (torch.zeros((proj_label_head.shape[0], 1, proj_label_head.shape[2]), device=self._target_device),
+            (torch.zeros((proj_label_head.shape[0], 1, proj_label_head.shape[2]), device=self._get_device()),
              proj_label_head), dim=1)
 
         proj_arc_dep = torch.cat(
-            (torch.zeros((proj_arc_dep.shape[0], 1, proj_arc_dep.shape[2]), device=self._target_device),
+            (torch.zeros((proj_arc_dep.shape[0], 1, proj_arc_dep.shape[2]), device=self._get_device()),
              proj_arc_dep), dim=1)
         proj_label_dep = torch.cat(
-            (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._target_device),
+            (torch.zeros((proj_label_dep.shape[0], 1, proj_label_dep.shape[2]), device=self._get_device()),
              proj_label_dep), dim=1)
 
         proj_arc_head_lang = torch.cat((proj_arc_head, lang_emb_parsing), dim=2)  # .permute(1, 0, 2)
@@ -171,6 +171,12 @@ class Parser(nn.Module):
 
     def load(self, path):
         self.load_state_dict(torch.load(path, map_location=self._target_device))
+
+    def _get_device(self):
+        if self.text_network.i2h.linear_layer.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self.text_network.i2h.linear_layer.weight.device.type,
+                                str(self.text_network.i2h.linear_layer.weight.device.index))
 
     def process(self, sequences, lang_id):
         batch_size = 16
