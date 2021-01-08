@@ -1,5 +1,7 @@
 jobs:
   test:
+    docker:
+      - image: circleci/python
     steps:
-    - checkout
-    - run: echo "done"
+      - checkout
+      - run: echo "done"
