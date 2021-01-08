@@ -16,4 +16,5 @@ regex
 torch
 tqdm
 configparser
+pytorch-lightning
 
