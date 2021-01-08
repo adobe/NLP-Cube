@@ -5,3 +5,8 @@ jobs:
     steps:
       - checkout
       - run: echo "done"
+
+workflows:
+  quick_test:
+    jobs:
+      - test:
