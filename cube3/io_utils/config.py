@@ -19,7 +19,7 @@
 import sys
 import ast
 from builtins import object, super
-from cube.misc.misc import fopen
+from cube3.io_utils.misc import fopen
 import collections
 
 if sys.version_info[0] == 2:

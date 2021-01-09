@@ -149,7 +149,8 @@ class Word:
     Structure to hold CONLL-U style metadata for words. See https://universaldependencies.org/format.html for more details about the format
     """
 
-    def __init__(self, index, word, lemma, upos, xpos, attrs, head, label, deps, space_after, token=None):
+    def __init__(self, index, word: str, lemma: str, upos: str, xpos: str, attrs: str, head, label: str, deps: str,
+                 space_after: str, token: Token = None):
         self.index, self.is_compound_entry = _int_try_parse(index)
         self.word = word
         self.lemma = lemma
@@ -170,5 +171,5 @@ class Word:
 
 if __name__ == '__main__':
     print("test")
-    doc = Doc(filename='corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-dev.conllu')
+    doc = Document(filename='corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-dev.conllu')
     print(doc)

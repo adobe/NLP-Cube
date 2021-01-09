@@ -1,6 +1,9 @@
 import logging, re
-from cube3.data.objects import Doc
-from cube3.data.utils import conllu_to_doc
+import sys
+
+sys.path.append('')
+from cube3.io_utils.objects import Document
+
 
 class Encodings():
     def __init__(self, verbose=True):
@@ -19,7 +22,7 @@ class Encodings():
         self.characters = []
         self.verbose = verbose
 
-    def compute(self, train_list, dev_list, tag_type=None, word_cutoff=7, char_cutoff=5, CUPT_format=False):
+    def compute(self, train: Document, dev: Document, word_cutoff=7, char_cutoff=5, CUPT_format=False):
         if self.verbose:
             print("Computing encoding maps... ")
 
@@ -53,25 +56,9 @@ class Encodings():
         char_count = {}
         word_count = {}
 
-        train = Doc()
-        if isinstance(train_list, list):
-            for lang_id, file in enumerate(train_list):
-                doc = conllu_to_doc(file, lang_id)
-                train.sentences.extend(doc.sentences)
-        else:
-            train.sentences = conllu_to_doc(train_list).sentences
-
-        dev = Doc()
-        if isinstance(dev_list, list):
-            for lang_id, file in enumerate(dev_list):
-                doc = conllu_to_doc(file, lang_id)
-                dev.sentences.extend(doc.sentences)
-        else:
-            dev.sentences = conllu_to_doc(dev_list).sentences
-
-        for sentence in train.sentences: # xxx
+        for sentence in train.sentences:  # xxx
             lang_id = sentence._lang_id
-            for entry in sentence.words: #entry is a Word
+            for entry in sentence.words:  # entry is a Word
                 word = entry.word.lower()
                 if word not in word_count:
                     word_count[word] = 1
@@ -115,13 +102,13 @@ class Encodings():
                 if entry.attrs not in self.attrs2int:
                     self.attrs2int[entry.attrs] = len(self.attrs2int)
                     self.attrs_list.append(entry.attrs)
-
-        for sentence in dev.sentences:
-            lang_id = sentence._lang_id
-            for entry in sentence.words:
-                word = entry.word.lower()
-                if word not in self.word_list:
-                    self.word_list[word] = 1  # word is inside devset only
+        if dev is not None:
+            for sentence in dev.sentences:
+                lang_id = sentence._lang_id
+                for entry in sentence.words:
+                    word = entry.word.lower()
+                    if word not in self.word_list:
+                        self.word_list[word] = 1  # word is inside devset only
 
         for word in word_count:
             if word_count[word] >= word_cutoff:
