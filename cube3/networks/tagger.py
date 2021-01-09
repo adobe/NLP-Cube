@@ -117,9 +117,9 @@ class Tagger(pl.LightningModule):
         attrs_ok = 0
         total = 0
 
-        pred_upos = torch.argmax(p_upos).detach().cpu().numpy()
-        pred_xpos = torch.argmax(p_xpos).detach().cpu().numpy()
-        pred_attrs = torch.argmax(p_attrs).detach().cpu().numpy()
+        pred_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
+        pred_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
+        pred_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
         tar_upos = y_upos.detach().cpu().numpy()
         tar_xpos = y_xpos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
