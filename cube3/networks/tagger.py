@@ -126,7 +126,7 @@ class Tagger(pl.LightningModule):
         sl = x_sent_len.detach().cpu().numpy()
 
         for iSent in range(x_sent.shape[0]):
-            for iWord in range(sl[ii]):
+            for iWord in range(sl[iSent]):
                 total += 1
                 if pred_upos[iSent, iWord] == tar_upos[iSent, iWord]:
                     upos_ok += 1
