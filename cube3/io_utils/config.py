@@ -102,15 +102,14 @@ class TokenizerConfig(Config):
 class TaggerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.layers = [200, 200]
-        self.layer_dropouts = [0.5, 0.5]
-        self.aux_softmax_layer = 1
+        self.char_emb_size = 256
+        self.char_filter_size = 512
+        self.char_layers = 3
+        self.word_emb_size = 256
+        self.lang_emb_size = 64
+        self.cnn_filter = 512
+        self.cnn_layers = 3
         self._valid = True
-        self.input_dropout_prob = 0.33
-        self.presoftmax_mlp_layers = [500]
-        self.presoftmax_mlp_dropouts = [0.5]
-        self.input_size = 100
-        self.language_embedding_size = 100
 
         if filename is None:
             if verbose:
@@ -119,20 +118,6 @@ class TaggerConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-
-        if verbose:
-            print("INPUT SIZE:", self.input_size)
-            print("LAYERS:", self.layers)
-            print("LAYER DROPOUTS:", self.layer_dropouts)
-            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print("PRESOFTMAX MLP LAYERS:", self.presoftmax_mlp_layers)
-            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropouts)
-
-        if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print(
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
-            self._valid = False
 
 
 class ParserConfig(Config):
