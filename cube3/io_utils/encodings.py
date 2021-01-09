@@ -21,6 +21,7 @@ class Encodings():
         self.attrs_list = []
         self.characters = []
         self.verbose = verbose
+        self.num_langs = 0
 
     def compute(self, train: Document, dev: Document, word_cutoff=7, char_cutoff=5, CUPT_format=False):
         if self.verbose:
@@ -57,7 +58,9 @@ class Encodings():
         word_count = {}
 
         for sentence in train.sentences:  # xxx
-            lang_id = sentence._lang_id
+            lang_id = sentence.lang_id
+            if lang_id + 1 > self.num_langs:
+                self.num_langs = lang_id + 1
             for entry in sentence.words:  # entry is a Word
                 word = entry.word.lower()
                 if word not in word_count:

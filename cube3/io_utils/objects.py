@@ -79,7 +79,7 @@ class Sentence:
         else:
             self.text = text
 
-        self._lang_id = lang_id
+        self.lang_id = lang_id
         skip = 0
         t = None
         if sequence is not None:

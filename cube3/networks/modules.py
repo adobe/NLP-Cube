@@ -313,3 +313,67 @@ class ConvNorm(torch.nn.Module):
     def forward(self, signal):
         conv_signal = self.conv(signal)
         return conv_signal
+
+
+class WordGram(nn.Module):
+    def __init__(self, num_chars: int, num_langs: int, num_filters=512, char_emb_size=256, case_emb_size=32,
+                 lang_emb_size=32, num_layers=3):
+        super(WordGram, self).__init__()
+        NUM_FILTERS = num_filters
+        self._num_filters = NUM_FILTERS
+        self._lang_emb = nn.Embedding(num_langs + 1, lang_emb_size)
+        self._tok_emb = nn.Embedding(num_chars + 1, char_emb_size)
+        self._case_emb = nn.Embedding(4, case_emb_size)
+        self._num_layers = num_layers
+        convolutions_char = []
+        cs_inp = char_emb_size + lang_emb_size + case_emb_size
+        for _ in range(num_layers):
+            conv_layer = nn.Sequential(
+                ConvNorm(cs_inp,
+                         NUM_FILTERS,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='tanh'),
+                nn.BatchNorm1d(NUM_FILTERS))
+            convolutions_char.append(conv_layer)
+            cs_inp = NUM_FILTERS // 2 + lang_emb_size
+        self._convolutions_char = nn.ModuleList(convolutions_char)
+
+    def forward(self, x_char, x_case, x_lang, x_mask, x_word_len):
+        x_char = self._tok_emb(x_char)
+        x_case = self._case_emb(x_case)
+        x_lang = self._lang_emb(x_lang)
+
+        x = torch.cat([x_char, x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1), x_case], dim=-1)
+        x = x.permute(0, 2, 1)
+        x_lang = x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1).permute(0, 2, 1)
+        cnt = 0
+        half = self._num_filters // 2
+        count = 0
+        for conv in self._convolutions_char:
+            drop = self.training
+            if cnt >= len(self._convolutions_char):
+                drop = False
+            conv_out = conv(x)
+            tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
+            x = torch.dropout(tmp, 0.1, drop)
+            count += 1
+            if count < self._num_layers:
+                x = torch.cat([x, x_lang], dim=1)
+        x = x.permute(0, 2, 1)
+        # scaled tanh output - avoids -inf/nan loss
+        x = x * x_mask.unsqueeze(2)
+        pre = torch.sum(x, dim=1)
+        norm = pre / x_word_len.unsqueeze(1)
+        return 5.0 * torch.tanh(norm)
+
+    def _get_device(self):
+        if self._lang_emb.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
+
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+
+    def load(self, path):
+        self.load_state_dict(torch.load(path, map_location='cpu'))
