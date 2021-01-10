@@ -73,12 +73,12 @@ class Tagger(pl.LightningModule):
             for ii in range(mask_1.shape[0]):
                 for jj in range(mask_1.shape[1]):
                     p = random.random()
-                    if p < 0.25:
+                    if p < 0.3:
                         pass
-                    elif p < 0.5:
+                    elif p < 0.6:
                         mask_1[ii, jj] = 2
                         mask_2[ii, jj] = 0
-                    elif p < 0.75:
+                    elif p < 0.8:
                         mask_1[ii, jj] = 0
                         mask_2[ii, jj] = 2
                     else:
@@ -86,14 +86,13 @@ class Tagger(pl.LightningModule):
                         mask_2[ii, jj] = 0
             mask_1 = torch.tensor(mask_1, device=self._get_device())
             mask_2 = torch.tensor(mask_2, device=self._get_device())
-            word_emb = word_emb * mask_1
-            char_emb = char_emb * mask_2
+            word_emb = word_emb * mask_1.unsqueeze(2)
+            char_emb = char_emb * mask_2.unsqueeze(2)
 
         lang_emb = self._lang_emb(x_lang_sent)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, word_emb.shape[1], 1)
 
         x = torch.cat([word_emb, lang_emb, char_emb], dim=-1)
-        x = torch.dropout(x, 0.5, self.training)
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
@@ -106,7 +105,7 @@ class Tagger(pl.LightningModule):
                 res = tmp
             else:
                 res = res + tmp
-            x = torch.dropout(tmp, 0.5, self.training)
+            x = torch.dropout(tmp, 0.2, self.training)
             cnt += 1
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
@@ -298,5 +297,5 @@ if __name__ == '__main__':
     config = TaggerConfig()
     model = Tagger(config=config, encodings=enc)
     # training
-    trainer = pl.Trainer(gpus=1, num_nodes=1, limit_train_batches=0.5, accelerator="ddp_gpu")
+    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, limit_train_batches=0.5, accelerator="ddp_gpu")
     trainer.fit(model, train_loader, val_loader)
