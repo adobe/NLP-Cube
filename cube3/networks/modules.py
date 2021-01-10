@@ -22,9 +22,10 @@ import torch.nn.functional as F
 import random
 from torch.nn.utils.rnn import PackedSequence
 from typing import *
+import pytorch_lightning as pl
 
 
-class LinearNorm(torch.nn.Module):
+class LinearNorm(pl.LightningModule):
     def __init__(self, in_dim, out_dim, bias=True, w_init_gain='linear'):
         super(LinearNorm, self).__init__()
         self.linear_layer = nn.Linear(in_dim, out_dim, bias=bias)
@@ -37,7 +38,7 @@ class LinearNorm(torch.nn.Module):
         return self.linear_layer(x)
 
 
-class Encoder(nn.Module):
+class Encoder(pl.LightningModule):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, dropout, nn_type=nn.GRU,
                  num_layers=2, ext_conditioning=0):
         super().__init__()
@@ -101,7 +102,7 @@ class Encoder(nn.Module):
         return outputs, hidden
 
 
-class Attention(nn.Module):
+class Attention(pl.LightningModule):
     def __init__(self, enc_hid_dim, dec_hid_dim, att_proj_size=100):
         super().__init__()
 
@@ -140,7 +141,7 @@ class Attention(nn.Module):
             return F.softmax(attention, dim=1)
 
 
-class Decoder(nn.Module):
+class Decoder(pl.LightningModule):
     def __init__(self, output_dim, emb_dim, enc_hid_dim, dec_hid_dim, dropout, attention, nn_type=nn.GRU, num_layers=2):
         super().__init__()
 
@@ -175,7 +176,7 @@ class Decoder(nn.Module):
         return output, hidden.squeeze(0)
 
 
-class Seq2Seq(nn.Module):
+class Seq2Seq(pl.LightningModule):
     def __init__(self, encoder, decoder, device):
         super().__init__()
 
@@ -211,7 +212,7 @@ class Seq2Seq(nn.Module):
 # The code is adapted from https://github.com/keitakurita/Better_LSTM_PyTorch - no pip package is provided so we are
 # cloning the code for testing
 
-class VariationalDropout(nn.Module):
+class VariationalDropout(pl.LightningModule):
     """
     Applies the same dropout mask across the temporal dimension
     See https://arxiv.org/abs/1512.05287 for more details.
@@ -252,7 +253,7 @@ class VariationalDropout(nn.Module):
             return x
 
 
-class VariationalLSTM(nn.LSTM):
+class VariationalLSTM(pl.LightningModule):
     def __init__(self, *args, dropouti: float = 0.,
                  dropoutw: float = 0., dropouto: float = 0.,
                  batch_first=True, unit_forget_bias=True, **kwargs):
@@ -294,7 +295,7 @@ class VariationalLSTM(nn.LSTM):
         return self.output_drop(seq), state
 
 
-class ConvNorm(torch.nn.Module):
+class ConvNorm(pl.LightningModule):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1,
                  padding=None, dilation=1, bias=True, w_init_gain='linear'):
         super(ConvNorm, self).__init__()
@@ -315,7 +316,84 @@ class ConvNorm(torch.nn.Module):
         return conv_signal
 
 
-class WordGram(nn.Module):
+# class WordGram(pl.LightningModule):
+#     def __init__(self, num_chars: int, num_langs: int, num_filters=512, char_emb_size=256, case_emb_size=32,
+#                  lang_emb_size=32, num_layers=3):
+#         super(WordGram, self).__init__()
+#         NUM_FILTERS = num_filters
+#         self._num_filters = NUM_FILTERS
+#         self._lang_emb = nn.Embedding(num_langs + 1, lang_emb_size)
+#         self._tok_emb = nn.Embedding(num_chars + 1, char_emb_size)
+#         self._case_emb = nn.Embedding(4, case_emb_size)
+#         self._num_layers = num_layers
+#
+#         convolutions_char = []
+#         cs_inp = char_emb_size + lang_emb_size + case_emb_size
+#         for _ in range(num_layers):
+#             conv_layer = nn.Sequential(
+#                 ConvNorm(cs_inp,
+#                          NUM_FILTERS,
+#                          kernel_size=5, stride=1,
+#                          padding=2,
+#                          dilation=1, w_init_gain='tanh'),
+#                 nn.BatchNorm1d(NUM_FILTERS))
+#             convolutions_char.append(conv_layer)
+#             cs_inp = NUM_FILTERS // 2 + lang_emb_size
+#         self._convolutions_char = nn.ModuleList(convolutions_char)
+#
+#         self._rnn = nn.LSTM(NUM_FILTERS // 2, NUM_FILTERS // 2, num_layers=2)
+#         self._pre_out = LinearNorm(NUM_FILTERS // 2, NUM_FILTERS // 2)
+#
+#     def forward(self, x_char, x_case, x_lang, x_mask, x_word_len):
+#         x_char = self._tok_emb(x_char)
+#         x_case = self._case_emb(x_case)
+#         x_lang = self._lang_emb(x_lang)
+#
+#         x = torch.cat([x_char, x_case], dim=-1)
+#         x = x.permute(0, 2, 1)
+#         x_lang = x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1).permute(0, 2, 1)
+#         half = self._num_filters // 2
+#         count = 0
+#         res = None
+#         skip = None
+#         for conv in self._convolutions_char:
+#             count += 1
+#             drop = self.training
+#             if count >= len(self._convolutions_char):
+#                 drop = False
+#             if skip is not None:
+#                 x = x + skip
+#
+#             x = torch.cat([x, x_lang], dim=1)
+#             conv_out = conv(x)
+#             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
+#             if res is None:
+#                 res = tmp
+#             else:
+#                 res = res + tmp
+#             skip = tmp
+#             x = torch.dropout(tmp, 0.1, drop)
+#         x = x + res
+#         x = x.permute(0, 2, 1)
+#         x = torch.flip(x, dims=[1])
+#         out, _ = self._rnn(x)
+#         norm = out[:, -1, :]
+#
+#         return torch.tanh(self._pre_out(norm))
+#
+#     def _get_device(self):
+#         if self._lang_emb.weight.device.type == 'cpu':
+#             return 'cpu'
+#         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
+#
+#     def save(self, path):
+#         torch.save(self.state_dict(), path)
+#
+#     def load(self, path):
+#         self.load_state_dict(torch.load(path, map_location='cpu'))
+
+
+class WordGram(pl.LightningModule):
     def __init__(self, num_chars: int, num_langs: int, num_filters=512, char_emb_size=256, case_emb_size=32,
                  lang_emb_size=32, num_layers=3):
         super(WordGram, self).__init__()
@@ -338,40 +416,43 @@ class WordGram(nn.Module):
             convolutions_char.append(conv_layer)
             cs_inp = NUM_FILTERS // 2 + lang_emb_size
         self._convolutions_char = nn.ModuleList(convolutions_char)
+        self._pre_out = LinearNorm(NUM_FILTERS // 2, NUM_FILTERS // 2)
 
     def forward(self, x_char, x_case, x_lang, x_mask, x_word_len):
         x_char = self._tok_emb(x_char)
         x_case = self._case_emb(x_case)
         x_lang = self._lang_emb(x_lang)
 
-        x = torch.cat([x_char, x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1), x_case], dim=-1)
+        x = torch.cat([x_char, x_case], dim=-1)
         x = x.permute(0, 2, 1)
         x_lang = x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1).permute(0, 2, 1)
-        cnt = 0
         half = self._num_filters // 2
         count = 0
         res = None
+        skip = None
         for conv in self._convolutions_char:
+            count += 1
             drop = self.training
-            if cnt >= len(self._convolutions_char):
+            if count >= len(self._convolutions_char):
                 drop = False
+            if skip is not None:
+                x = x + skip
+
+            x = torch.cat([x, x_lang], dim=1)
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
             if res is None:
                 res = tmp
             else:
                 res = res + tmp
-            x = torch.dropout(tmp, 0.5, drop)
-            count += 1
-            if count < self._num_layers:
-                x = torch.cat([x, x_lang], dim=1)
+            skip = tmp
+            x = torch.dropout(tmp, 0.1, drop)
         x = x + res
         x = x.permute(0, 2, 1)
-        # scaled tanh output - avoids -inf/nan loss
         x = x * x_mask.unsqueeze(2)
-        pre = torch.sum(x, dim=1)
+        pre = torch.sum(x, dim=1, dtype=torch.float)
         norm = pre / x_word_len.unsqueeze(1)
-        return 5.0 * torch.tanh(norm)
+        return torch.tanh(self._pre_out(norm))
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':

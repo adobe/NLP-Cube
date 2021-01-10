@@ -49,6 +49,10 @@ class Tagger(pl.LightningModule):
         self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
+        self._aupos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.upos2int))
+        self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
+        self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
+
     def forward(self, x_sents, x_lang_sent, x_words_chars, x_words_case, x_lang_word, x_sent_len, x_word_len,
                 x_sent_masks, x_word_masks):
         char_emb_packed = self._word_net(x_words_chars, x_words_case, x_lang_word, x_word_masks, x_word_len)
@@ -57,13 +61,24 @@ class Tagger(pl.LightningModule):
         sl = x_sent_len.cpu().numpy()
         pos = 0
         for ii in range(x_sents.shape[0]):
-            head = char_emb_packed[pos:pos + sl[ii], :]
-            pos += sl[ii]
-            tail = torch.zeros((x_sents.shape[1] - sl[ii], self._config.char_filter_size // 2),
-                               device=self._get_device(), dtype=torch.float)
-            sent_emb = torch.cat([head, tail], dim=0)
+            slist = []
+            for jj in range(sl[ii]):
+                slist.append(char_emb_packed[pos, :].unsqueeze(0))
+                pos += 1
+            for jj in range(x_sents.shape[1] - sl[ii]):
+                slist.append(torch.zeros((1, self._config.char_filter_size // 2),
+                                         device=self._get_device(), dtype=torch.float))
+            sent_emb = torch.cat(slist, dim=0)
             blist.append(sent_emb.unsqueeze(0))
-        char_emb = torch.cat(blist, dim=0).float()
+
+        char_emb = torch.cat(blist, dim=0)
+        lang_emb = self._lang_emb(x_lang_sent)
+        lang_emb = lang_emb.unsqueeze(1).repeat(1, char_emb.shape[1], 1)
+
+        aupos = self._aupos(torch.cat([char_emb, lang_emb], dim=-1))
+        axpos = self._axpos(torch.cat([char_emb, lang_emb], dim=-1))
+        aattrs = self._aattrs(torch.cat([char_emb, lang_emb], dim=-1))
+
         word_emb = self._word_emb(x_sents)
 
         if self.training:
@@ -89,9 +104,6 @@ class Tagger(pl.LightningModule):
             word_emb = word_emb * mask_1.unsqueeze(2)
             char_emb = char_emb * mask_2.unsqueeze(2)
 
-        lang_emb = self._lang_emb(x_lang_sent)
-        lang_emb = lang_emb.unsqueeze(1).repeat(1, word_emb.shape[1], 1)
-
         x = torch.cat([word_emb, lang_emb, char_emb], dim=-1)
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
@@ -113,7 +125,7 @@ class Tagger(pl.LightningModule):
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
         x = torch.tanh(x)
-        return self._upos(x), self._xpos(x), self._attrs(x)
+        return self._upos(x), self._xpos(x), self._attrs(x), aupos, axpos, aattrs
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':
@@ -126,22 +138,28 @@ class Tagger(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = batch
-        p_upos, p_xpos, p_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len,
-                                               x_word_len,
-                                               x_sent_masks,
-                                               x_word_masks)
+        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case,
+                                                                        x_lang_word, x_sent_len, x_word_len,
+                                                                        x_sent_masks, x_word_masks)
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
-        return (loss_upos + loss_attrs + loss_xpos) / 3
+
+        loss_aupos = F.cross_entropy(a_upos.view(-1, a_upos.shape[2]), y_upos.view(-1), ignore_index=0)
+        loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
+        loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
+
+        return ((loss_upos + loss_attrs + loss_xpos) / 3) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3) * 0.2
 
     def validation_step(self, batch, batch_idx):
         x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = batch
-        p_upos, p_xpos, p_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len,
-                                               x_word_len,
-                                               x_sent_masks,
-                                               x_word_masks)
+        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case,
+                                                                        x_lang_word,
+                                                                        x_sent_len,
+                                                                        x_word_len,
+                                                                        x_sent_masks,
+                                                                        x_word_masks)
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
@@ -170,13 +188,38 @@ class Tagger(pl.LightningModule):
                 if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
                     attrs_ok += 1
 
-        return {'loss': loss, 'upos_ok': upos_ok, 'xpos_ok': xpos_ok, 'attrs_ok': attrs_ok, 'total': total}
+        aupos_ok = 0
+        axpos_ok = 0
+        aattrs_ok = 0
+
+        pred_upos = torch.argmax(a_upos, dim=-1).detach().cpu().numpy()
+        pred_xpos = torch.argmax(a_xpos, dim=-1).detach().cpu().numpy()
+        pred_attrs = torch.argmax(a_attrs, dim=-1).detach().cpu().numpy()
+        tar_upos = y_upos.detach().cpu().numpy()
+        tar_xpos = y_xpos.detach().cpu().numpy()
+        tar_attrs = y_attrs.detach().cpu().numpy()
+        sl = x_sent_len.detach().cpu().numpy()
+
+        for iSent in range(x_sent.shape[0]):
+            for iWord in range(sl[iSent]):
+                if pred_upos[iSent, iWord] == tar_upos[iSent, iWord]:
+                    aupos_ok += 1
+                if pred_xpos[iSent, iWord] == tar_xpos[iSent, iWord]:
+                    axpos_ok += 1
+                if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
+                    aattrs_ok += 1
+
+        return {'loss': loss, 'upos_ok': upos_ok, 'xpos_ok': xpos_ok, 'attrs_ok': attrs_ok,
+                'aupos_ok': aupos_ok, 'axpos_ok': axpos_ok, 'aattrs_ok': aattrs_ok, 'total': total}
 
     def validation_epoch_end(self, outputs):
         valid_loss_total = 0
         upos_ok = 0
         xpos_ok = 0
         attrs_ok = 0
+        aupos_ok = 0
+        axpos_ok = 0
+        aattrs_ok = 0
         total = 0
         for out in outputs:
             valid_loss_total += out['loss']
@@ -184,12 +227,16 @@ class Tagger(pl.LightningModule):
             upos_ok += out['upos_ok']
             attrs_ok += out['attrs_ok']
             xpos_ok += out['xpos_ok']
+            aupos_ok += out['aupos_ok']
+            aattrs_ok += out['aattrs_ok']
+            axpos_ok += out['axpos_ok']
 
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/upos', upos_ok / total)
         self.log('val/xpos', xpos_ok / total)
         self.log('val/attrs', attrs_ok / total)
-        print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total, "\n\n\n")
+        print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
+              aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
 
 class TaggerDataset(Dataset):
@@ -291,11 +338,17 @@ if __name__ == '__main__':
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn)
+    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn, shuffle=True)
     val_loader = DataLoader(devset, batch_size=16, collate_fn=collate.collate_fn)
 
     config = TaggerConfig()
     model = Tagger(config=config, encodings=enc)
     # training
-    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, limit_train_batches=0.5, accelerator="ddp_gpu")
+
+    # x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = collate.collate_fn(
+    #     doc_train.sentences[0:5])
+    # from ipdb import set_trace
+    #
+    # set_trace()
+    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, accelerator="ddp_gpu")
     trainer.fit(model, train_loader, val_loader)

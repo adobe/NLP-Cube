@@ -102,7 +102,7 @@ class TokenizerConfig(Config):
 class TaggerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.char_emb_size =256
+        self.char_emb_size = 256
         self.char_filter_size = 512
         self.char_layers = 3
         self.word_emb_size = 256
