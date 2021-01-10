@@ -72,12 +72,23 @@ class Tagger(pl.LightningModule):
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
+        res=None
+        cnt = 0
         for conv in self._convs:
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
-            x = torch.dropout(tmp, 0.1, self.training)
-            x = torch.cat([x, lang_emb], dim=1)
+            if res is None:
+                res = tmp
+            else:
+                res = res + tmp
+            x = torch.dropout(tmp, 0.5, self.training)
+            cnt += 1
+            if cnt!=self._config.cnn_layers:
+                x = torch.cat([x, lang_emb], dim=1)
+        x = x + res
+        x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
+        x = torch.tanh(x)
         return self._upos(x), self._xpos(x), self._attrs(x)
 
     def _get_device(self):
@@ -154,6 +165,7 @@ class Tagger(pl.LightningModule):
         self.log('val/upos', upos_ok / total)
         self.log('val/xpos', xpos_ok / total)
         self.log('val/attrs', attrs_ok / total)
+        print("\n\n\n",upos_ok/total, xpos_ok/total, attrs_ok/total,"\n\n\n")
 
 
 class TaggerDataset(Dataset):
@@ -246,8 +258,8 @@ class TaggerCollate:
 
 
 if __name__ == '__main__':
-    doc_train = Document(filename='corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-train.conllu')
-    doc_dev = Document(filename='corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-dev.conllu')
+    doc_train = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu')
+    doc_dev = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu')
     enc = Encodings()
     enc.compute(doc_train, None)
 
@@ -255,11 +267,11 @@ if __name__ == '__main__':
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=32, collate_fn=collate.collate_fn)
-    val_loader = DataLoader(devset, batch_size=32, collate_fn=collate.collate_fn)
+    train_loader = DataLoader(trainset, batch_size=64, collate_fn=collate.collate_fn)
+    val_loader = DataLoader(devset, batch_size=64, collate_fn=collate.collate_fn)
 
     config = TaggerConfig()
     model = Tagger(config=config, encodings=enc)
     # training
-    trainer = pl.Trainer(gpus=0, num_nodes=1, limit_train_batches=0.5, accelerator="ddp_cpu")
+    trainer = pl.Trainer(gpus=1, num_nodes=1, limit_train_batches=0.5, accelerator="ddp_gpu")
     trainer.fit(model, train_loader, val_loader)

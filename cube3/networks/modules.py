@@ -350,16 +350,22 @@ class WordGram(nn.Module):
         cnt = 0
         half = self._num_filters // 2
         count = 0
+        res = None
         for conv in self._convolutions_char:
             drop = self.training
             if cnt >= len(self._convolutions_char):
                 drop = False
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
-            x = torch.dropout(tmp, 0.1, drop)
+            if res is None:
+                res = tmp
+            else:
+                res = res + tmp
+            x = torch.dropout(tmp, 0.5, drop)
             count += 1
             if count < self._num_layers:
                 x = torch.cat([x, x_lang], dim=1)
+        x = x + res
         x = x.permute(0, 2, 1)
         # scaled tanh output - avoids -inf/nan loss
         x = x * x_mask.unsqueeze(2)
