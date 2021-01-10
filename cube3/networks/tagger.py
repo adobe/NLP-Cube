@@ -13,6 +13,7 @@ from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TaggerConfig
 import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
+import random
 
 from cube3.networks.modules import WordGram
 
@@ -63,8 +64,31 @@ class Tagger(pl.LightningModule):
             sent_emb = torch.cat([head, tail], dim=0)
             blist.append(sent_emb.unsqueeze(0))
         char_emb = torch.cat(blist, dim=0).float()
-
         word_emb = self._word_emb(x_sents)
+
+        if self.training:
+            mask_1 = np.ones((char_emb.shape[0], char_emb.shape[1]), dtype=np.long)
+            mask_2 = np.ones((word_emb.shape[0], word_emb.shape[1]), dtype=np.long)
+
+            for ii in range(mask_1.shape[0]):
+                for jj in range(mask_1.shape[1]):
+                    p = random.random()
+                    if p < 0.25:
+                        pass
+                    elif p < 0.5:
+                        mask_1[ii, jj] = 2
+                        mask_2[ii, jj] = 0
+                    elif p < 0.75:
+                        mask_1[ii, jj] = 0
+                        mask_2[ii, jj] = 2
+                    else:
+                        mask_1[ii, jj] = 0
+                        mask_2[ii, jj] = 0
+            mask_1 = torch.tensor(mask_1, device=self._get_device())
+            mask_2 = torch.tensor(mask_2, device=self._get_device())
+            word_emb = word_emb * mask_1
+            char_emb = char_emb * mask_2
+
         lang_emb = self._lang_emb(x_lang_sent)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, word_emb.shape[1], 1)
 
@@ -73,7 +97,7 @@ class Tagger(pl.LightningModule):
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
-        res=None
+        res = None
         cnt = 0
         for conv in self._convs:
             conv_out = conv(x)
@@ -84,7 +108,7 @@ class Tagger(pl.LightningModule):
                 res = res + tmp
             x = torch.dropout(tmp, 0.5, self.training)
             cnt += 1
-            if cnt!=self._config.cnn_layers:
+            if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
         x = x + res
         x = torch.cat([x, lang_emb], dim=1)
@@ -166,7 +190,7 @@ class Tagger(pl.LightningModule):
         self.log('val/upos', upos_ok / total)
         self.log('val/xpos', xpos_ok / total)
         self.log('val/attrs', attrs_ok / total)
-        print("\n\n\n",upos_ok/total, xpos_ok/total, attrs_ok/total,"\n\n\n")
+        print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total, "\n\n\n")
 
 
 class TaggerDataset(Dataset):
