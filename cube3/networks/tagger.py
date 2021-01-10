@@ -69,6 +69,7 @@ class Tagger(pl.LightningModule):
         lang_emb = lang_emb.unsqueeze(1).repeat(1, word_emb.shape[1], 1)
 
         x = torch.cat([word_emb, lang_emb, char_emb], dim=-1)
+        x = torch.dropout(x, 0.5, self.training)
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
@@ -267,8 +268,8 @@ if __name__ == '__main__':
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=64, collate_fn=collate.collate_fn)
-    val_loader = DataLoader(devset, batch_size=64, collate_fn=collate.collate_fn)
+    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn)
+    val_loader = DataLoader(devset, batch_size=16, collate_fn=collate.collate_fn)
 
     config = TaggerConfig()
     model = Tagger(config=config, encodings=enc)
