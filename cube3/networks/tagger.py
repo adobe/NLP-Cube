@@ -150,7 +150,7 @@ class Tagger(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        return ((loss_upos + loss_attrs + loss_xpos) / 3) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3) * 0.2
+        return ((loss_upos + loss_attrs + loss_xpos) / 3) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3) * 0.5
 
     def validation_step(self, batch, batch_idx):
         x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = batch
@@ -329,7 +329,8 @@ class TaggerCollate:
 
 
 if __name__ == '__main__':
-    doc_train = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu')
+    doc_train = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu', lang_id=0)
+    # doc_train.load('corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu', lang_id=1)
     doc_dev = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu')
     enc = Encodings()
     enc.compute(doc_train, None)
@@ -338,7 +339,7 @@ if __name__ == '__main__':
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn, shuffle=True)
+    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn, shuffle=True, num_workers=2)
     val_loader = DataLoader(devset, batch_size=16, collate_fn=collate.collate_fn)
 
     config = TaggerConfig()
@@ -350,5 +351,5 @@ if __name__ == '__main__':
     # from ipdb import set_trace
     #
     # set_trace()
-    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, accelerator="ddp_gpu")
+    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, accelerator="ddp")
     trainer.fit(model, train_loader, val_loader)
