@@ -1,12 +1,13 @@
 import sys
-
 sys.path.append('')
+import os, argparse
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import numpy as np
 from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
@@ -52,6 +53,25 @@ class Tagger(pl.LightningModule):
         self._aupos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.upos2int))
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
+
+        self._early_stop_results_prev = {"upos": 0., "xpos": 0., "attrs": 0.}
+        self._early_stop_results = {"upos":0., "xpos":0., "attrs":0.}
+        self._early_stop_meta_val = 0
+
+    def _compute_early_stop (self, current_upos, current_xpos, current_attrs):
+        self._early_stop_results_prev = self._early_stop_results.copy()
+        if current_upos > self._early_stop_results["upos"]:
+            self._early_stop_results["upos"] = current_upos
+            self._early_stop_meta_val += 1
+
+        if current_xpos > self._early_stop_results["xpos"]:
+            self._early_stop_results["xpos"] = current_xpos
+            self._early_stop_meta_val += 1
+
+        if current_attrs > self._early_stop_results["attrs"]:
+            self._early_stop_results["attrs"] = current_attrs
+            self._early_stop_meta_val += 1
+
 
     def forward(self, x_sents, x_lang_sent, x_words_chars, x_words_case, x_lang_word, x_sent_len, x_word_len,
                 x_sent_masks, x_word_masks):
@@ -150,7 +170,9 @@ class Tagger(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        return ((loss_upos + loss_attrs + loss_xpos) / 3) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3) * 1.0
+        step_loss = ((loss_upos + loss_attrs + loss_xpos) / 3.) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3.) * 1.0
+
+        return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
         x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = batch
@@ -231,12 +253,19 @@ class Tagger(pl.LightningModule):
             aattrs_ok += out['aattrs_ok']
             axpos_ok += out['axpos_ok']
 
+
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/upos', upos_ok / total)
         self.log('val/xpos', xpos_ok / total)
         self.log('val/attrs', attrs_ok / total)
-        print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
-              aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
+
+        # single value for early stopping
+        self._compute_early_stop(upos_ok / total, xpos_ok / total, attrs_ok / total)
+        self.log('val/early_meta', self._early_stop_meta_val)
+
+
+        #print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
+        #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
 
 class TaggerDataset(Dataset):
@@ -327,8 +356,44 @@ class TaggerCollate:
                torch.tensor(y_xpos), \
                torch.tensor(y_attrs)
 
+class PrintAndSaveCallback(pl.callbacks.Callback):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+
+    def on_epoch_end(self, trainer, pl_module):
+        metrics = trainer.callback_metrics
+        epoch = trainer.current_epoch
+
+        upos = "UPOS = {:.4f}".format(metrics["val/upos"])
+        if pl_module._early_stop_results_prev["upos"] < pl_module._early_stop_results["upos"]:
+            upos += " [BEST]"
+            trainer.save_checkpoint(self.args.store + ".upos")
+        xpos = "XPOS = {:.4f}".format(metrics["val/xpos"])
+        if pl_module._early_stop_results_prev["xpos"] < pl_module._early_stop_results["xpos"]:
+            xpos += " [BEST]"
+            trainer.save_checkpoint(self.args.store + ".xpos")
+        attrs = "ATTRS = {:.4f}".format(metrics["val/attrs"])
+        if pl_module._early_stop_results_prev["attrs"] < pl_module._early_stop_results["attrs"]:
+            attrs += " [BEST]"
+            trainer.save_checkpoint(self.args.store + ".attrs")
+        print("\n\nEpoch {}: {}, {}, {}\n".format(epoch, upos, xpos, attrs))
+
+        trainer.save_checkpoint(self.args.store + ".last")
+
 
 if __name__ == '__main__':
+    from cube3.io_utils.misc import ArgParser
+    argparser = ArgParser()
+    # add custom options
+    argparser.parser.add_argument('--abc', action='store_true', dest='abc', help='abc')
+    # run argparser
+    args = argparser()
+    print(args) # example
+
+    # hand power pana facem la toate aceeasi interfata
+    args.store = "data/tagger"
+
     doc_train = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu', lang_id=0)
     doc_train.load('corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu', lang_id=1)
     doc_dev = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu')
@@ -339,11 +404,12 @@ if __name__ == '__main__':
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=16, collate_fn=collate.collate_fn, shuffle=True, num_workers=2)
-    val_loader = DataLoader(devset, batch_size=16, collate_fn=collate.collate_fn)
+    train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=False, num_workers=4, pin_memory=True)
+    val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn, num_workers=4, pin_memory=True)
 
     config = TaggerConfig()
     model = Tagger(config=config, encodings=enc)
+
     # training
 
     # x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = collate.collate_fn(
@@ -351,5 +417,22 @@ if __name__ == '__main__':
     # from ipdb import set_trace
     #
     # set_trace()
-    trainer = pl.Trainer(gpus=1, max_epochs=1000, num_nodes=1, accelerator="ddp")
+
+    early_stopping_callback = EarlyStopping(
+        monitor='val/early_meta',
+        patience=3,
+        verbose=True,
+        mode='max'
+    )
+
+    trainer = pl.Trainer(
+        gpus=1,
+        accelerator="ddp",
+        num_nodes=1,
+        default_root_dir='data/',
+        callbacks=[early_stopping_callback, PrintAndSaveCallback(args)],
+        #limit_train_batches = 5,
+        #limit_val_batches = 2,
+    )
+
     trainer.fit(model, train_loader, val_loader)
