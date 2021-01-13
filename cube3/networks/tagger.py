@@ -59,10 +59,18 @@ class Tagger(pl.LightningModule):
 
         self._early_stop_results_prev = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_results = {"upos": 0., "xpos": 0., "attrs": 0.}
+
+        self._early_stop_results_lang_prev = {}
+        self._early_stop_results_lang = {}
+        for id in id2lang:
+            lang = id2lang[id]
+            self._early_stop_results_lang_prev[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+            self._early_stop_results_lang[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, current_upos, current_xpos, current_attrs):
         self._early_stop_results_prev = self._early_stop_results.copy()
+
         if current_upos > self._early_stop_results["upos"]:
             self._early_stop_results["upos"] = current_upos
             self._early_stop_meta_val += 1
@@ -252,6 +260,10 @@ class Tagger(pl.LightningModule):
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
             self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
             self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
+            self._early_stop_results_lang_prev[lang] = self._early_stop_results_lang[lang].copy()
+            self._early_stop_results_lang[lang]["upos"] = language_result[lang_id]['upos_ok'] / total
+            self._early_stop_results_lang[lang]["xpos"] = language_result[lang_id]['xpos_ok'] / total
+            self._early_stop_results_lang[lang]["attrs"] = language_result[lang_id]['attrs_ok'] / total
 
         # single value for early stopping
         self._compute_early_stop(upos_ok / total, xpos_ok / total, attrs_ok / total)
@@ -374,6 +386,24 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
             trainer.save_checkpoint(self.args.store + ".attrs")
         print("\n\nEpoch {}: {}, {}, {}\n".format(epoch, upos, xpos, attrs))
 
+        #from pprint import pprint
+        #pprint(metrics)
+        for id in self._id2lang:
+            lang = self._id2lang[id]
+            #upos = "UPOS = {:.4f}".format(metrics["val/UPOS/{0}".format(lang)])
+            if pl_module._early_stop_results_lang_prev[lang]["upos"] < pl_module._early_stop_results_lang[lang]["upos"]:
+                #upos += " [BEST]"
+                trainer.save_checkpoint(self.args.store + "." + lang + ".upos")
+            #xpos = "XPOS = {:.4f}".format(metrics["val/XPOS/{0}".format(lang)])
+            if pl_module._early_stop_results_lang_prev[lang]["xpos"] < pl_module._early_stop_results_lang[lang]["xpos"]:
+                #xpos += " [BEST]"
+                trainer.save_checkpoint(self.args.store + "." + lang + ".xpos")
+            #attrs = "ATTRS = {:.4f}".format(metrics["val/ATTRS/{0}".format(lang)])
+            if pl_module._early_stop_results_lang_prev[lang]["attrs"] < pl_module._early_stop_results_lang[lang]["attrs"]:
+                #attrs += " [BEST]"
+                trainer.save_checkpoint(self.args.store + "." + lang + ".attrs")
+            #print("\n{}: {}, {}, {}".format(lang, upos, xpos, attrs))
+
         trainer.save_checkpoint(self.args.store + ".last")
         lang_list = [self._id2lang[ii] for ii in self._id2lang]
         s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
@@ -408,6 +438,14 @@ if __name__ == '__main__':
         doc_train.load(lang[1], lang_id=ii)
         doc_dev.load(lang[2], lang_id=ii)
         id2lang[ii] = lang[0]
+
+    # ensure target dir exists
+    target = args.store
+    i = args.store.rfind("/")
+    if i>0:
+        target = args.store[:i]
+        os.makedirs(target, exist_ok=True)
+
     enc = Encodings()
     enc.compute(doc_train, None)
     enc.save('{0}.encodings'.format(args.store))
@@ -442,8 +480,8 @@ if __name__ == '__main__':
         num_nodes=1,
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)],
-        # limit_train_batches=5,
-        # limit_val_batches = 2,
+        limit_train_batches = 5,
+        limit_val_batches = 2,
     )
 
     trainer.fit(model, train_loader, val_loader)
