@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('')
 import os, argparse
 import pytorch_lightning as pl
@@ -20,7 +21,7 @@ from cube3.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):
-    def __init__(self, config: TaggerConfig, encodings: Encodings):
+    def __init__(self, config: TaggerConfig, encodings: Encodings, id2lang: {} = None):
         super().__init__()
         self._config = config
         self._encodings = encodings
@@ -29,6 +30,8 @@ class Tagger(pl.LightningModule):
                                   num_filters=config.char_filter_size, char_emb_size=config.char_emb_size,
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
+        self._num_langs = encodings.num_langs
+        self._id2lang = id2lang
 
         conv_layers = []
         cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size
@@ -55,10 +58,10 @@ class Tagger(pl.LightningModule):
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._early_stop_results_prev = {"upos": 0., "xpos": 0., "attrs": 0.}
-        self._early_stop_results = {"upos":0., "xpos":0., "attrs":0.}
+        self._early_stop_results = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
-    def _compute_early_stop (self, current_upos, current_xpos, current_attrs):
+    def _compute_early_stop(self, current_upos, current_xpos, current_attrs):
         self._early_stop_results_prev = self._early_stop_results.copy()
         if current_upos > self._early_stop_results["upos"]:
             self._early_stop_results["upos"] = current_upos
@@ -71,7 +74,6 @@ class Tagger(pl.LightningModule):
         if current_attrs > self._early_stop_results["attrs"]:
             self._early_stop_results["attrs"] = current_attrs
             self._early_stop_meta_val += 1
-
 
     def forward(self, x_sents, x_lang_sent, x_words_chars, x_words_case, x_lang_word, x_sent_len, x_word_len,
                 x_sent_masks, x_word_masks):
@@ -170,7 +172,8 @@ class Tagger(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        step_loss = ((loss_upos + loss_attrs + loss_xpos) / 3.) * 1.0 + ((loss_aupos + loss_aattrs + loss_axpos) / 3.) * 1.0
+        step_loss = ((loss_upos + loss_attrs + loss_xpos) / 3.) * 1.0 + (
+                (loss_aupos + loss_aattrs + loss_axpos) / 3.) * 1.0
 
         return {'loss': step_loss}
 
@@ -187,10 +190,8 @@ class Tagger(pl.LightningModule):
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
         loss = (loss_upos + loss_attrs + loss_xpos) / 3
-        upos_ok = 0
-        xpos_ok = 0
-        attrs_ok = 0
-        total = 0
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
+                           range(self._num_langs)}
 
         pred_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
         pred_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
@@ -199,72 +200,64 @@ class Tagger(pl.LightningModule):
         tar_xpos = y_xpos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
         sl = x_sent_len.detach().cpu().numpy()
-
+        x_lang = x_lang.detach().cpu().numpy()
         for iSent in range(x_sent.shape[0]):
             for iWord in range(sl[iSent]):
-                total += 1
+                lang_id = x_lang[iSent] - 1
+                language_result[lang_id]['total'] += 1
                 if pred_upos[iSent, iWord] == tar_upos[iSent, iWord]:
-                    upos_ok += 1
+                    language_result[lang_id]['upos_ok'] += 1
                 if pred_xpos[iSent, iWord] == tar_xpos[iSent, iWord]:
-                    xpos_ok += 1
+                    language_result[lang_id]['xpos_ok'] += 1
                 if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
-                    attrs_ok += 1
+                    language_result[lang_id]['attrs_ok'] += 1
 
-        aupos_ok = 0
-        axpos_ok = 0
-        aattrs_ok = 0
-
-        pred_upos = torch.argmax(a_upos, dim=-1).detach().cpu().numpy()
-        pred_xpos = torch.argmax(a_xpos, dim=-1).detach().cpu().numpy()
-        pred_attrs = torch.argmax(a_attrs, dim=-1).detach().cpu().numpy()
-        tar_upos = y_upos.detach().cpu().numpy()
-        tar_xpos = y_xpos.detach().cpu().numpy()
-        tar_attrs = y_attrs.detach().cpu().numpy()
-        sl = x_sent_len.detach().cpu().numpy()
-
-        for iSent in range(x_sent.shape[0]):
-            for iWord in range(sl[iSent]):
-                if pred_upos[iSent, iWord] == tar_upos[iSent, iWord]:
-                    aupos_ok += 1
-                if pred_xpos[iSent, iWord] == tar_xpos[iSent, iWord]:
-                    axpos_ok += 1
-                if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
-                    aattrs_ok += 1
-
-        return {'loss': loss, 'upos_ok': upos_ok, 'xpos_ok': xpos_ok, 'attrs_ok': attrs_ok,
-                'aupos_ok': aupos_ok, 'axpos_ok': axpos_ok, 'aattrs_ok': aattrs_ok, 'total': total}
+        return {'loss': loss, 'acc': language_result}
 
     def validation_epoch_end(self, outputs):
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
+                           range(self._num_langs)}
+
         valid_loss_total = 0
+        total = 0
+        attrs_ok = 0
         upos_ok = 0
         xpos_ok = 0
-        attrs_ok = 0
-        aupos_ok = 0
-        axpos_ok = 0
-        aattrs_ok = 0
-        total = 0
         for out in outputs:
             valid_loss_total += out['loss']
-            total += out['total']
-            upos_ok += out['upos_ok']
-            attrs_ok += out['attrs_ok']
-            xpos_ok += out['xpos_ok']
-            aupos_ok += out['aupos_ok']
-            aattrs_ok += out['aattrs_ok']
-            axpos_ok += out['axpos_ok']
-
+            for lang_id in language_result:
+                valid_loss_total += out['loss']
+                language_result[lang_id]['total'] += out['acc'][lang_id]['total']
+                language_result[lang_id]['upos_ok'] += out['acc'][lang_id]['upos_ok']
+                language_result[lang_id]['xpos_ok'] += out['acc'][lang_id]['xpos_ok']
+                language_result[lang_id]['attrs_ok'] += out['acc'][lang_id]['attrs_ok']
+                # global
+                total += out['acc'][lang_id]['total']
+                upos_ok += out['acc'][lang_id]['upos_ok']
+                xpos_ok += out['acc'][lang_id]['xpos_ok']
+                attrs_ok += out['acc'][lang_id]['attrs_ok']
 
         self.log('val/loss', valid_loss_total / len(outputs))
-        self.log('val/upos', upos_ok / total)
-        self.log('val/xpos', xpos_ok / total)
-        self.log('val/attrs', attrs_ok / total)
+        self.log('val/UPOS/total', upos_ok / total)
+        self.log('val/XPOS/total', xpos_ok / total)
+        self.log('val/ATTRS/total', attrs_ok / total)
+        for lang_id in language_result:
+            total = language_result[lang_id]['total']
+            if total == 0:
+                total = 1
+            if self._id2lang is None:
+                lang = lang_id
+            else:
+                lang = self._id2lang[lang_id]
+            self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
+            self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
+            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
 
         # single value for early stopping
         self._compute_early_stop(upos_ok / total, xpos_ok / total, attrs_ok / total)
         self.log('val/early_meta', self._early_stop_meta_val)
 
-
-        #print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
+        # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
 
@@ -356,83 +349,101 @@ class TaggerCollate:
                torch.tensor(y_xpos), \
                torch.tensor(y_attrs)
 
+
 class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args):
+    def __init__(self, args, id2lang):
         super().__init__()
         self.args = args
+        self._id2lang = id2lang
 
     def on_epoch_end(self, trainer, pl_module):
         metrics = trainer.callback_metrics
         epoch = trainer.current_epoch
 
-        upos = "UPOS = {:.4f}".format(metrics["val/upos"])
+        upos = "UPOS = {:.4f}".format(metrics["val/UPOS/total"])
         if pl_module._early_stop_results_prev["upos"] < pl_module._early_stop_results["upos"]:
             upos += " [BEST]"
             trainer.save_checkpoint(self.args.store + ".upos")
-        xpos = "XPOS = {:.4f}".format(metrics["val/xpos"])
+        xpos = "XPOS = {:.4f}".format(metrics["val/XPOS/total"])
         if pl_module._early_stop_results_prev["xpos"] < pl_module._early_stop_results["xpos"]:
             xpos += " [BEST]"
             trainer.save_checkpoint(self.args.store + ".xpos")
-        attrs = "ATTRS = {:.4f}".format(metrics["val/attrs"])
+        attrs = "ATTRS = {:.4f}".format(metrics["val/ATTRS/total"])
         if pl_module._early_stop_results_prev["attrs"] < pl_module._early_stop_results["attrs"]:
             attrs += " [BEST]"
             trainer.save_checkpoint(self.args.store + ".attrs")
         print("\n\nEpoch {}: {}, {}, {}\n".format(epoch, upos, xpos, attrs))
 
         trainer.save_checkpoint(self.args.store + ".last")
+        lang_list = [self._id2lang[ii] for ii in self._id2lang]
+        s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
+        print("\t" + s)
+        print("\t" + ("=" * (len(s) + 9)))
+        for lang in lang_list:
+            upos = metrics["val/UPOS/{0}".format(lang)]
+            xpos = metrics["val/XPOS/{0}".format(lang)]
+            attrs = metrics["val/ATTRS/{0}".format(lang)]
+            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}".format(lang, upos, xpos, attrs)
+            print(msg)
+        print("\n")
 
 
 if __name__ == '__main__':
     from cube3.io_utils.misc import ArgParser
+
     argparser = ArgParser()
-    # add custom options
-    argparser.parser.add_argument('--abc', action='store_true', dest='abc', help='abc')
     # run argparser
     args = argparser()
-    print(args) # example
+    print(args)  # example
 
-    # hand power pana facem la toate aceeasi interfata
-    args.store = "data/tagger"
+    import json
 
-    doc_train = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu', lang_id=0)
-    doc_train.load('corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu', lang_id=1)
-    doc_dev = Document(filename='corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu')
+    langs = json.load(open(args.train_file))
+    doc_train = Document()
+    doc_dev = Document()
+    id2lang = {}
+    for ii in range(len(langs)):
+        lang = langs[ii]
+        print(lang[1], ii)
+        doc_train.load(lang[1], lang_id=ii)
+        doc_dev.load(lang[2], lang_id=ii)
+        id2lang[ii] = lang[0]
     enc = Encodings()
     enc.compute(doc_train, None)
+    enc.save('{0}.encodings'.format(args.store))
 
     trainset = TaggerDataset(doc_train)
     devset = TaggerDataset(doc_dev)
 
     collate = TaggerCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=False, num_workers=4, pin_memory=True)
-    val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
+                              num_workers=args.num_workers)
+    val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
+                            num_workers=args.num_workers)
 
     config = TaggerConfig()
-    model = Tagger(config=config, encodings=enc)
+    model = Tagger(config=config, encodings=enc, id2lang=id2lang)
 
     # training
 
-    # x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, y_upos, y_xpos, y_attrs = collate.collate_fn(
-    #     doc_train.sentences[0:5])
-    # from ipdb import set_trace
-    #
-    # set_trace()
-
     early_stopping_callback = EarlyStopping(
         monitor='val/early_meta',
-        patience=3,
+        patience=args.patience,
         verbose=True,
         mode='max'
     )
-
+    if args.gpus == 0:
+        acc = 'ddp_cpu'
+    else:
+        acc = 'ddp'
     trainer = pl.Trainer(
-        gpus=1,
-        accelerator="ddp",
+        gpus=args.gpus,
+        accelerator=acc,
         num_nodes=1,
         default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args)],
-        #limit_train_batches = 5,
-        #limit_val_batches = 2,
+        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)],
+        # limit_train_batches=5,
+        # limit_val_batches = 2,
     )
 
     trainer.fit(model, train_loader, val_loader)

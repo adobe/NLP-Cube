@@ -150,7 +150,8 @@ class Encodings():
         # We only read character2int, labels, holistic words and label2int here. word_list should be recomputed for every dataset (if deemed necessary)
         with open(filename, "r", encoding="utf8") as f:
             line = f.readline()
-
+            self.num_langs = int(line.strip().split(' ')[-1])
+            line = f.readline()
             num_labels = int(line.split(" ")[1])
             if self.verbose:
                 print("Loading labels " + str(num_labels))
@@ -229,6 +230,7 @@ class Encodings():
 
     def save(self, filename):
         f = open(filename, "w", encoding="utf8")
+        f.write("LANGS " + str(self.num_langs) + "\n")
         f.write("LABELS " + str(len(self.label2int)) + "\n")
         for label in self.label2int:
             f.write(str(label) + "\t" + str(self.label2int[label]) + "\n")
