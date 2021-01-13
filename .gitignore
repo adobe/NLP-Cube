@@ -1,4 +1,7 @@
 lightning_logs
+*.gz
+*.encodings
+*.npy
 data/*
 nlp-cube-models/*
 corpus/
