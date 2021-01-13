@@ -16,8 +16,8 @@ from cube3.io_utils.config import TaggerConfig
 import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
 import random
-from transformers import XLMRobertaTokenizer
-from transformers import XLMRobertaModel
+from transformers import AutoTokenizer
+from transformers import AutoModel
 
 from cube3.networks.modules import WordGram
 
@@ -278,6 +278,7 @@ class Tagger(pl.LightningModule):
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
             self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
             self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
+
             self._early_stop_results_lang_prev[lang] = self._early_stop_results_lang[lang].copy()
             self._early_stop_results_lang[lang]["upos"] = language_result[lang_id]['upos_ok'] / total
             self._early_stop_results_lang[lang]["xpos"] = language_result[lang_id]['xpos_ok'] / total
@@ -436,8 +437,10 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
 
 class XLMHelper:
     def __init__(self, device='cpu'):
-        self._splitter = XLMRobertaTokenizer.from_pretrained('xlm-roberta-base')
-        self._xlmr = XLMRobertaModel.from_pretrained("xlm-roberta-base", output_hidden_states=True)
+        #self._splitter = XLMRobertaTokenizer.from_pretrained('xlm-roberta-base')
+        #self._xlmr = XLMRobertaModel.from_pretrained("xlm-roberta-base", output_hidden_states=True)
+        self._splitter = AutoTokenizer.from_pretrained('dumitrescustefan/bert-base-romanian-cased-v1')
+        self._xlmr = AutoModel.from_pretrained('dumitrescustefan/bert-base-romanian-cased-v1', output_hidden_states=True)
         self._xlmr.eval()
         self._xlmr.to(device)
         self._device = device
