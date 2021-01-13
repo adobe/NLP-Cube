@@ -59,31 +59,27 @@ class Tagger(pl.LightningModule):
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
-        self._early_stop_results_prev = {"upos": 0., "xpos": 0., "attrs": 0.}
-        self._early_stop_results = {"upos": 0., "xpos": 0., "attrs": 0.}
-
-        self._early_stop_results_lang_prev = {}
-        self._early_stop_results_lang = {}
+        self._results = {}
         for id in id2lang:
             lang = id2lang[id]
-            self._early_stop_results_lang_prev[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
-            self._early_stop_results_lang[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+            self._results[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
-    def _compute_early_stop(self, current_upos, current_xpos, current_attrs):
-        self._early_stop_results_prev = self._early_stop_results.copy()
-
-        if current_upos > self._early_stop_results["upos"]:
-            self._early_stop_results["upos"] = current_upos
-            self._early_stop_meta_val += 1
-
-        if current_xpos > self._early_stop_results["xpos"]:
-            self._early_stop_results["xpos"] = current_xpos
-            self._early_stop_meta_val += 1
-
-        if current_attrs > self._early_stop_results["attrs"]:
-            self._early_stop_results["attrs"] = current_attrs
-            self._early_stop_meta_val += 1
+    def _compute_early_stop(self, res):
+        for lang in res:
+            if res[lang]["upos"] > self._results[lang]["upos"]:
+                self._early_stop_meta_val += 1
+                self._results[lang]["upos"] = res[lang]["upos"]
+                res[lang]["upos_best"] = True
+            if res[lang]["xpos"] > self._results[lang]["xpos"]:
+                self._early_stop_meta_val += 1
+                self._results[lang]["xpos"] = res[lang]["xpos"]
+                res[lang]["xpos_best"] = True
+            if res[lang]["attrs"] > self._results[lang]["attrs"]:
+                self._early_stop_meta_val += 1
+                self._results[lang]["attrs"] = res[lang]["attrs"]
+                res[lang]["attrs_best"] = True
+        return res
 
     def forward(self, x_sents, x_lang_sent, x_words_chars, x_words_case, x_lang_word, x_sent_len, x_word_len,
                 x_sent_masks, x_word_masks, x_word_emb_packed):
@@ -267,6 +263,8 @@ class Tagger(pl.LightningModule):
         self.log('val/UPOS/total', upos_ok / total)
         self.log('val/XPOS/total', xpos_ok / total)
         self.log('val/ATTRS/total', attrs_ok / total)
+
+        res = {}
         for lang_id in language_result:
             total = language_result[lang_id]['total']
             if total == 0:
@@ -275,17 +273,18 @@ class Tagger(pl.LightningModule):
                 lang = lang_id
             else:
                 lang = self._id2lang[lang_id]
+            res[lang_id] = {
+                            "upos": language_result[lang_id]['upos_ok'] / total,
+                            "xpos": language_result[lang_id]['xpos_ok'] / total,
+                            "attrs": language_result[lang_id]['attrs_ok'] / total
+                           }
+
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
             self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
             self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
 
-            self._early_stop_results_lang_prev[lang] = self._early_stop_results_lang[lang].copy()
-            self._early_stop_results_lang[lang]["upos"] = language_result[lang_id]['upos_ok'] / total
-            self._early_stop_results_lang[lang]["xpos"] = language_result[lang_id]['xpos_ok'] / total
-            self._early_stop_results_lang[lang]["attrs"] = language_result[lang_id]['attrs_ok'] / total
-
         # single value for early stopping
-        self._compute_early_stop(upos_ok / total, xpos_ok / total, attrs_ok / total)
+        self._epoch_results = self._compute_early_stop(res)
         self.log('val/early_meta', self._early_stop_meta_val)
 
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
@@ -395,33 +394,19 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
         metrics = trainer.callback_metrics
         epoch = trainer.current_epoch
 
-        upos = "UPOS = {:.4f}".format(metrics["val/UPOS/total"])
-        if pl_module._early_stop_results_prev["upos"] < pl_module._early_stop_results["upos"]:
-            upos += " [BEST]"
-            trainer.save_checkpoint(self.args.store + ".upos")
-        xpos = "XPOS = {:.4f}".format(metrics["val/XPOS/total"])
-        if pl_module._early_stop_results_prev["xpos"] < pl_module._early_stop_results["xpos"]:
-            xpos += " [BEST]"
-            trainer.save_checkpoint(self.args.store + ".xpos")
-        attrs = "ATTRS = {:.4f}".format(metrics["val/ATTRS/total"])
-        if pl_module._early_stop_results_prev["attrs"] < pl_module._early_stop_results["attrs"]:
-            attrs += " [BEST]"
-            trainer.save_checkpoint(self.args.store + ".attrs")
-        print("\n\nEpoch {}: {}, {}, {}\n".format(epoch, upos, xpos, attrs))
-
         # from pprint import pprint
         # pprint(metrics)
-        for id in self._id2lang:
-            lang = self._id2lang[id]
-            if pl_module._early_stop_results_lang_prev[lang]["upos"] < pl_module._early_stop_results_lang[lang]["upos"]:
+        for lang in pl_module._epoch_results:
+            res = pl_module._epoch_results[lang]
+            if "upos_best" in res:
                 trainer.save_checkpoint(self.args.store + "." + lang + ".upos")
-            if pl_module._early_stop_results_lang_prev[lang]["xpos"] < pl_module._early_stop_results_lang[lang]["xpos"]:
+            if "xpos_best" in res:
                 trainer.save_checkpoint(self.args.store + "." + lang + ".xpos")
-            if pl_module._early_stop_results_lang_prev[lang]["attrs"] < pl_module._early_stop_results_lang[lang][
-                "attrs"]:
+            if "attrs_best" in res:
                 trainer.save_checkpoint(self.args.store + "." + lang + ".attrs")
 
         trainer.save_checkpoint(self.args.store + ".last")
+
         lang_list = [self._id2lang[ii] for ii in self._id2lang]
         s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
         print("\t" + s)
