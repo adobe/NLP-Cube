@@ -18,3 +18,5 @@ tqdm
 configparser
 pytorch-lightning
 
+transformers
+sentencepiece
