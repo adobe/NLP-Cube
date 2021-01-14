@@ -32,6 +32,7 @@ class ArgParser():
         self.parser.add_argument('--resume', action='store_true', dest='resume', help='Resume training')
         self.parser.add_argument('--lm-device', action='store', dest='lm_device', default='cuda:0',
                                  help='Where to load LM (default=cuda:0)')
+        self.parser.add_argument('--config', action='store', dest='config_file', help='Load config file')
 
     def __call__(self, *args, **kwargs):
         return self.parser.parse_args()

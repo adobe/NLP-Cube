@@ -379,6 +379,9 @@ if __name__ == '__main__':
                             num_workers=args.num_workers)
 
     config = TaggerConfig()
+    if args.config_file:
+        config.load(args.config_file)
+    config.save('{0}.config'.format(args.store))
     model = Tagger(config=config, encodings=enc, id2lang=id2lang)
 
     # training
