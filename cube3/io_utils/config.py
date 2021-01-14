@@ -108,7 +108,7 @@ class TaggerConfig(Config):
         self.word_emb_size = 256
         self.lang_emb_size = 64
         self.cnn_filter = 512
-        self.cnn_layers = 8
+        self.cnn_layers = 5
         self._valid = True
 
         if filename is None:

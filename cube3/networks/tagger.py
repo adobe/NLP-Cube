@@ -18,8 +18,7 @@ from cube3.io_utils.config import TaggerConfig
 import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
 import random
-from transformers import AutoTokenizer
-from transformers import AutoModel
+
 from cube3.networks.utils import XLMHelper, MorphoCollate, MorphoDataset
 
 from cube3.networks.modules import WordGram
@@ -84,8 +83,17 @@ class Tagger(pl.LightningModule):
                 res[lang]["attrs_best"] = True
         return res
 
-    def forward(self, x_sents, x_lang_sent, x_words_chars, x_words_case, x_lang_word, x_sent_len, x_word_len,
-                x_sent_masks, x_word_masks, x_word_emb_packed):
+    def forward(self, X):
+        x_sents = X['x_sent']
+        x_lang_sent = X['x_lang_sent']
+        x_words_chars = X['x_word']
+        x_words_case = X['x_word_case']
+        x_lang_word = X['x_lang_word']
+        x_sent_len = X['x_sent_len']
+        x_word_len = X['x_word_len']
+        x_sent_masks = X['x_sent_masks']
+        x_word_masks = X['x_word_masks']
+        x_word_emb_packed = X['x_word_embeddings']
         char_emb_packed = self._word_net(x_words_chars, x_words_case, x_lang_word, x_word_masks, x_word_len)
 
         blist_char = []
@@ -183,10 +191,10 @@ class Tagger(pl.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, x_word_emb, y_upos, y_xpos, y_attrs = batch
-        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case,
-                                                                        x_lang_word, x_sent_len, x_word_len,
-                                                                        x_sent_masks, x_word_masks, x_word_emb)
+        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        y_upos = batch['y_upos']
+        y_xpos = batch['y_xpos']
+        y_attrs = batch['y_attrs']
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
@@ -202,15 +210,12 @@ class Tagger(pl.LightningModule):
         return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
-        x_sent, x_lang, x_word_chars, x_word_case, x_lang_word, x_sent_len, x_word_len, x_sent_masks, x_word_masks, x_word_emb, y_upos, y_xpos, y_attrs = batch
-        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(x_sent, x_lang, x_word_chars, x_word_case,
-                                                                        x_lang_word,
-                                                                        x_sent_len,
-                                                                        x_word_len,
-                                                                        x_sent_masks,
-                                                                        x_word_masks,
-                                                                        x_word_emb)
-
+        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        y_upos = batch['y_upos']
+        y_xpos = batch['y_xpos']
+        y_attrs = batch['y_attrs']
+        x_sent_len = batch['x_sent_len']
+        x_lang = batch['x_lang_sent']
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
@@ -226,7 +231,7 @@ class Tagger(pl.LightningModule):
         tar_attrs = y_attrs.detach().cpu().numpy()
         sl = x_sent_len.detach().cpu().numpy()
         x_lang = x_lang.detach().cpu().numpy()
-        for iSent in range(x_sent.shape[0]):
+        for iSent in range(p_upos.shape[0]):
             for iWord in range(sl[iSent]):
                 lang_id = x_lang[iSent] - 1
                 language_result[lang_id]['total'] += 1

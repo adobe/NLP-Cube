@@ -1,5 +1,11 @@
 import numpy as np
 import torch
+from torch.utils.data.dataset import Dataset
+from torch.utils.data import DataLoader
+from transformers import AutoTokenizer
+from transformers import AutoModel
+from cube3.io_utils.objects import Document, Sentence, Token, Word
+from cube3.io_utils.encodings import Encodings
 
 
 class MorphoDataset(Dataset):
@@ -14,8 +20,9 @@ class MorphoDataset(Dataset):
 
 
 class MorphoCollate:
-    def __init__(self, encodings: Encodings):
+    def __init__(self, encodings: Encodings, add_parsing=False):
         self._encodings = encodings
+        self._add_parsing = add_parsing
 
     def collate_fn(self, batch: [Sentence]):
         a_sent_len = [len(sent.words) for sent in batch]
@@ -42,11 +49,18 @@ class MorphoCollate:
         y_upos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
         y_xpos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
         y_attrs = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+
+        y_head = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+        y_label = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+
         for iSent in range(len(batch)):
             sent = batch[iSent]
             x_lang_sent[iSent] = sent.lang_id + 1
             for iWord in range(len(sent.words)):
                 word = sent.words[iWord]
+                y_head[iSent, iWord] = word.head
+                if word.label in self._encodings.label2int:
+                    y_label[iSent, iWord] = self._encodings.label2int[word.label]
                 if word.upos in self._encodings.upos2int:
                     y_upos[iSent, iWord] = self._encodings.upos2int[word.upos]
                 if word.xpos in self._encodings.xpos2int:
@@ -79,20 +93,27 @@ class MorphoCollate:
                 c_word += 1
 
         x_lang_word = np.array(x_lang_word)
+        response = {
+            'x_sent': torch.tensor(x_sent),
+            'x_lang_sent': torch.tensor(x_lang_sent),
+            'x_word': torch.tensor(x_word),
+            'x_word_case': torch.tensor(x_word_case),
+            'x_lang_word': torch.tensor(x_lang_word),
+            'x_sent_len': torch.tensor(x_sent_len),
+            'x_word_len': torch.tensor(x_word_len),
+            'x_sent_masks': torch.tensor(x_sent_masks),
+            'x_word_masks': torch.tensor(x_word_masks),
+            'x_word_embeddings': torch.tensor(x_word_embeddings),
+            'y_upos': torch.tensor(y_upos),
+            'y_xpos': torch.tensor(y_xpos),
+            'y_attrs': torch.tensor(y_attrs)
+        }
 
-        return torch.tensor(x_sent), \
-               torch.tensor(x_lang_sent), \
-               torch.tensor(x_word), \
-               torch.tensor(x_word_case), \
-               torch.tensor(x_lang_word), \
-               torch.tensor(x_sent_len), \
-               torch.tensor(x_word_len), \
-               torch.tensor(x_sent_masks), \
-               torch.tensor(x_word_masks), \
-               torch.tensor(x_word_embeddings), \
-               torch.tensor(y_upos), \
-               torch.tensor(y_xpos), \
-               torch.tensor(y_attrs)
+        if self._add_parsing:
+            response['y_head'] = torch.tensor(y_head)
+            response['y_label'] = torch.tensor(y_label)
+
+        return response
 
 
 class XLMHelper:

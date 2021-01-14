@@ -40,9 +40,13 @@ class Document:
         in_sequence = False
         f = fopen(filename, 'r')
         seq = []
+        cnt = 0
         for line in f.readlines():
             line = line.replace("\n", "")
             line = line.replace("\r", "")
+            cnt += 1
+            if cnt == 100:
+                break
             if (not line.startswith("#") or in_sequence) and line != '':
                 parts = line.split("\t")
 
