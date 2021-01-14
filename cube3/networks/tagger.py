@@ -366,7 +366,16 @@ if __name__ == '__main__':
     enc = Encodings()
     enc.compute(doc_train, None)
     enc.save('{0}.encodings'.format(args.store))
-    helper = LMHelper(device=args.lm_device, model=args.lm_model)
+
+    config = TaggerConfig()
+    config.lm_model = args.lm_model
+    if args.config_file:
+        config.load(args.config_file)
+        if args.lm_model is not None:
+            config.lm_model = args.lm_model
+    config.save('{0}.config'.format(args.store))
+
+    helper = LMHelper(device=args.lm_device, model=config.lm_model)
     helper.apply(doc_dev)
     helper.apply(doc_train)
     trainset = MorphoDataset(doc_train)
@@ -378,13 +387,6 @@ if __name__ == '__main__':
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
                             num_workers=args.num_workers)
 
-    config = TaggerConfig()
-    config.lm_model = args.lm_model
-    if args.config_file:
-        config.load(args.config_file)
-        if args.lm_model is not None:
-            config.lm_model = args.lm_model
-    config.save('{0}.config'.format(args.store))
     model = Tagger(config=config, encodings=enc, id2lang=id2lang)
 
     # training
