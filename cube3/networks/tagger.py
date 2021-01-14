@@ -382,6 +382,8 @@ if __name__ == '__main__':
     config.lm_model = args.lm_model
     if args.config_file:
         config.load(args.config_file)
+        if args.lm_model is not None:
+            config.lm_model = args.lm_model
     config.save('{0}.config'.format(args.store))
     model = Tagger(config=config, encodings=enc, id2lang=id2lang)
 
