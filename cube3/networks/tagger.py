@@ -19,7 +19,7 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
 import random
 
-from cube3.networks.utils import XLMHelper, MorphoCollate, MorphoDataset
+from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset
 
 from cube3.networks.modules import WordGram
 
@@ -366,7 +366,7 @@ if __name__ == '__main__':
     enc = Encodings()
     enc.compute(doc_train, None)
     enc.save('{0}.encodings'.format(args.store))
-    helper = XLMHelper(device=args.lm_device)
+    helper = LMHelper(device=args.lm_device, model=args.lm_model)
     helper.apply(doc_dev)
     helper.apply(doc_train)
     trainset = MorphoDataset(doc_train)
@@ -379,6 +379,7 @@ if __name__ == '__main__':
                             num_workers=args.num_workers)
 
     config = TaggerConfig()
+    config.lm_model = args.lm_model
     if args.config_file:
         config.load(args.config_file)
     config.save('{0}.config'.format(args.store))

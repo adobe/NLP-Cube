@@ -109,6 +109,7 @@ class TaggerConfig(Config):
         self.lang_emb_size = 64
         self.cnn_filter = 512
         self.cnn_layers = 5
+        self.lm_model = 'xlm-roberta-base'
         self._valid = True
 
         if filename is None:

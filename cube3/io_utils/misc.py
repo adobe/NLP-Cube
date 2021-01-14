@@ -30,6 +30,8 @@ class ArgParser():
         self.parser.add_argument('--debug', action='store_true', dest='debug',
                                  help='Do some standard stuff to debug the model')
         self.parser.add_argument('--resume', action='store_true', dest='resume', help='Resume training')
+        self.parser.add_argument('--lm-model', action='store', dest='lm_model',
+                                 help='What LM model to use (default=xlm-roberta-base)', default='xlm-roberta-base')
         self.parser.add_argument('--lm-device', action='store', dest='lm_device', default='cuda:0',
                                  help='Where to load LM (default=cuda:0)')
         self.parser.add_argument('--config', action='store', dest='config_file', help='Load config file')

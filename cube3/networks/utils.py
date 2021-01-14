@@ -116,7 +116,7 @@ class MorphoCollate:
         return response
 
 
-class XLMHelper:
+class LMHelper:
     def __init__(self, device: str = 'cpu', model: str = None):
         if model is None:
             self._splitter = AutoTokenizer.from_pretrained('xlm-roberta-base')
