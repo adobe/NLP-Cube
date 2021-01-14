@@ -2,6 +2,8 @@ import sys
 
 sys.path.append('')
 import os, argparse
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
@@ -59,25 +61,25 @@ class Tagger(pl.LightningModule):
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
-        self._results = {}
+        self._res = {}
         for id in id2lang:
             lang = id2lang[id]
-            self._results[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
         for lang in res:
-            if res[lang]["upos"] > self._results[lang]["upos"]:
+            if res[lang]["upos"] > self._res[lang]["upos"]:
                 self._early_stop_meta_val += 1
-                self._results[lang]["upos"] = res[lang]["upos"]
+                self._res[lang]["upos"] = res[lang]["upos"]
                 res[lang]["upos_best"] = True
-            if res[lang]["xpos"] > self._results[lang]["xpos"]:
+            if res[lang]["xpos"] > self._res[lang]["xpos"]:
                 self._early_stop_meta_val += 1
-                self._results[lang]["xpos"] = res[lang]["xpos"]
+                self._res[lang]["xpos"] = res[lang]["xpos"]
                 res[lang]["xpos_best"] = True
-            if res[lang]["attrs"] > self._results[lang]["attrs"]:
+            if res[lang]["attrs"] > self._res[lang]["attrs"]:
                 self._early_stop_meta_val += 1
-                self._results[lang]["attrs"] = res[lang]["attrs"]
+                self._res[lang]["attrs"] = res[lang]["attrs"]
                 res[lang]["attrs_best"] = True
         return res
 
@@ -273,11 +275,11 @@ class Tagger(pl.LightningModule):
                 lang = lang_id
             else:
                 lang = self._id2lang[lang_id]
-            res[lang_id] = {
-                            "upos": language_result[lang_id]['upos_ok'] / total,
-                            "xpos": language_result[lang_id]['xpos_ok'] / total,
-                            "attrs": language_result[lang_id]['attrs_ok'] / total
-                           }
+            res[lang] = {
+                "upos": language_result[lang_id]['upos_ok'] / total,
+                "xpos": language_result[lang_id]['xpos_ok'] / total,
+                "attrs": language_result[lang_id]['attrs_ok'] / total
+            }
 
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
             self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
@@ -409,7 +411,7 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
 
         lang_list = [self._id2lang[ii] for ii in self._id2lang]
         s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
-        print("\t" + s)
+        print("\n\n\t" + s)
         print("\t" + ("=" * (len(s) + 9)))
         for lang in lang_list:
             upos = metrics["val/UPOS/{0}".format(lang)]
@@ -422,10 +424,11 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
 
 class XLMHelper:
     def __init__(self, device='cpu'):
-        #self._splitter = XLMRobertaTokenizer.from_pretrained('xlm-roberta-base')
-        #self._xlmr = XLMRobertaModel.from_pretrained("xlm-roberta-base", output_hidden_states=True)
+        # self._splitter = XLMRobertaTokenizer.from_pretrained('xlm-roberta-base')
+        # self._xlmr = XLMRobertaModel.from_pretrained("xlm-roberta-base", output_hidden_states=True)
         self._splitter = AutoTokenizer.from_pretrained('dumitrescustefan/bert-base-romanian-cased-v1')
-        self._xlmr = AutoModel.from_pretrained('dumitrescustefan/bert-base-romanian-cased-v1', output_hidden_states=True)
+        self._xlmr = AutoModel.from_pretrained('dumitrescustefan/bert-base-romanian-cased-v1',
+                                               output_hidden_states=True)
         self._xlmr.eval()
         self._xlmr.to(device)
         self._device = device

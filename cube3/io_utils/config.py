@@ -104,11 +104,11 @@ class TaggerConfig(Config):
         super().__init__()
         self.char_emb_size = 256
         self.char_filter_size = 512
-        self.char_layers = 3
+        self.char_layers = 5
         self.word_emb_size = 256
         self.lang_emb_size = 64
         self.cnn_filter = 512
-        self.cnn_layers = 3
+        self.cnn_layers = 5
         self._valid = True
 
         if filename is None:
