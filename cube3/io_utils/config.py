@@ -124,16 +124,16 @@ class TaggerConfig(Config):
 class ParserConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.layers = [300, 300, 200, 200, 200]
-        self.layer_dropouts = [0.33, 0.33, 0.33, 0.33, 0.33]
-        self.aux_softmax_layer = 2
+        self.char_emb_size = 256
+        self.char_filter_size = 512
+        self.char_layers = 3
+        self.word_emb_size = 256
+        self.lang_emb_size = 64
+        self.cnn_filter = 512
+        self.cnn_layers = 5
+        self.aux_softmax_location = 3
+        self.lm_model = 'xlm-roberta-base'
         self._valid = True
-        self.input_dropout_prob = 0.33
-        self.arc_proj_size = 100
-        self.label_proj_size = 400
-        self.presoftmax_mlp_dropout = 0.33
-        self.predict_morphology = True
-        self.input_embeddings_size = 100
 
         if filename is None:
             if verbose:
@@ -142,23 +142,6 @@ class ParserConfig(Config):
             if verbose:
                 sys.stdout.write("Reading configuration file " + filename + " \n")
             self.load(filename)
-
-        if verbose:
-            print("LAYERS:", self.layers)
-            print("LAYER DROPOUTS:", self.layer_dropouts)
-            print("AUX SOFTMAX POSITION:", self.aux_softmax_layer)
-            print("INPUT DROPOUT PROB:", self.input_dropout_prob)
-            print("ARC PROJECTION SIZE:", self.arc_proj_size)
-            print("LABEL PROJECTION SIZE:", self.label_proj_size)
-            print("PRESOFTMAX MLP DROPOUT:", self.presoftmax_mlp_dropout)
-            print("JOINTLY PARSE AND PREDICT MORPHOLOGY:", self.predict_morphology)
-            print("USE MORPHOLOGY AS INPUT:", self.use_morphology)
-            print("INPUT EMBEDDINGS SIZE:", self.input_embeddings_size)
-
-        if self.aux_softmax_layer > len(self.layers) - 1 or self.aux_softmax_layer == 0:
-            print(
-                "Configuration error: aux softmax layer must be placed after the first layer and before the final one.")
-            self._valid = False
 
 
 class LemmatizerConfig(Config):
