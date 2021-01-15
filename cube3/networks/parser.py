@@ -77,23 +77,19 @@ class Parser(pl.LightningModule):
         self._res = {}
         for id in id2lang:
             lang = id2lang[id]
-            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0., 'uas': 0., 'las': 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
         for lang in res:
-            if res[lang]["upos"] > self._res[lang]["upos"]:
+            if res[lang]["uas"] > self._res[lang]["uas"]:
                 self._early_stop_meta_val += 1
-                self._res[lang]["upos"] = res[lang]["upos"]
-                res[lang]["upos_best"] = True
-            if res[lang]["xpos"] > self._res[lang]["xpos"]:
+                self._res[lang]["uas"] = res[lang]["uas"]
+                res[lang]["uas_best"] = True
+            if res[lang]["las"] > self._res[lang]["las"]:
                 self._early_stop_meta_val += 1
-                self._res[lang]["xpos"] = res[lang]["xpos"]
-                res[lang]["xpos_best"] = True
-            if res[lang]["attrs"] > self._res[lang]["attrs"]:
-                self._early_stop_meta_val += 1
-                self._res[lang]["attrs"] = res[lang]["attrs"]
-                res[lang]["attrs_best"] = True
+                self._res[lang]["las"] = res[lang]["las"]
+                res[lang]["las_best"] = True
         return res
 
     def forward(self, X):
@@ -202,18 +198,18 @@ class Parser(pl.LightningModule):
         # aux tagging
         lang_emb = lang_emb.permute(0, 2, 1)
         hidden = hidden.permute(0, 2, 1)[:, 1:, :]
-        pre_morpho = self._pre_morpho(hidden)
+        pre_morpho = torch.tanh(self._pre_morpho(hidden))
         pre_morpho = torch.cat([pre_morpho, lang_emb[:, 1:, :]], dim=2)
         upos = self._upos(pre_morpho)
         xpos = self._xpos(pre_morpho)
         attrs = self._attrs(pre_morpho)
 
         # parsing
-        pre_parsing = self._pre_out(x)
-        h_r1 = self._head_r1(pre_parsing)
-        h_r2 = self._head_r2(pre_parsing)
-        l_r1 = self._label_r1(pre_parsing)
-        l_r2 = self._label_r2(pre_parsing)
+        pre_parsing = torch.tanh(self._pre_out(x))
+        h_r1 = torch.tanh(self._head_r1(pre_parsing))
+        h_r2 = torch.tanh(self._head_r2(pre_parsing))
+        l_r1 = torch.tanh(self._label_r1(pre_parsing))
+        l_r2 = torch.tanh(self._label_r2(pre_parsing))
         att_stack = []
         for ii in range(1, h_r1.shape[1]):
             a = self._att_net(h_r1[:, ii, :], h_r2)
@@ -221,6 +217,21 @@ class Parser(pl.LightningModule):
         att = torch.cat(att_stack, dim=1)
 
         return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
+
+    def _get_labels(self, x1, x2, heads):
+        x1 = x1[:, 1:, :]
+        x_stack = []
+        for ii in range(x1.shape[0]):
+            xx = []
+            for jj in range(x1.shape[1]):
+                if jj < len(heads[ii]):
+                    xx.append(x2[ii, heads[ii][jj]].unsqueeze(0).unsqueeze(0))
+                else:
+                    xx.append(x2[ii, 0].unsqueeze(0).unsqueeze(0))
+            x_stack.append(torch.cat(xx, dim=1))
+        x_stack = torch.cat(x_stack, dim=0)
+        hid = torch.cat([x1, x_stack], dim=-1)
+        return self._label(hid)
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':
@@ -239,6 +250,8 @@ class Parser(pl.LightningModule):
         y_head = batch['y_head']
         y_label = batch['y_label']
 
+        pred_labels = self._get_labels(l_r1, l_r2, y_head.detach().cpu().numpy())
+
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
@@ -247,8 +260,11 @@ class Parser(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        step_loss = ((loss_upos + loss_attrs + loss_xpos) / 3.) * 1.0 + (
-                (loss_aupos + loss_aattrs + loss_axpos) / 3.) * 1.0
+        loss_uas = F.nll_loss(torch.log(att.view(-1, att.shape[2])), y_head.view(-1))
+        loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
+
+        step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
+                (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
 
         return {'loss': step_loss}
 
@@ -257,30 +273,32 @@ class Parser(pl.LightningModule):
         y_upos = batch['y_upos']
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
+        y_head = batch['y_head']
+        y_label = batch['y_label']
         x_sent_len = batch['x_sent_len']
         x_lang = batch['x_lang_sent']
         sl = x_sent_len.detach().cpu().numpy()
 
         att = att.detach().cpu().numpy()
         pred_heads = self._decoder.decode(att, sl)
-        uas_ok = 0
-        uas_total = 0
-        from ipdb import set_trace
-        set_trace()
+        pred_labels = self._get_labels(l_r1, l_r2, pred_heads)
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
         loss = (loss_upos + loss_attrs + loss_xpos) / 3
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
-                           range(self._num_langs)}
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0, 'uas_ok': 0, 'las_ok': 0}
+                           for lang_id in range(self._num_langs)}
 
         pred_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
         pred_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
         pred_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
+        pred_labels = torch.argmax(pred_labels, dim=-1).detach().cpu().numpy()
         tar_upos = y_upos.detach().cpu().numpy()
         tar_xpos = y_xpos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
+        tar_head = y_head.detach().cpu().numpy()
+        tar_label = y_head.detach().cpu().numpy()
 
         x_lang = x_lang.detach().cpu().numpy()
         for iSent in range(p_upos.shape[0]):
@@ -293,11 +311,16 @@ class Parser(pl.LightningModule):
                     language_result[lang_id]['xpos_ok'] += 1
                 if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
                     language_result[lang_id]['attrs_ok'] += 1
+                if pred_heads[iSent][iWord] == tar_head[iSent, iWord]:
+                    language_result[lang_id]['uas_ok'] += 1
+                    if pred_labels[iSent, iWord] == tar_label[iSent, iWord]:
+                        language_result[lang_id]['las_ok'] += 1
 
         return {'loss': loss, 'acc': language_result}
 
     def validation_epoch_end(self, outputs):
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0, 'uas_ok': 0, 'las_ok': 0}
+                           for lang_id in
                            range(self._num_langs)}
 
         valid_loss_total = 0
@@ -305,6 +328,8 @@ class Parser(pl.LightningModule):
         attrs_ok = 0
         upos_ok = 0
         xpos_ok = 0
+        uas_ok = 0
+        las_ok = 0
         for out in outputs:
             valid_loss_total += out['loss']
             for lang_id in language_result:
@@ -313,16 +338,22 @@ class Parser(pl.LightningModule):
                 language_result[lang_id]['upos_ok'] += out['acc'][lang_id]['upos_ok']
                 language_result[lang_id]['xpos_ok'] += out['acc'][lang_id]['xpos_ok']
                 language_result[lang_id]['attrs_ok'] += out['acc'][lang_id]['attrs_ok']
+                language_result[lang_id]['uas_ok'] += out['acc'][lang_id]['uas_ok']
+                language_result[lang_id]['las_ok'] += out['acc'][lang_id]['las_ok']
                 # global
                 total += out['acc'][lang_id]['total']
                 upos_ok += out['acc'][lang_id]['upos_ok']
                 xpos_ok += out['acc'][lang_id]['xpos_ok']
                 attrs_ok += out['acc'][lang_id]['attrs_ok']
+                uas_ok += out['acc'][lang_id]['uas_ok']
+                las_ok += out['acc'][lang_id]['las_ok']
 
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/UPOS/total', upos_ok / total)
         self.log('val/XPOS/total', xpos_ok / total)
         self.log('val/ATTRS/total', attrs_ok / total)
+        self.log('val/UAS/total', uas_ok / total)
+        self.log('val/LAS/total', las_ok / total)
 
         res = {}
         for lang_id in language_result:
@@ -336,12 +367,16 @@ class Parser(pl.LightningModule):
             res[lang] = {
                 "upos": language_result[lang_id]['upos_ok'] / total,
                 "xpos": language_result[lang_id]['xpos_ok'] / total,
-                "attrs": language_result[lang_id]['attrs_ok'] / total
+                "attrs": language_result[lang_id]['attrs_ok'] / total,
+                "uas": language_result[lang_id]['uas_ok'] / total,
+                "las": language_result[lang_id]['las_ok'] / total
             }
 
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
             self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
             self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
+            self.log('val/UAS/{0}'.format(lang), language_result[lang_id]['uas_ok'] / total)
+            self.log('val/LAS/{0}'.format(lang), language_result[lang_id]['las_ok'] / total)
 
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
@@ -365,24 +400,24 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
         # pprint(metrics)
         for lang in pl_module._epoch_results:
             res = pl_module._epoch_results[lang]
-            if "upos_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".upos")
-            if "xpos_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".xpos")
-            if "attrs_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".attrs")
+            if "uas_best" in res:
+                trainer.save_checkpoint(self.args.store + "." + lang + ".uas")
+            if "las_best" in res:
+                trainer.save_checkpoint(self.args.store + "." + lang + ".las")
 
         trainer.save_checkpoint(self.args.store + ".last")
 
         lang_list = [self._id2lang[ii] for ii in self._id2lang]
-        s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
+        s = "{0:30s}\tUAS\tLAS\tUPOS\tXPOS\tATTRS".format("Language")
         print("\n\n\t" + s)
-        print("\t" + ("=" * (len(s) + 9)))
+        print("\t" + ("=" * (len(s) + 16)))
         for lang in lang_list:
+            uas = metrics["val/UAS/{0}".format(lang)]
+            las = metrics["val/LAS/{0}".format(lang)]
             upos = metrics["val/UPOS/{0}".format(lang)]
             xpos = metrics["val/XPOS/{0}".format(lang)]
             attrs = metrics["val/ATTRS/{0}".format(lang)]
-            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}".format(lang, upos, xpos, attrs)
+            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos, attrs)
             print(msg)
         print("\n")
 
@@ -435,9 +470,9 @@ if __name__ == '__main__':
 
     collate = MorphoCollate(enc, add_parsing=True)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
-                              num_workers=0)  # args.num_workers)
+                              num_workers=args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
-                            num_workers=0)  # args.num_workers)
+                            num_workers=args.num_workers)
 
     model = Parser(config=config, encodings=enc, id2lang=id2lang)
 
