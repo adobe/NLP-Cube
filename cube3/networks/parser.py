@@ -298,7 +298,7 @@ class Parser(pl.LightningModule):
         tar_xpos = y_xpos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
         tar_head = y_head.detach().cpu().numpy()
-        tar_label = y_head.detach().cpu().numpy()
+        tar_label = y_label.detach().cpu().numpy()
 
         x_lang = x_lang.detach().cpu().numpy()
         for iSent in range(p_upos.shape[0]):
