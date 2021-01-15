@@ -16,7 +16,7 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import ParserConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, Attention
+from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention
 import random
 
 from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset, GreedyDecoder
@@ -63,12 +63,15 @@ class Parser(pl.LightningModule):
         self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size, NUM_FILTERS // 4, num_layers=2,
+                            batch_first=True, bidirectional=True)
+
         self._pre_out = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, config.pre_parser_size)
         self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
         self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
         self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
         self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
-        self._att_net = Attention(config.head_size // 2, config.head_size)
+        self._att_net = BilinearAttention(config.head_size, config.head_size)
         self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
         self._r_emb = nn.Embedding(1, config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768)
 
@@ -205,7 +208,9 @@ class Parser(pl.LightningModule):
         attrs = self._attrs(pre_morpho)
 
         # parsing
-        pre_parsing = torch.tanh(self._pre_out(x))
+        output, _ = self._rnn(x)
+        output = torch.cat([output, lang_emb], dim=-1)
+        pre_parsing = torch.tanh(self._pre_out(output))
         h_r1 = torch.tanh(self._head_r1(pre_parsing))
         h_r2 = torch.tanh(self._head_r2(pre_parsing))
         l_r1 = torch.tanh(self._label_r1(pre_parsing))
@@ -260,7 +265,7 @@ class Parser(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        loss_uas = F.nll_loss(torch.log(att.view(-1, att.shape[2])), y_head.view(-1))
+        loss_uas = F.cross_entropy(att.view(-1, att.shape[2]), y_head.view(-1))
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
 
         step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
@@ -279,7 +284,7 @@ class Parser(pl.LightningModule):
         x_lang = batch['x_lang_sent']
         sl = x_sent_len.detach().cpu().numpy()
 
-        att = att.detach().cpu().numpy()
+        att = torch.softmax(att, dim=-1).detach().cpu().numpy()
         pred_heads = self._decoder.decode(att, sl)
         pred_labels = self._get_labels(l_r1, l_r2, pred_heads)
 

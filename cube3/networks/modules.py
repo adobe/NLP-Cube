@@ -102,6 +102,17 @@ class Encoder(pl.LightningModule):
         return outputs, hidden
 
 
+class BilinearAttention(nn.Module):
+    def __init__(self, dim1, dim2):
+        super().__init__()
+        self.layer = nn.Bilinear(dim1, dim2, 1)
+
+    def forward(self, query, keys):
+        query = query.unsqueeze(1).repeat(1, keys.shape[1], 1)
+        trans = self.layer(query, keys)
+        return trans
+
+
 class Attention(pl.LightningModule):
     def __init__(self, enc_hid_dim, dec_hid_dim, att_proj_size=100):
         super().__init__()
