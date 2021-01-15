@@ -45,8 +45,8 @@ class Document:
             line = line.replace("\n", "")
             line = line.replace("\r", "")
             cnt += 1
-            if cnt == 100:
-                break
+            # if cnt == 100:
+            #     break
             if (not line.startswith("#") or in_sequence) and line != '':
                 parts = line.split("\t")
 
