@@ -16,10 +16,10 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import ParserConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm
+from cube3.networks.modules import ConvNorm, LinearNorm, Attention
 import random
 
-from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset
+from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset, GreedyDecoder
 
 from cube3.networks.modules import WordGram
 
@@ -53,13 +53,26 @@ class Parser(pl.LightningModule):
         self._word_emb = nn.Embedding(len(encodings.word2int), config.word_emb_size, padding_idx=0)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._convs = nn.ModuleList(conv_layers)
-        self._upos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.upos2int))
-        self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
-        self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._aupos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.upos2int))
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
+
+        self._pre_morpho = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, NUM_FILTERS // 2)
+        self._upos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.upos2int))
+        self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
+        self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
+
+        self._pre_out = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, config.pre_parser_size)
+        self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
+        self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
+        self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
+        self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
+        self._att_net = Attention(config.head_size // 2, config.head_size)
+        self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
+        self._r_emb = nn.Embedding(1, config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768)
+
+        self._decoder = GreedyDecoder()
 
         self._res = {}
         for id in id2lang:
@@ -120,11 +133,11 @@ class Parser(pl.LightningModule):
         char_emb = torch.cat(blist_char, dim=0)
         word_emb_ext = torch.cat(blist_emb, dim=0)
         lang_emb = self._lang_emb(x_lang_sent)
-        lang_emb = lang_emb.unsqueeze(1).repeat(1, char_emb.shape[1], 1)
+        lang_emb = lang_emb.unsqueeze(1).repeat(1, char_emb.shape[1] + 1, 1)
 
-        aupos = self._aupos(torch.cat([char_emb, lang_emb], dim=-1))
-        axpos = self._axpos(torch.cat([char_emb, lang_emb], dim=-1))
-        aattrs = self._aattrs(torch.cat([char_emb, lang_emb], dim=-1))
+        aupos = self._aupos(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
+        axpos = self._axpos(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
+        aattrs = self._aattrs(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
 
         word_emb = self._word_emb(x_sents)
 
@@ -158,11 +171,16 @@ class Parser(pl.LightningModule):
             char_emb = char_emb * mask_2.unsqueeze(2)
             word_emb_ext = word_emb_ext * mask_3.unsqueeze(2)
 
-        x = torch.cat([word_emb, lang_emb, char_emb, word_emb_ext], dim=-1)
+        x = torch.cat([word_emb, lang_emb[:, 1:, :], char_emb, word_emb_ext], dim=-1)
+        # prepend root
+        root_emb = self._r_emb(torch.zeros((x.shape[0], 1), device=self._get_device(), dtype=torch.long))
+        x = torch.cat([root_emb, x], dim=1)
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
         res = None
+        cnt = 0
+        hidden = None
         cnt = 0
         for conv in self._convs:
             conv_out = conv(x)
@@ -175,11 +193,34 @@ class Parser(pl.LightningModule):
             cnt += 1
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
+            if cnt == self._config.aux_softmax_location:
+                hidden = x
         x = x + res
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
         x = torch.tanh(x)
-        return self._upos(x), self._xpos(x), self._attrs(x), aupos, axpos, aattrs
+        # aux tagging
+        lang_emb = lang_emb.permute(0, 2, 1)
+        hidden = hidden.permute(0, 2, 1)[:, 1:, :]
+        pre_morpho = self._pre_morpho(hidden)
+        pre_morpho = torch.cat([pre_morpho, lang_emb[:, 1:, :]], dim=2)
+        upos = self._upos(pre_morpho)
+        xpos = self._xpos(pre_morpho)
+        attrs = self._attrs(pre_morpho)
+
+        # parsing
+        pre_parsing = self._pre_out(x)
+        h_r1 = self._head_r1(pre_parsing)
+        h_r2 = self._head_r2(pre_parsing)
+        l_r1 = self._label_r1(pre_parsing)
+        l_r2 = self._label_r2(pre_parsing)
+        att_stack = []
+        for ii in range(1, h_r1.shape[1]):
+            a = self._att_net(h_r1[:, ii, :], h_r2)
+            att_stack.append(a.unsqueeze(1))
+        att = torch.cat(att_stack, dim=1)
+
+        return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':
@@ -191,7 +232,7 @@ class Parser(pl.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_upos = batch['y_upos']
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
@@ -212,12 +253,21 @@ class Parser(pl.LightningModule):
         return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
-        p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_upos = batch['y_upos']
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
         x_sent_len = batch['x_sent_len']
         x_lang = batch['x_lang_sent']
+        sl = x_sent_len.detach().cpu().numpy()
+
+        att = att.detach().cpu().numpy()
+        pred_heads = self._decoder.decode(att, sl)
+        uas_ok = 0
+        uas_total = 0
+        from ipdb import set_trace
+        set_trace()
+
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
@@ -231,7 +281,7 @@ class Parser(pl.LightningModule):
         tar_upos = y_upos.detach().cpu().numpy()
         tar_xpos = y_xpos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
-        sl = x_sent_len.detach().cpu().numpy()
+
         x_lang = x_lang.detach().cpu().numpy()
         for iSent in range(p_upos.shape[0]):
             for iWord in range(sl[iSent]):
@@ -385,11 +435,11 @@ if __name__ == '__main__':
 
     collate = MorphoCollate(enc, add_parsing=True)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
-                              num_workers=args.num_workers)
+                              num_workers=0)  # args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
-                            num_workers=args.num_workers)
+                            num_workers=0)  # args.num_workers)
 
-    model = Tagger(config=config, encodings=enc, id2lang=id2lang)
+    model = Parser(config=config, encodings=enc, id2lang=id2lang)
 
     # training
 

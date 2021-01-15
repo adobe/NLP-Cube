@@ -16,8 +16,6 @@ class ArgParser():
         self.parser = argparse.ArgumentParser(description='Tagger ')
         self.parser.add_argument('--train', action='store', dest='train_file',
                                  help='Start building a tagger model')
-        self.parser.add_argument('--config', action='store', dest='config_file',
-                                 help='Use this configuration file for tagger')
         self.parser.add_argument('--patience', action='store', type=int, default=20, dest='patience',
                                  help='Number of epochs before early stopping (default=20)')
         self.parser.add_argument('--store', action='store', dest='store', help='Output base', default='data/model')

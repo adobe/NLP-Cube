@@ -132,6 +132,9 @@ class ParserConfig(Config):
         self.cnn_filter = 512
         self.cnn_layers = 5
         self.aux_softmax_location = 3
+        self.pre_parser_size = 500
+        self.head_size = 100
+        self.label_size = 100
         self.lm_model = 'xlm-roberta-base'
         self._valid = True
 
