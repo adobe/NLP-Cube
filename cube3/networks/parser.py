@@ -192,10 +192,11 @@ class Parser(pl.LightningModule):
                 res = res + tmp
             x = torch.dropout(tmp, 0.2, self.training)
             cnt += 1
+            if cnt == self._config.aux_softmax_location:
+                hidden = torch.cat([x, lang_emb], dim=1)
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
-            if cnt == self._config.aux_softmax_location:
-                hidden = x
+
         x = x + res
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
