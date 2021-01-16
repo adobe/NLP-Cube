@@ -193,7 +193,7 @@ class Parser(pl.LightningModule):
             x = torch.dropout(tmp, 0.2, self.training)
             cnt += 1
             if cnt == self._config.aux_softmax_location:
-                hidden = torch.cat([x, lang_emb], dim=1)
+                hidden = torch.cat([x + res, lang_emb], dim=1)
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
 
