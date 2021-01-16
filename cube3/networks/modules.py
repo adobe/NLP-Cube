@@ -105,12 +105,15 @@ class Encoder(pl.LightningModule):
 class BilinearAttention(nn.Module):
     def __init__(self, dim1, dim2):
         super().__init__()
-        self.layer = nn.Bilinear(dim1, dim2, 1)
+        self.biliniar = nn.Bilinear(dim1, dim2, 1)
+        self.linear = nn.Linear(dim1 + dim2, 1)
 
     def forward(self, query, keys):
         query = query.unsqueeze(1).repeat(1, keys.shape[1], 1)
-        trans = self.layer(query, keys)
-        return trans
+        biliniar = self.biliniar(query, keys)
+        h = torch.cat([query, keys], dim=-1)
+        liniar = self.linear(h)
+        return (liniar + biliniar).squeeze(2)
 
 
 class Attention(pl.LightningModule):

@@ -16,10 +16,10 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import ParserConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention
+from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention
 import random
 
-from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset, GreedyDecoder
+from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder
 
 from cube3.networks.modules import WordGram
 
@@ -72,10 +72,12 @@ class Parser(pl.LightningModule):
         self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
         self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
         self._att_net = BilinearAttention(config.head_size, config.head_size)
+        # self._att_net = Attention(config.head_size // 2, config.head_size)
         self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
         self._r_emb = nn.Embedding(1, config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768)
 
-        self._decoder = GreedyDecoder()
+        # self._decoder = GreedyDecoder()
+        self._decoder = ChuLiuEdmondsDecoder()
 
         self._res = {}
         for id in id2lang:
