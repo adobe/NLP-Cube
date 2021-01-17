@@ -63,10 +63,10 @@ class Parser(pl.LightningModule):
         self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
-        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size, NUM_FILTERS // 4, num_layers=2,
-                            batch_first=True, bidirectional=True)
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + 768, 200, num_layers=3,
+                            batch_first=True, bidirectional=True, dropout=0.33)
 
-        self._pre_out = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, config.pre_parser_size)
+        self._pre_out = LinearNorm(400 + config.lang_emb_size, config.pre_parser_size)
         self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
         self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
         self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
@@ -142,37 +142,9 @@ class Parser(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        if self.training:
-            mask_1 = np.ones((char_emb.shape[0], char_emb.shape[1]), dtype=np.long)
-            mask_2 = np.ones((word_emb.shape[0], word_emb.shape[1]), dtype=np.long)
-            mask_3 = np.ones((word_emb.shape[0], word_emb.shape[1]), dtype=np.long)
+        x = self._mask_concat([word_emb, char_emb, word_emb_ext])
 
-            for ii in range(mask_1.shape[0]):
-                for jj in range(mask_1.shape[1]):
-                    mult = 1
-                    p = random.random()
-                    if p < 0.33:
-                        mult += 1
-                        mask_1[ii, jj] = 0
-                    p = random.random()
-                    if p < 0.33:
-                        mult += 1
-                        mask_2[ii, jj] = 0
-                    p = random.random()
-                    if p < 0.33:
-                        mult += 1
-                        mask_3[ii, jj] = 0
-                    mask_1[ii, jj] *= mult
-                    mask_2[ii, jj] *= mult
-                    mask_3[ii, jj] *= mult
-            mask_1 = torch.tensor(mask_1, device=self._get_device())
-            mask_2 = torch.tensor(mask_2, device=self._get_device())
-            mask_3 = torch.tensor(mask_3, device=self._get_device())
-            word_emb = word_emb * mask_1.unsqueeze(2)
-            char_emb = char_emb * mask_2.unsqueeze(2)
-            word_emb_ext = word_emb_ext * mask_3.unsqueeze(2)
-
-        x = torch.cat([word_emb, lang_emb[:, 1:, :], char_emb, word_emb_ext], dim=-1)
+        x = torch.cat([x, lang_emb[:, 1:, :]], dim=-1)
         # prepend root
         root_emb = self._r_emb(torch.zeros((x.shape[0], 1), device=self._get_device(), dtype=torch.long))
         x = torch.cat([root_emb, x], dim=1)
@@ -198,22 +170,28 @@ class Parser(pl.LightningModule):
                 x = torch.cat([x, lang_emb], dim=1)
 
         x = x + res
+        x_parse = x.permute(0, 2, 1)
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
-        x = torch.tanh(x)
+        # x = torch.tanh(x)
         # aux tagging
         lang_emb = lang_emb.permute(0, 2, 1)
         hidden = hidden.permute(0, 2, 1)[:, 1:, :]
-        pre_morpho = torch.tanh(self._pre_morpho(hidden))
+        pre_morpho = torch.dropout(torch.tanh(self._pre_morpho(hidden)), 0.33, self.training)
         pre_morpho = torch.cat([pre_morpho, lang_emb[:, 1:, :]], dim=2)
         upos = self._upos(pre_morpho)
         xpos = self._xpos(pre_morpho)
         attrs = self._attrs(pre_morpho)
 
         # parsing
+        word_emb_ext = torch.cat(
+            [torch.zeros((word_emb_ext.shape[0], 1, 768), device=self._get_device(), dtype=torch.float), word_emb_ext],
+            dim=1)
+        x = self._mask_concat([x_parse, word_emb_ext])
+        x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
-        pre_parsing = torch.tanh(self._pre_out(output))
+        pre_parsing = torch.dropout(torch.tanh(self._pre_out(output)), 0.33, self.training)
         h_r1 = torch.tanh(self._head_r1(pre_parsing))
         h_r2 = torch.tanh(self._head_r2(pre_parsing))
         l_r1 = torch.tanh(self._label_r1(pre_parsing))
@@ -225,6 +203,31 @@ class Parser(pl.LightningModule):
         att = torch.cat(att_stack, dim=1)
 
         return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
+
+    def _mask_concat(self, representations):
+        if self.training:
+            masks = []
+            for ii in range(len(representations)):
+                mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
+                masks.append(mask)
+
+            for ii in range(masks[0].shape[0]):
+                for jj in range(masks[0].shape[1]):
+                    mult = 1
+                    for kk in range(len(masks)):
+                        p = random.random()
+                        if p < 0.33:
+                            mult += 1
+                            masks[kk][ii, jj] = 0
+                    for kk in range(len(masks)):
+                        masks[kk][ii, jj] *= mult
+            for kk in range(len(masks)):
+                masks[kk] = torch.tensor(masks[kk], device=self._get_device())
+
+            for kk in range(len(masks)):
+                representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
+
+        return torch.cat(representations, dim=-1)
 
     def _get_labels(self, x1, x2, heads):
         x1 = x1[:, 1:, :]
