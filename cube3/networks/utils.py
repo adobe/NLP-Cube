@@ -65,11 +65,11 @@ class TokenCollate:
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
-            x_lang.append(current_sentence.lang_id)
+            x_lang.append(current_sentence.lang_id + 1)
             x_prev = self._tokenizer(prev_sentence.text)['input_ids'][1:-1]
             x_next = self._tokenizer(next_sentence.text)['input_ids'][1:-1]
             y_offset.append(len(x_prev) + 1)
-            x_main = self._tokenizer(current_sentence.text)['input_ids']    [1:-1]
+            x_main = self._tokenizer(current_sentence.text)['input_ids'][1:-1]
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
