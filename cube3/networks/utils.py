@@ -1,4 +1,5 @@
 import sys
+import random
 
 sys.path.append('')
 import numpy as np
@@ -13,6 +14,21 @@ from cube3.io_utils.encodings import Encodings
 from collections import namedtuple
 
 
+class TokenizationDataset(Dataset):
+    def __init__(self, document: Document):
+        self._document = document
+
+    def __len__(self):
+        return len(self._document.sentences)
+
+    def __getitem__(self, item):
+        # append two random sentences
+        index1 = random.randint(0, len(self._document.sentences) - 1)
+        index2 = random.randint(0, len(self._document.sentences) - 1)
+        return {'main': self._document.sentences[item], 'prev': self._document.sentences[index1],
+                'next': self._document.sentences[index2]}
+
+
 class MorphoDataset(Dataset):
     def __init__(self, document: Document):
         self._document = document
@@ -22,6 +38,60 @@ class MorphoDataset(Dataset):
 
     def __getitem__(self, item):
         return self._document.sentences[item]
+
+
+class MorphoCollate:
+    def __init__(self, encodings: Encodings, tokenizer: AutoTokenizer):
+        self._encodings = encodings  # this is currently not used - we keep it for future development
+        self._tokenizer = tokenizer
+
+    def collate_fn(self, batch):
+        START = 0
+        END = 2
+        PAD = 1
+        max_x = 0
+        x_input = []
+        y_output = []
+        y_offset = []
+        y_len = []
+        for example in batch:
+            current_sentence = example['main']
+            prev_sentence = example['prev']
+            next_sentence = example['next']
+            x_prev = self._tokenizer(prev_sentence.detokenize())[1:-1]
+            x_next = self._tokenizer(next_sentence.detokenize())[1:-1]
+            y_offset.append(len(x_prev) + 1)
+            x_main = self._tokenizer(current_sentence.detokenize())[1:-1]
+            y_len.append(len(x_main))
+            x_len = len(x_prev) + len(x_main) + len(x_next)
+            x_input.append([x_prev, x_main, x_next])
+            if x_len > max_x:
+                max_x = x_len
+
+        max_y = max(y_len)
+        y_out = np.zeros((len(batch), max_y))
+        x_out = np.ones((len(batch), max_x + 2)) * PAD
+        for ii in range(len(batch)):
+            x_out[ii, 0] = START
+            pos = 1
+            x = x_input[ii][0]
+            for jj in range(len(x)):
+                x_out[ii, pos] = x[jj]
+                pos += 1
+            x = x_input[ii][1]
+            for jj in range(len(x)):
+                x_out[ii, pos] = x[jj]
+                pos += 1
+            x = x_input[ii][2]
+            for jj in range(len(x)):
+                x_out[ii, pos] = x[jj]
+                pos += 1
+            x_out[ii, pos] = END
+
+        x_out = torch.tensor(x_out)
+        y_offset = torch.tensor(y_offset)
+        y_len = torch.tensor(y_len)
+        return {'x_input': x_out, 'y_output': None, 'y_offset': y_offset, 'y_len': y_len}
 
 
 class MorphoCollate:
@@ -141,8 +211,8 @@ class LMHelper:
         word2pieces = {}
         new_sents = []
         START = 0
-        END = 1
-        PAD = 2
+        PAD = 1
+        END = 2
         for ii in range(len(batch)):
             c_sent = [START]
             pos = 1

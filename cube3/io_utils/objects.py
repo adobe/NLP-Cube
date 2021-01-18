@@ -103,7 +103,7 @@ class Sentence:
                     t.words.append(w)
                     self.words.append(w)
 
-    def _detokenize(self):
+    def detokenize(self):
         s = []
         for t in self.tokens:
             s.append(t.text)
