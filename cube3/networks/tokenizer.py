@@ -27,8 +27,10 @@ from cube3.networks.modules import WordGram
 class Tokenizer(pl.LightningModule):
     def __init__(self, config: TokenizerConfig, encodings: Encodings, id2lang: {}):
         super().__init__()
+        self._id2lang = id2lang
+        self._config = config
         conv_layers = []
-        cs_inp = 768
+        cs_inp = 768 + config.lang_emb_size
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -42,19 +44,45 @@ class Tokenizer(pl.LightningModule):
             cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
         self._convs = nn.ModuleList(conv_layers)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
-        self._output = LinearNorm(NUM_FILTERS // 2, 4)
+        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
 
     def forward(self, batch):
-        pass
+        x_emb = batch['x_input']
+        x_lang = batch['x_lang']
+        x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb.shape[1], 1)
+        x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
+        x_lang = x_lang.permute(0, 2, 1)
+        half = self._config.cnn_filter // 2
+        res = None
+        cnt = 0
+        for conv in self._convs:
+            conv_out = conv(x)
+            tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
+            if res is None:
+                res = tmp
+            else:
+                res = res + tmp
+            x = torch.dropout(tmp, 0.2, self.training)
+            cnt += 1
+            if cnt != self._config.cnn_layers:
+                x = torch.cat([x, x_lang], dim=1)
+        x = x + res
+        x = torch.cat([x, x_lang], dim=1)
+        x = x.permute(0, 2, 1)
+        return self._output(x)
 
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         pass
 
     def validation_epoch_end(self, outputs) -> None:
         pass
 
-    def training_step(self, batch):
-        pass
+    def training_step(self, batch, batch_idx):
+        y_target = batch['y_output']
+        y_pred = self.forward(batch)
+
+        loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
+        return loss
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())
@@ -139,7 +167,7 @@ if __name__ == '__main__':
     trainset = TokenizationDataset(doc_train)
     devset = TokenizationDataset(doc_dev)
 
-    collate = TokenCollate(enc)
+    collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
                               num_workers=args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,

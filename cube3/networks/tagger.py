@@ -178,7 +178,7 @@ class Tagger(pl.LightningModule):
         x = x + res
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
-        x = torch.tanh(x)
+        # x = torch.tanh(x)
         return self._upos(x), self._xpos(x), self._attrs(x), aupos, axpos, aattrs
 
     def _get_device(self):
