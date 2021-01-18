@@ -187,7 +187,7 @@ class Tagger(pl.LightningModule):
         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.AdamW(self.parameters())
         return optimizer
 
     def training_step(self, batch, batch_idx):

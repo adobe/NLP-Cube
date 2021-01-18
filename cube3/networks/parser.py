@@ -250,7 +250,7 @@ class Parser(pl.LightningModule):
         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.AdamW(self.parameters())
         return optimizer
 
     def training_step(self, batch, batch_idx):
@@ -503,6 +503,7 @@ if __name__ == '__main__':
         gpus=args.gpus,
         accelerator=acc,
         num_nodes=1,
+        auto_select_gpus=True,
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)]
         # limit_train_batches=5,
