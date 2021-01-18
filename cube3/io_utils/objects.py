@@ -78,18 +78,14 @@ class Sentence:
         self.tokens = []
         self.words = []
 
-        if text is None:
-            self.text = self._detokenize()
-        else:
-            self.text = text
-
         self.lang_id = lang_id
         skip = 0
         t = None
         if sequence is not None:
             for w in sequence:
                 if skip == 0:
-                    t = Token(index=w.index, text=w.word, space_after=not 'spaceafter=no' in w.space_after, words=[])
+                    t = Token(index=w.index, text=w.word, space_after=(not 'spaceafter=no' in w.space_after.lower()),
+                              words=[])
                     self.tokens.append(t)
                     if w.is_compound_entry:
                         parts = w.index.split('-')
@@ -103,7 +99,12 @@ class Sentence:
                     t.words.append(w)
                     self.words.append(w)
 
-    def detokenize(self):
+        if text is None:
+            self.text = self._detokenize()
+        else:
+            self.text = text
+
+    def _detokenize(self):
         s = []
         for t in self.tokens:
             s.append(t.text)
@@ -130,7 +131,7 @@ class Token:
 
     def __repr__(self):
         if not self.space_after:
-            spa = 'SpaceAfter=no'
+            spa = 'SpaceAfter=No'
         else:
             spa = '_'
         head = ''

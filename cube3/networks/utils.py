@@ -40,10 +40,11 @@ class MorphoDataset(Dataset):
         return self._document.sentences[item]
 
 
-class MorphoCollate:
-    def __init__(self, encodings: Encodings, tokenizer: AutoTokenizer):
+class TokenCollate:
+    def __init__(self, encodings: Encodings, lm_model='xlm-roberta-base'):
         self._encodings = encodings  # this is currently not used - we keep it for future development
-        self._tokenizer = tokenizer
+        self._tokenizer = AutoTokenizer.from_pretrained(lm_model)
+        self._lm = AutoModel.from_pretrained(lm_model)
 
     def collate_fn(self, batch):
         START = 0
@@ -58,13 +59,16 @@ class MorphoCollate:
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
-            x_prev = self._tokenizer(prev_sentence.detokenize())[1:-1]
-            x_next = self._tokenizer(next_sentence.detokenize())[1:-1]
+            x_prev = self._tokenizer(prev_sentence.text)[1:-1]
+            x_next = self._tokenizer(next_sentence.text)[1:-1]
             y_offset.append(len(x_prev) + 1)
-            x_main = self._tokenizer(current_sentence.detokenize())[1:-1]
+            x_main = self._tokenizer(current_sentence.text)[1:-1]
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
+            y_output.append(self._get_targets(current_sentence))
+            from ipdb import set_trace
+            set_trace()
             if x_len > max_x:
                 max_x = x_len
 
@@ -92,6 +96,25 @@ class MorphoCollate:
         y_offset = torch.tensor(y_offset)
         y_len = torch.tensor(y_len)
         return {'x_input': x_out, 'y_output': None, 'y_offset': y_offset, 'y_len': y_len}
+
+    def _get_targets(self, sentence: Sentence):
+        text = sentence.text
+        toks = self._tokenizer.tokenize(text)
+        toks = [tok.replace('▁', '') for tok in toks]
+        targets = [0 for _ in range(len(toks))]
+        iToken = 0
+        cl = 0
+        for ii in range(len(targets)):
+            target = 1  # nothing
+            cl += len(toks[ii])
+            if cl == len(sentence.tokens[iToken].text):
+                iToken += 1
+                cl = 0
+                target = 2  # token
+            if iToken == len(sentence.tokens):
+                target = 3  # sentence end (+token)
+            targets[ii] = target
+        return targets
 
 
 class MorphoCollate:

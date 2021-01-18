@@ -21,7 +21,7 @@ class ArgParser():
         self.parser.add_argument('--store', action='store', dest='store', help='Output base', default='data/model')
         self.parser.add_argument('--gpus', action='store', dest='gpus', type=int,
                                  help='How many GPUs to use (default=1)', default=1)
-        self.parser.add_argument('--num_workers', action='store', dest='num_workers', type=int,
+        self.parser.add_argument('--num-workers', action='store', dest='num_workers', type=int,
                                  help='How many dataloaders to use (default=4)', default=4)
         self.parser.add_argument('--batch-size', action='store', type=int, default=16, dest='batch_size',
                                  help='Batch size (default=16)')

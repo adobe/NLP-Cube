@@ -14,19 +14,35 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import numpy as np
 from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
-from cube3.io_utils.config import TaggerConfig
+from cube3.io_utils.config import TokenizerConfig
 import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
 import random
 
-from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset
+from cube3.networks.utils import LMHelper, TokenizationDataset, TokenCollate
 
 from cube3.networks.modules import WordGram
 
 
 class Tokenizer(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, config: TokenizerConfig, encodings: Encodings, id2lang: {}):
         super().__init__()
+        conv_layers = []
+        cs_inp = 768
+        NUM_FILTERS = config.cnn_filter
+        for _ in range(config.cnn_layers):
+            conv_layer = nn.Sequential(
+                ConvNorm(cs_inp,
+                         NUM_FILTERS,
+                         kernel_size=5, stride=1,
+                         padding=2,
+                         dilation=1, w_init_gain='tanh'),
+                nn.BatchNorm1d(NUM_FILTERS))
+            conv_layers.append(conv_layer)
+            cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
+        self._convs = nn.ModuleList(conv_layers)
+        self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
+        self._output = LinearNorm(NUM_FILTERS // 2, 4)
 
     def forward(self, batch):
         pass
@@ -34,11 +50,14 @@ class Tokenizer(pl.LightningModule):
     def validation_step(self, batch):
         pass
 
-    def validation_epoch_end(self, outputs: List[Any]) -> None:
+    def validation_epoch_end(self, outputs) -> None:
         pass
 
     def training_step(self, batch):
         pass
+
+    def configure_optimizers(self):
+        return torch.optim.AdamW(self.parameters())
 
 
 class PrintAndSaveCallback(pl.callbacks.Callback):
@@ -106,7 +125,7 @@ if __name__ == '__main__':
     enc.compute(doc_train, None)
     enc.save('{0}.encodings'.format(args.store))
 
-    config = TaggerConfig()
+    config = TokenizerConfig()
     config.lm_model = args.lm_model
     if args.config_file:
         config.load(args.config_file)
@@ -114,19 +133,19 @@ if __name__ == '__main__':
             config.lm_model = args.lm_model
     config.save('{0}.config'.format(args.store))
 
-    helper = LMHelper(device=args.lm_device, model=config.lm_model)
-    helper.apply(doc_dev)
-    helper.apply(doc_train)
-    trainset = MorphoDataset(doc_train)
-    devset = MorphoDataset(doc_dev)
+    # helper = LMHelper(device=args.lm_device, model=config.lm_model)
+    # helper.apply(doc_dev)
+    # helper.apply(doc_train)
+    trainset = TokenizationDataset(doc_train)
+    devset = TokenizationDataset(doc_dev)
 
-    collate = MorphoCollate(enc)
+    collate = TokenCollate(enc)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
                               num_workers=args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
                             num_workers=args.num_workers)
 
-    model = Tagger(config=config, encodings=enc, id2lang=id2lang)
+    model = Tokenizer(config=config, encodings=enc, id2lang=id2lang)
 
     # training
 

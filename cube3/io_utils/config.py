@@ -84,9 +84,9 @@ class Config(object):
 class TokenizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.lstm_layers = [200, 200]
+        self.cnn_filter = 512
         self.lang_emb_size = 100
-        self.char_emb_size = 100
+        self.cnn_layers = 5
 
         if filename is None:
             if verbose:
