@@ -1,0 +1,10 @@
+dev_files:
+- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-dev.conllu
+language:
+  en_gum: en_gum
+language2id:
+- en_gum
+test_files:
+- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-test.conllu
+train_files:
+- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-train.conllu

@@ -1,0 +1,27 @@
+dev_files:
+- la_llct: corpus/ud-treebanks-v2.7/UD_Latin-LLCT/la_llct-ud-dev.conllu
+- la_ittb: corpus/ud-treebanks-v2.7/UD_Latin-ITTB/la_ittb-ud-dev.conllu
+- la_proiel: corpus/ud-treebanks-v2.7/UD_Latin-PROIEL/la_proiel-ud-dev.conllu
+- la_perseus: corpus/ud-treebanks-v2.7/UD_Latin-Perseus/la_perseus-ud-test.conllu
+language:
+  la: la_ittb
+  la_ittb: la_ittb
+  la_llct: la_llct
+  la_perseus: la_perseus
+  la_proiel: la_proiel
+  latin: la_ittb
+language2id:
+- la_perseus
+- la_ittb
+- la_llct
+- la_proiel
+test_files:
+- la_llct: corpus/ud-treebanks-v2.7/UD_Latin-LLCT/la_llct-ud-test.conllu
+- la_ittb: corpus/ud-treebanks-v2.7/UD_Latin-ITTB/la_ittb-ud-test.conllu
+- la_proiel: corpus/ud-treebanks-v2.7/UD_Latin-PROIEL/la_proiel-ud-test.conllu
+- la_perseus: corpus/ud-treebanks-v2.7/UD_Latin-Perseus/la_perseus-ud-test.conllu
+train_files:
+- la_llct: corpus/ud-treebanks-v2.7/UD_Latin-LLCT/la_llct-ud-train.conllu
+- la_ittb: corpus/ud-treebanks-v2.7/UD_Latin-ITTB/la_ittb-ud-train.conllu
+- la_proiel: corpus/ud-treebanks-v2.7/UD_Latin-PROIEL/la_proiel-ud-train.conllu
+- la_perseus: corpus/ud-treebanks-v2.7/UD_Latin-Perseus/la_perseus-ud-train.conllu

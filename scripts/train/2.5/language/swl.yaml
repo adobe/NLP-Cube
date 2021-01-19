@@ -1,0 +1,12 @@
+dev_files:
+- swl_sslc: corpus/ud-treebanks-v2.5/UD_Swedish_Sign_Language-SSLC/swl_sslc-ud-dev.conllu
+language:
+  swedish sign language: swl_sslc
+  swl: swl_sslc
+  swl_sslc: swl_sslc
+language2id:
+- swl_sslc
+test_files:
+- swl_sslc: corpus/ud-treebanks-v2.5/UD_Swedish_Sign_Language-SSLC/swl_sslc-ud-test.conllu
+train_files:
+- swl_sslc: corpus/ud-treebanks-v2.5/UD_Swedish_Sign_Language-SSLC/swl_sslc-ud-train.conllu

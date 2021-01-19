@@ -1,0 +1,10 @@
+dev_files:
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-dev.conllu
+language:
+  cs_cltt: cs_cltt
+language2id:
+- cs_cltt
+test_files:
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-test.conllu
+train_files:
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-train.conllu

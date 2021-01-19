@@ -1,0 +1,10 @@
+dev_files:
+- el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-dev.conllu
+language:
+  el_gdt: el_gdt
+language2id:
+- el_gdt
+test_files:
+- el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-test.conllu
+train_files:
+- el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-train.conllu

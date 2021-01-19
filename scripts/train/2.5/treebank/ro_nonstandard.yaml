@@ -1,0 +1,10 @@
+dev_files:
+- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu
+language:
+  ro_nonstandard: ro_nonstandard
+language2id:
+- ro_nonstandard
+test_files:
+- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-test.conllu
+train_files:
+- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu

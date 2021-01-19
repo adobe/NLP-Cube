@@ -1,0 +1,22 @@
+dev_files:
+- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
+- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu
+- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu
+language:
+  'no': no_bokmaal
+  no_bokmaal: no_bokmaal
+  no_nynorsk: no_nynorsk
+  no_nynorsklia: no_nynorsklia
+  norwegian: no_bokmaal
+language2id:
+- no_nynorsklia
+- no_nynorsk
+- no_bokmaal
+test_files:
+- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
+- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-test.conllu
+- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-test.conllu
+train_files:
+- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu
+- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu
+- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu

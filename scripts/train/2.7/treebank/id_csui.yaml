@@ -1,0 +1,10 @@
+dev_files:
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-test.conllu
+language:
+  id_csui: id_csui
+language2id:
+- id_csui
+test_files:
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-test.conllu
+train_files:
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-train.conllu

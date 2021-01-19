@@ -1,0 +1,12 @@
+dev_files:
+- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu
+language:
+  marathi: mr_ufal
+  mr: mr_ufal
+  mr_ufal: mr_ufal
+language2id:
+- mr_ufal
+test_files:
+- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-test.conllu
+train_files:
+- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-train.conllu

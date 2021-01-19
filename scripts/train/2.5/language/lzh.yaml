@@ -1,0 +1,12 @@
+dev_files:
+- lzh_kyoto: corpus/ud-treebanks-v2.5/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-dev.conllu
+language:
+  classical chinese: lzh_kyoto
+  lzh: lzh_kyoto
+  lzh_kyoto: lzh_kyoto
+language2id:
+- lzh_kyoto
+test_files:
+- lzh_kyoto: corpus/ud-treebanks-v2.5/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-test.conllu
+train_files:
+- lzh_kyoto: corpus/ud-treebanks-v2.5/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-train.conllu

@@ -1,0 +1,10 @@
+dev_files:
+- zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-dev.conllu
+language:
+  zh_gsd: zh_gsd
+language2id:
+- zh_gsd
+test_files:
+- zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-test.conllu
+train_files:
+- zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-train.conllu

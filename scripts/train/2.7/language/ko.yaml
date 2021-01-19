@@ -1,0 +1,20 @@
+dev_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-dev.conllu
+- ko_gsd: corpus/ud-treebanks-v2.7/UD_Korean-GSD/ko_gsd-ud-dev.conllu
+language:
+  ko: ko_gsd
+  ko_gsd: ko_gsd
+  ko_kaist: ko_kaist
+  ko_pud: ko_pud
+  korean: ko_gsd
+language2id:
+- ko_gsd
+- ko_pud
+- ko_kaist
+test_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-test.conllu
+- ko_gsd: corpus/ud-treebanks-v2.7/UD_Korean-GSD/ko_gsd-ud-test.conllu
+train_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-train.conllu
+- ko_gsd: corpus/ud-treebanks-v2.7/UD_Korean-GSD/ko_gsd-ud-train.conllu
+- ko_pud: corpus/ud-treebanks-v2.7/UD_Korean-PUD/ko_pud-ud-train.conllu

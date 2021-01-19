@@ -1,0 +1,10 @@
+dev_files:
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-dev.conllu
+language:
+  hr_set: hr_set
+language2id:
+- hr_set
+test_files:
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-test.conllu
+train_files:
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-train.conllu

@@ -1,0 +1,133 @@
+dev_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-dev.conllu
+- bg_btb: corpus/ud-treebanks-v2.7/UD_Bulgarian-BTB/bg_btb-ud-dev.conllu
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-dev.conllu
+- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-dev.conllu
+- cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-dev.conllu
+- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-dev.conllu
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-dev.conllu
+- cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-dev.conllu
+- pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-dev.conllu
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-dev.conllu
+- ru_gsd: corpus/ud-treebanks-v2.7/UD_Russian-GSD/ru_gsd-ud-dev.conllu
+- ru_taiga: corpus/ud-treebanks-v2.7/UD_Russian-Taiga/ru_taiga-ud-dev.conllu
+- ru_syntagrus: corpus/ud-treebanks-v2.7/UD_Russian-SynTagRus/ru_syntagrus-ud-dev.conllu
+- sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-dev.conllu
+- sk_snk: corpus/ud-treebanks-v2.7/UD_Slovak-SNK/sk_snk-ud-dev.conllu
+- sl_ssj: corpus/ud-treebanks-v2.7/UD_Slovenian-SSJ/sl_ssj-ud-dev.conllu
+- sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-test.conllu
+- uk_iu: corpus/ud-treebanks-v2.7/UD_Ukrainian-IU/uk_iu-ud-dev.conllu
+- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
+language:
+  be: be_hse
+  be_hse: be_hse
+  belarusian: be_hse
+  bg: bg_btb
+  bg_btb: bg_btb
+  bulgarian: bg_btb
+  croatian: hr_set
+  cs: cs_pdt
+  cs_cac: cs_cac
+  cs_cltt: cs_cltt
+  cs_fictree: cs_fictree
+  cs_pdt: cs_pdt
+  cs_pud: cs_pud
+  cu: cu_proiel
+  cu_proiel: cu_proiel
+  czech: cs_pdt
+  hr: hr_set
+  hr_set: hr_set
+  hsb: hsb_ufal
+  hsb_ufal: hsb_ufal
+  old church slavonic: cu_proiel
+  pl: pl_pdb
+  pl_lfg: pl_lfg
+  pl_pdb: pl_pdb
+  pl_pud: pl_pud
+  polish: pl_pdb
+  ru: ru_syntagrus
+  ru_gsd: ru_gsd
+  ru_pud: ru_pud
+  ru_syntagrus: ru_syntagrus
+  ru_taiga: ru_taiga
+  russian: ru_syntagrus
+  serbian: sr_set
+  sk: sk_snk
+  sk_snk: sk_snk
+  sl: sl_ssj
+  sl_ssj: sl_ssj
+  sl_sst: sl_sst
+  slovak: sk_snk
+  slovenian: sl_ssj
+  sr: sr_set
+  sr_set: sr_set
+  uk: uk_iu
+  uk_iu: uk_iu
+  ukrainian: uk_iu
+  upper sorbian: hsb_ufal
+language2id:
+- hr_set
+- hsb_ufal
+- cs_fictree
+- ru_syntagrus
+- cs_pud
+- cu_proiel
+- sk_snk
+- uk_iu
+- bg_btb
+- ru_taiga
+- sl_sst
+- sl_ssj
+- be_hse
+- cs_cltt
+- sr_set
+- pl_pdb
+- pl_pud
+- cs_pdt
+- cs_cac
+- ru_pud
+- pl_lfg
+- ru_gsd
+test_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-test.conllu
+- bg_btb: corpus/ud-treebanks-v2.7/UD_Bulgarian-BTB/bg_btb-ud-test.conllu
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-test.conllu
+- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-test.conllu
+- cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-test.conllu
+- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-test.conllu
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-test.conllu
+- cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-test.conllu
+- pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-test.conllu
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-test.conllu
+- ru_gsd: corpus/ud-treebanks-v2.7/UD_Russian-GSD/ru_gsd-ud-test.conllu
+- ru_taiga: corpus/ud-treebanks-v2.7/UD_Russian-Taiga/ru_taiga-ud-test.conllu
+- ru_syntagrus: corpus/ud-treebanks-v2.7/UD_Russian-SynTagRus/ru_syntagrus-ud-test.conllu
+- sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-test.conllu
+- sk_snk: corpus/ud-treebanks-v2.7/UD_Slovak-SNK/sk_snk-ud-test.conllu
+- sl_ssj: corpus/ud-treebanks-v2.7/UD_Slovenian-SSJ/sl_ssj-ud-test.conllu
+- sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-test.conllu
+- uk_iu: corpus/ud-treebanks-v2.7/UD_Ukrainian-IU/uk_iu-ud-test.conllu
+- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
+train_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-train.conllu
+- bg_btb: corpus/ud-treebanks-v2.7/UD_Bulgarian-BTB/bg_btb-ud-train.conllu
+- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-train.conllu
+- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-train.conllu
+- cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-train.conllu
+- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-train.conllu
+- cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-train.conllu
+- cs_pud: corpus/ud-treebanks-v2.7/UD_Czech-PUD/cs_pud-ud-train.conllu
+- cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-train.conllu
+- pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-train.conllu
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-train.conllu
+- pl_pud: corpus/ud-treebanks-v2.7/UD_Polish-PUD/pl_pud-ud-train.conllu
+- ru_gsd: corpus/ud-treebanks-v2.7/UD_Russian-GSD/ru_gsd-ud-train.conllu
+- ru_taiga: corpus/ud-treebanks-v2.7/UD_Russian-Taiga/ru_taiga-ud-train.conllu
+- ru_pud: corpus/ud-treebanks-v2.7/UD_Russian-PUD/ru_pud-ud-train.conllu
+- ru_syntagrus: corpus/ud-treebanks-v2.7/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu
+- sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-train.conllu
+- sk_snk: corpus/ud-treebanks-v2.7/UD_Slovak-SNK/sk_snk-ud-train.conllu
+- sl_ssj: corpus/ud-treebanks-v2.7/UD_Slovenian-SSJ/sl_ssj-ud-train.conllu
+- sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-train.conllu
+- uk_iu: corpus/ud-treebanks-v2.7/UD_Ukrainian-IU/uk_iu-ud-train.conllu
+- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-train.conllu

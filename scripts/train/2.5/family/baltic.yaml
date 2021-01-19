@@ -1,0 +1,24 @@
+dev_files:
+- lv_lvtb: corpus/ud-treebanks-v2.5/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu
+- lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-dev.conllu
+- lt_hse: corpus/ud-treebanks-v2.5/UD_Lithuanian-HSE/lt_hse-ud-dev.conllu
+language:
+  latvian: lv_lvtb
+  lithuanian: lt_alksnis
+  lt: lt_alksnis
+  lt_alksnis: lt_alksnis
+  lt_hse: lt_hse
+  lv: lv_lvtb
+  lv_lvtb: lv_lvtb
+language2id:
+- lt_hse
+- lt_alksnis
+- lv_lvtb
+test_files:
+- lv_lvtb: corpus/ud-treebanks-v2.5/UD_Latvian-LVTB/lv_lvtb-ud-test.conllu
+- lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-test.conllu
+- lt_hse: corpus/ud-treebanks-v2.5/UD_Lithuanian-HSE/lt_hse-ud-test.conllu
+train_files:
+- lv_lvtb: corpus/ud-treebanks-v2.5/UD_Latvian-LVTB/lv_lvtb-ud-train.conllu
+- lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-train.conllu
+- lt_hse: corpus/ud-treebanks-v2.5/UD_Lithuanian-HSE/lt_hse-ud-train.conllu

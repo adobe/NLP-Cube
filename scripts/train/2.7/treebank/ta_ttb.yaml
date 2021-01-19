@@ -1,0 +1,10 @@
+dev_files:
+- ta_ttb: corpus/ud-treebanks-v2.7/UD_Tamil-TTB/ta_ttb-ud-dev.conllu
+language:
+  ta_ttb: ta_ttb
+language2id:
+- ta_ttb
+test_files:
+- ta_ttb: corpus/ud-treebanks-v2.7/UD_Tamil-TTB/ta_ttb-ud-test.conllu
+train_files:
+- ta_ttb: corpus/ud-treebanks-v2.7/UD_Tamil-TTB/ta_ttb-ud-train.conllu

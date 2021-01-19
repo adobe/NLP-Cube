@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('')
-import os, argparse
+import os, yaml
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import pytorch_lightning as pl
@@ -25,7 +25,7 @@ from cube3.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):
-    def __init__(self, config: TaggerConfig, encodings: Encodings, id2lang: {} = None):
+    def __init__(self, config: TaggerConfig, encodings: Encodings, language2id: [] = None):
         super().__init__()
         self._config = config
         self._encodings = encodings
@@ -35,7 +35,7 @@ class Tagger(pl.LightningModule):
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
         self._num_langs = encodings.num_langs
-        self._id2lang = id2lang
+        self._language2id = language2id
 
         conv_layers = []
         cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
@@ -62,9 +62,8 @@ class Tagger(pl.LightningModule):
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._res = {}
-        for id in id2lang:
-            lang = id2lang[id]
-            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+        for language_code in self._language2id:
+            self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
@@ -300,10 +299,10 @@ class Tagger(pl.LightningModule):
 
 
 class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, id2lang):
+    def __init__(self, args, language2id):
         super().__init__()
         self.args = args
-        self._id2lang = id2lang
+        self.language2id = language2id
 
     def on_epoch_end(self, trainer, pl_module):
         metrics = trainer.callback_metrics
@@ -322,11 +321,10 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
 
         trainer.save_checkpoint(self.args.store + ".last")
 
-        lang_list = [self._id2lang[ii] for ii in self._id2lang]
         s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
         print("\n\n\t" + s)
         print("\t" + ("=" * (len(s) + 9)))
-        for lang in lang_list:
+        for lang in self.language2id:
             upos = metrics["val/UPOS/{0}".format(lang)]
             xpos = metrics["val/XPOS/{0}".format(lang)]
             attrs = metrics["val/ATTRS/{0}".format(lang)]
@@ -343,6 +341,7 @@ if __name__ == '__main__':
     args = argparser()
     print(args)  # example
 
+    """
     import json
 
     langs = json.load(open(args.train_file))
@@ -355,6 +354,31 @@ if __name__ == '__main__':
         doc_train.load(lang[1], lang_id=ii)
         doc_dev.load(lang[2], lang_id=ii)
         id2lang[ii] = lang[0]
+
+    """
+    with open(args.train_file) as file:
+        train_config = yaml.full_load(file)
+    doc_train = Document()
+    doc_dev = Document()
+    doc_test = Document()
+
+
+    for d in train_config["train_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading train file for language code [{}] : {}".format(lang_code, file))
+        doc_train.load(file, lang_id=train_config["language2id"].index(lang_code))
+    for d in train_config["dev_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading dev file for language code [{}] : {}".format(lang_code, file))
+        doc_dev.load(file, lang_id=train_config["language2id"].index(lang_code))
+    for d in train_config["test_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading test file for language code [{}] : {}".format(lang_code, file))
+        doc_test.load(file, lang_id=train_config["language2id"].index(lang_code))
+
 
     # ensure target dir exists
     target = args.store
@@ -387,7 +411,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
                             num_workers=args.num_workers)
 
-    model = Tagger(config=config, encodings=enc, id2lang=id2lang)
+    model = Tagger(config=config, encodings=enc, id2lang=train_config["language2id"])
 
     # training
 
@@ -403,10 +427,10 @@ if __name__ == '__main__':
         acc = 'ddp'
     trainer = pl.Trainer(
         gpus=args.gpus,
-        accelerator=acc,
-        num_nodes=1,
+        #accelerator=acc,
+        #num_nodes=1,
         default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)]
+        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, train_config["language2id"])]
         # limit_train_batches=5,
         # limit_val_batches=2,
     )

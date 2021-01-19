@@ -1,0 +1,10 @@
+dev_files:
+- pl_pdb: corpus/ud-treebanks-v2.5/UD_Polish-PDB/pl_pdb-ud-dev.conllu
+language:
+  pl_pdb: pl_pdb
+language2id:
+- pl_pdb
+test_files:
+- pl_pdb: corpus/ud-treebanks-v2.5/UD_Polish-PDB/pl_pdb-ud-test.conllu
+train_files:
+- pl_pdb: corpus/ud-treebanks-v2.5/UD_Polish-PDB/pl_pdb-ud-train.conllu

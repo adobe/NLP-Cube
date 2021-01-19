@@ -1,0 +1,10 @@
+dev_files:
+- ug_udt: corpus/ud-treebanks-v2.5/UD_Uyghur-UDT/ug_udt-ud-dev.conllu
+language:
+  ug_udt: ug_udt
+language2id:
+- ug_udt
+test_files:
+- ug_udt: corpus/ud-treebanks-v2.5/UD_Uyghur-UDT/ug_udt-ud-test.conllu
+train_files:
+- ug_udt: corpus/ud-treebanks-v2.5/UD_Uyghur-UDT/ug_udt-ud-train.conllu

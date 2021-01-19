@@ -1,0 +1,10 @@
+dev_files:
+- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-dev.conllu
+language:
+  en_ewt: en_ewt
+language2id:
+- en_ewt
+test_files:
+- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-test.conllu
+train_files:
+- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-train.conllu

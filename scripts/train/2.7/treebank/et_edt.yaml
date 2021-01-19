@@ -1,0 +1,10 @@
+dev_files:
+- et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-dev.conllu
+language:
+  et_edt: et_edt
+language2id:
+- et_edt
+test_files:
+- et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-test.conllu
+train_files:
+- et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-train.conllu

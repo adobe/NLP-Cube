@@ -1,0 +1,10 @@
+dev_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-dev.conllu
+language:
+  be_hse: be_hse
+language2id:
+- be_hse
+test_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-test.conllu
+train_files:
+- be_hse: corpus/ud-treebanks-v2.7/UD_Belarusian-HSE/be_hse-ud-train.conllu
