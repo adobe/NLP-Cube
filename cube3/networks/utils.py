@@ -340,7 +340,7 @@ class LMHelper:
             c_sent.append(END)
             new_sents.append(c_sent)
         max_len = max([len(s) for s in new_sents])
-        input_ids = np.ones((len(new_sents), max_len), dtype=np.long) * 2  # pad everything
+        input_ids = np.ones((len(new_sents), max_len), dtype=np.long) * PAD  # pad everything
         for ii in range(input_ids.shape[0]):
             for jj in range(input_ids.shape[1]):
                 if jj < len(new_sents[ii]):
