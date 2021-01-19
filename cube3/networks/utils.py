@@ -173,10 +173,14 @@ class TokenCollate:
                 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
 
     def _normalize(self, text):
+        import re
+
         punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
         new_text = ''
         for ch in text:
-            if ch in punctuation:
+            if re.match(u'[\u4e00-\u9fff]', ch):
+                new_text += ' ' + ch + ' '
+            elif ch in punctuation:
                 new_text += ' ' + ch + ' '
             else:
                 new_text += ch
