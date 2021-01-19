@@ -15,18 +15,30 @@ from collections import namedtuple
 
 
 class TokenizationDataset(Dataset):
-    def __init__(self, document: Document):
+    def __init__(self, document: Document, shuffle=True):
         self._document = document
+        self._shuffle = shuffle
 
     def __len__(self):
         return len(self._document.sentences)
 
     def __getitem__(self, item):
         # append two random sentences
-        index1 = random.randint(0, len(self._document.sentences) - 1)
-        index2 = random.randint(0, len(self._document.sentences) - 1)
-        return {'main': self._document.sentences[item], 'prev': self._document.sentences[index1],
-                'next': self._document.sentences[index2]}
+        if self._shuffle:
+            index1 = random.randint(0, len(self._document.sentences) - 1)
+            index2 = random.randint(0, len(self._document.sentences) - 1)
+        else:
+            index1 = item - 1
+            index2 = item + 1
+        if index1 >= 0:
+            prev = self._document.sentences[index1]
+        else:
+            prev = Sentence(sequence=[])
+        if index2 < len(self._document.sentences):
+            next = self._document.sentences[index2]
+        else:
+            next = Sentence(sequence=[])
+        return {'main': self._document.sentences[item], 'prev': prev, 'next': next}
 
 
 class MorphoDataset(Dataset):
@@ -61,6 +73,7 @@ class TokenCollate:
         y_output = []
         y_offset = []
         y_len = []
+        x_text = []
         for example in batch:
             current_sentence = example['main']
             prev_sentence = example['prev']
@@ -73,6 +86,7 @@ class TokenCollate:
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
+            x_text.append(self._tokenizer.tokenize(current_sentence.text))
             y_output.append(self._get_targets(current_sentence))
             if x_len > max_x:
                 max_x = x_len
@@ -107,7 +121,8 @@ class TokenCollate:
         y_len = torch.tensor(y_len)
         with torch.no_grad():
             x_out = self._lm(x_out)['last_hidden_state'].detach()
-        return {'x_input': x_out, 'x_lang': x_lang, 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len}
+        return {'x_input': x_out, 'x_text': x_text, 'x_lang': x_lang, 'y_output': y_out, 'y_offset': y_offset,
+                'y_len': y_len}
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
