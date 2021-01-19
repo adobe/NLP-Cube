@@ -74,19 +74,60 @@ class TokenCollate:
         y_offset = []
         y_len = []
         x_text = []
+        x_lang_word = []
+        x_sent_len = []
+
+        x_word_embeddings = []
+        a_word_len = []
+        for example in batch:
+            for qq in ['prev', 'main', 'next']:
+                sent = example[qq]
+                for word in self._tokenizer.tokenize(self._normalize(sent.text)):
+                    a_word_len.append(len(word))
+                    x_lang_word.append(sent.lang_id)
+        x_word_len = np.array(a_word_len, dtype=np.long)
+        max_word_len = np.max(x_word_len)
+        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
+        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        c_word = 0
+        for example in batch:
+            sz = 0
+            for qq in ['prev', 'main', 'next']:
+                sent = example[qq]
+                lst = self._tokenizer.tokenize(self._normalize(sent.text))
+                sz += len(lst)
+                for word in lst:
+                    for iChar in range(len(word)):
+                        x_word_masks[c_word, iChar] = 1
+                        ch = word[iChar]
+                        if ch.lower() == ch.upper():  # symbol
+                            x_word_case[c_word, iChar] = 1
+                        elif ch.lower() != ch:  # upper
+                            x_word_case[c_word, iChar] = 2
+                        else:  # lower
+                            x_word_case[c_word, iChar] = 3
+                        ch = ch.lower()
+                        if ch in self._encodings.char2int:
+                            x_word[c_word, iChar] = self._encodings.char2int[ch]
+                        else:
+                            x_word[c_word, iChar] = self._encodings.char2int['<UNK>']
+                    c_word += 1
+            x_sent_len.append(sz)
+
         for example in batch:
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
             x_lang.append(current_sentence.lang_id + 1)
-            x_prev = self._tokenizer(prev_sentence.text)['input_ids'][1:-1]
-            x_next = self._tokenizer(next_sentence.text)['input_ids'][1:-1]
+            x_prev = self._tokenizer(self._normalize(prev_sentence.text))['input_ids'][1:-1]
+            x_next = self._tokenizer(self._normalize(next_sentence.text))['input_ids'][1:-1]
             y_offset.append(len(x_prev) + 1)
-            x_main = self._tokenizer(current_sentence.text)['input_ids'][1:-1]
+            x_main = self._tokenizer(self._normalize(current_sentence.text))['input_ids'][1:-1]
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
-            x_text.append(self._tokenizer.tokenize(current_sentence.text))
+            x_text.append(self._tokenizer.tokenize(self._normalize(current_sentence.text)))
             y_output.append(self._get_targets(current_sentence))
             if x_len > max_x:
                 max_x = x_len
@@ -119,14 +160,36 @@ class TokenCollate:
         y_out = torch.tensor(y_out)
         y_offset = torch.tensor(y_offset)
         y_len = torch.tensor(y_len)
+        x_word = torch.tensor(x_word)
+        x_word_case = torch.tensor(x_word_case)
+        x_word_masks = torch.tensor(x_word_masks)
+        x_word_len = torch.tensor(x_word_len)
+        x_lang_word = torch.tensor(x_lang_word)
+        x_sent_len = torch.tensor(x_sent_len)
         with torch.no_grad():
             x_out = self._lm(x_out)['last_hidden_state'].detach()
-        return {'x_input': x_out, 'x_text': x_text, 'x_lang': x_lang, 'y_output': y_out, 'y_offset': y_offset,
-                'y_len': y_len}
+        return {'x_input': x_out, 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
+                'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
+                'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
+
+    def _normalize(self, text):
+        punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
+        new_text = ''
+        for ch in text:
+            if ch in punctuation:
+                new_text += ' ' + ch + ' '
+            else:
+                new_text += ch
+
+        tmp = new_text.replace('  ', ' ')
+        while tmp != new_text:
+            new_text = tmp
+            tmp = new_text.replace('  ', ' ')
+        return new_text.strip()
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
-        toks = self._tokenizer.tokenize(text)
+        toks = self._tokenizer.tokenize(self._normalize(text))
         toks = [tok.replace('▁', '') for tok in toks]
         targets = [0 for _ in range(len(toks))]
         iToken = 0

@@ -16,7 +16,7 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TokenizerConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm
+from cube3.networks.modules import ConvNorm, LinearNorm, WordGram
 import random
 
 from cube3.networks.utils import LMHelper, TokenizationDataset, TokenCollate
@@ -30,7 +30,7 @@ class Tokenizer(pl.LightningModule):
         self._id2lang = id2lang
         self._config = config
         conv_layers = []
-        cs_inp = 768 + config.lang_emb_size
+        cs_inp = 768 + config.lang_emb_size + 256
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -43,6 +43,7 @@ class Tokenizer(pl.LightningModule):
             conv_layers.append(conv_layer)
             cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
         self._convs = nn.ModuleList(conv_layers)
+        self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
 
@@ -58,6 +59,32 @@ class Tokenizer(pl.LightningModule):
         x_emb = batch['x_input']
         x_lang = batch['x_lang']
         x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb.shape[1], 1)
+        x_word_char = batch['x_word_char']
+        x_word_case = batch['x_word_case']
+        x_word_lang = batch['x_word_lang']
+        x_word_masks = batch['x_word_masks']
+        x_word_len = batch['x_word_len']
+        x_sent_len = batch['x_sent_len']
+        char_emb_packed = self._wg(x_word_char, x_word_case, x_word_lang, x_word_masks, x_word_len)
+
+        blist_char = []
+        sl = x_sent_len.cpu().numpy()
+        pos = 0
+        for ii in range(x_emb.shape[0]):
+            slist_char = []
+            slist_char.append(torch.zeros((1, 256),
+                                          device=self._get_device(), dtype=torch.float))  # start token
+            for jj in range(sl[ii]):
+                slist_char.append(char_emb_packed[pos, :].unsqueeze(0))
+                pos += 1
+            for jj in range(x_emb.shape[1] - sl[ii] - 1):
+                slist_char.append(torch.zeros((1, 256),
+                                              device=self._get_device(), dtype=torch.float))
+            sent_emb = torch.cat(slist_char, dim=0)
+            blist_char.append(sent_emb.unsqueeze(0))
+
+        x_char_emb = torch.cat(blist_char, dim=0)
+        x_emb = self._mask_concat([x_emb, x_char_emb])
         x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
         x_lang = x_lang.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
@@ -78,6 +105,31 @@ class Tokenizer(pl.LightningModule):
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
         return self._output(x)
+
+    def _mask_concat(self, representations):
+        if self.training:
+            masks = []
+            for ii in range(len(representations)):
+                mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
+                masks.append(mask)
+
+            for ii in range(masks[0].shape[0]):
+                for jj in range(masks[0].shape[1]):
+                    mult = 1
+                    for kk in range(len(masks)):
+                        p = random.random()
+                        if p < 0.33:
+                            mult += 1
+                            masks[kk][ii, jj] = 0
+                    for kk in range(len(masks)):
+                        masks[kk][ii, jj] *= mult
+            for kk in range(len(masks)):
+                masks[kk] = torch.tensor(masks[kk], device=self._get_device())
+
+            for kk in range(len(masks)):
+                representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
+
+        return torch.cat(representations, dim=-1)
 
     def validation_step(self, batch, batch_idx):
         x_lang = batch['x_lang']
@@ -175,6 +227,11 @@ class Tokenizer(pl.LightningModule):
                 self._res[lang]["token"] = res[lang]["token"]
                 res[lang]["token_best"] = True
         return res
+
+    def _get_device(self):
+        if self._lang_emb.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
 
 def _conll_eval(gold, pred):
