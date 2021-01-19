@@ -1,0 +1,22 @@
+dev_files:
+- ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-dev.conllu
+- ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-dev.conllu
+language:
+  ro: ro_rrt
+  ro_nonstandard: ro_nonstandard
+  ro_rrt: ro_rrt
+  ro_simonero: ro_simonero
+  romanian: ro_rrt
+language2id:
+- ro_simonero
+- ro_rrt
+- ro_nonstandard
+test_files:
+- ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-test.conllu
+- ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-test.conllu
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-test.conllu
+train_files:
+- ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-train.conllu
+- ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-train.conllu

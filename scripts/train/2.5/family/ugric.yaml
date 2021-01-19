@@ -1,0 +1,12 @@
+dev_files:
+- hu_szeged: corpus/ud-treebanks-v2.5/UD_Hungarian-Szeged/hu_szeged-ud-dev.conllu
+language:
+  hu: hu_szeged
+  hu_szeged: hu_szeged
+  hungarian: hu_szeged
+language2id:
+- hu_szeged
+test_files:
+- hu_szeged: corpus/ud-treebanks-v2.5/UD_Hungarian-Szeged/hu_szeged-ud-test.conllu
+train_files:
+- hu_szeged: corpus/ud-treebanks-v2.5/UD_Hungarian-Szeged/hu_szeged-ud-train.conllu

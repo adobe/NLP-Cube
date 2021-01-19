@@ -1,0 +1,10 @@
+dev_files:
+- wo_wtb: corpus/ud-treebanks-v2.5/UD_Wolof-WTB/wo_wtb-ud-dev.conllu
+language:
+  wo_wtb: wo_wtb
+language2id:
+- wo_wtb
+test_files:
+- wo_wtb: corpus/ud-treebanks-v2.5/UD_Wolof-WTB/wo_wtb-ud-test.conllu
+train_files:
+- wo_wtb: corpus/ud-treebanks-v2.5/UD_Wolof-WTB/wo_wtb-ud-train.conllu

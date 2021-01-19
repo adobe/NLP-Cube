@@ -1,0 +1,10 @@
+dev_files:
+- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu
+language:
+  hi_hdtb: hi_hdtb
+language2id:
+- hi_hdtb
+test_files:
+- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-test.conllu
+train_files:
+- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu

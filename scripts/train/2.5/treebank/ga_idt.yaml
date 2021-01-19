@@ -1,0 +1,10 @@
+dev_files:
+- ga_idt: corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-dev.conllu
+language:
+  ga_idt: ga_idt
+language2id:
+- ga_idt
+test_files:
+- ga_idt: corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-test.conllu
+train_files:
+- ga_idt: corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-train.conllu

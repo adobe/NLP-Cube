@@ -1,0 +1,10 @@
+dev_files:
+- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-dev.conllu
+language:
+  is_icepahc: is_icepahc
+language2id:
+- is_icepahc
+test_files:
+- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-test.conllu
+train_files:
+- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-train.conllu

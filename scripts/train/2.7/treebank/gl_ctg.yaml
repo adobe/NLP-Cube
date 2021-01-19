@@ -1,0 +1,10 @@
+dev_files:
+- gl_ctg: corpus/ud-treebanks-v2.7/UD_Galician-CTG/gl_ctg-ud-dev.conllu
+language:
+  gl_ctg: gl_ctg
+language2id:
+- gl_ctg
+test_files:
+- gl_ctg: corpus/ud-treebanks-v2.7/UD_Galician-CTG/gl_ctg-ud-test.conllu
+train_files:
+- gl_ctg: corpus/ud-treebanks-v2.7/UD_Galician-CTG/gl_ctg-ud-train.conllu

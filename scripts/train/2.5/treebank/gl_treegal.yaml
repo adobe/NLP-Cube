@@ -1,0 +1,10 @@
+dev_files:
+- gl_treegal: corpus/ud-treebanks-v2.5/UD_Galician-TreeGal/gl_treegal-ud-test.conllu
+language:
+  gl_treegal: gl_treegal
+language2id:
+- gl_treegal
+test_files:
+- gl_treegal: corpus/ud-treebanks-v2.5/UD_Galician-TreeGal/gl_treegal-ud-test.conllu
+train_files:
+- gl_treegal: corpus/ud-treebanks-v2.5/UD_Galician-TreeGal/gl_treegal-ud-train.conllu

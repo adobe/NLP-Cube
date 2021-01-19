@@ -1,0 +1,36 @@
+dev_files:
+- hi_hdtb: corpus/ud-treebanks-v2.7/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu
+- mr_ufal: corpus/ud-treebanks-v2.7/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu
+- sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
+- ur_udtb: corpus/ud-treebanks-v2.7/UD_Urdu-UDTB/ur_udtb-ud-dev.conllu
+language:
+  hi: hi_hdtb
+  hi_hdtb: hi_hdtb
+  hi_pud: hi_pud
+  hindi: hi_hdtb
+  marathi: mr_ufal
+  mr: mr_ufal
+  mr_ufal: mr_ufal
+  sa: sa_vedic
+  sa_vedic: sa_vedic
+  sanskrit: sa_vedic
+  ur: ur_udtb
+  ur_udtb: ur_udtb
+  urdu: ur_udtb
+language2id:
+- mr_ufal
+- hi_pud
+- sa_vedic
+- hi_hdtb
+- ur_udtb
+test_files:
+- hi_hdtb: corpus/ud-treebanks-v2.7/UD_Hindi-HDTB/hi_hdtb-ud-test.conllu
+- mr_ufal: corpus/ud-treebanks-v2.7/UD_Marathi-UFAL/mr_ufal-ud-test.conllu
+- sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
+- ur_udtb: corpus/ud-treebanks-v2.7/UD_Urdu-UDTB/ur_udtb-ud-test.conllu
+train_files:
+- hi_hdtb: corpus/ud-treebanks-v2.7/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu
+- hi_pud: corpus/ud-treebanks-v2.7/UD_Hindi-PUD/hi_pud-ud-train.conllu
+- mr_ufal: corpus/ud-treebanks-v2.7/UD_Marathi-UFAL/mr_ufal-ud-train.conllu
+- sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-train.conllu
+- ur_udtb: corpus/ud-treebanks-v2.7/UD_Urdu-UDTB/ur_udtb-ud-train.conllu

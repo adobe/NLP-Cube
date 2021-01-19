@@ -1,0 +1,10 @@
+dev_files:
+- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-dev.conllu
+language:
+  de_gsd: de_gsd
+language2id:
+- de_gsd
+test_files:
+- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-test.conllu
+train_files:
+- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-train.conllu

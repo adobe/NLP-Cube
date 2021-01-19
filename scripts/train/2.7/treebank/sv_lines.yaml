@@ -1,0 +1,10 @@
+dev_files:
+- sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-dev.conllu
+language:
+  sv_lines: sv_lines
+language2id:
+- sv_lines
+test_files:
+- sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-test.conllu
+train_files:
+- sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-train.conllu

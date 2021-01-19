@@ -1,0 +1,12 @@
+dev_files:
+- gd_arcosg: corpus/ud-treebanks-v2.5/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-dev.conllu
+language:
+  gd: gd_arcosg
+  gd_arcosg: gd_arcosg
+  scottish gaelic: gd_arcosg
+language2id:
+- gd_arcosg
+test_files:
+- gd_arcosg: corpus/ud-treebanks-v2.5/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-test.conllu
+train_files:
+- gd_arcosg: corpus/ud-treebanks-v2.5/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-train.conllu

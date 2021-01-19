@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('')
-import os, argparse
+import os, yaml
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import pytorch_lightning as pl
@@ -25,7 +25,7 @@ from cube3.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):
-    def __init__(self, config: TaggerConfig, encodings: Encodings, id2lang: {} = None):
+    def __init__(self, config: TaggerConfig, encodings: Encodings, language2id: [] = None):
         super().__init__()
         self._config = config
         self._encodings = encodings
@@ -35,7 +35,7 @@ class Tagger(pl.LightningModule):
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
         self._num_langs = encodings.num_langs
-        self._id2lang = id2lang
+        self._language2id = language2id
 
         conv_layers = []
         cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
@@ -62,9 +62,8 @@ class Tagger(pl.LightningModule):
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._res = {}
-        for id in id2lang:
-            lang = id2lang[id]
-            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0.}
+        for language_code in self._language2id:
+            self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
@@ -245,7 +244,7 @@ class Tagger(pl.LightningModule):
         return {'loss': loss, 'acc': language_result}
 
     def validation_epoch_end(self, outputs):
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
+        language_result = {lang_index: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_index in
                            range(self._num_langs)}
 
         valid_loss_total = 0
@@ -255,17 +254,17 @@ class Tagger(pl.LightningModule):
         xpos_ok = 0
         for out in outputs:
             valid_loss_total += out['loss']
-            for lang_id in language_result:
+            for lang_index in language_result:
                 valid_loss_total += out['loss']
-                language_result[lang_id]['total'] += out['acc'][lang_id]['total']
-                language_result[lang_id]['upos_ok'] += out['acc'][lang_id]['upos_ok']
-                language_result[lang_id]['xpos_ok'] += out['acc'][lang_id]['xpos_ok']
-                language_result[lang_id]['attrs_ok'] += out['acc'][lang_id]['attrs_ok']
+                language_result[lang_index]['total'] += out['acc'][lang_index]['total']
+                language_result[lang_index]['upos_ok'] += out['acc'][lang_index]['upos_ok']
+                language_result[lang_index]['xpos_ok'] += out['acc'][lang_index]['xpos_ok']
+                language_result[lang_index]['attrs_ok'] += out['acc'][lang_index]['attrs_ok']
                 # global
-                total += out['acc'][lang_id]['total']
-                upos_ok += out['acc'][lang_id]['upos_ok']
-                xpos_ok += out['acc'][lang_id]['xpos_ok']
-                attrs_ok += out['acc'][lang_id]['attrs_ok']
+                total += out['acc'][lang_index]['total']
+                upos_ok += out['acc'][lang_index]['upos_ok']
+                xpos_ok += out['acc'][lang_index]['xpos_ok']
+                attrs_ok += out['acc'][lang_index]['attrs_ok']
 
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/UPOS/total', upos_ok / total)
@@ -273,23 +272,23 @@ class Tagger(pl.LightningModule):
         self.log('val/ATTRS/total', attrs_ok / total)
 
         res = {}
-        for lang_id in language_result:
-            total = language_result[lang_id]['total']
+        for lang_index in language_result:
+            total = language_result[lang_index]['total']
             if total == 0:
                 total = 1
-            if self._id2lang is None:
-                lang = lang_id
+            if self._language2id is None:
+                lang = lang_index
             else:
-                lang = self._id2lang[lang_id]
+                lang = self._language2id[lang_index]
             res[lang] = {
-                "upos": language_result[lang_id]['upos_ok'] / total,
-                "xpos": language_result[lang_id]['xpos_ok'] / total,
-                "attrs": language_result[lang_id]['attrs_ok'] / total
+                "upos": language_result[lang_index]['upos_ok'] / total,
+                "xpos": language_result[lang_index]['xpos_ok'] / total,
+                "attrs": language_result[lang_index]['attrs_ok'] / total
             }
 
-            self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
-            self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
-            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
+            self.log('val/UPOS/{0}'.format(lang), language_result[lang_index]['upos_ok'] / total)
+            self.log('val/XPOS/{0}'.format(lang), language_result[lang_index]['xpos_ok'] / total)
+            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_index]['attrs_ok'] / total)
 
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
@@ -300,10 +299,10 @@ class Tagger(pl.LightningModule):
 
 
 class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, id2lang):
+    def __init__(self, args, language2id):
         super().__init__()
         self.args = args
-        self._id2lang = id2lang
+        self.language2id = language2id
 
     def on_epoch_end(self, trainer, pl_module):
         metrics = trainer.callback_metrics
@@ -322,11 +321,10 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
 
         trainer.save_checkpoint(self.args.store + ".last")
 
-        lang_list = [self._id2lang[ii] for ii in self._id2lang]
         s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
         print("\n\n\t" + s)
         print("\t" + ("=" * (len(s) + 9)))
-        for lang in lang_list:
+        for lang in self.language2id:
             upos = metrics["val/UPOS/{0}".format(lang)]
             xpos = metrics["val/XPOS/{0}".format(lang)]
             attrs = metrics["val/ATTRS/{0}".format(lang)]
@@ -343,6 +341,7 @@ if __name__ == '__main__':
     args = argparser()
     print(args)  # example
 
+    """
     import json
 
     langs = json.load(open(args.train_file))
@@ -355,6 +354,31 @@ if __name__ == '__main__':
         doc_train.load(lang[1], lang_id=ii)
         doc_dev.load(lang[2], lang_id=ii)
         id2lang[ii] = lang[0]
+
+    """
+    with open(args.train_file) as file:
+        train_config = yaml.full_load(file)
+    doc_train = Document()
+    doc_dev = Document()
+    doc_test = Document()
+
+
+    for d in train_config["train_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading train file for language code [{}] : {}".format(lang_code, file))
+        doc_train.load(file, lang_id=train_config["language2id"].index(lang_code))
+    for d in train_config["dev_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading dev file for language code [{}] : {}".format(lang_code, file))
+        doc_dev.load(file, lang_id=train_config["language2id"].index(lang_code))
+    for d in train_config["test_files"]:
+        lang_code = list(d.keys())[0]
+        file = d[lang_code]
+        print("Reading test file for language code [{}] : {}".format(lang_code, file))
+        doc_test.load(file, lang_id=train_config["language2id"].index(lang_code))
+
 
     # ensure target dir exists
     target = args.store
@@ -387,7 +411,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
                             num_workers=args.num_workers)
 
-    model = Tagger(config=config, encodings=enc, id2lang=id2lang)
+    model = Tagger(config=config, encodings=enc, language2id=train_config["language2id"])
 
     # training
 
@@ -403,10 +427,10 @@ if __name__ == '__main__':
         acc = 'ddp'
     trainer = pl.Trainer(
         gpus=args.gpus,
-        accelerator=acc,
-        num_nodes=1,
+        #accelerator=acc,
+        #num_nodes=1,
         default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)]
+        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, train_config["language2id"])]
         # limit_train_batches=5,
         # limit_val_batches=2,
     )

@@ -1,0 +1,10 @@
+dev_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-dev.conllu
+language:
+  ko_kaist: ko_kaist
+language2id:
+- ko_kaist
+test_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-test.conllu
+train_files:
+- ko_kaist: corpus/ud-treebanks-v2.7/UD_Korean-Kaist/ko_kaist-ud-train.conllu

@@ -1,0 +1,10 @@
+dev_files:
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-dev.conllu
+language:
+  ro_simonero: ro_simonero
+language2id:
+- ro_simonero
+test_files:
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-test.conllu
+train_files:
+- ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-train.conllu

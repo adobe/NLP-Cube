@@ -1,0 +1,10 @@
+dev_files:
+- sk_snk: corpus/ud-treebanks-v2.5/UD_Slovak-SNK/sk_snk-ud-dev.conllu
+language:
+  sk_snk: sk_snk
+language2id:
+- sk_snk
+test_files:
+- sk_snk: corpus/ud-treebanks-v2.5/UD_Slovak-SNK/sk_snk-ud-test.conllu
+train_files:
+- sk_snk: corpus/ud-treebanks-v2.5/UD_Slovak-SNK/sk_snk-ud-train.conllu

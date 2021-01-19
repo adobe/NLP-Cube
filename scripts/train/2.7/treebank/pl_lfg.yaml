@@ -1,0 +1,10 @@
+dev_files:
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-dev.conllu
+language:
+  pl_lfg: pl_lfg
+language2id:
+- pl_lfg
+test_files:
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-test.conllu
+train_files:
+- pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-train.conllu

@@ -1,0 +1,19 @@
+dev_files:
+- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
+language:
+  fa: fa_seraji
+  fa_seraji: fa_seraji
+  kmr: kmr_mg
+  kmr_mg: kmr_mg
+  kurmanji: kmr_mg
+  persian: fa_seraji
+language2id:
+- fa_seraji
+- kmr_mg
+test_files:
+- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-test.conllu
+train_files:
+- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-train.conllu
+- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-train.conllu

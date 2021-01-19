@@ -1,0 +1,10 @@
+dev_files:
+- it_postwita: corpus/ud-treebanks-v2.7/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu
+language:
+  it_postwita: it_postwita
+language2id:
+- it_postwita
+test_files:
+- it_postwita: corpus/ud-treebanks-v2.7/UD_Italian-PoSTWITA/it_postwita-ud-test.conllu
+train_files:
+- it_postwita: corpus/ud-treebanks-v2.7/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu

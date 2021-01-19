@@ -1,0 +1,20 @@
+dev_files:
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-test.conllu
+- id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-dev.conllu
+language:
+  id: id_gsd
+  id_csui: id_csui
+  id_gsd: id_gsd
+  id_pud: id_pud
+  indonesian: id_gsd
+language2id:
+- id_csui
+- id_pud
+- id_gsd
+test_files:
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-test.conllu
+- id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-test.conllu
+train_files:
+- id_pud: corpus/ud-treebanks-v2.7/UD_Indonesian-PUD/id_pud-ud-train.conllu
+- id_csui: corpus/ud-treebanks-v2.7/UD_Indonesian-CSUI/id_csui-ud-train.conllu
+- id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-train.conllu
