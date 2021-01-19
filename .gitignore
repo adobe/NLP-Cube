@@ -1,3 +1,4 @@
+*.txt
 lightning_logs
 *.gz
 *.encodings

@@ -15,18 +15,30 @@ from collections import namedtuple
 
 
 class TokenizationDataset(Dataset):
-    def __init__(self, document: Document):
+    def __init__(self, document: Document, shuffle=True):
         self._document = document
+        self._shuffle = shuffle
 
     def __len__(self):
         return len(self._document.sentences)
 
     def __getitem__(self, item):
         # append two random sentences
-        index1 = random.randint(0, len(self._document.sentences) - 1)
-        index2 = random.randint(0, len(self._document.sentences) - 1)
-        return {'main': self._document.sentences[item], 'prev': self._document.sentences[index1],
-                'next': self._document.sentences[index2]}
+        if self._shuffle:
+            index1 = random.randint(0, len(self._document.sentences) - 1)
+            index2 = random.randint(0, len(self._document.sentences) - 1)
+        else:
+            index1 = item - 1
+            index2 = item + 1
+        if index1 >= 0:
+            prev = self._document.sentences[index1]
+        else:
+            prev = Sentence(sequence=[])
+        if index2 < len(self._document.sentences):
+            next = self._document.sentences[index2]
+        else:
+            next = Sentence(sequence=[])
+        return {'main': self._document.sentences[item], 'prev': prev, 'next': next}
 
 
 class MorphoDataset(Dataset):
@@ -41,10 +53,15 @@ class MorphoDataset(Dataset):
 
 
 class TokenCollate:
-    def __init__(self, encodings: Encodings, lm_model='xlm-roberta-base'):
+    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0'):
+        if lm_model is None:
+            lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
         self._tokenizer = AutoTokenizer.from_pretrained(lm_model)
         self._lm = AutoModel.from_pretrained(lm_model)
+        self._lm.eval()
+        self._lm_device = lm_device
+        self._lm.to(lm_device)
 
     def collate_fn(self, batch):
         START = 0
@@ -52,29 +69,29 @@ class TokenCollate:
         PAD = 1
         max_x = 0
         x_input = []
+        x_lang = []
         y_output = []
         y_offset = []
         y_len = []
+        x_text = []
         for example in batch:
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
-            x_prev = self._tokenizer(prev_sentence.text)[1:-1]
-            x_next = self._tokenizer(next_sentence.text)[1:-1]
+            x_lang.append(current_sentence.lang_id + 1)
+            x_prev = self._tokenizer(prev_sentence.text)['input_ids'][1:-1]
+            x_next = self._tokenizer(next_sentence.text)['input_ids'][1:-1]
             y_offset.append(len(x_prev) + 1)
-            x_main = self._tokenizer(current_sentence.text)[1:-1]
+            x_main = self._tokenizer(current_sentence.text)['input_ids'][1:-1]
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
+            x_text.append(self._tokenizer.tokenize(current_sentence.text))
             y_output.append(self._get_targets(current_sentence))
-            from ipdb import set_trace
-            set_trace()
             if x_len > max_x:
                 max_x = x_len
 
-        max_y = max(y_len)
-        y_out = np.zeros((len(batch), max_y))
-        x_out = np.ones((len(batch), max_x + 2)) * PAD
+        x_out = np.ones((len(batch), max_x + 2), dtype=np.long) * PAD
         for ii in range(len(batch)):
             x_out[ii, 0] = START
             pos = 1
@@ -92,10 +109,20 @@ class TokenCollate:
                 pos += 1
             x_out[ii, pos] = END
 
-        x_out = torch.tensor(x_out)
+        y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype=np.long)
+        for ii in range(x_out.shape[0]):
+            for jj in range(y_len[ii]):
+                index = y_offset[ii] + jj
+                y_out[ii, index] = y_output[ii][jj]
+        x_out = torch.tensor(x_out, device=self._lm_device)
+        x_lang = torch.tensor(x_lang)
+        y_out = torch.tensor(y_out)
         y_offset = torch.tensor(y_offset)
         y_len = torch.tensor(y_len)
-        return {'x_input': x_out, 'y_output': None, 'y_offset': y_offset, 'y_len': y_len}
+        with torch.no_grad():
+            x_out = self._lm(x_out)['last_hidden_state'].detach()
+        return {'x_input': x_out, 'x_text': x_text, 'x_lang': x_lang, 'y_output': y_out, 'y_offset': y_offset,
+                'y_len': y_len}
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text

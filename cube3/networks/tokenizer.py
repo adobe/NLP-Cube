@@ -27,8 +27,10 @@ from cube3.networks.modules import WordGram
 class Tokenizer(pl.LightningModule):
     def __init__(self, config: TokenizerConfig, encodings: Encodings, id2lang: {}):
         super().__init__()
+        self._id2lang = id2lang
+        self._config = config
         conv_layers = []
-        cs_inp = 768
+        cs_inp = 768 + config.lang_emb_size
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -42,22 +44,161 @@ class Tokenizer(pl.LightningModule):
             cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
         self._convs = nn.ModuleList(conv_layers)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
-        self._output = LinearNorm(NUM_FILTERS // 2, 4)
+        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
+
+        self._dev_results = {langid: [] for langid in self._id2lang}
+        self._res = {}
+        for id in id2lang:
+            lang = id2lang[id]
+            self._res[lang] = {"sent": 0., "token": 0.}
+        self._early_stop_meta_val = 0
+        self._epoch_results = {}
 
     def forward(self, batch):
-        pass
+        x_emb = batch['x_input']
+        x_lang = batch['x_lang']
+        x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb.shape[1], 1)
+        x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
+        x_lang = x_lang.permute(0, 2, 1)
+        half = self._config.cnn_filter // 2
+        res = None
+        cnt = 0
+        for conv in self._convs:
+            conv_out = conv(x)
+            tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
+            if res is None:
+                res = tmp
+            else:
+                res = res + tmp
+            x = torch.dropout(tmp, 0.2, self.training)
+            cnt += 1
+            if cnt != self._config.cnn_layers:
+                x = torch.cat([x, x_lang], dim=1)
+        x = x + res
+        x = torch.cat([x, x_lang], dim=1)
+        x = x.permute(0, 2, 1)
+        return self._output(x)
 
-    def validation_step(self, batch):
-        pass
+    def validation_step(self, batch, batch_idx):
+        x_lang = batch['x_lang']
+        x_text = batch['x_text']
+        y_offset = batch['y_offset'].cpu().numpy()
+        y_target = batch['y_output'].cpu().numpy()
+        y_len = batch['y_len'].cpu().numpy()
+        x_l = x_lang.cpu().numpy()
+        y_pred = self.forward(batch)
+        y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
+        for ii in range(len(y_len)):
+            ofs = y_offset[ii]
+            lang = x_l[ii] - 1
+            for jj in range(y_len[ii]):
+                self._dev_results[lang].append([x_text[ii][jj], y_target[ii, jj + ofs], y_pred[ii, jj + ofs]])
 
     def validation_epoch_end(self, outputs) -> None:
-        pass
+        # empty accumulator
+        # results = {langid: {'SENT_F': 0, 'TOK_F': 0} for langid in self._id2lang}
+        results = {}
 
-    def training_step(self, batch):
-        pass
+        for lang in self._dev_results:
+            data = self._dev_results[lang]
+            g_sents = []
+            p_sents = []
+            tok_p = ''
+            tok_g = ''
+            g_sent = []
+            p_sent = []
+            for example in data:
+                target = example[1]
+                pred = example[2]
+                text = example[0].replace('▁', '')
+                tok_g += text
+                tok_p += text
+                if target == 2 or target == 3:
+                    if tok_g.strip() != '':
+                        g_sent.append(tok_g)
+                    tok_g = ''
+                if target == 3:
+                    if len(g_sent) != 0:
+                        g_sents.append(g_sent)
+                    g_sent = []
+
+                if pred == 2 or pred == 3:
+                    if tok_p.strip():
+                        p_sent.append(tok_p)
+                    tok_p = ''
+                if pred == 3:
+                    if len(p_sent) != 0:
+                        p_sents.append(p_sent)
+                    p_sent = []
+
+            if tok_g.strip() != '':
+                g_sent.append(tok_g)
+            if len(g_sent) != 0:
+                g_sents.append(g_sent)
+            if tok_p.strip() != '':
+                p_sent.append(tok_p)
+            if len(p_sent) != 0:
+                p_sents.append(p_sent)
+
+            sent_f, tok_f = _conll_eval(g_sents, p_sents)
+            if self._id2lang is not None:
+                lang = self._id2lang[lang]
+
+            results[lang] = {}
+            results[lang]['sent'] = sent_f
+            results[lang]['token'] = tok_f
+            self.log('val/SENT/{0}'.format(lang), sent_f)
+            self.log('val/TOKEN/{0}'.format(lang), tok_f)
+
+        self._dev_results = {langid: [] for langid in self._id2lang}
+        self._epoch_results = self._compute_early_stop(results)
+        self.log('val/early_meta', self._early_stop_meta_val)
+
+    def training_step(self, batch, batch_idx):
+        y_target = batch['y_output']
+        y_pred = self.forward(batch)
+
+        loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
+        return loss
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())
+
+    def _compute_early_stop(self, res):
+        for lang in res:
+            if res[lang]["sent"] > self._res[lang]["sent"]:
+                self._early_stop_meta_val += 1
+                self._res[lang]["sent"] = res[lang]["sent"]
+                res[lang]["sent_best"] = True
+            if res[lang]["token"] > self._res[lang]["token"]:
+                self._early_stop_meta_val += 1
+                self._res[lang]["token"] = res[lang]["token"]
+                res[lang]["token_best"] = True
+        return res
+
+
+def _conll_eval(gold, pred):
+    f = open('tmp_g.txt', 'w')
+    for sent in gold:
+        for ii in range(len(sent)):
+            head = ii
+            f.write('{0}\t{1}\t_\t_\t_\t_\t{2}\t_\t_\t_\n'.format(ii + 1, sent[ii], head))
+        f.write('\n')
+    f.close()
+
+    f = open('tmp_p.txt', 'w')
+    for sent in pred:
+        for ii in range(len(sent)):
+            head = ii
+            f.write('{0}\t{1}\t_\t_\t_\t_\t{2}\t_\t_\t_\n'.format(ii + 1, sent[ii], head))
+        f.write('\n')
+    f.close()
+    from _cube.misc.conll18_ud_eval_wrapper import conll_eval
+    result = conll_eval('tmp_g.txt', 'tmp_p.txt')
+    if result is None:
+        return 0, 0
+    else:
+        return result['Sentences'].f1, result['Tokens'].f1
 
 
 class PrintAndSaveCallback(pl.callbacks.Callback):
@@ -76,7 +217,7 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
             res = pl_module._epoch_results[lang]
             if "sent_best" in res:
                 trainer.save_checkpoint(self.args.store + "." + lang + ".sent")
-            if "sent_best" in res:
+            if "token_best" in res:
                 trainer.save_checkpoint(self.args.store + "." + lang + ".tok")
 
         trainer.save_checkpoint(self.args.store + ".last")
@@ -137,9 +278,9 @@ if __name__ == '__main__':
     # helper.apply(doc_dev)
     # helper.apply(doc_train)
     trainset = TokenizationDataset(doc_train)
-    devset = TokenizationDataset(doc_dev)
+    devset = TokenizationDataset(doc_dev, shuffle=False)
 
-    collate = TokenCollate(enc)
+    collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
                               num_workers=args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
@@ -164,7 +305,7 @@ if __name__ == '__main__':
         accelerator=acc,
         num_nodes=1,
         default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)]
+        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)],
         # limit_train_batches=5,
         # limit_val_batches=2,
     )
