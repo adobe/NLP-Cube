@@ -283,7 +283,8 @@ class LMHelper:
                 if jj < len(new_sents[ii]):
                     input_ids[ii, jj] = new_sents[ii][jj]
         with torch.no_grad():
-            we = self._xlmr(torch.tensor(input_ids, device=self._device))['last_hidden_state'].detach().cpu().numpy()
+            out = self._xlmr(torch.tensor(input_ids, device=self._device), return_dict=True)
+            we = out['last_hidden_state'].detach().cpu().numpy()
 
         word_emb = []
         for ii in range(len(batch)):
@@ -300,7 +301,7 @@ class LMHelper:
 
     def apply(self, doc: Document):
         import tqdm
-        for sent in tqdm.tqdm(doc.sentences):
+        for sent in tqdm.tqdm(doc.sentences, desc="Pre-computing embeddings", unit="sent"):
             wemb = self._compute_we([sent])
             for ii in range(len(wemb)):
                 sent.words[ii]._emb = wemb[ii]
