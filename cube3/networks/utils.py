@@ -353,10 +353,13 @@ class LMHelper:
         for ii in range(len(batch)):
             for jj in range(len(batch[ii].words)):
                 pieces = word2pieces[ii, jj]
-                m = we[pieces[0][0], pieces[0][1]]
-                for zz in range(len(pieces) - 1):
-                    m += we[pieces[zz][0], pieces[zz][1]]
-                m = m / len(pieces)
+                if len(pieces) == 0:
+                    m = we[pieces[0][0], pieces[0][1]]
+                    for zz in range(len(pieces) - 1):
+                        m += we[pieces[zz][0], pieces[zz][1]]
+                    m = m / len(pieces)
+                else:
+                    m = np.zeros((768), dtype=np.float)
                 word_emb.append(m)
         # word_emb = torch.cat(word_emb, dim=0)
 
