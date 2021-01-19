@@ -244,7 +244,7 @@ class Tagger(pl.LightningModule):
         return {'loss': loss, 'acc': language_result}
 
     def validation_epoch_end(self, outputs):
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
+        language_result = {lang_index: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_index in
                            range(self._num_langs)}
 
         valid_loss_total = 0
@@ -254,17 +254,17 @@ class Tagger(pl.LightningModule):
         xpos_ok = 0
         for out in outputs:
             valid_loss_total += out['loss']
-            for lang_id in language_result:
+            for lang_index in language_result:
                 valid_loss_total += out['loss']
-                language_result[lang_id]['total'] += out['acc'][lang_id]['total']
-                language_result[lang_id]['upos_ok'] += out['acc'][lang_id]['upos_ok']
-                language_result[lang_id]['xpos_ok'] += out['acc'][lang_id]['xpos_ok']
-                language_result[lang_id]['attrs_ok'] += out['acc'][lang_id]['attrs_ok']
+                language_result[lang_index]['total'] += out['acc'][lang_index]['total']
+                language_result[lang_index]['upos_ok'] += out['acc'][lang_index]['upos_ok']
+                language_result[lang_index]['xpos_ok'] += out['acc'][lang_index]['xpos_ok']
+                language_result[lang_index]['attrs_ok'] += out['acc'][lang_index]['attrs_ok']
                 # global
-                total += out['acc'][lang_id]['total']
-                upos_ok += out['acc'][lang_id]['upos_ok']
-                xpos_ok += out['acc'][lang_id]['xpos_ok']
-                attrs_ok += out['acc'][lang_id]['attrs_ok']
+                total += out['acc'][lang_index]['total']
+                upos_ok += out['acc'][lang_index]['upos_ok']
+                xpos_ok += out['acc'][lang_index]['xpos_ok']
+                attrs_ok += out['acc'][lang_index]['attrs_ok']
 
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/UPOS/total', upos_ok / total)
@@ -272,23 +272,23 @@ class Tagger(pl.LightningModule):
         self.log('val/ATTRS/total', attrs_ok / total)
 
         res = {}
-        for lang_id in language_result:
-            total = language_result[lang_id]['total']
+        for lang_index in language_result:
+            total = language_result[lang_index]['total']
             if total == 0:
                 total = 1
-            if self._id2lang is None:
-                lang = lang_id
+            if self._language2id is None:
+                lang = lang_index
             else:
-                lang = self._id2lang[lang_id]
+                lang = self._language2id[lang_index]
             res[lang] = {
-                "upos": language_result[lang_id]['upos_ok'] / total,
-                "xpos": language_result[lang_id]['xpos_ok'] / total,
-                "attrs": language_result[lang_id]['attrs_ok'] / total
+                "upos": language_result[lang_index]['upos_ok'] / total,
+                "xpos": language_result[lang_index]['xpos_ok'] / total,
+                "attrs": language_result[lang_index]['attrs_ok'] / total
             }
 
-            self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
-            self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
-            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
+            self.log('val/UPOS/{0}'.format(lang), language_result[lang_index]['upos_ok'] / total)
+            self.log('val/XPOS/{0}'.format(lang), language_result[lang_index]['xpos_ok'] / total)
+            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_index]['attrs_ok'] / total)
 
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
@@ -411,7 +411,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
                             num_workers=args.num_workers)
 
-    model = Tagger(config=config, encodings=enc, id2lang=train_config["language2id"])
+    model = Tagger(config=config, encodings=enc, language2id=train_config["language2id"])
 
     # training
 
