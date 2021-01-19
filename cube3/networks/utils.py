@@ -353,7 +353,7 @@ class LMHelper:
         for ii in range(len(batch)):
             for jj in range(len(batch[ii].words)):
                 pieces = word2pieces[ii, jj]
-                if len(pieces) == 0:
+                if len(pieces) != 0:
                     m = we[pieces[0][0], pieces[0][1]]
                     for zz in range(len(pieces) - 1):
                         m += we[pieces[zz][0], pieces[zz][1]]
