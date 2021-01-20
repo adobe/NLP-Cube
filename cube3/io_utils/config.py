@@ -87,6 +87,7 @@ class TokenizerConfig(Config):
         self.cnn_filter = 512
         self.lang_emb_size = 100
         self.cnn_layers = 5
+        self.no_space_lang = False
 
         if filename is None:
             if verbose:

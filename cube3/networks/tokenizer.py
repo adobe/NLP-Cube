@@ -81,8 +81,8 @@ class Tokenizer(pl.LightningModule):
                 slist_char.append(torch.zeros((1, 256),
                                               device=self._get_device(), dtype=torch.float))
             sent_emb = torch.cat(slist_char, dim=0)
-            blist_char.append(sent_emb.unsqueeze(0))
 
+            blist_char.append(sent_emb.unsqueeze(0))
         x_char_emb = torch.cat(blist_char, dim=0)
         x_emb = self._mask_concat([x_emb, x_char_emb])
         x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
@@ -291,6 +291,20 @@ class PrintAndSaveCallback(pl.callbacks.Callback):
         print("\n")
 
 
+def _detect_no_space_lang(document: Document):
+    seen_spc = 0
+    POLL_RANGE = 50
+    for ii in range(POLL_RANGE):
+        index = random.randint(0, len(document.sentences) - 1)
+        text = document.sentences[index].text.strip()
+        if ' ' in text:
+            seen_spc += 1
+    if seen_spc / POLL_RANGE > 0.5:
+        return False
+    else:
+        return True
+
+
 if __name__ == '__main__':
     from cube3.io_utils.misc import ArgParser
 
@@ -324,6 +338,9 @@ if __name__ == '__main__':
     enc.save('{0}.encodings'.format(args.store))
 
     config = TokenizerConfig()
+    no_space_lang = _detect_no_space_lang(doc_train)
+    print("NO_SPACE_LANG = " + str(no_space_lang))
+    config.no_space_lang = no_space_lang
     config.lm_model = args.lm_model
     if args.config_file:
         config.load(args.config_file)
@@ -336,8 +353,7 @@ if __name__ == '__main__':
     # helper.apply(doc_train)
     trainset = TokenizationDataset(doc_train)
     devset = TokenizationDataset(doc_dev, shuffle=False)
-
-    collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model)
+    collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model, no_space_lang=config.no_space_lang)
     train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
                               num_workers=args.num_workers)
     val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,

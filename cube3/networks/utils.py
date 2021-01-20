@@ -53,7 +53,7 @@ class MorphoDataset(Dataset):
 
 
 class TokenCollate:
-    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0'):
+    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False):
         if lm_model is None:
             lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
@@ -62,6 +62,7 @@ class TokenCollate:
         self._lm.eval()
         self._lm_device = lm_device
         self._lm.to(lm_device)
+        self._no_space = no_space_lang
 
     def collate_fn(self, batch):
         START = 0
@@ -82,7 +83,8 @@ class TokenCollate:
         for example in batch:
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                for word in self._tokenizer.tokenize(self._normalize(sent.text)):
+                toks, ids = self._tokenize(sent.text)
+                for word in toks:
                     a_word_len.append(len(word))
                     x_lang_word.append(sent.lang_id)
         x_word_len = np.array(a_word_len, dtype=np.long)
@@ -95,7 +97,8 @@ class TokenCollate:
             sz = 0
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                lst = self._tokenizer.tokenize(self._normalize(sent.text))
+                toks, ids = self._tokenize(sent.text)
+                lst = toks
                 sz += len(lst)
                 for word in lst:
                     for iChar in range(len(word)):
@@ -120,14 +123,17 @@ class TokenCollate:
             prev_sentence = example['prev']
             next_sentence = example['next']
             x_lang.append(current_sentence.lang_id + 1)
-            x_prev = self._tokenizer(self._normalize(prev_sentence.text))['input_ids'][1:-1]
-            x_next = self._tokenizer(self._normalize(next_sentence.text))['input_ids'][1:-1]
+            toks, ids = self._tokenize(prev_sentence.text)
+            x_prev = ids
+            toks, ids = self._tokenize(next_sentence.text)
+            x_next = ids
             y_offset.append(len(x_prev) + 1)
-            x_main = self._tokenizer(self._normalize(current_sentence.text))['input_ids'][1:-1]
+            c_toks, ids = self._tokenize(current_sentence.text)
+            x_main = ids
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
-            x_text.append(self._tokenizer.tokenize(self._normalize(current_sentence.text)))
+            x_text.append(c_toks)
             y_output.append(self._get_targets(current_sentence))
             if x_len > max_x:
                 max_x = x_len
@@ -172,28 +178,63 @@ class TokenCollate:
                 'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
                 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
 
-    def _normalize(self, text):
-        import re
+    # def _normalize(self, text):
+    #     import re
+    #
+    #     punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
+    #     new_text = ''
+    #     for ch in text:
+    #         if re.match(u'[\u4e00-\u9fff]', ch):
+    #             new_text += ' ' + ch + ' '
+    #         elif ch in punctuation:
+    #             new_text += ' ' + ch + ' '
+    #         else:
+    #             new_text += ch
+    #
+    #     tmp = new_text.replace('  ', ' ')
+    #     while tmp != new_text:
+    #         new_text = tmp
+    #         tmp = new_text.replace('  ', ' ')
+    #     return new_text.strip()
 
-        punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
-        new_text = ''
-        for ch in text:
-            if re.match(u'[\u4e00-\u9fff]', ch):
-                new_text += ' ' + ch + ' '
-            elif ch in punctuation:
-                new_text += ' ' + ch + ' '
-            else:
-                new_text += ch
+    def _tokenize(self, text):
+        if self._no_space:
+            new_text = [ch for ch in text]
+        else:
+            import re
+            punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
+            new_text = ''
+            for ch in text:
+                if re.match(u'[\u4e00-\u9fff]', ch):
+                    new_text += ' ' + ch + ' '
+                elif ch in punctuation:
+                    new_text += ' ' + ch + ' '
+                else:
+                    new_text += ch
 
-        tmp = new_text.replace('  ', ' ')
-        while tmp != new_text:
-            new_text = tmp
             tmp = new_text.replace('  ', ' ')
-        return new_text.strip()
+            while tmp != new_text:
+                new_text = tmp
+                tmp = new_text.replace('  ', ' ')
+
+            new_text = new_text.split(' ')
+
+        toks = self._tokenizer.tokenize(new_text, is_split_into_words=True)
+        ids = self._tokenizer(new_text, is_split_into_words=True)['input_ids'][1:-1]
+        r_toks = []
+        r_ids = []
+        if len(toks) != 0:  # empty text
+            r_toks.append(toks[0])
+            r_ids.append(ids[0])
+        for ii in range(1, len(toks)):
+            if toks[ii] != '▁':
+                r_toks.append(toks[ii])
+                r_ids.append(ids[ii])
+        return r_toks, r_ids
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
-        toks = self._tokenizer.tokenize(self._normalize(text))
+        toks, ids = self._tokenize(text)
         toks = [tok.replace('▁', '') for tok in toks]
         targets = [0 for _ in range(len(toks))]
         iToken = 0
