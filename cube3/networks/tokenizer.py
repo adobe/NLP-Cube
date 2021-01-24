@@ -25,9 +25,9 @@ from cube3.networks.modules import WordGram
 
 
 class Tokenizer(pl.LightningModule):
-    def __init__(self, config: TokenizerConfig, encodings: Encodings, id2lang: {}):
+    def __init__(self, config: TokenizerConfig, encodings: Encodings, language_codes: [] = None):
         super().__init__()
-        self._id2lang = id2lang
+        self._language_codes = language_codes
         self._config = config
         conv_layers = []
         cs_inp = 768 + config.lang_emb_size + 256
@@ -47,11 +47,10 @@ class Tokenizer(pl.LightningModule):
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
 
-        self._dev_results = {langid: [] for langid in self._id2lang}
+        self._dev_results = {i:[] for i,_ in enumerate(self._language_codes)} #{langid: [] for langid in self._id2lang}
         self._res = {}
-        for id in id2lang:
-            lang = id2lang[id]
-            self._res[lang] = {"sent": 0., "token": 0.}
+        for language_code in self._language_codes:
+            self._res[language_code] = {"sent": 0., "token": 0.}
         self._early_stop_meta_val = 0
         self._epoch_results = {}
 
@@ -193,16 +192,16 @@ class Tokenizer(pl.LightningModule):
                 p_sents.append(p_sent)
 
             sent_f, tok_f = _conll_eval(g_sents, p_sents)
-            if self._id2lang is not None:
-                lang = self._id2lang[lang]
 
+            if self._language_codes is not None:
+                lang = self._language_codes[lang]
             results[lang] = {}
             results[lang]['sent'] = sent_f
             results[lang]['token'] = tok_f
             self.log('val/SENT/{0}'.format(lang), sent_f)
             self.log('val/TOKEN/{0}'.format(lang), tok_f)
 
-        self._dev_results = {langid: [] for langid in self._id2lang}
+        self._dev_results = {i:[] for i,_ in enumerate(self._language_codes)}
         self._epoch_results = self._compute_early_stop(results)
         self.log('val/early_meta', self._early_stop_meta_val)
 
@@ -233,6 +232,49 @@ class Tokenizer(pl.LightningModule):
             return 'cpu'
         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
+    def _detect_no_space_lang(document: Document):
+        seen_spc = 0
+        POLL_RANGE = 50
+        for ii in range(POLL_RANGE):
+            index = random.randint(0, len(document.sentences) - 1)
+            text = document.sentences[index].text.strip()
+            if ' ' in text:
+                seen_spc += 1
+        if seen_spc / POLL_RANGE > 0.5:
+            return False
+        else:
+            return True
+
+    class PrintAndSaveCallback(pl.callbacks.Callback):
+        def __init__(self, store_prefix):
+            super().__init__()
+            self.store_prefix = store_prefix
+
+        def on_epoch_end(self, trainer, pl_module):
+            metrics = trainer.callback_metrics
+            epoch = trainer.current_epoch
+
+            # from pprint import pprint
+            # pprint(metrics)
+            for lang in pl_module._epoch_results:
+                res = pl_module._epoch_results[lang]
+                if "sent_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".sent")
+                if "token_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".tok")
+
+            trainer.save_checkpoint(self.store_prefix + ".last")
+
+            s = "{0:30s}\tSENT\tTOKEN".format("Language")
+            print("\n\n\t" + s)
+            print("\t" + ("=" * (len(s) + 9)))
+            for lang in pl_module._language_codes:
+                sent = metrics["val/SENT/{0}".format(lang)]
+                token = metrics["val/TOKEN/{0}".format(lang)]
+                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}".format(lang, sent, token)
+                print(msg)
+            print("\n")
+
 
 def _conll_eval(gold, pred):
     f = open('tmp_g.txt', 'w')
@@ -257,54 +299,7 @@ def _conll_eval(gold, pred):
     else:
         return result['Sentences'].f1, result['Tokens'].f1
 
-
-class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, id2lang):
-        super().__init__()
-        self.args = args
-        self._id2lang = id2lang
-
-    def on_epoch_end(self, trainer, pl_module):
-        metrics = trainer.callback_metrics
-        epoch = trainer.current_epoch
-
-        # from pprint import pprint
-        # pprint(metrics)
-        for lang in pl_module._epoch_results:
-            res = pl_module._epoch_results[lang]
-            if "sent_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".sent")
-            if "token_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".tok")
-
-        trainer.save_checkpoint(self.args.store + ".last")
-
-        lang_list = [self._id2lang[ii] for ii in self._id2lang]
-        s = "{0:30s}\tSENT\tTOKEN".format("Language")
-        print("\n\n\t" + s)
-        print("\t" + ("=" * (len(s) + 9)))
-        for lang in lang_list:
-            sent = metrics["val/SENT/{0}".format(lang)]
-            token = metrics["val/TOKEN/{0}".format(lang)]
-            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}".format(lang, sent, token)
-            print(msg)
-        print("\n")
-
-
-def _detect_no_space_lang(document: Document):
-    seen_spc = 0
-    POLL_RANGE = 50
-    for ii in range(POLL_RANGE):
-        index = random.randint(0, len(document.sentences) - 1)
-        text = document.sentences[index].text.strip()
-        if ' ' in text:
-            seen_spc += 1
-    if seen_spc / POLL_RANGE > 0.5:
-        return False
-    else:
-        return True
-
-
+"""
 if __name__ == '__main__':
     from cube3.io_utils.misc import ArgParser
 
@@ -384,3 +379,4 @@ if __name__ == '__main__':
     )
 
     trainer.fit(model, train_loader, val_loader)
+"""

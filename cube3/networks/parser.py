@@ -25,7 +25,7 @@ from cube3.networks.modules import WordGram
 
 
 class Parser(pl.LightningModule):
-    def __init__(self, config: ParserConfig, encodings: Encodings, id2lang: {} = None):
+    def __init__(self, config: ParserConfig, encodings: Encodings, language_codes: [] = None):
         super().__init__()
         self._config = config
         self._encodings = encodings
@@ -35,7 +35,7 @@ class Parser(pl.LightningModule):
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
         self._num_langs = encodings.num_langs
-        self._id2lang = id2lang
+        self._language_codes = language_codes
 
         conv_layers = []
         cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
@@ -80,9 +80,8 @@ class Parser(pl.LightningModule):
         self._decoder = ChuLiuEdmondsDecoder()
 
         self._res = {}
-        for id in id2lang:
-            lang = id2lang[id]
-            self._res[lang] = {"upos": 0., "xpos": 0., "attrs": 0., 'uas': 0., 'las': 0.}
+        for language_code in self._language_codes:
+            self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0., 'uas': 0., 'las': 0.}
         self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
@@ -367,147 +366,59 @@ class Parser(pl.LightningModule):
         self.log('val/LAS/total', las_ok / total)
 
         res = {}
-        for lang_id in language_result:
-            total = language_result[lang_id]['total']
+        for lang_index in language_result:
+            total = language_result[lang_index]['total']
             if total == 0:
                 total = 1
-            if self._id2lang is None:
-                lang = lang_id
+            if self._language_codes is None:
+                lang = lang_index
             else:
-                lang = self._id2lang[lang_id]
+                lang = self._language_codes[lang_index]
             res[lang] = {
-                "upos": language_result[lang_id]['upos_ok'] / total,
-                "xpos": language_result[lang_id]['xpos_ok'] / total,
-                "attrs": language_result[lang_id]['attrs_ok'] / total,
-                "uas": language_result[lang_id]['uas_ok'] / total,
-                "las": language_result[lang_id]['las_ok'] / total
+                "upos": language_result[lang_index]['upos_ok'] / total,
+                "xpos": language_result[lang_index]['xpos_ok'] / total,
+                "attrs": language_result[lang_index]['attrs_ok'] / total,
+                "uas": language_result[lang_index]['uas_ok'] / total,
+                "las": language_result[lang_index]['las_ok'] / total
             }
 
-            self.log('val/UPOS/{0}'.format(lang), language_result[lang_id]['upos_ok'] / total)
-            self.log('val/XPOS/{0}'.format(lang), language_result[lang_id]['xpos_ok'] / total)
-            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_id]['attrs_ok'] / total)
-            self.log('val/UAS/{0}'.format(lang), language_result[lang_id]['uas_ok'] / total)
-            self.log('val/LAS/{0}'.format(lang), language_result[lang_id]['las_ok'] / total)
+            self.log('val/UPOS/{0}'.format(lang), language_result[lang_index]['upos_ok'] / total)
+            self.log('val/XPOS/{0}'.format(lang), language_result[lang_index]['xpos_ok'] / total)
+            self.log('val/ATTRS/{0}'.format(lang), language_result[lang_index]['attrs_ok'] / total)
+            self.log('val/UAS/{0}'.format(lang), language_result[lang_index]['uas_ok'] / total)
+            self.log('val/LAS/{0}'.format(lang), language_result[lang_index]['las_ok'] / total)
 
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
         self.log('val/early_meta', self._early_stop_meta_val)
 
-        # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
-        #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
+    class PrintAndSaveCallback(pl.callbacks.Callback):
+        def __init__(self, store_prefix):
+            super().__init__()
+            self.store_prefix = store_prefix
 
+        def on_epoch_end(self, trainer, pl_module):
+            metrics = trainer.callback_metrics
+            epoch = trainer.current_epoch
 
-class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, id2lang):
-        super().__init__()
-        self.args = args
-        self._id2lang = id2lang
+            for lang in pl_module._epoch_results:
+                res = pl_module._epoch_results[lang]
+                if "uas_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".uas")
+                if "las_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".las")
 
-    def on_epoch_end(self, trainer, pl_module):
-        metrics = trainer.callback_metrics
-        epoch = trainer.current_epoch
+            trainer.save_checkpoint(self.store_prefix + ".last")
 
-        # from pprint import pprint
-        # pprint(metrics)
-        for lang in pl_module._epoch_results:
-            res = pl_module._epoch_results[lang]
-            if "uas_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".uas")
-            if "las_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".las")
-
-        trainer.save_checkpoint(self.args.store + ".last")
-
-        lang_list = [self._id2lang[ii] for ii in self._id2lang]
-        s = "{0:30s}\tUAS\tLAS\tUPOS\tXPOS\tATTRS".format("Language")
-        print("\n\n\t" + s)
-        print("\t" + ("=" * (len(s) + 16)))
-        for lang in lang_list:
-            uas = metrics["val/UAS/{0}".format(lang)]
-            las = metrics["val/LAS/{0}".format(lang)]
-            upos = metrics["val/UPOS/{0}".format(lang)]
-            xpos = metrics["val/XPOS/{0}".format(lang)]
-            attrs = metrics["val/ATTRS/{0}".format(lang)]
-            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos, attrs)
-            print(msg)
-        print("\n")
-
-
-if __name__ == '__main__':
-    from cube3.io_utils.misc import ArgParser
-
-    argparser = ArgParser()
-    # run argparser
-    args = argparser()
-    print(args)  # example
-
-    import json
-
-    langs = json.load(open(args.train_file))
-    doc_train = Document()
-    doc_dev = Document()
-    id2lang = {}
-    for ii in range(len(langs)):
-        lang = langs[ii]
-        print(lang[1], ii)
-        doc_train.load(lang[1], lang_id=ii)
-        doc_dev.load(lang[2], lang_id=ii)
-        id2lang[ii] = lang[0]
-
-    # ensure target dir exists
-    target = args.store
-    i = args.store.rfind("/")
-    if i > 0:
-        target = args.store[:i]
-        os.makedirs(target, exist_ok=True)
-
-    enc = Encodings()
-    enc.compute(doc_train, None)
-    enc.save('{0}.encodings'.format(args.store))
-
-    config = ParserConfig()
-    config.lm_model = args.lm_model
-    if args.config_file:
-        config.load(args.config_file)
-        if args.lm_model is not None:
-            config.lm_model = args.lm_model
-    config.save('{0}.config'.format(args.store))
-
-    helper = LMHelper(device=args.lm_device, model=config.lm_model)
-    helper.apply(doc_dev)
-    helper.apply(doc_train)
-    trainset = MorphoDataset(doc_train)
-    devset = MorphoDataset(doc_dev)
-
-    collate = MorphoCollate(enc, add_parsing=True)
-    train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
-                              num_workers=args.num_workers)
-    val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
-                            num_workers=args.num_workers)
-
-    model = Parser(config=config, encodings=enc, id2lang=id2lang)
-
-    # training
-
-    early_stopping_callback = EarlyStopping(
-        monitor='val/early_meta',
-        patience=args.patience,
-        verbose=True,
-        mode='max'
-    )
-    if args.gpus == 0:
-        acc = 'ddp_cpu'
-    else:
-        acc = 'ddp'
-    trainer = pl.Trainer(
-        gpus=args.gpus,
-        accelerator=acc,
-        num_nodes=1,
-        auto_select_gpus=True,
-        default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, id2lang)]
-        # limit_train_batches=5,
-        # limit_val_batches=2,
-    )
-
-    trainer.fit(model, train_loader, val_loader)
+            s = "{0:30s}\tUAS\tLAS\tUPOS\tXPOS\tATTRS".format("Language")
+            print("\n\n\t" + s)
+            print("\t" + ("=" * (len(s) + 16)))
+            for lang in pl_module._language_codes:
+                uas = metrics["val/UAS/{0}".format(lang)]
+                las = metrics["val/LAS/{0}".format(lang)]
+                upos = metrics["val/UPOS/{0}".format(lang)]
+                xpos = metrics["val/XPOS/{0}".format(lang)]
+                attrs = metrics["val/ATTRS/{0}".format(lang)]
+                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos, attrs)
+                print(msg)
+            print("\n")

@@ -1,19 +1,22 @@
 import os, sys, yaml
 
-from pytorch_lightning.callbacks import EarlyStopping
-
 sys.path.append(".")
+from audioop import add
+
+from pytorch_lightning.callbacks import EarlyStopping
 
 from argparse import ArgumentParser
 
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
-from cube3.io_utils.config import TaggerConfig
+from cube3.io_utils.config import TaggerConfig, ParserConfig, TokenizerConfig
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.objects import Document
+from cube3.networks.tokenizer import Tokenizer
 from cube3.networks.tagger import Tagger
-from cube3.networks.utils import LMHelper, MorphoDataset, MorphoCollate
+from cube3.networks.parser import Parser
+from cube3.networks.utils import LMHelper, MorphoDataset, MorphoCollate, TokenizationDataset, TokenCollate
 
 
 class Trainer():
@@ -71,7 +74,15 @@ class Trainer():
         enc.compute(self.doc_train, None)
         enc.save('{0}.encodings'.format(self.store_prefix))
 
-        config = TaggerConfig()
+        if self.task == "tokenizer":
+            config = TokenizerConfig()
+            no_space_lang = Tokenizer._detect_no_space_lang(self.doc_train)
+            print("NO_SPACE_LANG = " + str(no_space_lang))
+            config.no_space_lang = no_space_lang
+        if self.task == "tagger":
+            config = TaggerConfig()
+        if self.task == "parser":
+            config = ParserConfig()
         config.lm_model = self.args.lm_model
         if self.args.config_file:
             config.load(self.args.config_file)
@@ -79,22 +90,33 @@ class Trainer():
                 config.lm_model = self.args.lm_model
         config.save('{}.config'.format(self.args.store))
 
-        helper = LMHelper(device=self.args.lm_device, model=config.lm_model)
-        helper.apply(self.doc_dev)
-        helper.apply(self.doc_train)
-        trainset = MorphoDataset(self.doc_train)
-        devset = MorphoDataset(self.doc_dev)
+        if self.task != "tokenizer":
+            helper = LMHelper(device=self.args.lm_device, model=config.lm_model)
+            helper.apply(self.doc_dev)
+            helper.apply(self.doc_train)
+
+        if self.task == "tokenizer":
+            trainset = TokenizationDataset(self.doc_train)
+            devset = TokenizationDataset(self.doc_dev, shuffle=False)
+        else:
+            trainset = MorphoDataset(self.doc_train)
+            devset = MorphoDataset(self.doc_dev)
 
         collate = MorphoCollate(enc)
-        train_loader = DataLoader(trainset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
-                                  num_workers=self.args.num_workers)
-        val_loader = DataLoader(devset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn,
-                                num_workers=self.args.num_workers)
-
-        model = Tagger(config=config, encodings=enc, language_codes=self.language_codes)
 
         # per task specific settings
         callbacks = []
+        if self.task == "tokenizer":
+            early_stopping_callback = EarlyStopping(
+                monitor='val/early_meta',
+                patience=args.patience,
+                verbose=True,
+                mode='max'
+            )
+            collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model,
+                                   no_space_lang=config.no_space_lang)
+            callbacks = [early_stopping_callback, Tokenizer.PrintAndSaveCallback(self.store_prefix)]
+            model = Tokenizer(config=config, encodings=enc, language_codes=self.language_codes)
 
         if self.task == "tagger":
             early_stopping_callback = EarlyStopping(
@@ -104,6 +126,25 @@ class Trainer():
                 mode='max'
             )
             callbacks = [early_stopping_callback, Tagger.PrintAndSaveCallback(self.store_prefix)]
+            model = Tagger(config=config, encodings=enc, language_codes=self.language_codes)
+
+        if self.task == "parser":
+            collate = MorphoCollate(enc, add_parsing=True)
+            early_stopping_callback = EarlyStopping(
+                monitor='val/early_meta',
+                patience=args.patience,
+                verbose=True,
+                mode='max'
+            )
+            callbacks = [early_stopping_callback, Parser.PrintAndSaveCallback(self.store_prefix)]
+            model = Parser(config=config, encodings=enc, language_codes=self.language_codes)
+
+        # dataloaders
+        train_loader = DataLoader(trainset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn,
+                                  shuffle=True,
+                                  num_workers=self.args.num_workers)
+        val_loader = DataLoader(devset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn,
+                                num_workers=self.args.num_workers)
 
         # pre-train checks
         resume_from_checkpoint = None

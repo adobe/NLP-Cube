@@ -218,7 +218,9 @@ class TokenCollate:
                 tmp = new_text.replace('  ', ' ')
 
             new_text = new_text.split(' ')
-
+        print("\n"+("_" * 50))
+        print(new_text)
+        print("_" * 50)
         toks = self._tokenizer.tokenize(new_text, is_split_into_words=True)
         ids = self._tokenizer(new_text, is_split_into_words=True)['input_ids'][1:-1]
         r_toks = []
