@@ -1,15 +1,15 @@
 dev_files:
-- id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-dev.conllu
-language:
+  id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-dev.conllu
+language_codes:
+- id_pud
+- id_gsd
+language_map:
   id: id_gsd
   id_gsd: id_gsd
   id_pud: id_pud
   indonesian: id_gsd
-language2id:
-- id_pud
-- id_gsd
 test_files:
-- id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-test.conllu
+  id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-test.conllu
 train_files:
-- id_pud: corpus/ud-treebanks-v2.5/UD_Indonesian-PUD/id_pud-ud-train.conllu
-- id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-train.conllu
+  id_gsd: corpus/ud-treebanks-v2.5/UD_Indonesian-GSD/id_gsd-ud-train.conllu
+  id_pud: corpus/ud-treebanks-v2.5/UD_Indonesian-PUD/id_pud-ud-train.conllu

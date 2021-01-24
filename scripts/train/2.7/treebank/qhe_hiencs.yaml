@@ -1,10 +1,10 @@
 dev_files:
-- qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-dev.conllu
+  qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-dev.conllu
 language:
   qhe_hiencs: qhe_hiencs
 language2id:
 - qhe_hiencs
 test_files:
-- qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-test.conllu
+  qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-test.conllu
 train_files:
-- qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-train.conllu
+  qhe_hiencs: corpus/ud-treebanks-v2.7/UD_Hindi_English-HIENCS/qhe_hiencs-ud-train.conllu

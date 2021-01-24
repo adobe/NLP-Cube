@@ -1,10 +1,10 @@
 dev_files:
-- fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-dev.conllu
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-dev.conllu
 language:
   fr_ftb: fr_ftb
 language2id:
 - fr_ftb
 test_files:
-- fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-test.conllu
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-test.conllu
 train_files:
-- fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-train.conllu
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-train.conllu

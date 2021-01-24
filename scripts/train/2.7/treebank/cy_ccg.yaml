@@ -1,10 +1,10 @@
 dev_files:
-- cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
 language:
   cy_ccg: cy_ccg
 language2id:
 - cy_ccg
 test_files:
-- cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
 train_files:
-- cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-train.conllu
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-train.conllu

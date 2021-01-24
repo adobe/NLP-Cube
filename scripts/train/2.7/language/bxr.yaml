@@ -1,5 +1,5 @@
 dev_files:
-- bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
+  bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
 language:
   buryat: bxr_bdt
   bxr: bxr_bdt
@@ -7,6 +7,6 @@ language:
 language2id:
 - bxr_bdt
 test_files:
-- bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
+  bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
 train_files:
-- bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-train.conllu
+  bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-train.conllu

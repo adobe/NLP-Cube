@@ -1,10 +1,10 @@
 dev_files:
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu
-language:
-  he_htb: he_htb
-language2id:
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu
+language_codes:
 - he_htb
+language_map:
+  he_htb: he_htb
 test_files:
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-test.conllu
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-test.conllu
 train_files:
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu

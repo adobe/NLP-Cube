@@ -1,17 +1,17 @@
 dev_files:
-- ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu
-- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu
-language:
+  ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu
+  ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-dev.conllu
+language_codes:
+- ro_nonstandard
+- ro_rrt
+language_map:
   ro: ro_rrt
   ro_nonstandard: ro_nonstandard
   ro_rrt: ro_rrt
   romanian: ro_rrt
-language2id:
-- ro_nonstandard
-- ro_rrt
 test_files:
-- ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-test.conllu
-- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-test.conllu
+  ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-test.conllu
+  ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-test.conllu
 train_files:
-- ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu
-- ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu
+  ro_nonstandard: corpus/ud-treebanks-v2.5/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu
+  ro_rrt: corpus/ud-treebanks-v2.5/UD_Romanian-RRT/ro_rrt-ud-train.conllu

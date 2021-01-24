@@ -1,17 +1,17 @@
 dev_files:
-- sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-dev.conllu
-- sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-test.conllu
-language:
+  sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-dev.conllu
+  sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-test.conllu
+language_codes:
+- sl_ssj
+- sl_sst
+language_map:
   sl: sl_ssj
   sl_ssj: sl_ssj
   sl_sst: sl_sst
   slovenian: sl_ssj
-language2id:
-- sl_sst
-- sl_ssj
 test_files:
-- sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-test.conllu
-- sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-test.conllu
+  sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-test.conllu
+  sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-test.conllu
 train_files:
-- sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-train.conllu
-- sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-train.conllu
+  sl_ssj: corpus/ud-treebanks-v2.5/UD_Slovenian-SSJ/sl_ssj-ud-train.conllu
+  sl_sst: corpus/ud-treebanks-v2.5/UD_Slovenian-SST/sl_sst-ud-train.conllu

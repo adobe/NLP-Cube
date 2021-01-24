@@ -1,10 +1,10 @@
 dev_files:
-- fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-dev.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-dev.conllu
 language:
   fr_partut: fr_partut
 language2id:
 - fr_partut
 test_files:
-- fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-test.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-test.conllu
 train_files:
-- fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-train.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-train.conllu

@@ -1,12 +1,12 @@
 dev_files:
-- cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-dev.conllu
-language:
+  cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-dev.conllu
+language_codes:
+- cop_scriptorium
+language_map:
   cop: cop_scriptorium
   cop_scriptorium: cop_scriptorium
   coptic: cop_scriptorium
-language2id:
-- cop_scriptorium
 test_files:
-- cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-test.conllu
+  cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-test.conllu
 train_files:
-- cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-train.conllu
+  cop_scriptorium: corpus/ud-treebanks-v2.5/UD_Coptic-Scriptorium/cop_scriptorium-ud-train.conllu

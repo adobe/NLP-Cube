@@ -1,5 +1,5 @@
 dev_files:
-- olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
 language:
   livvi: olo_kkpp
   olo: olo_kkpp
@@ -7,6 +7,6 @@ language:
 language2id:
 - olo_kkpp
 test_files:
-- olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
 train_files:
-- olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu

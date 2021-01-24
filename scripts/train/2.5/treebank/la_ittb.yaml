@@ -1,10 +1,10 @@
 dev_files:
-- la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-dev.conllu
-language:
-  la_ittb: la_ittb
-language2id:
+  la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-dev.conllu
+language_codes:
 - la_ittb
+language_map:
+  la_ittb: la_ittb
 test_files:
-- la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-test.conllu
+  la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-test.conllu
 train_files:
-- la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-train.conllu
+  la_ittb: corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-train.conllu

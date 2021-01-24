@@ -1,10 +1,10 @@
 dev_files:
-- et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-dev.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-dev.conllu
 language:
   et_ewt: et_ewt
 language2id:
 - et_ewt
 test_files:
-- et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-test.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-test.conllu
 train_files:
-- et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-train.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-train.conllu

@@ -1,5 +1,5 @@
 dev_files:
-- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-dev.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-dev.conllu
 language:
   icelandic: is_icepahc
   is: is_icepahc
@@ -9,7 +9,7 @@ language2id:
 - is_icepahc
 - is_pud
 test_files:
-- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-test.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-test.conllu
 train_files:
-- is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-train.conllu
-- is_pud: corpus/ud-treebanks-v2.7/UD_Icelandic-PUD/is_pud-ud-train.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-train.conllu
+  is_pud: corpus/ud-treebanks-v2.7/UD_Icelandic-PUD/is_pud-ud-train.conllu

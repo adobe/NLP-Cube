@@ -1,5 +1,5 @@
 dev_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
 language:
   kmr: kmr_mg
   kmr_mg: kmr_mg
@@ -7,6 +7,6 @@ language:
 language2id:
 - kmr_mg
 test_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
 train_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-train.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-train.conllu

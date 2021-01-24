@@ -25,7 +25,7 @@ from cube3.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):
-    def __init__(self, config: TaggerConfig, encodings: Encodings, language2id: [] = None):
+    def __init__(self, config: TaggerConfig, encodings: Encodings, language_codes: [] = None):
         super().__init__()
         self._config = config
         self._encodings = encodings
@@ -35,7 +35,7 @@ class Tagger(pl.LightningModule):
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
         self._num_langs = encodings.num_langs
-        self._language2id = language2id
+        self._language_codes = language_codes
 
         conv_layers = []
         cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
@@ -62,7 +62,7 @@ class Tagger(pl.LightningModule):
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._res = {}
-        for language_code in self._language2id:
+        for language_code in self._language_codes:
             self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0.}
         self._early_stop_meta_val = 0
 
@@ -276,10 +276,10 @@ class Tagger(pl.LightningModule):
             total = language_result[lang_index]['total']
             if total == 0:
                 total = 1
-            if self._language2id is None:
+            if self._language_codes is None:
                 lang = lang_index
             else:
-                lang = self._language2id[lang_index]
+                lang = self._language_codes[lang_index]
             res[lang] = {
                 "upos": language_result[lang_index]['upos_ok'] / total,
                 "xpos": language_result[lang_index]['xpos_ok'] / total,
@@ -297,142 +297,120 @@ class Tagger(pl.LightningModule):
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
+    def process(self, doc: Document, upos:bool=True, xpos:bool=True, attrs:bool=True, batch_size:int=1, num_workers:int=4) -> Document :
+        if (upos or xpos or attrs) == False:
+            raise Exception("To perform tagging at least one of 'upos', 'xpos' or 'attrs' must be set to True.")
 
-class PrintAndSaveCallback(pl.callbacks.Callback):
-    def __init__(self, args, language2id):
-        super().__init__()
-        self.args = args
-        self.language2id = language2id
+        helper = LMHelper(device=self.device, model=self._config.lm_model)
+        helper.apply(doc)
 
-    def on_epoch_end(self, trainer, pl_module):
-        metrics = trainer.callback_metrics
-        epoch = trainer.current_epoch
+        dataset = MorphoDataset(doc)
+        collate = MorphoCollate(self._encodings)
 
-        # from pprint import pprint
-        # pprint(metrics)
-        for lang in pl_module._epoch_results:
-            res = pl_module._epoch_results[lang]
-            if "upos_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".upos")
-            if "xpos_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".xpos")
-            if "attrs_best" in res:
-                trainer.save_checkpoint(self.args.store + "." + lang + ".attrs")
+        dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
+                                  shuffle=False, num_workers=num_workers)
+        index = 0
+        with torch.no_grad():
+            for batch in dataloader:
+                p_upos, p_xpos, p_attrs, _, _, _ = self.forward(batch)
 
-        trainer.save_checkpoint(self.args.store + ".last")
+                batch_size = p_upos.size()[0]
+                if upos:
+                    pred_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
+                if xpos:
+                    pred_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
+                if attrs:
+                    pred_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
 
-        s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
-        print("\n\n\t" + s)
-        print("\t" + ("=" * (len(s) + 9)))
-        for lang in self.language2id:
-            upos = metrics["val/UPOS/{0}".format(lang)]
-            xpos = metrics["val/XPOS/{0}".format(lang)]
-            attrs = metrics["val/ATTRS/{0}".format(lang)]
-            msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}".format(lang, upos, xpos, attrs)
-            print(msg)
-        print("\n")
+                for sentence_index in range(batch_size): # for each sentence
+                    if upos:
+                        for word_index in range(len(pred_upos[sentence_index])): # for each word
+                            doc.sentences[index + sentence_index].words[word_index].upos = self._encodings.upos_list[pred_upos[sentence_index][word_index]]
+                    if xpos:
+                        for word_index in range(len(pred_xpos[sentence_index])): # for each word
+                            doc.sentences[index + sentence_index].words[word_index].xpos = self._encodings.xpos_list[pred_xpos[sentence_index][word_index]]
+                    if attrs:
+                        for word_index in range(len(pred_attrs[sentence_index])): # for each word
+                            doc.sentences[index + sentence_index].words[word_index].attrs = self._encodings.attrs_list[pred_attrs[sentence_index][word_index]]
 
+                index += batch_size
+#                break
+        return doc
+
+    class PrintAndSaveCallback(pl.callbacks.Callback):
+        def __init__(self, store_prefix):
+            super().__init__()
+            self.store_prefix = store_prefix
+
+        def on_epoch_end(self, trainer, pl_module):
+            metrics = trainer.callback_metrics
+            epoch = trainer.current_epoch
+
+            for lang in pl_module._epoch_results:
+                res = pl_module._epoch_results[lang]
+                if "upos_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".upos")
+                if "xpos_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".xpos")
+                if "attrs_best" in res:
+                    trainer.save_checkpoint(self.store_prefix + "." + lang + ".attrs")
+
+            trainer.save_checkpoint(self.store_prefix + ".last")
+
+            s = "{0:30s}\tUPOS\tXPOS\tATTRS".format("Language")
+            print("\n\n\t" + s)
+            print("\t" + ("=" * (len(s) + 9)))
+            for lang in pl_module._language_codes:
+                upos = metrics["val/UPOS/{0}".format(lang)]
+                xpos = metrics["val/XPOS/{0}".format(lang)]
+                attrs = metrics["val/ATTRS/{0}".format(lang)]
+                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}".format(lang, upos, xpos, attrs)
+                print(msg)
+            print("\n")
 
 if __name__ == '__main__':
-    from cube3.io_utils.misc import ArgParser
 
-    argparser = ArgParser()
-    # run argparser
-    args = argparser()
-    print(args)  # example
+    root = "data/be"
+    language_code = "be_hse"
 
+    # read yaml
+    object_config = yaml.full_load(open(root+".yaml"))
+
+    # read model config
+    config = TaggerConfig(filename=root+".config")
+
+    # read encodings
+    encodings = Encodings()
+    encodings.load(filename=root+".encodings")
+
+    # load models
+    tagger_UPOS = Tagger.load_from_checkpoint(root + "."+language_code+".upos", config=config, encodings=encodings,
+                                              language_codes=object_config["language_codes"])
+    tagger_UPOS.eval()
+    tagger_UPOS.freeze()
+
+    tagger_XPOS = Tagger.load_from_checkpoint(root + "." + language_code + ".xpos", config=config, encodings=encodings,
+                                              language_codes=object_config["language_codes"])
+    tagger_XPOS.eval()
+    tagger_XPOS.freeze()
+
+    tagger_ATTRS = Tagger.load_from_checkpoint(root + "." + language_code + ".attrs", config=config, encodings=encodings,
+                                              language_codes=object_config["language_codes"])
+    tagger_ATTRS.eval()
+    tagger_ATTRS.freeze()
+
+    """ 
+    self.tagger_UPOS.to(device)
+    self.tagger_XPOS.to(device)
+    self.tagger_ATTRS.to(device)
+
+    doc =
+    model = Tagger(config=config, encodings=enc, language_codes=self.language_codes)
     """
-    import json
 
-    langs = json.load(open(args.train_file))
-    doc_train = Document()
-    doc_dev = Document()
-    id2lang = {}
-    for ii in range(len(langs)):
-        lang = langs[ii]
-        print(lang[1], ii)
-        doc_train.load(lang[1], lang_id=ii)
-        doc_dev.load(lang[2], lang_id=ii)
-        id2lang[ii] = lang[0]
+    # read a doc
+    doc = Document()
+    doc.load("corpus/ud-treebanks-v2.5/UD_Belarusian-HSE/be_hse-ud-dev.conllu", lang_id=object_config["language_codes"].index(language_code))
 
-    """
-    with open(args.train_file) as file:
-        train_config = yaml.full_load(file)
-    doc_train = Document()
-    doc_dev = Document()
-    doc_test = Document()
-
-
-    for d in train_config["train_files"]:
-        lang_code = list(d.keys())[0]
-        file = d[lang_code]
-        print("Reading train file for language code [{}] : {}".format(lang_code, file))
-        doc_train.load(file, lang_id=train_config["language2id"].index(lang_code))
-    for d in train_config["dev_files"]:
-        lang_code = list(d.keys())[0]
-        file = d[lang_code]
-        print("Reading dev file for language code [{}] : {}".format(lang_code, file))
-        doc_dev.load(file, lang_id=train_config["language2id"].index(lang_code))
-    for d in train_config["test_files"]:
-        lang_code = list(d.keys())[0]
-        file = d[lang_code]
-        print("Reading test file for language code [{}] : {}".format(lang_code, file))
-        doc_test.load(file, lang_id=train_config["language2id"].index(lang_code))
-
-
-    # ensure target dir exists
-    target = args.store
-    i = args.store.rfind("/")
-    if i > 0:
-        target = args.store[:i]
-        os.makedirs(target, exist_ok=True)
-
-    enc = Encodings()
-    enc.compute(doc_train, None)
-    enc.save('{0}.encodings'.format(args.store))
-
-    config = TaggerConfig()
-    config.lm_model = args.lm_model
-    if args.config_file:
-        config.load(args.config_file)
-        if args.lm_model is not None:
-            config.lm_model = args.lm_model
-    config.save('{0}.config'.format(args.store))
-
-    helper = LMHelper(device=args.lm_device, model=config.lm_model)
-    helper.apply(doc_dev)
-    helper.apply(doc_train)
-    trainset = MorphoDataset(doc_train)
-    devset = MorphoDataset(doc_dev)
-
-    collate = MorphoCollate(enc)
-    train_loader = DataLoader(trainset, batch_size=args.batch_size, collate_fn=collate.collate_fn, shuffle=True,
-                              num_workers=args.num_workers)
-    val_loader = DataLoader(devset, batch_size=args.batch_size, collate_fn=collate.collate_fn,
-                            num_workers=args.num_workers)
-
-    model = Tagger(config=config, encodings=enc, language2id=train_config["language2id"])
-
-    # training
-
-    early_stopping_callback = EarlyStopping(
-        monitor='val/early_meta',
-        patience=args.patience,
-        verbose=True,
-        mode='max'
-    )
-    if args.gpus == 0:
-        acc = 'ddp_cpu'
-    else:
-        acc = 'ddp'
-    trainer = pl.Trainer(
-        gpus=args.gpus,
-        #accelerator=acc,
-        #num_nodes=1,
-        default_root_dir='data/',
-        callbacks=[early_stopping_callback, PrintAndSaveCallback(args, train_config["language2id"])]
-        # limit_train_batches=5,
-        # limit_val_batches=2,
-    )
-
-    trainer.fit(model, train_loader, val_loader)
+    new_doc = tagger_UPOS.process(doc)
+    #print(new_doc)

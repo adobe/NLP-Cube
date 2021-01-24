@@ -1,10 +1,10 @@
 dev_files:
-- uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-dev.conllu
-language:
-  uk_iu: uk_iu
-language2id:
+  uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-dev.conllu
+language_codes:
 - uk_iu
+language_map:
+  uk_iu: uk_iu
 test_files:
-- uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-test.conllu
+  uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-test.conllu
 train_files:
-- uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-train.conllu
+  uk_iu: corpus/ud-treebanks-v2.5/UD_Ukrainian-IU/uk_iu-ud-train.conllu

@@ -1,5 +1,5 @@
 dev_files:
-- ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-dev.conllu
+  ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-dev.conllu
 language:
   ug: ug_udt
   ug_udt: ug_udt
@@ -7,6 +7,6 @@ language:
 language2id:
 - ug_udt
 test_files:
-- ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-test.conllu
+  ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-test.conllu
 train_files:
-- ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-train.conllu
+  ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-train.conllu

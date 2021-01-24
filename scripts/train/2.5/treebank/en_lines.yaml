@@ -1,10 +1,10 @@
 dev_files:
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu
-language:
-  en_lines: en_lines
-language2id:
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu
+language_codes:
 - en_lines
+language_map:
+  en_lines: en_lines
 test_files:
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-test.conllu
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-test.conllu
 train_files:
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-train.conllu
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-train.conllu

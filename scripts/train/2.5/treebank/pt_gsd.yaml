@@ -1,10 +1,10 @@
 dev_files:
-- pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-dev.conllu
-language:
-  pt_gsd: pt_gsd
-language2id:
+  pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-dev.conllu
+language_codes:
 - pt_gsd
+language_map:
+  pt_gsd: pt_gsd
 test_files:
-- pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-test.conllu
+  pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-test.conllu
 train_files:
-- pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-train.conllu
+  pt_gsd: corpus/ud-treebanks-v2.5/UD_Portuguese-GSD/pt_gsd-ud-train.conllu

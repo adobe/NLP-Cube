@@ -1,10 +1,10 @@
 dev_files:
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu
-language:
-  en_ewt: en_ewt
-language2id:
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu
+language_codes:
 - en_ewt
+language_map:
+  en_ewt: en_ewt
 test_files:
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-test.conllu
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-test.conllu
 train_files:
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu

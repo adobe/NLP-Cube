@@ -1,5 +1,5 @@
 dev_files:
-- fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-dev.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-dev.conllu
 language:
   faroese: fo_oft
   fo: fo_oft
@@ -8,6 +8,6 @@ language2id:
 - fo_oft
 - fo_farpahc
 test_files:
-- fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-test.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-test.conllu
 train_files:
-- fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-train.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-train.conllu

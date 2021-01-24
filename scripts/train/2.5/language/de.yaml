@@ -1,20 +1,20 @@
 dev_files:
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-dev.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-dev.conllu
-language:
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-dev.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-dev.conllu
+language_codes:
+- de_hdt
+- de_pud
+- de_gsd
+language_map:
   de: de_hdt
   de_gsd: de_gsd
   de_hdt: de_hdt
   de_pud: de_pud
   german: de_hdt
-language2id:
-- de_gsd
-- de_pud
-- de_hdt
 test_files:
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-test.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-test.conllu
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-test.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-test.conllu
 train_files:
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-train.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-train.conllu
-- de_pud: corpus/ud-treebanks-v2.5/UD_German-PUD/de_pud-ud-train.conllu
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-train.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-train.conllu
+  de_pud: corpus/ud-treebanks-v2.5/UD_German-PUD/de_pud-ud-train.conllu

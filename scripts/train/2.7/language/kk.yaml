@@ -1,5 +1,5 @@
 dev_files:
-- kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
+  kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
 language:
   kazakh: kk_ktb
   kk: kk_ktb
@@ -7,6 +7,6 @@ language:
 language2id:
 - kk_ktb
 test_files:
-- kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
+  kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
 train_files:
-- kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-train.conllu
+  kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-train.conllu

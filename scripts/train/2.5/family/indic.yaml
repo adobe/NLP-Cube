@@ -1,8 +1,13 @@
 dev_files:
-- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu
-- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu
-- ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-dev.conllu
-language:
+  hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu
+  mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu
+  ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-dev.conllu
+language_codes:
+- mr_ufal
+- ur_udtb
+- hi_pud
+- hi_hdtb
+language_map:
   hi: hi_hdtb
   hi_hdtb: hi_hdtb
   hi_pud: hi_pud
@@ -13,17 +18,12 @@ language:
   ur: ur_udtb
   ur_udtb: ur_udtb
   urdu: ur_udtb
-language2id:
-- hi_hdtb
-- hi_pud
-- mr_ufal
-- ur_udtb
 test_files:
-- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-test.conllu
-- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-test.conllu
-- ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-test.conllu
+  hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-test.conllu
+  mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-test.conllu
+  ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-test.conllu
 train_files:
-- hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu
-- hi_pud: corpus/ud-treebanks-v2.5/UD_Hindi-PUD/hi_pud-ud-train.conllu
-- mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-train.conllu
-- ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-train.conllu
+  hi_hdtb: corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu
+  hi_pud: corpus/ud-treebanks-v2.5/UD_Hindi-PUD/hi_pud-ud-train.conllu
+  mr_ufal: corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-train.conllu
+  ur_udtb: corpus/ud-treebanks-v2.5/UD_Urdu-UDTB/ur_udtb-ud-train.conllu

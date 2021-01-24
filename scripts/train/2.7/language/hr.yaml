@@ -1,5 +1,5 @@
 dev_files:
-- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-dev.conllu
+  hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-dev.conllu
 language:
   croatian: hr_set
   hr: hr_set
@@ -7,6 +7,6 @@ language:
 language2id:
 - hr_set
 test_files:
-- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-test.conllu
+  hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-test.conllu
 train_files:
-- hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-train.conllu
+  hr_set: corpus/ud-treebanks-v2.7/UD_Croatian-SET/hr_set-ud-train.conllu

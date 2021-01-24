@@ -1,10 +1,10 @@
 dev_files:
-- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-dev.conllu
+  cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-dev.conllu
 language:
   cs_fictree: cs_fictree
 language2id:
 - cs_fictree
 test_files:
-- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-test.conllu
+  cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-test.conllu
 train_files:
-- cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-train.conllu
+  cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-train.conllu

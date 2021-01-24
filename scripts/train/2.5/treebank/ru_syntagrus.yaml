@@ -1,10 +1,10 @@
 dev_files:
-- ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-dev.conllu
-language:
-  ru_syntagrus: ru_syntagrus
-language2id:
+  ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-dev.conllu
+language_codes:
 - ru_syntagrus
+language_map:
+  ru_syntagrus: ru_syntagrus
 test_files:
-- ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-test.conllu
+  ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-test.conllu
 train_files:
-- ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu
+  ru_syntagrus: corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu

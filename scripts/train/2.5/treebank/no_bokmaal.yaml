@@ -1,10 +1,10 @@
 dev_files:
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
-language:
-  no_bokmaal: no_bokmaal
-language2id:
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
+language_codes:
 - no_bokmaal
+language_map:
+  no_bokmaal: no_bokmaal
 test_files:
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
 train_files:
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu

@@ -1,5 +1,5 @@
 dev_files:
-- pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-dev.conllu
+  pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-dev.conllu
 language:
   naija: pcm_nsc
   pcm: pcm_nsc
@@ -7,6 +7,6 @@ language:
 language2id:
 - pcm_nsc
 test_files:
-- pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-test.conllu
+  pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-test.conllu
 train_files:
-- pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-train.conllu
+  pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-train.conllu

@@ -1,5 +1,5 @@
 dev_files:
-- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
+  hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
 language:
   hsb: hsb_ufal
   hsb_ufal: hsb_ufal
@@ -7,6 +7,6 @@ language:
 language2id:
 - hsb_ufal
 test_files:
-- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
+  hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
 train_files:
-- hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-train.conllu
+  hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-train.conllu

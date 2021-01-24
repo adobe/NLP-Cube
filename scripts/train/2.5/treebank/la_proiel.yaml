@@ -1,10 +1,10 @@
 dev_files:
-- la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-dev.conllu
-language:
-  la_proiel: la_proiel
-language2id:
+  la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-dev.conllu
+language_codes:
 - la_proiel
+language_map:
+  la_proiel: la_proiel
 test_files:
-- la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-test.conllu
+  la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-test.conllu
 train_files:
-- la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-train.conllu
+  la_proiel: corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-train.conllu

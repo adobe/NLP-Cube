@@ -1,10 +1,10 @@
 dev_files:
-- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-dev.conllu
-- en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-dev.conllu
-- en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-dev.conllu
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
-- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-dev.conllu
-- en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-dev.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-dev.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-dev.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-dev.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-dev.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-dev.conllu
 language:
   en: en_ewt
   en_esl: en_esl
@@ -16,25 +16,25 @@ language:
   en_pud: en_pud
   english: en_ewt
 language2id:
-- en_partut
+- en_pud
+- en_gum
 - en_ewt
 - en_gumreddit
 - en_esl
-- en_gum
 - en_lines
-- en_pud
+- en_partut
 test_files:
-- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-test.conllu
-- en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-test.conllu
-- en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-test.conllu
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
-- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-test.conllu
-- en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-test.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-test.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-test.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-test.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-test.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-test.conllu
 train_files:
-- en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-train.conllu
-- en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-train.conllu
-- en_pud: corpus/ud-treebanks-v2.7/UD_English-PUD/en_pud-ud-train.conllu
-- en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-train.conllu
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-train.conllu
-- en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-train.conllu
-- en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-train.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-train.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-train.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-train.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-train.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-train.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-train.conllu
+  en_pud: corpus/ud-treebanks-v2.7/UD_English-PUD/en_pud-ud-train.conllu

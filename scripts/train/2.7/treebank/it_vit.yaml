@@ -1,10 +1,10 @@
 dev_files:
-- it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-dev.conllu
+  it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-dev.conllu
 language:
   it_vit: it_vit
 language2id:
 - it_vit
 test_files:
-- it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-test.conllu
+  it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-test.conllu
 train_files:
-- it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-train.conllu
+  it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-train.conllu

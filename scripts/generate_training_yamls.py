@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 path_to_corpus_folder = "corpus/ud-treebanks-v2.5"
 path_to_save_folder = "scripts/train/2.5"
 
-path_to_corpus_folder = "corpus/ud-treebanks-v2.7/"
-path_to_save_folder = "scripts/train/2.7"
+#path_to_corpus_folder = "corpus/ud-treebanks-v2.7/"
+#path_to_save_folder = "scripts/train/2.7"
 
 # read default language map
 default_language_map = {}
@@ -110,24 +110,24 @@ for l in table:
 
     # for PUD treebanks
     if l["language_code"].endswith("pud"): # languages only with test files
-        l["train_file"] = {l["language_code"]:train_file}
+        l["train_file"] = [l["language_code"],train_file]
         l["dev_file"] = None
         l["test_file"] = None
     else: # regular treebank
         if os.path.exists(train_file):
-            l["train_file"] = {l["language_code"]:train_file}
+            l["train_file"] = [l["language_code"],train_file]
         else:
             l["train_file"] = None
         if os.path.exists(dev_file):
-            l["dev_file"] = {l["language_code"]:dev_file}
+            l["dev_file"] = [l["language_code"],dev_file]
         else:
             l["dev_file"] = None
         if os.path.exists(test_file):
             if l["dev_file"] == None:
-                l["dev_file"] = {l["language_code"]:test_file}
-                l["test_file"] = {l["language_code"]:test_file}
+                l["dev_file"] = [l["language_code"],test_file]
+                l["test_file"] = [l["language_code"],test_file]
             else:
-                l["test_file"] = {l["language_code"]:test_file}
+                l["test_file"] = [l["language_code"],test_file]
         else:
             l["test_file"] = None
 
@@ -150,24 +150,24 @@ os.makedirs(folder, exist_ok=True)
 
 for l in table:
     obj = {
-        "language": {l["language_code"]:l["language_code"]},
-        "language2id": [l["language_code"]],
-        "train_files": [],
-        "dev_files": [],
-        "test_files": []
+        "language_map": {l["language_code"]:l["language_code"]},
+        "language_codes": [l["language_code"]],
+        "train_files": {},
+        "dev_files": {},
+        "test_files": {}
     }
 
     if l["train_file"] is not None:
-        obj["train_files"].append(l["train_file"])
+        obj["train_files"][l["train_file"][0]] = l["train_file"][1]
     if l["dev_file"] is not None:
-        obj["dev_files"].append(l["dev_file"])
+        obj["dev_files"][l["dev_file"][0]] = l["dev_file"][1]
     if l["test_file"] is not None:
-        obj["test_files"].append(l["test_file"])
+        obj["test_files"][l["test_file"][0]] = l["test_file"][1]
     else:
         if l["dev_file"] is not None:
-            obj["test_files"].append(l["dev_file"])
+            obj["test_files"][l["dev_file"][0]] = l["dev_file"][1]
 
-    obj["language2id"] = list(set([obj["language"][key] for key in obj["language"]]))
+    obj["language_codes"] = list(set([obj["language_map"][key] for key in obj["language_map"]]))
 
     if len(obj["train_files"]) == 0 :
         print("\tLanguage {} has zero training files, skipping. ".format(l["language_code"]))
@@ -202,30 +202,30 @@ for g in groups:
         continue
 
     obj = {
-        "language": {},
-        "language2id": [],
-        "train_files": [],
-        "dev_files": [],
-        "test_files": []
+        "language_map": {},
+        "language_codes": [],
+        "train_files": {},
+        "dev_files": {},
+        "test_files": {}
     }
     for l in groups[g]:
         # add full language name, lowercased
-        if l["language_name"].lower() not in obj["language"]:
-            obj["language"][l["language_name"].lower()] = default_language_map[g]
+        if l["language_name"].lower() not in obj["language_map"]:
+            obj["language_map"][l["language_name"].lower()] = default_language_map[g]
         # add major language code
-        if g not in obj["language"]:
-            obj["language"][g] = default_language_map[g]
+        if g not in obj["language_map"]:
+            obj["language_map"][g] = default_language_map[g]
         # add treebank code
-        obj["language"][l["language_code"]] = l["language_code"]
+        obj["language_map"][l["language_code"]] = l["language_code"]
 
         if l["train_file"] is not None:
-            obj["train_files"].append(l["train_file"])
+            obj["train_files"][l["train_file"][0]] = l["train_file"][1]
         if l["dev_file"] is not None:
-            obj["dev_files"].append(l["dev_file"])
+            obj["dev_files"][l["dev_file"][0]] = l["dev_file"][1]
         if l["test_file"] is not None:
-            obj["test_files"].append(l["test_file"])
+            obj["test_files"][l["test_file"][0]] = l["test_file"][1]
 
-    obj["language2id"] = list(set([obj["language"][key] for key in obj["language"]]))
+    obj["language_codes"] = list(set([obj["language_map"][key] for key in obj["language_map"]]))
 
     if len(obj["train_files"]) == 0 :
         print("\tLanguage {} ({}) has zero training files, skipping. ".format(l["language_name"], g))
@@ -263,31 +263,31 @@ for l in table:
 
 for g in groups:
     obj = {
-        "language": {},
-        "language2id": [],
-        "train_files": [],
-        "dev_files": [],
-        "test_files": []
+        "language_map": {},
+        "language_codes": [],
+        "train_files": {},
+        "dev_files": {},
+        "test_files": {}
     }
 
     for l in groups[g]:
         # add full language name, lowercased
-        if l["language_name"].lower() not in obj["language"]:
-            obj["language"][l["language_name"].lower()] = default_language_map[l["major_language_code"]]
+        if l["language_name"].lower() not in obj["language_map"]:
+            obj["language_map"][l["language_name"].lower()] = default_language_map[l["major_language_code"]]
         # add major language code
-        if g not in obj["language"]:
-            obj["language"][l["major_language_code"]] = default_language_map[l["major_language_code"]]
+        if g not in obj["language_map"]:
+            obj["language_map"][l["major_language_code"]] = default_language_map[l["major_language_code"]]
         # add treebank code
-        obj["language"][l["language_code"]] = l["language_code"]
+        obj["language_map"][l["language_code"]] = l["language_code"]
 
         if l["train_file"] is not None:
-            obj["train_files"].append(l["train_file"])
+            obj["train_files"][l["train_file"][0]] = l["train_file"][1]
         if l["dev_file"] is not None:
-            obj["dev_files"].append(l["dev_file"])
+            obj["dev_files"][l["dev_file"][0]] = l["dev_file"][1]
         if l["test_file"] is not None:
-            obj["test_files"].append(l["test_file"])
+            obj["test_files"][l["test_file"][0]] = l["test_file"][1]
 
-    obj["language2id"] = list(set([obj["language"][key] for key in obj["language"]]))
+    obj["language_codes"] = list(set([obj["language_map"][key] for key in obj["language_map"]]))
 
     if len(obj["train_files"]) == 0 :
         print("\tLanguage {} (fam: {}) has zero training files, skipping. ".format(l["language_name"], g))
@@ -304,4 +304,4 @@ for g in groups:
 
     filename = g.lower()+".yaml"
     with open(os.path.join(folder, filename), 'w') as f:
-        data = yaml.dump(obj, f, sort_keys=True)
+        yaml.dump(obj, f, sort_keys=True)

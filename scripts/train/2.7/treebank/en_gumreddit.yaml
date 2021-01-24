@@ -1,10 +1,10 @@
 dev_files:
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
 language:
   en_gumreddit: en_gumreddit
 language2id:
 - en_gumreddit
 test_files:
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
 train_files:
-- en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-train.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-train.conllu

@@ -1,10 +1,17 @@
 dev_files:
-- it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-dev.conllu
-- it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-dev.conllu
-- it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-dev.conllu
-- it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-dev.conllu
-- it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu
-language:
+  it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-dev.conllu
+  it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-dev.conllu
+  it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu
+  it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-dev.conllu
+  it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-dev.conllu
+language_codes:
+- it_twittiro
+- it_isdt
+- it_pud
+- it_postwita
+- it_partut
+- it_vit
+language_map:
   it: it_isdt
   it_isdt: it_isdt
   it_partut: it_partut
@@ -13,23 +20,16 @@ language:
   it_twittiro: it_twittiro
   it_vit: it_vit
   italian: it_isdt
-language2id:
-- it_pud
-- it_partut
-- it_isdt
-- it_vit
-- it_twittiro
-- it_postwita
 test_files:
-- it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-test.conllu
-- it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-test.conllu
-- it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-test.conllu
-- it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-test.conllu
-- it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-test.conllu
+  it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-test.conllu
+  it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-test.conllu
+  it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-test.conllu
+  it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-test.conllu
+  it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-test.conllu
 train_files:
-- it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-train.conllu
-- it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-train.conllu
-- it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-train.conllu
-- it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-train.conllu
-- it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu
-- it_pud: corpus/ud-treebanks-v2.5/UD_Italian-PUD/it_pud-ud-train.conllu
+  it_isdt: corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-train.conllu
+  it_partut: corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-train.conllu
+  it_postwita: corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu
+  it_pud: corpus/ud-treebanks-v2.5/UD_Italian-PUD/it_pud-ud-train.conllu
+  it_twittiro: corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-train.conllu
+  it_vit: corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-train.conllu

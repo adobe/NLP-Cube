@@ -1,10 +1,17 @@
 dev_files:
-- et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-dev.conllu
-- et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
-- fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-dev.conllu
-- fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-dev.conllu
-- olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
-language:
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-dev.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
+  fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-dev.conllu
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-dev.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+language_codes:
+- fi_pud
+- et_ewt
+- fi_tdt
+- fi_ftb
+- olo_kkpp
+- et_edt
+language_map:
   estonian: et_edt
   et: et_edt
   et_edt: et_edt
@@ -17,23 +24,16 @@ language:
   livvi: olo_kkpp
   olo: olo_kkpp
   olo_kkpp: olo_kkpp
-language2id:
-- et_ewt
-- et_edt
-- fi_pud
-- fi_ftb
-- olo_kkpp
-- fi_tdt
 test_files:
-- et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-test.conllu
-- et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
-- fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-test.conllu
-- fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-test.conllu
-- olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-test.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
+  fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-test.conllu
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-test.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
 train_files:
-- et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-train.conllu
-- et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-train.conllu
-- fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-train.conllu
-- fi_pud: corpus/ud-treebanks-v2.5/UD_Finnish-PUD/fi_pud-ud-train.conllu
-- fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-train.conllu
-- olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-train.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-train.conllu
+  fi_ftb: corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-train.conllu
+  fi_pud: corpus/ud-treebanks-v2.5/UD_Finnish-PUD/fi_pud-ud-train.conllu
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-train.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu

@@ -1,10 +1,10 @@
 dev_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu
-language:
-  ar_padt: ar_padt
-language2id:
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu
+language_codes:
 - ar_padt
+language_map:
+  ar_padt: ar_padt
 test_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-test.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-test.conllu
 train_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu

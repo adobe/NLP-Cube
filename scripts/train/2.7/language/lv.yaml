@@ -1,5 +1,5 @@
 dev_files:
-- lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu
 language:
   latvian: lv_lvtb
   lv: lv_lvtb
@@ -7,6 +7,6 @@ language:
 language2id:
 - lv_lvtb
 test_files:
-- lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-test.conllu
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-test.conllu
 train_files:
-- lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-train.conllu
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-train.conllu

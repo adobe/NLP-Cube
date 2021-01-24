@@ -1,5 +1,5 @@
 dev_files:
-- da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-dev.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-dev.conllu
 language:
   da: da_ddt
   da_ddt: da_ddt
@@ -7,6 +7,6 @@ language:
 language2id:
 - da_ddt
 test_files:
-- da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-test.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-test.conllu
 train_files:
-- da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-train.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-train.conllu

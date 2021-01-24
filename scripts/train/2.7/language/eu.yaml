@@ -1,5 +1,5 @@
 dev_files:
-- eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-dev.conllu
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-dev.conllu
 language:
   basque: eu_bdt
   eu: eu_bdt
@@ -7,6 +7,6 @@ language:
 language2id:
 - eu_bdt
 test_files:
-- eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-test.conllu
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-test.conllu
 train_files:
-- eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-train.conllu
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-train.conllu

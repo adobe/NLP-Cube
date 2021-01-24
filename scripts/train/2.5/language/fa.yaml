@@ -1,12 +1,12 @@
 dev_files:
-- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
-language:
+  fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
+language_codes:
+- fa_seraji
+language_map:
   fa: fa_seraji
   fa_seraji: fa_seraji
   persian: fa_seraji
-language2id:
-- fa_seraji
 test_files:
-- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-test.conllu
+  fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-test.conllu
 train_files:
-- fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-train.conllu
+  fa_seraji: corpus/ud-treebanks-v2.5/UD_Persian-Seraji/fa_seraji-ud-train.conllu

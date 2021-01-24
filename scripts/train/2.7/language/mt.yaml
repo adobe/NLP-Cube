@@ -1,5 +1,5 @@
 dev_files:
-- mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu
+  mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu
 language:
   maltese: mt_mudt
   mt: mt_mudt
@@ -7,6 +7,6 @@ language:
 language2id:
 - mt_mudt
 test_files:
-- mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-test.conllu
+  mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-test.conllu
 train_files:
-- mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-train.conllu
+  mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-train.conllu

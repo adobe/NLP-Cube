@@ -1,12 +1,12 @@
 dev_files:
-- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
-language:
+  kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+language_codes:
+- kmr_mg
+language_map:
   kmr: kmr_mg
   kmr_mg: kmr_mg
   kurmanji: kmr_mg
-language2id:
-- kmr_mg
 test_files:
-- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
+  kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
 train_files:
-- kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-train.conllu
+  kmr_mg: corpus/ud-treebanks-v2.5/UD_Kurmanji-MG/kmr_mg-ud-train.conllu

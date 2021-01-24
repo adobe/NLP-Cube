@@ -1,10 +1,10 @@
 dev_files:
-- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-dev.conllu
+  cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-dev.conllu
 language:
   cs_pdt: cs_pdt
 language2id:
 - cs_pdt
 test_files:
-- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-test.conllu
+  cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-test.conllu
 train_files:
-- cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-train.conllu
+  cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-train.conllu

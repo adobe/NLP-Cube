@@ -1,10 +1,10 @@
 dev_files:
-- got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
 language:
   got_proiel: got_proiel
 language2id:
 - got_proiel
 test_files:
-- got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
 train_files:
-- got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-train.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-train.conllu

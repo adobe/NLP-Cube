@@ -1,10 +1,10 @@
 dev_files:
-- la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-test.conllu
-language:
-  la_perseus: la_perseus
-language2id:
+  la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-test.conllu
+language_codes:
 - la_perseus
+language_map:
+  la_perseus: la_perseus
 test_files:
-- la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-test.conllu
+  la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-test.conllu
 train_files:
-- la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-train.conllu
+  la_perseus: corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-train.conllu

@@ -1,9 +1,15 @@
 dev_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu
-- ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-dev.conllu
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu
-- mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu
-language:
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-dev.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-dev.conllu
+  mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu
+language_codes:
+- mt_mudt
+- ar_pud
+- ar_nyuad
+- ar_padt
+- he_htb
+language_map:
   ar: ar_padt
   ar_nyuad: ar_nyuad
   ar_padt: ar_padt
@@ -15,20 +21,14 @@ language:
   maltese: mt_mudt
   mt: mt_mudt
   mt_mudt: mt_mudt
-language2id:
-- ar_nyuad
-- ar_pud
-- ar_padt
-- mt_mudt
-- he_htb
 test_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-test.conllu
-- ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-test.conllu
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-test.conllu
-- mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-test.conllu
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-test.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-test.conllu
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-test.conllu
+  mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-test.conllu
 train_files:
-- ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu
-- ar_pud: corpus/ud-treebanks-v2.5/UD_Arabic-PUD/ar_pud-ud-train.conllu
-- ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-train.conllu
-- he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu
-- mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-train.conllu
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-train.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu
+  ar_pud: corpus/ud-treebanks-v2.5/UD_Arabic-PUD/ar_pud-ud-train.conllu
+  he_htb: corpus/ud-treebanks-v2.5/UD_Hebrew-HTB/he_htb-ud-train.conllu
+  mt_mudt: corpus/ud-treebanks-v2.5/UD_Maltese-MUDT/mt_mudt-ud-train.conllu

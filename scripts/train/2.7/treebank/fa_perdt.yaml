@@ -1,10 +1,10 @@
 dev_files:
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
 language:
   fa_perdt: fa_perdt
 language2id:
 - fa_perdt
 test_files:
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
 train_files:
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-train.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-train.conllu

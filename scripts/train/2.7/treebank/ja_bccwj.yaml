@@ -1,10 +1,10 @@
 dev_files:
-- ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-dev.conllu
+  ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-dev.conllu
 language:
   ja_bccwj: ja_bccwj
 language2id:
 - ja_bccwj
 test_files:
-- ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-test.conllu
+  ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-test.conllu
 train_files:
-- ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-train.conllu
+  ja_bccwj: corpus/ud-treebanks-v2.7/UD_Japanese-BCCWJ/ja_bccwj-ud-train.conllu

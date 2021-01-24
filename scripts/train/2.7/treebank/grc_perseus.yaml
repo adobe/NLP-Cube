@@ -1,10 +1,10 @@
 dev_files:
-- grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-dev.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-dev.conllu
 language:
   grc_perseus: grc_perseus
 language2id:
 - grc_perseus
 test_files:
-- grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-test.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-test.conllu
 train_files:
-- grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-train.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-train.conllu

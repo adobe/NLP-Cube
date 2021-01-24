@@ -1,10 +1,10 @@
 dev_files:
-- fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-dev.conllu
-language:
-  fr_spoken: fr_spoken
-language2id:
+  fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-dev.conllu
+language_codes:
 - fr_spoken
+language_map:
+  fr_spoken: fr_spoken
 test_files:
-- fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-test.conllu
+  fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-test.conllu
 train_files:
-- fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-train.conllu
+  fr_spoken: corpus/ud-treebanks-v2.5/UD_French-Spoken/fr_spoken-ud-train.conllu

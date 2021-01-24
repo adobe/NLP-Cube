@@ -1,12 +1,12 @@
 dev_files:
-- hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-dev.conllu
-language:
+  hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-dev.conllu
+language_codes:
+- hy_armtdp
+language_map:
   armenian: hy_armtdp
   hy: hy_armtdp
   hy_armtdp: hy_armtdp
-language2id:
-- hy_armtdp
 test_files:
-- hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-test.conllu
+  hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-test.conllu
 train_files:
-- hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-train.conllu
+  hy_armtdp: corpus/ud-treebanks-v2.5/UD_Armenian-ArmTDP/hy_armtdp-ud-train.conllu

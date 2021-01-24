@@ -1,22 +1,45 @@
 dev_files:
-- af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu
-- da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-dev.conllu
-- nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu
-- nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu
-- en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-dev.conllu
-- en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-dev.conllu
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu
-- en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-dev.conllu
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-dev.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-dev.conllu
-- got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
-- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu
-- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu
-- sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu
-- sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-dev.conllu
-language:
+  af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-dev.conllu
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-dev.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-dev.conllu
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-dev.conllu
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-dev.conllu
+  en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-dev.conllu
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-dev.conllu
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-dev.conllu
+  got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu
+  sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-dev.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu
+language_codes:
+- en_esl
+- de_gsd
+- en_pud
+- nl_alpino
+- da_ddt
+- is_icepahc
+- sv_pud
+- en_gum
+- got_proiel
+- en_lines
+- is_pud
+- no_nynorsklia
+- no_bokmaal
+- sv_lines
+- en_ewt
+- no_nynorsk
+- en_partut
+- sv_talbanken
+- nl_lassysmall
+- de_hdt
+- de_pud
+- af_afribooms
+language_map:
   af: af_afribooms
   af_afribooms: af_afribooms
   afrikaans: af_afribooms
@@ -56,66 +79,43 @@ language:
   sv_pud: sv_pud
   sv_talbanken: sv_talbanken
   swedish: sv_talbanken
-language2id:
-- en_esl
-- is_icepahc
-- no_nynorsk
-- sv_lines
-- af_afribooms
-- no_nynorsklia
-- nl_alpino
-- nl_lassysmall
-- en_pud
-- no_bokmaal
-- en_gum
-- en_lines
-- sv_pud
-- en_partut
-- got_proiel
-- is_pud
-- de_hdt
-- de_gsd
-- sv_talbanken
-- en_ewt
-- de_pud
-- da_ddt
 test_files:
-- af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-test.conllu
-- da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-test.conllu
-- nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-test.conllu
-- nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-test.conllu
-- en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-test.conllu
-- en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-test.conllu
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-test.conllu
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-test.conllu
-- en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-test.conllu
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-test.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-test.conllu
-- got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
-- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-test.conllu
-- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-test.conllu
-- sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-test.conllu
-- sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-test.conllu
+  af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-test.conllu
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-test.conllu
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-test.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-test.conllu
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-test.conllu
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-test.conllu
+  en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-test.conllu
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-test.conllu
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-test.conllu
+  got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-test.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-test.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-test.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-test.conllu
+  sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-test.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-test.conllu
 train_files:
-- af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu
-- da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-train.conllu
-- nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-train.conllu
-- nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-train.conllu
-- en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-train.conllu
-- en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-train.conllu
-- en_pud: corpus/ud-treebanks-v2.5/UD_English-PUD/en_pud-ud-train.conllu
-- en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-train.conllu
-- en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu
-- en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-train.conllu
-- de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-train.conllu
-- de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-train.conllu
-- de_pud: corpus/ud-treebanks-v2.5/UD_German-PUD/de_pud-ud-train.conllu
-- got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-train.conllu
-- is_pud: corpus/ud-treebanks-v2.5/UD_Icelandic-PUD/is_pud-ud-train.conllu
-- no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu
-- no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu
-- no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu
-- sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu
-- sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-train.conllu
-- sv_pud: corpus/ud-treebanks-v2.5/UD_Swedish-PUD/sv_pud-ud-train.conllu
+  af_afribooms: corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-train.conllu
+  de_gsd: corpus/ud-treebanks-v2.5/UD_German-GSD/de_gsd-ud-train.conllu
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-train.conllu
+  de_pud: corpus/ud-treebanks-v2.5/UD_German-PUD/de_pud-ud-train.conllu
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-train.conllu
+  en_ewt: corpus/ud-treebanks-v2.5/UD_English-EWT/en_ewt-ud-train.conllu
+  en_gum: corpus/ud-treebanks-v2.5/UD_English-GUM/en_gum-ud-train.conllu
+  en_lines: corpus/ud-treebanks-v2.5/UD_English-LinES/en_lines-ud-train.conllu
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-train.conllu
+  en_pud: corpus/ud-treebanks-v2.5/UD_English-PUD/en_pud-ud-train.conllu
+  got_proiel: corpus/ud-treebanks-v2.5/UD_Gothic-PROIEL/got_proiel-ud-train.conllu
+  is_pud: corpus/ud-treebanks-v2.5/UD_Icelandic-PUD/is_pud-ud-train.conllu
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-train.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.5/UD_Dutch-LassySmall/nl_lassysmall-ud-train.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.5/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.5/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu
+  sv_lines: corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-train.conllu
+  sv_pud: corpus/ud-treebanks-v2.5/UD_Swedish-PUD/sv_pud-ud-train.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu

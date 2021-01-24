@@ -1,7 +1,7 @@
 dev_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
-- fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
+  fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
 language:
   fa: fa_seraji
   fa_perdt: fa_perdt
@@ -12,13 +12,13 @@ language:
   persian: fa_seraji
 language2id:
 - fa_seraji
-- fa_perdt
 - kmr_mg
+- fa_perdt
 test_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
-- fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-test.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
+  fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-test.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
 train_files:
-- kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-train.conllu
-- fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-train.conllu
-- fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-train.conllu
+  fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-train.conllu
+  fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-train.conllu
+  kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-train.conllu
