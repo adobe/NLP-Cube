@@ -90,6 +90,73 @@ class CompoundDataset(Dataset):
         return self._examples[item]
 
 
+class Word2TargetCollate:
+    def __init__(self, encodings: Encodings):
+        self._encodings = Encodings
+        self._start_index = len(encodings.char2int)
+        self._stop_index = len(encodings.char2int) + 1
+        self._eol = len(encodings.char2int)
+
+    def collate_fn(self, batch):
+        max_input_len = max([len(e['word']) for e in batch])
+        max_target_len = max([len(e['target']) for e in batch])
+        n = len(batch)
+        x_char = np.zeros((n, max_input_len + 2))
+        x_case = np.zeros((n, max_input_len + 2))
+        y_char = np.zeros((n, max_target_len + 1))
+        y_case = np.zeros((n, max_target_len + 1))
+        x_lang = np.zeros(n)
+        x_upos = np.zeros(n)
+
+        for ii in range(n):
+            word = batch[ii]['word']
+            target = batch[ii]['target']
+            lang_id = batch[ii]['lang_id']
+            upos = ''
+            if 'upos' in batch[ii]:
+                upos = batch[ii]['upos']
+            x_lang[ii] = lang_id + 1
+            if upos in self._encodings.upos2int:
+                x_upos[ii] = self._encodings.upos2int[upos]
+            else:
+                x_upos[ii] = self._encodings.upos2int['<UNK>']
+
+            i_char = 1
+            x_char[ii, 0] = self._start_index
+            for ch in word:
+                if ch.lower() == ch.upper():
+                    x_case[ii, i_char] = 1  # symbol
+                elif ch.lower() != ch:
+                    x_case[ii, i_char] = 2  # uppercase
+                else:
+                    x_case[ii, i_char] = 3  # lowercase
+                if ch.lower() in self._encodings.char2int:
+                    x_char[ii, i_char] = self._encodings.char2int[ch.lower()]
+                else:
+                    x_char[ii, i_char] = self._encodings.char2int['<UNK>']
+                i_char += 1
+            x_char[ii, i_char] = self._stop_index
+
+            i_char = 0
+            for ch in target:
+                if ch.lower() == ch.upper():
+                    y_case[ii, i_char] = 1  # symbol
+                elif ch.lower() != ch:
+                    y_case[ii, i_char] = 2  # uppercase
+                else:
+                    y_case[ii, i_char] = 3  # lowercase
+                if ch.lower() in self._encodings.char2int:
+                    y_char[ii, i_char] = self._encodings.char2int[ch.lower()]
+                else:
+                    y_char[ii, i_char] = self._encodings.char2int['<UNK>']
+                i_char += 1
+            y_char[ii, i_char] = self._eol
+
+        rez = {'x_char': x_char, 'x_case': x_case, 'x_lang': x_lang, 'x_upos': x_upos,
+               'y_char': y_char, 'y_case': y_case}
+        return rez
+
+
 class TokenCollate:
     def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False):
         if lm_model is None:
