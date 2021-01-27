@@ -1,3 +1,4 @@
+.DS_Store
 *.txt
 lightning_logs
 *.gz
