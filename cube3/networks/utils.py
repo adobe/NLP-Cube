@@ -52,6 +52,44 @@ class MorphoDataset(Dataset):
         return self._document.sentences[item]
 
 
+class LemmaDataset(Dataset):
+    def __init__(self, document: Document):
+        self._examples = []
+        for sent in document:
+            lang_id = sent.lang_id
+            for w in sent.words:
+                word = w.word
+                lemma = w.lemma
+                upos = w.upos
+                example = {'word': word, 'upos ': upos, 'lang_id': lang_id, 'target': lemma}
+                self._examples.append(example)
+
+    def __len__(self):
+        return len(self._examples)
+
+    def __getitem__(self, item):
+        return self._examples[item]
+
+
+class CompoundDataset(Dataset):
+    def __init__(self, document: Document):
+        self._examples = []
+        for sent in document:
+            lang_id = sent.lang_id
+            for t in sent.tokens:
+                if len(t.words) > 1:
+                    word = t.text
+                    target = ' '.join([w.word for w in t.words])
+                    example = {'word': word, 'lang_id': lang_id, 'target': target}
+                    self._examples.append(example)
+
+    def __len__(self):
+        return len(self._examples)
+
+    def __getitem__(self, item):
+        return self._examples[item]
+
+
 class TokenCollate:
     def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False):
         if lm_model is None:
@@ -218,7 +256,7 @@ class TokenCollate:
                 tmp = new_text.replace('  ', ' ')
 
             new_text = new_text.split(' ')
-        print("\n"+("_" * 50))
+        print("\n" + ("_" * 50))
         print(new_text)
         print("_" * 50)
         toks = self._tokenizer.tokenize(new_text, is_split_into_words=True)
