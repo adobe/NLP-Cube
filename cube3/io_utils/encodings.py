@@ -5,7 +5,7 @@ sys.path.append('')
 from cube3.io_utils.objects import Document
 
 
-class Encodings():
+class Encodings:
     def __init__(self, verbose=True):
         self.word_list = {}
         self.hol_word_list = []
