@@ -23,6 +23,7 @@ class Lemmatizer(pl.LightningModule):
         self._encodings = encodings
         self._num_languages = encodings.num_langs
         self._language_codes = language_codes
+        self._eol = len(encodings.char2int)
 
         self._char_list = ['' for char in encodings.char2int]
         for char in encodings.char2int:
@@ -133,7 +134,7 @@ class Lemmatizer(pl.LightningModule):
             out_case_list.append(output_case)
             selected_chars = torch.argmax(output_char, dim=-1)
             for ii in range(selected_chars.shape[0]):
-                if selected_chars[ii].squeeze() == 0:
+                if selected_chars[ii].squeeze() == self._eol:
                     done[ii] = 1
             if gs_output is not None:
                 prev_char_emb = self._char_emb(output_idx[:, step]).unsqueeze(1)
@@ -166,14 +167,12 @@ class Lemmatizer(pl.LightningModule):
         y_char_target, y_case_target = batch['y_char'], batch['y_case']
         loss_char = F.cross_entropy(y_char_pred.view(-1, y_char_pred.shape[2]), y_char_target.view(-1), ignore_index=0)
         loss_case = F.cross_entropy(y_case_pred.view(-1, y_case_pred.shape[2]), y_case_target.view(-1), ignore_index=0)
-        return loss_char + loss_case
+        return (loss_char + loss_case) / 2
 
     def validation_step(self, batch, batch_idx):
-        y_char_pred, y_case_pred = self.forward(batch)
         y_char_target, y_case_target = batch['y_char'], batch['y_case']
-        loss_char = F.cross_entropy(y_char_pred.view(-1, y_char_pred.shape[2]), y_char_target.view(-1), ignore_index=0)
-        loss_case = F.cross_entropy(y_case_pred.view(-1, y_case_pred.shape[2]), y_case_target.view(-1), ignore_index=0)
-        loss = loss_char + loss_case
+        del batch['y_char']
+        y_char_pred, y_case_pred = self.forward(batch)
 
         language_result = {lang_id: {'total': 0, 'ok': 0}
                            for lang_id in range(self._num_languages)}
@@ -191,19 +190,16 @@ class Lemmatizer(pl.LightningModule):
                 language_result[lang_id - 1]['ok'] += 1
             language_result[lang_id - 1]['total'] += 1
 
-        return {'loss': loss, 'acc': language_result}
+        return {'acc': language_result}
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
         language_result = {lang_id: {'total': 0, 'ok': 0}
                            for lang_id in
                            range(self._num_languages)}
-        loss = 0
         for result in outputs:
-            loss += result['loss'].item()
             for lang_id in result['acc']:
                 language_result[lang_id]['ok'] += result['acc'][lang_id]['ok']
                 language_result[lang_id]['total'] += result['acc'][lang_id]['total']
-        loss = loss / len(outputs)
 
         res = {}
         for lang_index in language_result:
@@ -219,7 +215,6 @@ class Lemmatizer(pl.LightningModule):
             }
 
             self.log('val/ACC/{0}'.format(lang), language_result[lang_index]['ok'] / total)
-        self.log('val/LOSS'.format(lang), loss)
 
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
