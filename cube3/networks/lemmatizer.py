@@ -174,7 +174,6 @@ class Lemmatizer(pl.LightningModule):
         loss_char = F.cross_entropy(y_char_pred.view(-1, y_char_pred.shape[2]), y_char_target.view(-1), ignore_index=0)
         loss_case = F.cross_entropy(y_case_pred.view(-1, y_case_pred.shape[2]), y_case_target.view(-1), ignore_index=0)
         loss = loss_char + loss_case
-        ok = 0
 
         language_result = {lang_id: {'total': 0, 'ok': 0}
                            for lang_id in range(self._num_languages)}
