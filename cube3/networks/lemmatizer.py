@@ -19,11 +19,14 @@ class Lemmatizer(pl.LightningModule):
 
     def __init__(self, config: LemmatizerConfig, encodings: Encodings, language_codes: [] = None):
         super(Lemmatizer, self).__init__()
+        NUM_FILTERS = 512
+        NUM_LAYERS = 5
         self._config = config
         self._encodings = encodings
         self._num_languages = encodings.num_langs
         self._language_codes = language_codes
         self._eol = len(encodings.char2int)
+        self._num_filters = NUM_FILTERS
 
         self._char_list = ['' for char in encodings.char2int]
         for char in encodings.char2int:
@@ -35,31 +38,31 @@ class Lemmatizer(pl.LightningModule):
         self._case_emb = nn.Embedding(4, 16, padding_idx=0)  # 0-pad 1-symbol 2-upper 3-lower
         convolutions = []
         cs_inp = config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16
-        for _ in range(3):
+
+        for _ in range(NUM_LAYERS):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
-                         512,
+                         NUM_FILTERS,
                          kernel_size=5, stride=1,
                          padding=2,
-                         dilation=1, w_init_gain='relu'),
-                nn.BatchNorm1d(512))
+                         dilation=1, w_init_gain='tanh'),
+                nn.BatchNorm1d(NUM_FILTERS))
             convolutions.append(conv_layer)
-            cs_inp = 512
-        self._char_conv = nn.ModuleList(convolutions)
-        encoder_layers = []
-        for ii in range(config.encoder_layers):
-            encoder_layers.append(nn.LSTM(cs_inp, config.encoder_size, 1, batch_first=True, bidirectional=True))
-            cs_inp = config.encoder_size * 2 + config.lang_emb_size + config.upos_emb_size + 16
+            cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
 
-        self._encoder_layers = nn.ModuleList(encoder_layers)
-        self._decoder = nn.LSTM(cs_inp + config.char_emb_size, config.decoder_size, config.decoder_layers,
-                                batch_first=True, bidirectional=False)
-        self._attention = Attention(cs_inp // 2, config.decoder_size, config.att_proj_size)
+        self._convolutions_char = nn.ModuleList(convolutions)
+        self._decoder = nn.LSTM(
+            NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16,
+            config.decoder_size, config.decoder_layers,
+            batch_first=True, bidirectional=False)
+        self._attention = Attention(
+            (NUM_FILTERS // 2 + config.lang_emb_size + config.upos_emb_size + 16) // 2,
+            config.decoder_size, config.att_proj_size)
 
         self._output_char = LinearNorm(config.decoder_size, len(self._encodings.char2int) + 2)
         self._output_case = LinearNorm(config.decoder_size, 4)
         self._start_frame = nn.Embedding(1,
-                                         config.encoder_size * 2 + config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16)
+                                         NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16)
 
         self._res = {}
         for language_code in self._language_codes:
@@ -72,31 +75,48 @@ class Lemmatizer(pl.LightningModule):
         x_case = X['x_case']
         x_lang = X['x_lang']
         x_upos = X['x_upos']
+
         if 'y_char' in X:
             gs_output = X['y_char']
         else:
             gs_output = None
+
         char_emb = self._char_emb(x_char)
         case_emb = self._case_emb(x_case)
+
         upos_emb = self._upos_emb(x_upos).unsqueeze(1).repeat(1, char_emb.shape[1], 1)
         lang_emb = self._lang_emb(x_lang).unsqueeze(1).repeat(1, char_emb.shape[1], 1)
-        conditioning = torch.cat((case_emb, upos_emb, lang_emb), dim=-1)
+        conditioning = torch.cat((case_emb, upos_emb), dim=-1)
         if gs_output is not None:
             output_idx = gs_output
 
         x = torch.cat((char_emb, conditioning), dim=-1)
+        half = self._num_filters // 2
+        count = 0
+        res = None
+        skip = None
+        x_lang_conv = lang_emb.permute(0, 2, 1)
         x = x.permute(0, 2, 1)
-        for conv in self._char_conv:
-            x = torch.dropout(torch.relu(conv(x)), 0.5, self.training)
+        for conv in self._convolutions_char:
+            count += 1
+            drop = self.training
+            if count >= len(self._convolutions_char):
+                drop = False
+            if skip is not None:
+                x = x + skip
+
+            x = torch.cat([x, x_lang_conv], dim=1)
+            conv_out = conv(x)
+            tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
+            if res is None:
+                res = tmp
+            else:
+                res = res + tmp
+            skip = tmp
+            x = torch.dropout(tmp, 0.1, drop)
+        x = x + res
         x = x.permute(0, 2, 1)
-
-        output = x
-        for ii in range(self._config.encoder_layers):
-            output, _ = self._encoder_layers[ii](output)
-            tmp = torch.cat((output, conditioning), dim=-1)
-            output = tmp
-
-        encoder_output = output
+        encoder_output = torch.cat((x, conditioning, lang_emb), dim=-1)
 
         step = 0
         done = np.zeros(encoder_output.shape[0])
@@ -140,6 +160,7 @@ class Lemmatizer(pl.LightningModule):
                 prev_char_emb = self._char_emb(output_idx[:, step]).unsqueeze(1)
             else:
                 prev_char_emb = self._char_emb(selected_chars)
+
             step += 1
 
         return torch.cat(out_char_list, dim=1), torch.cat(out_case_list, dim=1)
@@ -167,13 +188,12 @@ class Lemmatizer(pl.LightningModule):
         y_char_target, y_case_target = batch['y_char'], batch['y_case']
         loss_char = F.cross_entropy(y_char_pred.view(-1, y_char_pred.shape[2]), y_char_target.view(-1), ignore_index=0)
         loss_case = F.cross_entropy(y_case_pred.view(-1, y_case_pred.shape[2]), y_case_target.view(-1), ignore_index=0)
-        return (loss_char + loss_case) / 2
+        return loss_char + loss_case
 
     def validation_step(self, batch, batch_idx):
         y_char_target, y_case_target = batch['y_char'], batch['y_case']
         del batch['y_char']
         y_char_pred, y_case_pred = self.forward(batch)
-
         language_result = {lang_id: {'total': 0, 'ok': 0}
                            for lang_id in range(self._num_languages)}
 
