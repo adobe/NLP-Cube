@@ -66,7 +66,7 @@ class LemmaDataset(Dataset):
                 key = (word, lang_id, upos)
                 if key not in lookup:
                     lookup[key] = 1
-                    example = {'word': word, 'upos ': upos, 'lang_id': lang_id, 'target': lemma}
+                    example = {'word': word, 'upos': upos, 'lang_id': lang_id, 'target': lemma}
                     self._examples.append(example)
 
     def __len__(self):
