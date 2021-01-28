@@ -10,13 +10,14 @@ from argparse import ArgumentParser
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 
-from cube3.io_utils.config import TaggerConfig, ParserConfig, TokenizerConfig, LemmatizerConfig
+from cube3.io_utils.config import TaggerConfig, ParserConfig, TokenizerConfig, LemmatizerConfig, CompoundConfig
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.objects import Document
 from cube3.networks.tokenizer import Tokenizer
 from cube3.networks.tagger import Tagger
 from cube3.networks.parser import Parser
 from cube3.networks.lemmatizer import Lemmatizer
+from cube3.networks.compound import Compound
 from cube3.networks.utils import LMHelper, MorphoDataset, MorphoCollate, TokenizationDataset, TokenCollate, \
     Word2TargetCollate, LemmaDataset, CompoundDataset
 
@@ -88,6 +89,8 @@ class Trainer():
             config = LemmatizerConfig()
         if self.task == "parser":
             config = ParserConfig()
+        if self.task == "cwe":
+            config = CompoundConfig()
         config.lm_model = self.args.lm_model
         if self.args.config_file:
             config.load(self.args.config_file)
@@ -109,6 +112,9 @@ class Trainer():
         elif self.task == 'lemmatizer':
             trainset = LemmaDataset(self.doc_train)
             devset = LemmaDataset(self.doc_dev)
+        elif self.task == 'cwe':
+            trainset = CompoundDataset(self.doc_train)
+            devset = CompoundDataset(self.doc_dev)
 
         collate = MorphoCollate(enc)
 
@@ -157,6 +163,17 @@ class Trainer():
             )
             callbacks = [early_stopping_callback, Lemmatizer.PrintAndSaveCallback(self.store_prefix)]
             model = Lemmatizer(config=config, encodings=enc, language_codes=self.language_codes)
+
+        if self.task == "cwe":
+            collate = Word2TargetCollate(enc)
+            early_stopping_callback = EarlyStopping(
+                monitor='val/early_meta',
+                patience=args.patience,
+                verbose=True,
+                mode='max'
+            )
+            callbacks = [early_stopping_callback, Lemmatizer.PrintAndSaveCallback(self.store_prefix)]
+            model = Compound(config=config, encodings=enc, language_codes=self.language_codes)
 
         # dataloaders
         train_loader = DataLoader(trainset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn,

@@ -80,17 +80,17 @@ class CompoundDataset(Dataset):
     def __init__(self, document: Document):
         self._examples = []
         lookup = {}
-        for sent in document:
+        for sent in document.sentences:
             lang_id = sent.lang_id
             for t in sent.tokens:
                 if len(t.words) > 1:
                     word = t.text
                     target = ' '.join([w.word for w in t.words])
                     key = (word, lang_id)
-                    if key not in lookup:
-                        lookup[key] = 1
-                        example = {'word': word, 'lang_id': lang_id, 'target': target}
-                        self._examples.append(example)
+                    #if key not in lookup:
+                    lookup[key] = 1
+                    example = {'word': word, 'lang_id': lang_id, 'target': target}
+                    self._examples.append(example)
 
     def __len__(self):
         return len(self._examples)
