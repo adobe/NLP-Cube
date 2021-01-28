@@ -55,14 +55,19 @@ class MorphoDataset(Dataset):
 class LemmaDataset(Dataset):
     def __init__(self, document: Document):
         self._examples = []
-        for sent in document:
+        lookup = {}
+        for sent in document.sentences:
             lang_id = sent.lang_id
             for w in sent.words:
                 word = w.word
                 lemma = w.lemma
                 upos = w.upos
-                example = {'word': word, 'upos ': upos, 'lang_id': lang_id, 'target': lemma}
-                self._examples.append(example)
+
+                key = (word, lang_id, upos)
+                if key not in lookup:
+                    lookup[key] = 1
+                    example = {'word': word, 'upos ': upos, 'lang_id': lang_id, 'target': lemma}
+                    self._examples.append(example)
 
     def __len__(self):
         return len(self._examples)
@@ -74,14 +79,18 @@ class LemmaDataset(Dataset):
 class CompoundDataset(Dataset):
     def __init__(self, document: Document):
         self._examples = []
+        lookup = {}
         for sent in document:
             lang_id = sent.lang_id
             for t in sent.tokens:
                 if len(t.words) > 1:
                     word = t.text
                     target = ' '.join([w.word for w in t.words])
-                    example = {'word': word, 'lang_id': lang_id, 'target': target}
-                    self._examples.append(example)
+                    key = (word, lang_id)
+                    if key not in lookup:
+                        lookup[key] = 1
+                        example = {'word': word, 'lang_id': lang_id, 'target': target}
+                        self._examples.append(example)
 
     def __len__(self):
         return len(self._examples)
@@ -92,7 +101,7 @@ class CompoundDataset(Dataset):
 
 class Word2TargetCollate:
     def __init__(self, encodings: Encodings):
-        self._encodings = Encodings
+        self._encodings = encodings
         self._start_index = len(encodings.char2int)
         self._stop_index = len(encodings.char2int) + 1
         self._eol = len(encodings.char2int)
@@ -101,12 +110,12 @@ class Word2TargetCollate:
         max_input_len = max([len(e['word']) for e in batch])
         max_target_len = max([len(e['target']) for e in batch])
         n = len(batch)
-        x_char = np.zeros((n, max_input_len + 2))
-        x_case = np.zeros((n, max_input_len + 2))
-        y_char = np.zeros((n, max_target_len + 1))
-        y_case = np.zeros((n, max_target_len + 1))
-        x_lang = np.zeros(n)
-        x_upos = np.zeros(n)
+        x_char = np.zeros((n, max_input_len + 2), dtype=np.long)
+        x_case = np.zeros((n, max_input_len + 2), dtype=np.long)
+        y_char = np.zeros((n, max_target_len + 1), dtype=np.long)
+        y_case = np.zeros((n, max_target_len + 1), dtype=np.long)
+        x_lang = np.zeros(n, dtype=np.long)
+        x_upos = np.zeros(n, dtype=np.long)
 
         for ii in range(n):
             word = batch[ii]['word']
@@ -152,8 +161,14 @@ class Word2TargetCollate:
                 i_char += 1
             y_char[ii, i_char] = self._eol
 
-        rez = {'x_char': x_char, 'x_case': x_case, 'x_lang': x_lang, 'x_upos': x_upos,
-               'y_char': y_char, 'y_case': y_case}
+        rez = {
+            'x_char': torch.tensor(x_char),
+            'x_case': torch.tensor(x_case),
+            'x_lang': torch.tensor(x_lang),
+            'x_upos': torch.tensor(x_upos),
+            'y_char': torch.tensor(y_char),
+            'y_case': torch.tensor(y_case)
+        }
         return rez
 
 
