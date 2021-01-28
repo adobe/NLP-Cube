@@ -151,12 +151,15 @@ class ParserConfig(Config):
 class LemmatizerConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
-        self.rnn_size = 200
-        self.rnn_layers = 2
-        self.char_embeddings = 100
-        self.char_rnn_size = 200
-        self.char_rnn_layers = 2
-        self.tag_embeddings_size = 100
+        self.encoder_layers = 2
+        self.encoder_size = 200
+        self.decoder_layers = 2
+        self.decoder_size = 400
+        self.att_proj_size = 100
+        self.upos_emb_size = 100
+        self.lang_emb_size = 100
+        self.char_emb_size = 100
+        self._valid = True
 
         if filename is None:
             if verbose:
