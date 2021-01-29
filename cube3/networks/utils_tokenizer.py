@@ -177,13 +177,14 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
         toks = self._tokenizer(text)
+
         targets = [0 for _ in range(len(toks))]
         iToken = 0
         cl = 0
         for ii in range(len(targets)):
             target = 1  # nothing
-            cl += len(toks[ii])
-            if cl == len(sentence.tokens[iToken].text):
+            cl += len(toks[ii].replace(' ', ''))
+            if cl == len(sentence.tokens[iToken].text.replace(' ', '')):
                 iToken += 1
                 cl = 0
                 target = 2  # token
@@ -191,6 +192,9 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
                     target = 3  # multiword token
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
+                for tt in range(ii, len(targets)):
+                    targets[ii] = target
+                break
             targets[ii] = target
         return targets
 
