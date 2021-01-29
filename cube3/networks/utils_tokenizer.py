@@ -36,7 +36,7 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=lm_device, model=parts[1])
             self._emb_size = 300
-        elif parts[1] == 'languasito':
+        elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=lm_device, model=parts[1])
             self._emb_size = 512
         else:
@@ -210,7 +210,7 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=self._lm_device, model=parts[1])
             self._emb_size = 300
-        elif parts[1] == 'languasito':
+        elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=self._lm_device, model=parts[1])
             self._emb_size = 512
 

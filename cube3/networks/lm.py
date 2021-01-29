@@ -7,7 +7,7 @@ import numpy as np
 from typing import *
 
 sys.path.append('')
-sys.path.append('Languasito')
+sys.path.append('./Languasito')
 from transformers import AutoTokenizer
 from transformers import AutoModel
 from cube3.io_utils.objects import Sentence, Document
@@ -108,12 +108,12 @@ class LMHelperLanguasito(LMHelper):
         for iBatch in range(num_batches):
             start = iBatch * BATCH_SIZE
             stop = min(iBatch * BATCH_SIZE + BATCH_SIZE, len(batch))
-            batch = []
+            tb = []
             for ii in range(start, stop):
                 cb = []
                 for w in batch[ii]:
-                    cb.append(w.word)
-                batch.append(cb)
+                    cb.append(w)
+                tb.append(cb)
             embeddings = self._languasito(batch)
 
         return embeddings

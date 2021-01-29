@@ -15,15 +15,15 @@ class LanguasitoAPI:
         self._languasito = languasito
         self._languasito.eval()
         self._encodings = encodings
-        self._collate = LanguasitoCollate(encodings)
+        self._collate = LanguasitoCollate(encodings, live=True)
 
     def to(self, device: str):
         self._languasito.to(device)
 
     def __call__(self, batch):
         with torch.no_grad():
-            x = LanguasitoCollate(batch)
-        rez = self._languasito(x)
+            x = self._collate.collate_fn(batch)
+            rez = self._languasito(x)
         emb = []
         pred_emb = rez['emb'].detach().cpu().numpy()
         for ii in range(len(batch)):
@@ -34,22 +34,24 @@ class LanguasitoAPI:
         return emb
 
     @staticmethod
-    def load(model: str):
+    def load(model_name: str):
         from pathlib import Path
         home = str(Path.home())
-        filename = '{0}/.languasito/{1}'.format(home, model)
+        filename = '{0}/.languasito/{1}'.format(home, model_name)
         import os
-        if os.path.exists(filename):
+        if os.path.exists(filename + '.encodings'):
             return LanguasitoAPI.load_local(filename)
         else:
             print("UserWarning: Model not found and automatic downloading is not yet supported")
             return None
 
     @staticmethod
-    def load_local(model: str):
+    def load_local(model_name: str):
         enc = Encodings()
-        enc.load('{0}.encodings'.format(model))
+        enc.load('{0}.encodings'.format(model_name))
         model = Languasito(enc)
-        model.load('{0}.model'.format(model))
+        tmp = torch.load('{0}.best'.format(model_name), map_location='cpu')
+        # model.load(tmp['state_dict'])
+        model.load_state_dict(tmp['state_dict'])
         api = LanguasitoAPI(model, enc)
         return api
