@@ -160,11 +160,11 @@ class Tokenizer(pl.LightningModule):
                 text = example[0].replace('▁', '')
                 tok_g += text
                 tok_p += text
-                if target == 2 or target == 3:
+                if target == 2 or target == 3 or target == 4:
                     if tok_g.strip() != '':
                         g_sent.append(tok_g)
                     tok_g = ''
-                if target == 3:
+                if target == 4:
                     if len(g_sent) != 0:
                         g_sents.append(g_sent)
                     g_sent = []
