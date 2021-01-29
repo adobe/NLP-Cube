@@ -40,7 +40,7 @@ class Tokenizer(pl.LightningModule):
         self._convs = nn.ModuleList(conv_layers)
         self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
-        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
+        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
 
         self._dev_results = {i: [] for i, _ in
                              enumerate(self._language_codes)}  # {langid: [] for langid in self._id2lang}
@@ -169,11 +169,11 @@ class Tokenizer(pl.LightningModule):
                         g_sents.append(g_sent)
                     g_sent = []
 
-                if pred == 2 or pred == 3:
+                if pred == 2 or pred == 3 or pred == 4:
                     if tok_p.strip():
                         p_sent.append(tok_p)
                     tok_p = ''
-                if pred == 3:
+                if pred == 4:
                     if len(p_sent) != 0:
                         p_sents.append(p_sent)
                     p_sent = []
