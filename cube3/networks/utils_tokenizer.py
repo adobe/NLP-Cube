@@ -187,7 +187,7 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
                 iToken += 1
                 cl = 0
                 target = 2  # token
-                if len(sentence.tokens[iToken].words) > 1:
+                if len(sentence.tokens[iToken - 1].words) > 1:
                     target = 3  # multiword token
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
@@ -393,7 +393,7 @@ class TokenCollateTrainHF(TokenCollateTrain):
                 iToken += 1
                 cl = 0
                 target = 2  # token
-                if len(sentence.tokens[iToken].words) > 1:
+                if len(sentence.tokens[iToken - 1].words) > 1:
                     target = 3  # multiword token
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
