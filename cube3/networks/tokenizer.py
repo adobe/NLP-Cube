@@ -170,7 +170,7 @@ class Tokenizer(pl.LightningModule):
                     g_sent = []
 
                 if pred == 2 or pred == 3 or pred == 4:
-                    if tok_p.strip():
+                    if tok_p.strip() != '':
                         p_sent.append(tok_p)
                     tok_p = ''
                 if pred == 4:
