@@ -8,10 +8,6 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.utils.data.dataset import Dataset
-from torch.utils.data import DataLoader
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-import numpy as np
 from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TokenizerConfig
@@ -19,18 +15,17 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, WordGram
 import random
 
-from cube3.networks.utils import TokenizationDataset, TokenCollate
-
 from cube3.networks.modules import WordGram
 
 
 class Tokenizer(pl.LightningModule):
-    def __init__(self, config: TokenizerConfig, encodings: Encodings, language_codes: [] = None):
+    def __init__(self, config: TokenizerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
         super().__init__()
         self._language_codes = language_codes
         self._config = config
+        self._ext_word_emb = ext_word_emb
         conv_layers = []
-        cs_inp = 768 + config.lang_emb_size + 256
+        cs_inp = self._ext_word_emb + config.lang_emb_size + 256
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -72,12 +67,12 @@ class Tokenizer(pl.LightningModule):
         pos = 0
         for ii in range(x_emb.shape[0]):
             slist_char = []
-            slist_char.append(torch.zeros((1, 256),
-                                          device=self._get_device(), dtype=torch.float))  # start token
+            # slist_char.append(torch.zeros((1, 256),
+            #                              device=self._get_device(), dtype=torch.float))  # start token
             for jj in range(sl[ii]):
                 slist_char.append(char_emb_packed[pos, :].unsqueeze(0))
                 pos += 1
-            for jj in range(x_emb.shape[1] - sl[ii] - 1):
+            for jj in range(x_emb.shape[1] - sl[ii]):
                 slist_char.append(torch.zeros((1, 256),
                                               device=self._get_device(), dtype=torch.float))
             sent_emb = torch.cat(slist_char, dim=0)
@@ -91,7 +86,7 @@ class Tokenizer(pl.LightningModule):
         res = None
         cnt = 0
         for conv in self._convs:
-            conv_out = conv(x)
+            conv_out = conv(x.float())
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
             if res is None:
                 res = tmp

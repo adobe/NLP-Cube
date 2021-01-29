@@ -28,6 +28,10 @@ class LMHelper:
     def apply(self, document: Document):
         pass
 
+    @abstractmethod
+    def apply_raw(self, batch):
+        pass
+
 
 class LMHelperFT(LMHelper):
     def __init__(self, device: str = 'cpu', model: str = None):
@@ -53,6 +57,15 @@ class LMHelperFT(LMHelper):
             for jj in range(len(document.sentences[ii].words)):
                 document.sentences[ii].words[jj].emb = self._fasttext.get_word_vector(
                     document.sentences[ii].words[jj].word)
+
+    def apply_raw(self, batch):
+        embeddings = []
+        for ii in range(len(batch)):
+            c_emb = []
+            for jj in range(len(batch[ii])):
+                c_emb.append(self._fasttext.get_word_vector(batch[ii][jj]))
+            embeddings.append(c_emb)
+        return embeddings
 
 
 class LMHelperLanguasito(LMHelper):
@@ -85,6 +98,25 @@ class LMHelperLanguasito(LMHelper):
             for ii in range(len(batch)):
                 for jj in range(len(batch[ii])):
                     document.sentences[ii + start].words[jj].emb = embeddings[ii][jj]
+
+    def apply_raw(self, batch):
+        BATCH_SIZE = 8
+        num_batches = len(batch) // BATCH_SIZE
+        if len(batch) % BATCH_SIZE != 0:
+            num_batches += 1
+
+        for iBatch in range(num_batches):
+            start = iBatch * BATCH_SIZE
+            stop = min(iBatch * BATCH_SIZE + BATCH_SIZE, len(batch))
+            batch = []
+            for ii in range(start, stop):
+                cb = []
+                for w in batch[ii]:
+                    cb.append(w.word)
+                batch.append(cb)
+            embeddings = self._languasito(batch)
+
+        return embeddings
 
 
 class LMHelperHF(LMHelper):
@@ -158,6 +190,9 @@ class LMHelperHF(LMHelper):
             wemb = self._compute_we([sent])
             for ii in range(len(wemb)):
                 sent.words[ii].emb = wemb[ii]
+
+    def apply_raw(self, batch):
+        pass
 
 
 if __name__ == "__main__":

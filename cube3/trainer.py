@@ -18,8 +18,9 @@ from cube3.networks.tagger import Tagger
 from cube3.networks.parser import Parser
 from cube3.networks.lemmatizer import Lemmatizer
 from cube3.networks.compound import Compound
-from cube3.networks.utils import MorphoDataset, MorphoCollate, TokenizationDataset, TokenCollate, \
+from cube3.networks.utils import MorphoDataset, MorphoCollate, TokenizationDataset, \
     Word2TargetCollate, LemmaDataset, CompoundDataset
+from cube3.networks.utils_tokenizer import TokenCollateTrainHF, TokenCollateTrainFTLanguasito
 from cube3.networks.lm import LMHelperFT, LMHelperHF, LMHelperLanguasito
 
 
@@ -138,10 +139,17 @@ class Trainer():
                 verbose=True,
                 mode='max'
             )
-            collate = TokenCollate(enc, lm_device=args.lm_device, lm_model=args.lm_model,
-                                   no_space_lang=config.no_space_lang)
+            parts = args.lm_model.split(':')
+            if parts[0] == 'transformer':
+                collate = TokenCollateTrainHF(enc, lm_device=args.lm_device, lm_model=parts[1],
+                                              no_space_lang=config.no_space_lang)
+            else:
+                collate = TokenCollateTrainFTLanguasito(enc, lm_device=args.lm_device, lm_model=args.lm_model,
+                                                        no_space_lang=config.no_space_lang)
+
             callbacks = [early_stopping_callback, Tokenizer.PrintAndSaveCallback(self.store_prefix)]
-            model = Tokenizer(config=config, encodings=enc, language_codes=self.language_codes)
+            model = Tokenizer(config=config, encodings=enc, language_codes=self.language_codes,
+                              ext_word_emb=collate.get_embeddings_size())
 
         if self.task == "tagger":
             early_stopping_callback = EarlyStopping(
