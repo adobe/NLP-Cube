@@ -19,7 +19,7 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, WordGram
 import random
 
-from cube3.networks.utils import LMHelper, TokenizationDataset, TokenCollate
+from cube3.networks.utils import TokenizationDataset, TokenCollate
 
 from cube3.networks.modules import WordGram
 
@@ -47,7 +47,8 @@ class Tokenizer(pl.LightningModule):
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 4)
 
-        self._dev_results = {i:[] for i,_ in enumerate(self._language_codes)} #{langid: [] for langid in self._id2lang}
+        self._dev_results = {i: [] for i, _ in
+                             enumerate(self._language_codes)}  # {langid: [] for langid in self._id2lang}
         self._res = {}
         for language_code in self._language_codes:
             self._res[language_code] = {"sent": 0., "token": 0.}
@@ -201,7 +202,7 @@ class Tokenizer(pl.LightningModule):
             self.log('val/SENT/{0}'.format(lang), sent_f)
             self.log('val/TOKEN/{0}'.format(lang), tok_f)
 
-        self._dev_results = {i:[] for i,_ in enumerate(self._language_codes)}
+        self._dev_results = {i: [] for i, _ in enumerate(self._language_codes)}
         self._epoch_results = self._compute_early_stop(results)
         self.log('val/early_meta', self._early_stop_meta_val)
 
@@ -298,6 +299,7 @@ def _conll_eval(gold, pred):
         return 0, 0
     else:
         return result['Sentences'].f1, result['Tokens'].f1
+
 
 """
 if __name__ == '__main__':

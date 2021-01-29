@@ -5,9 +5,7 @@ sys.path.append('')
 import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
-from torch.utils.data import DataLoader
-from transformers import AutoTokenizer
-from transformers import AutoModel
+
 from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 
@@ -386,7 +384,7 @@ class MorphoCollate:
         for sent in batch:
             for word in sent.words:
                 a_word_len.append(len(word.word))
-                x_word_embeddings.append(word._emb)
+                x_word_embeddings.append(word.emb)
         x_sent_len = np.array(a_sent_len, dtype=np.long)
         x_word_len = np.array(a_word_len, dtype=np.long)
         max_sent_len = np.max(x_sent_len)
@@ -469,75 +467,6 @@ class MorphoCollate:
             response['y_label'] = torch.tensor(y_label)
 
         return response
-
-
-class LMHelper:
-    def __init__(self, device: str = 'cpu', model: str = None):
-        if model is None:
-            self._splitter = AutoTokenizer.from_pretrained('xlm-roberta-base')
-            self._xlmr = AutoModel.from_pretrained('xlm-roberta-base',
-                                                   output_hidden_states=True)
-        else:
-            self._splitter = AutoTokenizer.from_pretrained(model)
-            self._xlmr = AutoModel.from_pretrained(model, output_hidden_states=True)
-        self._xlmr.eval()
-        self._xlmr.to(device)
-        self._device = device
-
-    def _compute_we(self, batch: [Sentence]):
-        # XML-Roberta
-
-        # convert all words into wordpiece indices
-        word2pieces = {}
-        new_sents = []
-        START = 0
-        PAD = 1
-        END = 2
-        for ii in range(len(batch)):
-            c_sent = [START]
-            pos = 1
-            for jj in range(len(batch[ii].words)):
-                word = batch[ii].words[jj].word
-                pieces = self._splitter(word)['input_ids'][1:-1]
-                word2pieces[(ii, jj)] = []
-                for piece in pieces:
-                    c_sent.append(piece)
-                    word2pieces[(ii, jj)].append([ii, pos])
-                    pos += 1
-            c_sent.append(END)
-            new_sents.append(c_sent)
-        max_len = max([len(s) for s in new_sents])
-        input_ids = np.ones((len(new_sents), max_len), dtype=np.long) * PAD  # pad everything
-        for ii in range(input_ids.shape[0]):
-            for jj in range(input_ids.shape[1]):
-                if jj < len(new_sents[ii]):
-                    input_ids[ii, jj] = new_sents[ii][jj]
-        with torch.no_grad():
-            out = self._xlmr(torch.tensor(input_ids, device=self._device), return_dict=True)
-            we = out['last_hidden_state'].detach().cpu().numpy()
-
-        word_emb = []
-        for ii in range(len(batch)):
-            for jj in range(len(batch[ii].words)):
-                pieces = word2pieces[ii, jj]
-                if len(pieces) != 0:
-                    m = we[pieces[0][0], pieces[0][1]]
-                    for zz in range(len(pieces) - 1):
-                        m += we[pieces[zz][0], pieces[zz][1]]
-                    m = m / len(pieces)
-                else:
-                    m = np.zeros((768), dtype=np.float)
-                word_emb.append(m)
-        # word_emb = torch.cat(word_emb, dim=0)
-
-        return word_emb
-
-    def apply(self, doc: Document):
-        import tqdm
-        for sent in tqdm.tqdm(doc.sentences, desc="Pre-computing embeddings", unit="sent"):
-            wemb = self._compute_we([sent])
-            for ii in range(len(wemb)):
-                sent.words[ii]._emb = wemb[ii]
 
 
 Arc = namedtuple('Arc', ('tail', 'weight', 'head'))

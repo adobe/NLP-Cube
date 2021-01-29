@@ -20,3 +20,4 @@ pytorch-lightning
 
 transformers
 sentencepiece
+fasttext

@@ -18,8 +18,9 @@ from cube3.networks.tagger import Tagger
 from cube3.networks.parser import Parser
 from cube3.networks.lemmatizer import Lemmatizer
 from cube3.networks.compound import Compound
-from cube3.networks.utils import LMHelper, MorphoDataset, MorphoCollate, TokenizationDataset, TokenCollate, \
+from cube3.networks.utils import MorphoDataset, MorphoCollate, TokenizationDataset, TokenCollate, \
     Word2TargetCollate, LemmaDataset, CompoundDataset
+from cube3.networks.lm import LMHelperFT, LMHelperHF, LMHelperLanguasito
 
 
 class Trainer():
@@ -99,7 +100,17 @@ class Trainer():
         config.save('{}.config'.format(self.args.store))
 
         if self.task != "tokenizer" and self.task != 'lemmatizer' and self.task != 'cwe':
-            helper = LMHelper(device=self.args.lm_device, model=config.lm_model)
+            lm_model = config.lm_model
+            parts = lm_model.split(':')
+            if parts[0] not in ['transformer', 'fasttext', 'languasito']:
+                print("Error: model prefix should be in the form of transformer: fasttext: or languasito:")
+                sys.exit(0)
+            if parts[0] == 'transformer':
+                helper = LMHelperHF(device=self.args.lm_device, model=parts[1])
+            elif parts[0] == 'fasttext':
+                helper = LMHelperFT(device=self.args.lm_device, model=parts[1])
+            elif parts[0] == 'languasito':
+                helper = LMHelperLanguasito(device=self.args.lm_device, model=parts[1])
             helper.apply(self.doc_dev)
             helper.apply(self.doc_train)
 
@@ -140,7 +151,8 @@ class Trainer():
                 mode='max'
             )
             callbacks = [early_stopping_callback, Tagger.PrintAndSaveCallback(self.store_prefix)]
-            model = Tagger(config=config, encodings=enc, language_codes=self.language_codes)
+            model = Tagger(config=config, encodings=enc, language_codes=self.language_codes,
+                           ext_word_emb=helper.get_embedding_size())
 
         if self.task == "parser":
             collate = MorphoCollate(enc, add_parsing=True)
@@ -151,7 +163,8 @@ class Trainer():
                 mode='max'
             )
             callbacks = [early_stopping_callback, Parser.PrintAndSaveCallback(self.store_prefix)]
-            model = Parser(config=config, encodings=enc, language_codes=self.language_codes)
+            model = Parser(config=config, encodings=enc, language_codes=self.language_codes,
+                           ext_word_emb=helper.get_embedding_size())
 
         if self.task == "lemmatizer":
             collate = Word2TargetCollate(enc)

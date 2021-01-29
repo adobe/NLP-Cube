@@ -19,18 +19,18 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm
 import random
 
-from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset
+from cube3.networks.utils import MorphoCollate, MorphoDataset
 
 from cube3.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):
-    def __init__(self, config: TaggerConfig, encodings: Encodings, language_codes: [] = None):
+    def __init__(self, config: TaggerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
         super().__init__()
-        self._device = "cpu" # default
+        self._device = "cpu"  # default
         self._config = config
         self._encodings = encodings
-
+        self._ext_word_emb = ext_word_emb
 
         self._word_net = WordGram(len(encodings.char2int), num_langs=encodings.num_langs + 1,
                                   num_filters=config.char_filter_size, char_emb_size=config.char_emb_size,
@@ -40,7 +40,7 @@ class Tagger(pl.LightningModule):
         self._language_codes = language_codes
 
         conv_layers = []
-        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
+        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -111,7 +111,7 @@ class Tagger(pl.LightningModule):
             for jj in range(x_sents.shape[1] - sl[ii]):
                 slist_char.append(torch.zeros((1, self._config.char_filter_size // 2),
                                               device=self._get_device(), dtype=torch.float))
-                slist_emb.append(torch.zeros((1, 768),
+                slist_emb.append(torch.zeros((1, self._ext_word_emb),
                                              device=self._get_device(), dtype=torch.float))
             sent_emb = torch.cat(slist_char, dim=0)
             word_emb = torch.cat(slist_emb, dim=0)
@@ -299,8 +299,8 @@ class Tagger(pl.LightningModule):
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
-    def process(self, doc: Document, upos:bool=True, xpos:bool=True, attrs:bool=True,
-                batch_size:int=1, num_workers:int=4) -> Document :
+    def process(self, doc: Document, upos: bool = True, xpos: bool = True, attrs: bool = True,
+                batch_size: int = 1, num_workers: int = 4) -> Document:
         if (upos or xpos or attrs) == False:
             raise Exception("To perform tagging at least one of 'upos', 'xpos' or 'attrs' must be set to True.")
 
@@ -311,7 +311,7 @@ class Tagger(pl.LightningModule):
         collate = MorphoCollate(self._encodings)
 
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
-                                  shuffle=False, num_workers=num_workers, pin_memory=True)
+                                shuffle=False, num_workers=num_workers, pin_memory=True)
         index = 0
 
         with torch.no_grad():
@@ -327,18 +327,21 @@ class Tagger(pl.LightningModule):
                 if attrs:
                     pred_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
 
-                for sentence_index in range(batch_size): # for each sentence
-                    #print(f"at index {index+sentence_index}, sentence {sentence_index} has {batch['x_sent_len'][sentence_index]} words.")
+                for sentence_index in range(batch_size):  # for each sentence
+                    # print(f"at index {index+sentence_index}, sentence {sentence_index} has {batch['x_sent_len'][sentence_index]} words.")
                     for word_index in range(batch["x_sent_len"][sentence_index]):
                         if upos:
-                            doc.sentences[index + sentence_index].words[word_index].upos = self._encodings.upos_list[pred_upos[sentence_index][word_index]]
+                            doc.sentences[index + sentence_index].words[word_index].upos = self._encodings.upos_list[
+                                pred_upos[sentence_index][word_index]]
                         if xpos:
-                            doc.sentences[index + sentence_index].words[word_index].xpos = self._encodings.xpos_list[pred_xpos[sentence_index][word_index]]
+                            doc.sentences[index + sentence_index].words[word_index].xpos = self._encodings.xpos_list[
+                                pred_xpos[sentence_index][word_index]]
                         if attrs:
-                            doc.sentences[index + sentence_index].words[word_index].attrs = self._encodings.attrs_list[pred_attrs[sentence_index][word_index]]
+                            doc.sentences[index + sentence_index].words[word_index].attrs = self._encodings.attrs_list[
+                                pred_attrs[sentence_index][word_index]]
 
                 index += batch_size
-#                break
+        #                break
         return doc
 
     class PrintAndSaveCallback(pl.callbacks.Callback):
@@ -372,25 +375,26 @@ class Tagger(pl.LightningModule):
                 print(msg)
             print("\n")
 
+
 if __name__ == '__main__':
 
     root = "data/be"
     language_code = "be_hse"
-    device = 'cpu'#'cuda'
+    device = 'cpu'  # 'cuda'
     batch_size = 2
 
     # read yaml
-    object_config = yaml.full_load(open(root+".yaml"))
+    object_config = yaml.full_load(open(root + ".yaml"))
 
     # read model config
-    config = TaggerConfig(filename=root+".config")
+    config = TaggerConfig(filename=root + ".config")
 
     # read encodings
     encodings = Encodings()
-    encodings.load(filename=root+".encodings")
+    encodings.load(filename=root + ".encodings")
 
     # load models
-    tagger_UPOS = Tagger.load_from_checkpoint(root + "."+language_code+".upos", config=config, encodings=encodings,
+    tagger_UPOS = Tagger.load_from_checkpoint(root + "." + language_code + ".upos", config=config, encodings=encodings,
                                               language_codes=object_config["language_codes"])
     tagger_UPOS.to(device)
     tagger_UPOS.eval()
@@ -402,15 +406,17 @@ if __name__ == '__main__':
     tagger_XPOS.eval()
     tagger_XPOS.freeze()
 
-    tagger_ATTRS = Tagger.load_from_checkpoint(root + "." + language_code + ".attrs", config=config, encodings=encodings,
-                                              language_codes=object_config["language_codes"])
+    tagger_ATTRS = Tagger.load_from_checkpoint(root + "." + language_code + ".attrs", config=config,
+                                               encodings=encodings,
+                                               language_codes=object_config["language_codes"])
     tagger_ATTRS.to(device)
     tagger_ATTRS.eval()
     tagger_ATTRS.freeze()
 
     # read a doc
     doc = Document()
-    doc.load("corpus/ud-treebanks-v2.5/UD_Belarusian-HSE/be_hse-ud-dev.conllu", lang_id=object_config["language_codes"].index(language_code))
+    doc.load("corpus/ud-treebanks-v2.5/UD_Belarusian-HSE/be_hse-ud-dev.conllu",
+             lang_id=object_config["language_codes"].index(language_code))
 
     for si, _ in enumerate(doc.sentences):
         for wi, _ in enumerate(doc.sentences[si].words):

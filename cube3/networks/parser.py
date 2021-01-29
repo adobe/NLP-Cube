@@ -19,16 +19,17 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention
 import random
 
-from cube3.networks.utils import LMHelper, MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder
+from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder
 
 from cube3.networks.modules import WordGram
 
 
 class Parser(pl.LightningModule):
-    def __init__(self, config: ParserConfig, encodings: Encodings, language_codes: [] = None):
+    def __init__(self, config: ParserConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
         super().__init__()
         self._config = config
         self._encodings = encodings
+        self._ext_word_emb = ext_word_emb
 
         self._word_net = WordGram(len(encodings.char2int), num_langs=encodings.num_langs + 1,
                                   num_filters=config.char_filter_size, char_emb_size=config.char_emb_size,
@@ -38,7 +39,7 @@ class Parser(pl.LightningModule):
         self._language_codes = language_codes
 
         conv_layers = []
-        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768
+        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -63,7 +64,7 @@ class Parser(pl.LightningModule):
         self._xpos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
-        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + 768, 200, num_layers=3,
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + self._ext_word_emb, 200, num_layers=3,
                             batch_first=True, bidirectional=True, dropout=0.33)
 
         self._pre_out = LinearNorm(400 + config.lang_emb_size, config.pre_parser_size)
@@ -74,7 +75,8 @@ class Parser(pl.LightningModule):
         self._att_net = BilinearAttention(config.head_size, config.head_size)
         # self._att_net = Attention(config.head_size // 2, config.head_size)
         self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
-        self._r_emb = nn.Embedding(1, config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + 768)
+        self._r_emb = nn.Embedding(1,
+                                   config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb)
 
         # self._decoder = GreedyDecoder()
         self._decoder = ChuLiuEdmondsDecoder()
@@ -123,7 +125,7 @@ class Parser(pl.LightningModule):
             for jj in range(x_sents.shape[1] - sl[ii]):
                 slist_char.append(torch.zeros((1, self._config.char_filter_size // 2),
                                               device=self._get_device(), dtype=torch.float))
-                slist_emb.append(torch.zeros((1, 768),
+                slist_emb.append(torch.zeros((1, self._ext_word_emb),
                                              device=self._get_device(), dtype=torch.float))
             sent_emb = torch.cat(slist_char, dim=0)
             word_emb = torch.cat(slist_emb, dim=0)
@@ -184,7 +186,7 @@ class Parser(pl.LightningModule):
 
         # parsing
         word_emb_ext = torch.cat(
-            [torch.zeros((word_emb_ext.shape[0], 1, 768), device=self._get_device(), dtype=torch.float), word_emb_ext],
+            [torch.zeros((word_emb_ext.shape[0], 1, self._ext_word_emb), device=self._get_device(), dtype=torch.float), word_emb_ext],
             dim=1)
         x = self._mask_concat([x_parse, word_emb_ext])
         x = torch.cat([x, lang_emb], dim=-1)
@@ -419,6 +421,7 @@ class Parser(pl.LightningModule):
                 upos = metrics["val/UPOS/{0}".format(lang)]
                 xpos = metrics["val/XPOS/{0}".format(lang)]
                 attrs = metrics["val/ATTRS/{0}".format(lang)]
-                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos, attrs)
+                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos,
+                                                                                       attrs)
                 print(msg)
             print("\n")

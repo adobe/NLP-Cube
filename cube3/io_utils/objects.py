@@ -167,6 +167,7 @@ class Word:
         self.deps = deps
         self.space_after = space_after
         self.parent = token
+        self.emb = None
 
     def __repr__(self):
         return "\t".join([str(self.index), self.word if isinstance(self.word, str) else self.word.encode('utf-8'),
