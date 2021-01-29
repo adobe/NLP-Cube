@@ -7,7 +7,7 @@ import numpy as np
 from typing import *
 
 sys.path.append('')
-sys.path.append('../Languasito')
+sys.path.append('Languasito')
 from transformers import AutoTokenizer
 from transformers import AutoModel
 from cube3.io_utils.objects import Sentence, Document
