@@ -16,13 +16,18 @@ class LanguasitoAPI:
         self._languasito.eval()
         self._encodings = encodings
         self._collate = LanguasitoCollate(encodings, live=True)
+        self._device = 'cpu'
 
     def to(self, device: str):
         self._languasito.to(device)
+        self._device = device
 
     def __call__(self, batch):
         with torch.no_grad():
             x = self._collate.collate_fn(batch)
+            for key in x:
+                if isinstance(x[key], torch.Tensor):
+                    x[key] = x[key].to(self._device)
             rez = self._languasito(x)
         emb = []
         pred_emb = rez['emb'].detach().cpu().numpy()
