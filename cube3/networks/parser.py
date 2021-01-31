@@ -288,7 +288,7 @@ class Parser(pl.LightningModule):
         return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
-        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs, _ = self.forward(batch)
         y_upos = batch['y_upos']
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
