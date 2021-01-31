@@ -137,6 +137,7 @@ class ParserConfig(Config):
         self.head_size = 100
         self.label_size = 100
         self.lm_model = 'xlm-roberta-base'
+        self.rhl_win_size = 7
         self._valid = True
 
         if filename is None:

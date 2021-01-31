@@ -173,9 +173,10 @@ class Word2TargetCollate:
 
 
 class MorphoCollate:
-    def __init__(self, encodings: Encodings, add_parsing=False):
+    def __init__(self, encodings: Encodings, add_parsing=False, rhl_win_size=7):
         self._encodings = encodings
         self._add_parsing = add_parsing
+        self._rhl_win_size = rhl_win_size
 
     def collate_fn(self, batch: [Sentence]):
         a_sent_len = [len(sent.words) for sent in batch]
@@ -205,6 +206,7 @@ class MorphoCollate:
 
         y_head = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
         y_label = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+        y_rhl = np.zeros((x_sent.shape[0], x_sent.shape[1]))
 
         for iSent in range(len(batch)):
             sent = batch[iSent]
@@ -212,6 +214,10 @@ class MorphoCollate:
             for iWord in range(len(sent.words)):
                 word = sent.words[iWord]
                 y_head[iSent, iWord] = word.head
+                rhl = word.head - iWord + self._rhl_win_size
+                rhl = np.clip(rhl, 0, self._rhl_win_size * 2)
+                y_rhl[iSent, iWord] = rhl
+
                 if word.label in self._encodings.label2int:
                     y_label[iSent, iWord] = self._encodings.label2int[word.label]
                 if word.upos in self._encodings.upos2int:
@@ -265,6 +271,7 @@ class MorphoCollate:
         if self._add_parsing:
             response['y_head'] = torch.tensor(y_head)
             response['y_label'] = torch.tensor(y_label)
+            response['y_rhl'] = torch.tensor(y_rhl)
 
         return response
 

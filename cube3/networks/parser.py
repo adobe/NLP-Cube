@@ -74,7 +74,10 @@ class Parser(pl.LightningModule):
         self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
         self._att_net = BilinearAttention(config.head_size, config.head_size)
         # self._att_net = Attention(config.head_size // 2, config.head_size)
-        self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
+        # self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
+        self._label_linear = nn.Linear(config.label_size * 2, len(encodings.label2int))
+        self._label_bilinear = nn.Bilinear(config.label_size, config.label_size, len(encodings.label2int))
+        self._rhl = LinearNorm(config.head_size, config.rhl_win_size * 2)  # relative head location
         self._r_emb = nn.Embedding(1,
                                    config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb)
 
@@ -186,7 +189,8 @@ class Parser(pl.LightningModule):
 
         # parsing
         word_emb_ext = torch.cat(
-            [torch.zeros((word_emb_ext.shape[0], 1, self._ext_word_emb), device=self._get_device(), dtype=torch.float), word_emb_ext],
+            [torch.zeros((word_emb_ext.shape[0], 1, self._ext_word_emb), device=self._get_device(), dtype=torch.float),
+             word_emb_ext],
             dim=1)
         x = self._mask_concat([x_parse, word_emb_ext])
         x = torch.cat([x, lang_emb], dim=-1)
@@ -202,8 +206,9 @@ class Parser(pl.LightningModule):
             a = self._att_net(h_r1[:, ii, :], h_r2)
             att_stack.append(a.unsqueeze(1))
         att = torch.cat(att_stack, dim=1)
+        rhl = self._rhl(h_r1)
 
-        return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
+        return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs, rhl
 
     def _mask_concat(self, representations):
         if self.training:
@@ -243,7 +248,7 @@ class Parser(pl.LightningModule):
             x_stack.append(torch.cat(xx, dim=1))
         x_stack = torch.cat(x_stack, dim=0)
         hid = torch.cat([x1, x_stack], dim=-1)
-        return self._label(hid)
+        return self._label_linear(hid) + self._label_bilinear(x1, x_stack)
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':
@@ -255,12 +260,13 @@ class Parser(pl.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs, rhl = self.forward(batch)
         y_upos = batch['y_upos']
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
         y_head = batch['y_head']
         y_label = batch['y_label']
+        y_rhl = batch['y_rhl']
 
         pred_labels = self._get_labels(l_r1, l_r2, y_head.detach().cpu().numpy())
 
@@ -274,8 +280,9 @@ class Parser(pl.LightningModule):
 
         loss_uas = F.cross_entropy(att.view(-1, att.shape[2]), y_head.view(-1))
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
+        loss_rhl = F.cross_entropy(rhl.view(-1, rhl.shape[2]), y_rhl.view(-1))
 
-        step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
+        step_loss = loss_uas + loss_las + loss_rhl + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
                 (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
 
         return {'loss': step_loss}
