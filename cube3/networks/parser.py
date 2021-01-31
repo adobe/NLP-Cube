@@ -206,7 +206,7 @@ class Parser(pl.LightningModule):
             a = self._att_net(h_r1[:, ii, :], h_r2)
             att_stack.append(a.unsqueeze(1))
         att = torch.cat(att_stack, dim=1)
-        rhl = self._rhl(h_r1)
+        rhl = self._rhl(h_r1[:,1:,:])
 
         return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs, rhl
 
@@ -246,7 +246,8 @@ class Parser(pl.LightningModule):
                 else:
                     xx.append(x2[ii, 0].unsqueeze(0).unsqueeze(0))
             x_stack.append(torch.cat(xx, dim=1))
-        x_stack = torch.cat(x_stack, dim=0)
+        x_stack = torch.cat(x_stack, dim=0).contiguous()
+        x1 = x1.contiguous()
         hid = torch.cat([x1, x_stack], dim=-1)
         return self._label_linear(hid) + self._label_bilinear(x1, x_stack)
 
@@ -282,7 +283,7 @@ class Parser(pl.LightningModule):
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
         loss_rhl = F.cross_entropy(rhl.view(-1, rhl.shape[2]), y_rhl.view(-1))
 
-        step_loss = loss_uas + loss_las + loss_rhl + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
+        step_loss = loss_uas + loss_las + loss_rhl*0.1 + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
                 (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
 
         return {'loss': step_loss}

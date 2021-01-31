@@ -206,7 +206,7 @@ class MorphoCollate:
 
         y_head = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
         y_label = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
-        y_rhl = np.zeros((x_sent.shape[0], x_sent.shape[1]))
+        y_rhl = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
 
         for iSent in range(len(batch)):
             sent = batch[iSent]
@@ -215,7 +215,7 @@ class MorphoCollate:
                 word = sent.words[iWord]
                 y_head[iSent, iWord] = word.head
                 rhl = word.head - iWord + self._rhl_win_size
-                rhl = np.clip(rhl, 0, self._rhl_win_size * 2)
+                rhl = np.clip(rhl, 0, self._rhl_win_size * 2 - 1)
                 y_rhl[iSent, iWord] = rhl
 
                 if word.label in self._encodings.label2int:
