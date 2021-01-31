@@ -77,7 +77,7 @@ class Parser(pl.LightningModule):
         # self._label = LinearNorm(config.label_size * 2, len(encodings.label2int))
         self._label_linear = nn.Linear(config.label_size * 2, len(encodings.label2int))
         self._label_bilinear = nn.Bilinear(config.label_size, config.label_size, len(encodings.label2int))
-        self._rhl = LinearNorm(config.head_size, config.rhl_win_size * 2)  # relative head location
+        self._rhl = LinearNorm(config.pre_parser_size, config.rhl_win_size * 2)  # relative head location
         self._r_emb = nn.Embedding(1,
                                    config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb)
 
@@ -206,7 +206,7 @@ class Parser(pl.LightningModule):
             a = self._att_net(h_r1[:, ii, :], h_r2)
             att_stack.append(a.unsqueeze(1))
         att = torch.cat(att_stack, dim=1)
-        rhl = self._rhl(h_r1[:,1:,:])
+        rhl = self._rhl(pre_parsing[:,1:,:])
 
         return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs, rhl
 
