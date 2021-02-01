@@ -401,6 +401,9 @@ class TokenCollateTrainHF(TokenCollateTrain):
                     target = 3  # multiword token
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
+                for tt in range(ii, len(targets)):
+                    targets[ii] = target
+                break
             targets[ii] = target
         return targets
 
