@@ -163,7 +163,7 @@ class Trainer():
                            ext_word_emb=helper.get_embedding_size())
 
         if self.task == "parser":
-            collate = MorphoCollate(enc, add_parsing=True)
+            collate = MorphoCollate(enc, add_parsing=True, rhl_win_size=config.rhl_win_size)
             early_stopping_callback = EarlyStopping(
                 monitor='val/early_meta',
                 patience=args.patience,
