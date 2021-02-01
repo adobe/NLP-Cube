@@ -135,7 +135,7 @@ class ParserConfig(Config):
         self.aux_softmax_location = 5
         self.pre_parser_size = 500
         self.head_size = 100
-        self.label_size = 100
+        self.label_size = 500
         self.lm_model = 'xlm-roberta-base'
         self.rhl_win_size = 2
         self._valid = True

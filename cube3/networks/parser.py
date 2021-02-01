@@ -197,10 +197,10 @@ class Parser(pl.LightningModule):
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
         pre_parsing = torch.dropout(torch.tanh(self._pre_out(output)), 0.33, self.training)
-        h_r1 = torch.tanh(self._head_r1(pre_parsing))
-        h_r2 = torch.tanh(self._head_r2(pre_parsing))
-        l_r1 = torch.tanh(self._label_r1(pre_parsing))
-        l_r2 = torch.tanh(self._label_r2(pre_parsing))
+        h_r1 = torch.dropout(torch.tanh(self._head_r1(pre_parsing)), 0.33, self.training)
+        h_r2 = torch.dropout(torch.tanh(self._head_r2(pre_parsing)), 0.33, self.training)
+        l_r1 = torch.dropout(torch.tanh(self._label_r1(pre_parsing)), 0.33, self.training)
+        l_r2 = torch.dropout(torch.tanh(self._label_r2(pre_parsing)), 0.33, self.training)
         att_stack = []
         for ii in range(1, h_r1.shape[1]):
             a = self._att_net(h_r1[:, ii, :], h_r2)
@@ -281,9 +281,9 @@ class Parser(pl.LightningModule):
 
         loss_uas = F.cross_entropy(att.view(-1, att.shape[2]), y_head.view(-1))
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
-        loss_rhl = F.cross_entropy(rhl.view(-1, rhl.shape[2]), y_rhl.view(-1))
+        # loss_rhl = F.cross_entropy(rhl.view(-1, rhl.shape[2]), y_rhl.view(-1))
 
-        step_loss = loss_uas + loss_las + loss_rhl*0.1 + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
+        step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
                 (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
 
         return {'loss': step_loss}
