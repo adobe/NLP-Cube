@@ -383,6 +383,41 @@ class Parser(pl.LightningModule):
         self._epoch_results = self._compute_early_stop(res)
         self.log('val/early_meta', self._early_stop_meta_val)
 
+    def process(self, doc: Document, collate: MorphoCollate, batch_size: int = 32, num_workers: int = 4) -> Document:
+        self.eval()
+        dataset = MorphoDataset(doc)
+
+        dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
+                                shuffle=False, num_workers=num_workers, pin_memory=True)
+        index = 0
+
+        with torch.no_grad():
+            for batch in dataloader:
+                del batch['y_upos']
+                att, l_r1, l_r2, p_upos, _, _, _ = self.forward(batch)
+
+                x_sent_len = batch['x_sent_len']
+                sl = x_sent_len.detach().cpu().numpy()
+
+                batch_size = p_upos.size()[0]
+
+                att = torch.softmax(att, dim=-1).detach().cpu().numpy()
+                pred_heads = self._decoder.decode(att, sl)
+                pred_labels = self._get_labels(l_r1, l_r2, pred_heads)
+                pred_labels = torch.argmax(pred_labels.detach(), dim=-1).cpu()
+
+                for sentence_index in range(batch_size):  # for each sentence
+                    # print(f"at index {index+sentence_index}, sentence {sentence_index} has {batch['x_sent_len'][sentence_index]} words.")
+                    for word_index in range(batch["x_sent_len"][sentence_index]):
+                        head = pred_heads[sentence_index][word_index]
+                        label_id = pred_labels[sentence_index][word_index]
+                        doc.sentences[index + sentence_index].words[word_index].head = head
+                        doc.sentences[index + sentence_index].words[word_index].label = self._encodings.labels[label_id]
+
+                index += batch_size
+        #                break
+        return doc
+
     class PrintAndSaveCallback(pl.callbacks.Callback):
         def __init__(self, store_prefix):
             super().__init__()

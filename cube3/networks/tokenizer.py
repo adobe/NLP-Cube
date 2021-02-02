@@ -13,7 +13,8 @@ from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TokenizerConfig
 from cube3.networks.utils_tokenizer import TokenCollate
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, WordGram
+from cube3.networks.modules import ConvNorm, LinearNorm
+from torch.utils.data import DataLoader
 import random
 
 from cube3.networks.modules import WordGram
@@ -209,40 +210,41 @@ class Tokenizer(pl.LightningModule):
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
         return loss
 
-    def process(self, raw_text, collate: TokenCollate, batch_size=32, lang_id=0):
+    def process(self, raw_text, collate: TokenCollate, batch_size=32, num_workers: int = 4, lang_id: int = 0):
+        raw_text = raw_text.replace('\n', ' ').replace('\r', ' ')
+        new_text = raw_text.replace('  ', ' ')
+        while new_text != raw_text:
+            raw_text = new_text
+            new_text = raw_text.replace('  ', ' ')
+
         self.eval()
-        examples = collate.collate_fn_live(raw_text, lang_id)
-        num_batches = len(examples) // batch_size
-        if len(examples) % batch_size != 0:
-            num_batches += 1
+        from cube3.networks.utils_tokenizer import TokenDatasetLive
+        dataset = TokenDatasetLive(raw_text, collate.get_tokens)
+        collate._lang_id = lang_id
+        dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
+                                shuffle=False, num_workers=num_workers, pin_memory=True)
 
         toks = []
         pred = []
-        #for iBatch in range(num_batches):
-        #    start = iBatch * batch_size
-        #    stop = min(len(examples), start + batch_size)
-        #    print(start, stop)
-        batch = examples
-        print(batch)
-        for key in batch:
-            if isinstance(batch[key], torch.Tensor):
-                 batch[key] = batch[key].to(self._device)
+        import tqdm
+        for batch in tqdm.tqdm(dataloader):
 
-        x_text = batch['x_text']
-        y_offset = batch['y_offset'].cpu().numpy()
-        y_len = batch['y_len'].cpu().numpy()
-        with torch.no_grad():
-            y_pred = self.forward(batch)
-        print(y_pred)
-        y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
-        for ii in range(len(y_len)):
-            ofs = y_offset[ii]
-            for jj in range(y_len[ii]):
-                # self._dev_results[lang].append([x_text[ii][jj], y_target[ii, jj + ofs], y_pred[ii, jj + ofs]])
-                toks.append(x_text[ii][jj])
-                pred.append(y_pred[ii, jj + ofs])
-        print(pred)
-        print(toks)
+            for key in batch:
+                if isinstance(batch[key], torch.Tensor):
+                    batch[key] = batch[key].to(self._device)
+
+            x_text = batch['x_text']
+            y_offset = batch['y_offset'].cpu().numpy()
+            y_len = batch['y_len'].cpu().numpy()
+            with torch.no_grad():
+                y_pred = self.forward(batch)
+            y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
+            for ii in range(len(y_len)):
+                ofs = y_offset[ii]
+                for jj in range(y_len[ii]):
+                    toks.append(x_text[ii][jj])
+                    pred.append(y_pred[ii, jj + ofs])
+
         p_sents = []
         tok_p = ''
         p_mwes = []
@@ -276,12 +278,15 @@ class Tokenizer(pl.LightningModule):
 
         d = Document()
         for sent, mwe in zip(p_sents, p_mwes):
-            print(sent)
-            # s = Sentence(sequence=sent)
-            # for ii in range(len(mwe)):
-            #     s.tokens[ii].mwe = mwe[ii]
-            # s.lang_id = lang_id
-            # d.sentences.append(s)
+            seq = []
+            cnt = 0
+            spaceafter = "_"
+            for w in sent:
+                cnt += 1
+                seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
+            s = Sentence(sequence=seq, lang_id=lang_id)
+
+            d.sentences.append(s)
         return d
 
     def configure_optimizers(self):

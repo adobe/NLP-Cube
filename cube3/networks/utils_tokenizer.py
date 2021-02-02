@@ -10,6 +10,7 @@ from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.objects import Sentence
 from cube3.networks.lm import LMHelperLanguasito, LMHelperFT
 from languasito.utils import LanguasitoTokenizer
+from torch.utils.data.dataset import Dataset
 
 
 class TokenCollate:
@@ -25,41 +26,56 @@ class TokenCollate:
         pass
 
     @abstractmethod
-    def collate_fn_live(self, text, lang_id: int):
+    def collate_fn_live(self, text, lang_id: int, batch_size: int):
         pass
 
 
-def _make_batch_from_raw(toks):
-    batch_size = 500
-    overlap = 200
+def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     batch = []
-    num_batches = len(toks) // batch_size
-    if len(toks) % batch_size != 0:
+    num_batches = len(toks) // seq_len
+    if len(toks) % seq_len != 0:
         num_batches += 1
-    for iBatch in range(num_batches):
-        start = iBatch * batch_size
-        stop = min(iBatch * batch_size + batch_size, len(toks))
-        current = toks[start:stop]
-        left = max(0, start - overlap)
-        right = min(len(toks), stop + overlap)
-        prev = toks[left:start]
-        next = toks[stop + 1:right]
-        #if len(prev)==0:
-        #    prev=['']
-        #if len(next)==0:
-        #    next=['']
-        example = {'prev': prev, 'main': current, 'next': next}
-        batch.append(example)
-    return batch
+    start = iBatch * seq_len
+    stop = min(iBatch * seq_len + seq_len, len(toks))
+    current = toks[start:stop]
+    left = max(0, start - overlap)
+    right = min(len(toks), stop + overlap)
+    prev = toks[left:start]
+    next = toks[stop + 1:right]
+    # if len(prev)==0:
+    #    prev=['']
+    # if len(next)==0:
+    #    next=['']
+    example = {'prev': prev, 'main': current, 'next': next}
+    return example
+
+
+class TokenDatasetLive(Dataset):
+    def __init__(self, raw_text, pretokenize_func, seq_len=500, overlap=200):
+        self._tokenize = pretokenize_func
+        self._toks = self._tokenize(raw_text)
+        self._seq_len = seq_len
+        self._overlap = overlap
+        self._num_examples = len(self._toks) // seq_len
+        if len(self._toks) % seq_len != 0:
+            self._num_examples += 1
+
+    def __len__(self):
+        return self._num_examples
+
+    def __getitem__(self, item):
+        return _make_example_from_raw(self._toks, item, self._seq_len, self._overlap)
 
 
 class TokenCollateFTLanguasito(TokenCollate):
-    def __init__(self, encodings: Encodings, lm_model: str = None, lm_device: str = 'cuda:0', no_space_lang=False):
+    def __init__(self, encodings: Encodings, lm_model: str = None, lm_device: str = 'cuda:0', no_space_lang=False,
+                 lang_id=None):
         self._encodings = encodings
         self._tokenizer = LanguasitoTokenizer(no_space_language=no_space_lang)
         self._emb_size = 0
         self._lm_model = lm_model
         self._lm_device = lm_device
+        self._lang_id = lang_id
         parts = lm_model.split(':')
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=lm_device, model=parts[1])
@@ -70,12 +86,7 @@ class TokenCollateFTLanguasito(TokenCollate):
         else:
             print("UserWarning: unsupported LM type for tokenizer")
 
-    def collate_fn_live(self, text, lang_id: int):
-        toks = self._tokenizer(text)
-        batch = _make_batch_from_raw(toks)
-        return self.collate_fn(batch, lang_id=lang_id)
-
-    def collate_fn(self, batch, lang_id=None):
+    def collate_fn(self, batch):
         START = 0
         END = 2
         PAD = 1
@@ -95,12 +106,12 @@ class TokenCollateFTLanguasito(TokenCollate):
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
                 # toks, ids = self._tokenize(sent.text)
-                if lang_id is None:
+                if self._lang_id is None:
                     toks = self._tokenizer(sent.text)
                     l_id = sent.lang_id
                 else:
                     toks = sent
-                    l_id = lang_id
+                    l_id = self._lang_id
                 for word in toks:
                     a_word_len.append(len(word))
                     x_lang_word.append(l_id)
@@ -116,7 +127,7 @@ class TokenCollateFTLanguasito(TokenCollate):
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
                 # toks, ids = self._tokenize(sent.text)
-                if lang_id is None:
+                if self._lang_id is None:
                     toks = self._tokenizer(sent.text)
                 else:
                     toks = sent
@@ -144,25 +155,25 @@ class TokenCollateFTLanguasito(TokenCollate):
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
-            if lang_id is None:
+            if self._lang_id is None:
                 x_lang.append(current_sentence.lang_id + 1)
             else:
-                x_lang.append(lang_id + 1)
+                x_lang.append(self._lang_id + 1)
             # toks, ids = self._tokenize(prev_sentence.text)
-            if lang_id is None:
+            if self._lang_id is None:
                 toks = self._tokenizer(prev_sentence.text)
             else:
                 toks = prev_sentence
             x_prev = toks
             # toks, ids = self._tokenize(next_sentence.text)
-            if lang_id is None:
+            if self._lang_id is None:
                 toks = self._tokenizer(next_sentence.text)
             else:
                 toks = next_sentence
             x_next = toks
             y_offset.append(len(x_prev))
             # c_toks, ids = self._tokenize(current_sentence.text)
-            if lang_id is None:
+            if self._lang_id is None:
                 c_toks = self._tokenizer(current_sentence.text)
             else:
                 c_toks = current_sentence
@@ -171,32 +182,13 @@ class TokenCollateFTLanguasito(TokenCollate):
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
             x_text.append(c_toks)
-            if lang_id is None:
+            if self._lang_id is None:
                 y_output.append(self._get_targets(current_sentence))
             else:
-                print(c_toks)
-                y_output.append(np.zeros(100))
+                y_output.append(np.zeros(len(c_toks)))
 
             if x_len > max_x:
                 max_x = x_len
-
-        # x_out = np.ones((len(batch), max_x + 2), dtype=np.long) * PAD
-        # for ii in range(len(batch)):
-        #     x_out[ii, 0] = START
-        #     pos = 1
-        #     x = x_input[ii][0]
-        #     for jj in range(len(x)):
-        #         x_out[ii, pos] = x[jj]
-        #         pos += 1
-        #     x = x_input[ii][1]
-        #     for jj in range(len(x)):
-        #         x_out[ii, pos] = x[jj]
-        #         pos += 1
-        #     x = x_input[ii][2]
-        #     for jj in range(len(x)):
-        #         x_out[ii, pos] = x[jj]
-        #         pos += 1
-        #     x_out[ii, pos] = END
 
         x_for_emb = []
         for example in x_input:
@@ -255,6 +247,9 @@ class TokenCollateFTLanguasito(TokenCollate):
             targets[ii] = target
         return targets
 
+    def get_tokens(self, text):
+        return self._tokenizer(text)
+
     def get_embeddings_size(self) -> int:
         return self._emb_size
 
@@ -289,10 +284,8 @@ class TokenCollateHF(TokenCollate):
         self._no_space = no_space_lang
         self._emb_size = 768
 
-    def collate_fn_live(self, text, lang_id: int):
-        toks = self._tokenize(text)
-        batch = _make_batch_from_raw(toks)
-        return self.collate_fn(batch)
+    def get_tokens(self, text):
+        return self._tokenize(text)
 
     def collate_fn(self, batch, lang_id=None):
         START = 0

@@ -342,16 +342,13 @@ class Tagger(pl.LightningModule):
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
-    def process(self, doc: Document, upos: bool = True, xpos: bool = True, attrs: bool = True,
-                batch_size: int = 1, num_workers: int = 4) -> Document:
-        if (upos or xpos or attrs) == False:
+    def process(self, doc: Document, collate: MorphoCollate, upos: bool = True, xpos: bool = True, attrs: bool = True,
+                batch_size: int = 32, num_workers: int = 4) -> Document:
+        self.eval()
+        if not (upos or xpos or attrs):
             raise Exception("To perform tagging at least one of 'upos', 'xpos' or 'attrs' must be set to True.")
 
-        helper = LMHelper(device=self._device, model=self._config.lm_model)
-        helper.apply(doc)
-
         dataset = MorphoDataset(doc)
-        collate = MorphoCollate(self._encodings)
 
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
                                 shuffle=False, num_workers=num_workers, pin_memory=True)
@@ -359,6 +356,7 @@ class Tagger(pl.LightningModule):
 
         with torch.no_grad():
             for batch in dataloader:
+                del batch['y_upos']
                 p_upos, p_xpos, p_attrs, _, _, _ = self.forward(batch)
 
                 batch_size = p_upos.size()[0]
