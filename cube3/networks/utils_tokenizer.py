@@ -12,7 +12,7 @@ from cube3.networks.lm import LMHelperLanguasito, LMHelperFT
 from languasito.utils import LanguasitoTokenizer
 
 
-class TokenCollateTrain:
+class TokenCollate:
     def __init__(self):
         pass
 
@@ -24,8 +24,32 @@ class TokenCollateTrain:
     def get_embeddings_size(self) -> int:
         pass
 
+    @abstractmethod
+    def collate_fn_live(self, text, lang_id: int):
+        pass
 
-class TokenCollateTrainFTLanguasito(TokenCollateTrain):
+
+def _make_batch_from_raw(toks):
+    batch_size = 500
+    overlap = 200
+    batch = []
+    num_batches = len(toks) // batch_size
+    if len(toks) % batch_size != 0:
+        num_batches += 1
+    for iBatch in range(num_batches):
+        start = iBatch * batch_size
+        stop = min(iBatch * batch_size + batch_size, len(toks))
+        current = toks[start:stop]
+        left = max(0, start - overlap)
+        right = min(len(toks), stop + overlap)
+        prev = toks[left:start]
+        next = toks[stop + 1:right]
+        example = {'prev': prev, 'main': current, 'next': next}
+        batch.append(example)
+    return batch
+
+
+class TokenCollateFTLanguasito(TokenCollate):
     def __init__(self, encodings: Encodings, lm_model: str = None, lm_device: str = 'cuda:0', no_space_lang=False):
         self._encodings = encodings
         self._tokenizer = LanguasitoTokenizer(no_space_language=no_space_lang)
@@ -42,7 +66,12 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
         else:
             print("UserWarning: unsupported LM type for tokenizer")
 
-    def collate_fn(self, batch):
+    def collate_fn_live(self, text, lang_id: int):
+        toks = self._tokenizer(text)
+        batch = _make_batch_from_raw(toks)
+        return self.collate_fn(batch, lang_id=lang_id)
+
+    def collate_fn(self, batch, lang_id=None):
         START = 0
         END = 2
         PAD = 1
@@ -62,10 +91,16 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
                 # toks, ids = self._tokenize(sent.text)
-                toks = self._tokenizer(sent.text)
+                if lang_id is None:
+                    text = sent.text
+                    l_id = sent.lang_id
+                else:
+                    text = sent
+                    l_id = lang_id
+                toks = self._tokenizer(text)
                 for word in toks:
                     a_word_len.append(len(word))
-                    x_lang_word.append(sent.lang_id)
+                    x_lang_word.append(l_id)
 
         x_word_len = np.array(a_word_len, dtype=np.long)
         max_word_len = np.max(x_word_len)
@@ -78,7 +113,10 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
                 # toks, ids = self._tokenize(sent.text)
-                toks = self._tokenizer(sent.text)
+                if lang_id is None:
+                    toks = self._tokenizer(sent.text)
+                else:
+                    toks = self._tokenizer(sent)
                 lst = toks
                 sz += len(lst)
                 for word in lst:
@@ -105,20 +143,33 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
             next_sentence = example['next']
             x_lang.append(current_sentence.lang_id + 1)
             # toks, ids = self._tokenize(prev_sentence.text)
-            toks = self._tokenizer(prev_sentence.text)
+            if lang_id is None:
+                toks = self._tokenizer(prev_sentence.text)
+            else:
+                toks = self._tokenizer(prev_sentence)
             x_prev = toks
             # toks, ids = self._tokenize(next_sentence.text)
-            toks = self._tokenizer(next_sentence.text)
+            if lang_id is None:
+                toks = self._tokenizer(next_sentence.text)
+            else:
+                toks = self._tokenizer(next_sentence)
             x_next = toks
             y_offset.append(len(x_prev) + 1)
             # c_toks, ids = self._tokenize(current_sentence.text)
-            c_toks = self._tokenizer(current_sentence.text)
+            if lang_id is None:
+                c_toks = self._tokenizer(current_sentence.text)
+            else:
+                c_toks = self._tokenizer(current_sentence)
             x_main = c_toks
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
             x_text.append(c_toks)
-            y_output.append(self._get_targets(current_sentence))
+            if lang_id is None:
+                y_output.append(self._get_targets(current_sentence))
+            else:
+                y_output.append([0])
+
             if x_len > max_x:
                 max_x = x_len
 
@@ -219,7 +270,7 @@ class TokenCollateTrainFTLanguasito(TokenCollateTrain):
             self._emb_size = 512
 
 
-class TokenCollateTrainHF(TokenCollateTrain):
+class TokenCollateHF(TokenCollate):
     def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False):
         if lm_model is None:
             lm_model = 'xlm-roberta-base'
@@ -232,7 +283,12 @@ class TokenCollateTrainHF(TokenCollateTrain):
         self._no_space = no_space_lang
         self._emb_size = 768
 
-    def collate_fn(self, batch):
+    def collate_fn_live(self, text, lang_id: int):
+        toks = self._tokenize(text)
+        batch = _make_batch_from_raw(toks)
+        return self.collate_fn(batch)
+
+    def collate_fn(self, batch, lang_id=None):
         START = 0
         END = 2
         PAD = 1
@@ -251,10 +307,17 @@ class TokenCollateTrainHF(TokenCollateTrain):
         for example in batch:
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                toks, ids = self._tokenize(sent.text)
+                if lang_id is None:
+                    l_id = sent.lang_id
+                    text = sent.text
+                else:
+                    l_id = lang_id
+                    text = sent
+
+                toks, ids = self._tokenize(text)
                 for word in toks:
                     a_word_len.append(len(word))
-                    x_lang_word.append(sent.lang_id)
+                    x_lang_word.append(l_id)
         x_word_len = np.array(a_word_len, dtype=np.long)
         max_word_len = np.max(x_word_len)
         x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
@@ -265,7 +328,14 @@ class TokenCollateTrainHF(TokenCollateTrain):
             sz = 0
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                toks, ids = self._tokenize(sent.text)
+                if lang_id is None:
+                    l_id = sent.lang_id
+                    text = sent.text
+                else:
+                    l_id = lang_id
+                    text = sent
+
+                toks, ids = self._tokenize(text)
                 lst = toks
                 sz += len(lst)
                 for word in lst:
@@ -291,18 +361,31 @@ class TokenCollateTrainHF(TokenCollateTrain):
             prev_sentence = example['prev']
             next_sentence = example['next']
             x_lang.append(current_sentence.lang_id + 1)
-            toks, ids = self._tokenize(prev_sentence.text)
+            if lang_id is None:
+                toks, ids = self._tokenize(prev_sentence.text)
+            else:
+                toks, ids = self._tokenize(prev_sentence)
             x_prev = ids
-            toks, ids = self._tokenize(next_sentence.text)
+            if lang_id is None:
+                toks, ids = self._tokenize(next_sentence.text)
+            else:
+                toks, ids = self._tokenize(next_sentence)
             x_next = ids
             y_offset.append(len(x_prev) + 1)
-            c_toks, ids = self._tokenize(current_sentence.text)
+            if lang_id is None:
+                c_toks, ids = self._tokenize(current_sentence.text)
+            else:
+                c_toks, ids = self._tokenize(current_sentence)
+
             x_main = ids
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
             x_text.append(c_toks)
-            y_output.append(self._get_targets(current_sentence))
+            if lang_id is None:
+                y_output.append(self._get_targets(current_sentence))
+            else:
+                y_output.append([0])
             if x_len > max_x:
                 max_x = x_len
 

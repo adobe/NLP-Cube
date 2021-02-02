@@ -11,6 +11,7 @@ import torch
 from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TokenizerConfig
+from cube3.networks.utils_tokenizer import TokenCollate
 import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, WordGram
 import random
@@ -207,6 +208,75 @@ class Tokenizer(pl.LightningModule):
 
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
         return loss
+
+    def process(self, raw_text, collate: TokenCollate, batch_size=32, lang_id=0):
+        self.eval()
+        examples = collate.collate_fn_live(raw_text, lang_id)
+        num_batches = len(examples) // batch_size
+        if len(examples) % batch_size != 0:
+            num_batches += 1
+
+        toks = []
+        pred = []
+        for iBatch in range(num_batches):
+            start = iBatch * batch_size
+            stop = min(len(examples), start + batch_size)
+            batch = examples[start:stop]
+            for key in batch:
+                if isinstance(batch[key], torch.Tensor):
+                    batch[key] = batch[key].to(self._device)
+
+            x_text = batch['x_text']
+            y_offset = batch['y_offset'].cpu().numpy()
+            y_len = batch['y_len'].cpu().numpy()
+            y_pred = self.forward(batch)
+            y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
+            for ii in range(len(y_len)):
+                ofs = y_offset[ii]
+                for jj in range(y_len[ii]):
+                    # self._dev_results[lang].append([x_text[ii][jj], y_target[ii, jj + ofs], y_pred[ii, jj + ofs]])
+                    toks.append(x_text[ii][jj])
+                    pred.append(y_pred[ii, jj + ofs])
+
+        p_sents = []
+        tok_p = ''
+        p_mwes = []
+        p_sent = []
+        p_mwe = []
+        for pred, text in zip(pred, toks):
+            text = text.replace('▁', '')
+            tok_p += text
+
+            if pred == 2 or pred == 3 or pred == 4:
+                if tok_p.strip() != '':
+                    p_sent.append(tok_p)
+                    if pred == 3:
+                        p_mwe.append(True)
+                    else:
+                        p_mwe.append(False)
+                tok_p = ''
+            if pred == 4:
+                if len(p_sent) != 0:
+                    p_sents.append(p_sent)
+                    p_mwes.appned(p_mwe)
+                p_sent = []
+                p_mwe = []
+
+        if tok_p.strip() != '':
+            p_sent.append(tok_p)
+            p_mwe.append(False)
+        if len(p_sent) != 0:
+            p_sents.append(p_sent)
+            p_mwes.append(p_mwe)
+
+        d = Document()
+        for sent, mwe in zip(p_sents, p_mwes):
+            s = Sentence(sequence=sent)
+            for ii in range(len(mwe)):
+                s.tokens[ii].mwe = mwe[ii]
+            s.lang_id = lang_id
+            d.sentences.append(s)
+        return d
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())
