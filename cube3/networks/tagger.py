@@ -16,7 +16,7 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TaggerConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm
+from cube3.networks.modules import ConvNorm, LinearNorm, DeepBiaffine
 import random
 
 from cube3.networks.utils import MorphoCollate, MorphoDataset
@@ -57,10 +57,8 @@ class Tagger(pl.LightningModule):
         self._convs = nn.ModuleList(conv_layers)
         self._upos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.upos2int))
         self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
-        self._xpos_bilinear = nn.Bilinear(64 + config.lang_emb_size, NUM_FILTERS // 2, len(encodings.xpos2int))
-        self._xpos_linear = nn.Linear(64 + config.lang_emb_size + NUM_FILTERS // 2, len(encodings.xpos2int))
-        self._attrs_bilinear = nn.Bilinear(64 + config.lang_emb_size, NUM_FILTERS // 2, len(encodings.attrs2int))
-        self._attrs_linear = nn.Linear(64 + config.lang_emb_size + NUM_FILTERS // 2, len(encodings.attrs2int))
+        self._xpos = LinearNorm(64 + config.lang_emb_size + NUM_FILTERS // 2, len(encodings.xpos2int))
+        self._attrs = LinearNorm(64 + config.lang_emb_size + NUM_FILTERS // 2, len(encodings.attrs2int))
 
         self._aupos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.upos2int))
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
@@ -210,7 +208,7 @@ class Tagger(pl.LightningModule):
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, lang_emb], dim=1)
         x = x + res
-        xu = x.permute(0, 2, 1)
+        xu = x.permute(0, 2, 1).contiguous()
         x = torch.cat([x, lang_emb], dim=1)
         x = x.permute(0, 2, 1)
         # x = torch.tanh(x)
@@ -221,8 +219,8 @@ class Tagger(pl.LightningModule):
             upos_idx = gs_upos
         upos_emb = self._upos_emb(upos_idx)
         upos_emb = torch.cat([upos_emb, lang_emb.permute(0, 2, 1)], dim=-1)
-        xpos = self._xpos_bilinear(upos_emb, xu.contiguous()) + self._xpos_linear(torch.cat([upos_emb, xu], dim=-1))
-        attrs = self._attrs_bilinear(upos_emb, xu.contiguous()) + self._attrs_linear(torch.cat([upos_emb, xu], dim=-1))
+        xpos = self._xpos(torch.cat([upos_emb, xu], dim=-1))
+        attrs = self._attrs(torch.cat([upos_emb, xu], dim=-1))
         return upos, xpos, attrs, aupos, axpos, aattrs
 
     def _get_device(self):
@@ -241,8 +239,8 @@ class Tagger(pl.LightningModule):
         y_attrs = batch['y_attrs']
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
-        loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
-        loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
+        loss_xpos = F.cross_entropy(p_xpos.reshape(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
+        loss_attrs = F.cross_entropy(p_attrs.reshape(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
         loss_aupos = F.cross_entropy(a_upos.view(-1, a_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
@@ -263,8 +261,8 @@ class Tagger(pl.LightningModule):
         p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
-        loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
-        loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
+        loss_xpos = F.cross_entropy(p_xpos.reshape(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
+        loss_attrs = F.cross_entropy(p_attrs.reshape(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
         loss = (loss_upos + loss_attrs + loss_xpos) / 3
         language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0} for lang_id in
                            range(self._num_langs)}
