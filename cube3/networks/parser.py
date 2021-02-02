@@ -60,7 +60,8 @@ class Parser(pl.LightningModule):
 
         self._pre_morpho = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, NUM_FILTERS // 2)
         self._upos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.upos2int))
-        self._attrs = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
+        self._attrs = LinearNorm(64 + NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
+        self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
 
         self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + self._ext_word_emb, 200, num_layers=3,
                             batch_first=True, bidirectional=True, dropout=0.33)
@@ -107,6 +108,9 @@ class Parser(pl.LightningModule):
         x_sent_masks = X['x_sent_masks']
         x_word_masks = X['x_word_masks']
         x_word_emb_packed = X['x_word_embeddings']
+        gs_upos = None
+        if 'y_upos' in X:
+            gs_upos = X['y_upos']
         char_emb_packed = self._word_net(x_words_chars, x_words_case, x_lang_word, x_word_masks, x_word_len)
 
         blist_char = []
@@ -174,7 +178,13 @@ class Parser(pl.LightningModule):
         pre_morpho = torch.dropout(torch.tanh(self._pre_morpho(hidden)), 0.33, self.training)
         pre_morpho = torch.cat([pre_morpho, lang_emb[:, 1:, :]], dim=2)
         upos = self._upos(pre_morpho)
-        attrs = self._attrs(pre_morpho)
+        if gs_upos is None:
+            upos_idx = torch.argmax(upos, dim=-1)
+        else:
+            upos_idx = gs_upos
+
+        upos_emb = self._upos_emb(upos_idx)
+        attrs = self._attrs(torch.cat([pre_morpho, upos_emb], dim=-1))
 
         # parsing
         word_emb_ext = torch.cat(
