@@ -218,26 +218,31 @@ class Tokenizer(pl.LightningModule):
 
         toks = []
         pred = []
-        for iBatch in range(num_batches):
-            start = iBatch * batch_size
-            stop = min(len(examples), start + batch_size)
-            batch = examples[start:stop]
-            for key in batch:
-                if isinstance(batch[key], torch.Tensor):
-                    batch[key] = batch[key].to(self._device)
+        #for iBatch in range(num_batches):
+        #    start = iBatch * batch_size
+        #    stop = min(len(examples), start + batch_size)
+        #    print(start, stop)
+        batch = examples
+        print(batch)
+        for key in batch:
+            if isinstance(batch[key], torch.Tensor):
+                 batch[key] = batch[key].to(self._device)
 
-            x_text = batch['x_text']
-            y_offset = batch['y_offset'].cpu().numpy()
-            y_len = batch['y_len'].cpu().numpy()
+        x_text = batch['x_text']
+        y_offset = batch['y_offset'].cpu().numpy()
+        y_len = batch['y_len'].cpu().numpy()
+        with torch.no_grad():
             y_pred = self.forward(batch)
-            y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
-            for ii in range(len(y_len)):
-                ofs = y_offset[ii]
-                for jj in range(y_len[ii]):
-                    # self._dev_results[lang].append([x_text[ii][jj], y_target[ii, jj + ofs], y_pred[ii, jj + ofs]])
-                    toks.append(x_text[ii][jj])
-                    pred.append(y_pred[ii, jj + ofs])
-
+        print(y_pred)
+        y_pred = torch.argmax(y_pred, dim=-1).detach().cpu().numpy()
+        for ii in range(len(y_len)):
+            ofs = y_offset[ii]
+            for jj in range(y_len[ii]):
+                # self._dev_results[lang].append([x_text[ii][jj], y_target[ii, jj + ofs], y_pred[ii, jj + ofs]])
+                toks.append(x_text[ii][jj])
+                pred.append(y_pred[ii, jj + ofs])
+        print(pred)
+        print(toks)
         p_sents = []
         tok_p = ''
         p_mwes = []
@@ -258,7 +263,7 @@ class Tokenizer(pl.LightningModule):
             if pred == 4:
                 if len(p_sent) != 0:
                     p_sents.append(p_sent)
-                    p_mwes.appned(p_mwe)
+                    p_mwes.append(p_mwe)
                 p_sent = []
                 p_mwe = []
 
@@ -271,11 +276,12 @@ class Tokenizer(pl.LightningModule):
 
         d = Document()
         for sent, mwe in zip(p_sents, p_mwes):
-            s = Sentence(sequence=sent)
-            for ii in range(len(mwe)):
-                s.tokens[ii].mwe = mwe[ii]
-            s.lang_id = lang_id
-            d.sentences.append(s)
+            print(sent)
+            # s = Sentence(sequence=sent)
+            # for ii in range(len(mwe)):
+            #     s.tokens[ii].mwe = mwe[ii]
+            # s.lang_id = lang_id
+            # d.sentences.append(s)
         return d
 
     def configure_optimizers(self):
