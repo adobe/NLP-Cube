@@ -38,6 +38,20 @@ class LinearNorm(pl.LightningModule):
         return self.linear_layer(x)
 
 
+class MLP(nn.Module):
+    def __init__(self, in_dim, out_dim, hid_dim=500, dropout=0.33, hid_func=torch.tanh):
+        super().__init__()
+        self._h1 = LinearNorm(in_dim, hid_dim)
+        self._h2 = LinearNorm(hid_dim, out_dim)
+        self._dropout = dropout
+        self._hid_func = hid_func
+
+    def forward(self, x):
+        h = torch.dropout(self._hid_func(self._h1(x)), self._dropout, self.training)
+        o = self._h2(h)
+        return o
+
+
 class Encoder(pl.LightningModule):
     def __init__(self, input_type, input_size, input_emb_dim, enc_hid_dim, dropout, nn_type=nn.GRU,
                  num_layers=2, ext_conditioning=0):
@@ -562,4 +576,3 @@ class DeepBiaffine(nn.Module):
     def forward(self, input1, input2):
         return self.scorer(self.dropout(self.hidden_func(self.W1(input1))),
                            self.dropout(self.hidden_func(self.W2(input2))))
-

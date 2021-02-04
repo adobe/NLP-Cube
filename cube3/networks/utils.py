@@ -14,6 +14,24 @@ from collections import namedtuple
 from transformers import AutoModel, AutoTokenizer
 
 
+def unpack(data: torch.Tensor, sizes: [], max_size: int, device: str):
+    pos = 0
+    blist = []
+    for ii in range(len(sizes)):
+        slist = []
+        for jj in range(sizes[ii]):
+            slist.append(data[pos, :].unsqueeze(0))
+            pos += 1
+
+        for jj in range(max_size - sizes[ii]):
+            slist.append(torch.zeros((1, data.shape[-1]), device=device, dtype=torch.float))
+        slist = torch.cat(slist, dim=0)
+        blist.append(slist.unsqueeze(0))
+
+    blist = torch.cat(blist, dim=0)
+    return blist
+
+
 class TokenizationDataset(Dataset):
     def __init__(self, document: Document, shuffle=True):
         self._document = document
@@ -181,11 +199,12 @@ class MorphoCollate:
     def collate_fn(self, batch: [Sentence]):
         a_sent_len = [len(sent.words) for sent in batch]
         a_word_len = []
-        x_word_embeddings = []
+        x_word_embeddings = [[] for _ in range(len(batch[0].words[0].emb))]
         for sent in batch:
             for word in sent.words:
                 a_word_len.append(len(word.word))
-                x_word_embeddings.append(word.emb)
+                for ii in range(len(word.emb)):
+                    x_word_embeddings[ii].append(word.emb[ii])
         x_sent_len = np.array(a_sent_len, dtype=np.long)
         x_word_len = np.array(a_word_len, dtype=np.long)
         max_sent_len = np.max(x_sent_len)
@@ -252,6 +271,7 @@ class MorphoCollate:
                 c_word += 1
 
         x_lang_word = np.array(x_lang_word)
+        x_word_embeddings = [torch.tensor(t) for t in x_word_embeddings]
         response = {
             'x_sent': torch.tensor(x_sent),
             'x_lang_sent': torch.tensor(x_lang_sent),
@@ -262,7 +282,7 @@ class MorphoCollate:
             'x_word_len': torch.tensor(x_word_len),
             'x_sent_masks': torch.tensor(x_sent_masks),
             'x_word_masks': torch.tensor(x_word_masks),
-            'x_word_embeddings': torch.tensor(x_word_embeddings),
+            'x_word_embeddings': x_word_embeddings,
             'y_upos': torch.tensor(y_upos),
             'y_xpos': torch.tensor(y_xpos),
             'y_attrs': torch.tensor(y_attrs)

@@ -50,13 +50,13 @@ class LMHelperFT(LMHelper):
         self._fasttext = fasttext.load_model(filename)
 
     def get_embedding_size(self):
-        return 300
+        return [300]
 
     def apply(self, document: Document):
         for ii in tqdm.tqdm(range(len(document.sentences)), desc="Pre-computing embeddings", unit="sent"):
             for jj in range(len(document.sentences[ii].words)):
-                document.sentences[ii].words[jj].emb = self._fasttext.get_word_vector(
-                    document.sentences[ii].words[jj].word)
+                document.sentences[ii].words[jj].emb = [self._fasttext.get_word_vector(
+                    document.sentences[ii].words[jj].word)]
 
     def apply_raw(self, batch):
         embeddings = []
@@ -77,7 +77,7 @@ class LMHelperLanguasito(LMHelper):
 
     def get_embedding_size(self):
         # TODO: a better way to get the embedding size (right now it is hardcoded)
-        return 512
+        return [512]
 
     def apply(self, document: Document):
         BATCH_SIZE = 8
@@ -97,7 +97,7 @@ class LMHelperLanguasito(LMHelper):
             embeddings = self._languasito(batch)
             for ii in range(len(batch)):
                 for jj in range(len(batch[ii])):
-                    document.sentences[ii + start].words[jj].emb = embeddings[ii][jj]
+                    document.sentences[ii + start].words[jj].emb = [embeddings[ii][jj]]
 
     def apply_raw(self, batch):
         BATCH_SIZE = 8
@@ -134,7 +134,7 @@ class LMHelperHF(LMHelper):
 
     def get_embedding_size(self):
         # TODO: a better way to get the embedding size (right now it is hardcoded)
-        return 768
+        return [768 for _ in range(13)]
 
     def _compute_we(self, batch: [Sentence]):
         # XML-Roberta
@@ -166,7 +166,7 @@ class LMHelperHF(LMHelper):
                     input_ids[ii, jj] = new_sents[ii][jj]
         with torch.no_grad():
             out = self._xlmr(torch.tensor(input_ids, device=self._device), return_dict=True)
-            we = out['last_hidden_state'].detach().cpu().numpy()
+            we = torch.cat(out['hidden_states'], dim=-1).detach().cpu().numpy()
 
         word_emb = []
         for ii in range(len(batch)):
@@ -178,7 +178,7 @@ class LMHelperHF(LMHelper):
                         m += we[pieces[zz][0], pieces[zz][1]]
                     m = m / len(pieces)
                 else:
-                    m = np.zeros((768), dtype=np.float)
+                    m = np.zeros((768 * 13), dtype=np.float)
                 word_emb.append(m)
         # word_emb = torch.cat(word_emb, dim=0)
 
@@ -189,7 +189,11 @@ class LMHelperHF(LMHelper):
         for sent in tqdm.tqdm(doc.sentences, desc="Pre-computing embeddings", unit="sent"):
             wemb = self._compute_we([sent])
             for ii in range(len(wemb)):
-                sent.words[ii].emb = wemb[ii]
+                ww = wemb[ii]
+                www = []
+                for kk in range(13):
+                    www.append(ww[:, kk * 768:kk * 768 + 768])
+                sent.words[ii].emb = www
 
     def apply_raw(self, batch):
         pass

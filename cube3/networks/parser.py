@@ -16,10 +16,10 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import ParserConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention
+from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention, MLP
 import random
 
-from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder
+from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder, unpack
 
 from cube3.networks.modules import WordGram
 
@@ -29,6 +29,8 @@ class Parser(pl.LightningModule):
         super().__init__()
         self._config = config
         self._encodings = encodings
+        if not isinstance(ext_word_emb, list):
+            ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
 
         self._word_net = WordGram(len(encodings.char2int), num_langs=encodings.num_langs + 1,
@@ -38,8 +40,14 @@ class Parser(pl.LightningModule):
         self._num_langs = encodings.num_langs
         self._language_codes = language_codes
 
+        ext2int = []
+        for input_size in self._ext_word_emb:
+            module = MLP(input_size, config.external_proj_size)
+            ext2int.append(module)
+        self._ext_proj = nn.ModuleList(ext2int)
+
         conv_layers = []
-        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb
+        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + config.external_proj_size
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -63,7 +71,7 @@ class Parser(pl.LightningModule):
         self._attrs = LinearNorm(64 + NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
         self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
 
-        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + self._ext_word_emb, 200, num_layers=3,
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, 200, num_layers=3,
                             batch_first=True, bidirectional=True, dropout=0.33)
 
         self._pre_out = LinearNorm(400 + config.lang_emb_size, config.pre_parser_size)
@@ -75,7 +83,7 @@ class Parser(pl.LightningModule):
         self._label_linear = nn.Linear(config.label_size * 2, len(encodings.label2int))
         self._label_bilinear = nn.Bilinear(config.label_size, config.label_size, len(encodings.label2int))
         self._r_emb = nn.Embedding(1,
-                                   config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb)
+                                   config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + config.external_proj_size)
 
         # self._decoder = GreedyDecoder()
         self._decoder = ChuLiuEdmondsDecoder()
@@ -113,29 +121,21 @@ class Parser(pl.LightningModule):
             gs_upos = X['y_upos']
         char_emb_packed = self._word_net(x_words_chars, x_words_case, x_lang_word, x_word_masks, x_word_len)
 
-        blist_char = []
-        blist_emb = []
         sl = x_sent_len.cpu().numpy()
-        pos = 0
-        for ii in range(x_sents.shape[0]):
-            slist_char = []
-            slist_emb = []
-            for jj in range(sl[ii]):
-                slist_char.append(char_emb_packed[pos, :].unsqueeze(0))
-                slist_emb.append(x_word_emb_packed[pos, :].unsqueeze(0))
-                pos += 1
-            for jj in range(x_sents.shape[1] - sl[ii]):
-                slist_char.append(torch.zeros((1, self._config.char_filter_size // 2),
-                                              device=self._get_device(), dtype=torch.float))
-                slist_emb.append(torch.zeros((1, self._ext_word_emb),
-                                             device=self._get_device(), dtype=torch.float))
-            sent_emb = torch.cat(slist_char, dim=0)
-            word_emb = torch.cat(slist_emb, dim=0)
-            blist_char.append(sent_emb.unsqueeze(0))
-            blist_emb.append(word_emb.unsqueeze(0))
 
-        char_emb = torch.cat(blist_char, dim=0)
-        word_emb_ext = torch.cat(blist_emb, dim=0)
+        char_emb = unpack(char_emb_packed, sl, x_sents.shape[1], device=self._get_device())
+        word_emb_ext = None
+
+        for ii in range(len(x_word_emb_packed)):
+            we = unpack(x_word_emb_packed[ii], sl, x_sents.shape[1], self._get_device())
+            if word_emb_ext is None:
+                word_emb_ext = self._ext_proj[ii](we)
+            else:
+                word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
+
+        word_emb_ext = word_emb_ext / len(x_word_emb_packed)
+        word_emb_ext = torch.tanh(word_emb_ext)
+
         lang_emb = self._lang_emb(x_lang_sent)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, char_emb.shape[1] + 1, 1)
 
@@ -188,9 +188,8 @@ class Parser(pl.LightningModule):
 
         # parsing
         word_emb_ext = torch.cat(
-            [torch.zeros((word_emb_ext.shape[0], 1, self._ext_word_emb), device=self._get_device(), dtype=torch.float),
-             word_emb_ext],
-            dim=1)
+            [torch.zeros((word_emb_ext.shape[0], 1, self._config.external_proj_size), device=self._get_device(),
+                         dtype=torch.float), word_emb_ext], dim=1)
         x = self._mask_concat([x_parse, word_emb_ext])
         x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)

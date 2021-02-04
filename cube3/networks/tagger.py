@@ -16,10 +16,10 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TaggerConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, DeepBiaffine
+from cube3.networks.modules import ConvNorm, LinearNorm, MLP
 import random
 
-from cube3.networks.utils import MorphoCollate, MorphoDataset
+from cube3.networks.utils import MorphoCollate, MorphoDataset, unpack
 
 from cube3.networks.modules import WordGram
 
@@ -30,6 +30,8 @@ class Tagger(pl.LightningModule):
         self._device = "cpu"  # default
         self._config = config
         self._encodings = encodings
+        if not isinstance(ext_word_emb, list):
+            ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
 
         self._word_net = WordGram(len(encodings.char2int), num_langs=encodings.num_langs + 1,
@@ -40,7 +42,7 @@ class Tagger(pl.LightningModule):
         self._language_codes = language_codes
 
         conv_layers = []
-        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + self._ext_word_emb
+        cs_inp = config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + config.external_proj_size
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -52,6 +54,12 @@ class Tagger(pl.LightningModule):
                 nn.BatchNorm1d(NUM_FILTERS))
             conv_layers.append(conv_layer)
             cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
+
+        ext2int = []
+        for input_size in self._ext_word_emb:
+            module = MLP(input_size, config.external_proj_size)
+            ext2int.append(module)
+        self._ext_proj = nn.ModuleList(ext2int)
         self._word_emb = nn.Embedding(len(encodings.word2int), config.word_emb_size, padding_idx=0)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._convs = nn.ModuleList(conv_layers)
@@ -125,30 +133,21 @@ class Tagger(pl.LightningModule):
         gs_upos = None
         if 'y_upos' in X:
             gs_upos = X['y_upos']
-
-        blist_char = []
-        blist_emb = []
         sl = x_sent_len.cpu().numpy()
-        pos = 0
-        for ii in range(x_sents.shape[0]):
-            slist_char = []
-            slist_emb = []
-            for jj in range(sl[ii]):
-                slist_char.append(char_emb_packed[pos, :].unsqueeze(0))
-                slist_emb.append(x_word_emb_packed[pos, :].unsqueeze(0))
-                pos += 1
-            for jj in range(x_sents.shape[1] - sl[ii]):
-                slist_char.append(torch.zeros((1, self._config.char_filter_size // 2),
-                                              device=self._get_device(), dtype=torch.float))
-                slist_emb.append(torch.zeros((1, self._ext_word_emb),
-                                             device=self._get_device(), dtype=torch.float))
-            sent_emb = torch.cat(slist_char, dim=0)
-            word_emb = torch.cat(slist_emb, dim=0)
-            blist_char.append(sent_emb.unsqueeze(0))
-            blist_emb.append(word_emb.unsqueeze(0))
 
-        char_emb = torch.cat(blist_char, dim=0)
-        word_emb_ext = torch.cat(blist_emb, dim=0)
+        char_emb = unpack(char_emb_packed, sl, x_sents.shape[1], device=self._get_device())
+        word_emb_ext = None
+
+        for ii in range(len(x_word_emb_packed)):
+            we = unpack(x_word_emb_packed[ii], sl, x_sents.shape[1], self._get_device())
+            if word_emb_ext is None:
+                word_emb_ext = self._ext_proj[ii](we)
+            else:
+                word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
+
+        word_emb_ext = word_emb_ext / len(x_word_emb_packed)
+        word_emb_ext = torch.tanh(word_emb_ext)
+
         lang_emb = self._lang_emb(x_lang_sent)
         lang_emb = lang_emb.unsqueeze(1).repeat(1, char_emb.shape[1], 1)
 
@@ -158,37 +157,6 @@ class Tagger(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        # if self.training:
-        #     mask_1 = np.ones((char_emb.shape[0], char_emb.shape[1]), dtype=np.long)
-        #     mask_2 = np.ones((word_emb.shape[0], word_emb.shape[1]), dtype=np.long)
-        #     mask_3 = np.ones((word_emb.shape[0], word_emb.shape[1]), dtype=np.long)
-        #
-        #     for ii in range(mask_1.shape[0]):
-        #         for jj in range(mask_1.shape[1]):
-        #             mult = 1
-        #             p = random.random()
-        #             if p < 0.33:
-        #                 mult += 1
-        #                 mask_1[ii, jj] = 0
-        #             p = random.random()
-        #             if p < 0.33:
-        #                 mult += 1
-        #                 mask_2[ii, jj] = 0
-        #             p = random.random()
-        #             if p < 0.33:
-        #                 mult += 1
-        #                 mask_3[ii, jj] = 0
-        #             mask_1[ii, jj] *= mult
-        #             mask_2[ii, jj] *= mult
-        #             mask_3[ii, jj] *= mult
-        #     mask_1 = torch.tensor(mask_1, device=self._get_device())
-        #     mask_2 = torch.tensor(mask_2, device=self._get_device())
-        #     mask_3 = torch.tensor(mask_3, device=self._get_device())
-        #     word_emb = word_emb * mask_1.unsqueeze(2)
-        #     char_emb = char_emb * mask_2.unsqueeze(2)
-        #     word_emb_ext = word_emb_ext * mask_3.unsqueeze(2)
-
-        # x = torch.cat([word_emb, lang_emb, char_emb, word_emb_ext], dim=-1)
         x = self._mask_concat([word_emb, char_emb, word_emb_ext])
         x = torch.cat([x, lang_emb], dim=-1)
         x = x.permute(0, 2, 1)

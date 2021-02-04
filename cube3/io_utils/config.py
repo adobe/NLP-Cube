@@ -87,6 +87,7 @@ class TokenizerConfig(Config):
         self.cnn_filter = 512
         self.lang_emb_size = 100
         self.cnn_layers = 5
+        self.external_proj_size = 300
         self.no_space_lang = False
 
         if filename is None:
@@ -110,6 +111,7 @@ class TaggerConfig(Config):
         self.lang_emb_size = 64
         self.cnn_filter = 512
         self.cnn_layers = 5
+        self.external_proj_size = 300
         self.lm_model = 'xlm-roberta-base'
         self._valid = True
 
@@ -137,7 +139,9 @@ class ParserConfig(Config):
         self.head_size = 100
         self.label_size = 200
         self.lm_model = 'xlm-roberta-base'
+        self.external_proj_size = 300
         self.rhl_win_size = 2
+
         self._valid = True
 
         if filename is None:
