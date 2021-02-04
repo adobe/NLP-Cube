@@ -192,7 +192,7 @@ class LMHelperHF(LMHelper):
                 ww = wemb[ii]
                 www = []
                 for kk in range(13):
-                    www.append(ww[:, kk * 768:kk * 768 + 768])
+                    www.append(ww[kk * 768:kk * 768 + 768])
                 sent.words[ii].emb = www
 
     def apply_raw(self, batch):
