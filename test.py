@@ -1,5 +1,4 @@
 import sys
-
 sys.path.append('')
 import torch
 from cube3.networks.tokenizer import Tokenizer
