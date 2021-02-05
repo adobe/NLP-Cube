@@ -197,7 +197,7 @@ class TokenCollateFTLanguasito(TokenCollate):
 
         x_emb = self._lm_helper.apply_raw(x_for_emb)
         max_len = max([len(x) for x in x_emb])
-        x_out = np.zeros((len(x_emb), max_len, self._emb_size), dtype=np.double)
+        x_out = np.zeros((len(x_emb), max_len, self._emb_size[0]), dtype=np.float)
         for ii in range(x_out.shape[0]):
             for jj in range(x_out.shape[1]):
                 if jj < len(x_emb[ii]):
@@ -219,7 +219,7 @@ class TokenCollateFTLanguasito(TokenCollate):
         x_lang_word = torch.tensor(x_lang_word)
         x_sent_len = torch.tensor(x_sent_len)
 
-        return {'x_input': x_out, 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
+        return {'x_input': [x_out], 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
                 'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
                 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
 
@@ -265,10 +265,10 @@ class TokenCollateFTLanguasito(TokenCollate):
         parts = self._lm_model.split(':')
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=self._lm_device, model=parts[1])
-            self._emb_size = 300
+            self._emb_size = [300]
         elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=self._lm_device, model=parts[1])
-            self._emb_size = 512
+            self._emb_size = [512]
 
 
 class TokenCollateHF(TokenCollate):
@@ -277,12 +277,12 @@ class TokenCollateHF(TokenCollate):
             lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
         self._tokenizer = AutoTokenizer.from_pretrained(lm_model)
-        self._lm = AutoModel.from_pretrained(lm_model)
+        self._lm = AutoModel.from_pretrained(lm_model, output_hidden_states=True)
         self._lm.eval()
         self._lm_device = lm_device
         self._lm.to(lm_device)
         self._no_space = no_space_lang
-        self._emb_size = 768
+        self._emb_size = [768 for _ in range(13)]
 
     def get_tokens(self, text):
         return self._tokenize(text)
@@ -427,7 +427,8 @@ class TokenCollateHF(TokenCollate):
         x_lang_word = torch.tensor(x_lang_word)
         x_sent_len = torch.tensor(x_sent_len)
         with torch.no_grad():
-            x_out = self._lm(x_out)['last_hidden_state'].detach()
+            x_out = self._lm(x_out)['hidden_states']
+            x_out = [t.detach() for t in x_out]
         return {'x_input': x_out, 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
                 'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
                 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}

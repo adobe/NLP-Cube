@@ -1,5 +1,7 @@
 import sys
 
+from cube3.networks.utils import unpack
+
 sys.path.append('')
 import os, argparse
 
@@ -13,7 +15,7 @@ from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import TokenizerConfig
 from cube3.networks.utils_tokenizer import TokenCollate
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm
+from cube3.networks.modules import ConvNorm, LinearNorm, MLP
 from torch.utils.data import DataLoader
 import random
 
@@ -25,9 +27,11 @@ class Tokenizer(pl.LightningModule):
         super().__init__()
         self._language_codes = language_codes
         self._config = config
+        if not isinstance(ext_word_emb, list):
+            ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
         conv_layers = []
-        cs_inp = self._ext_word_emb + config.lang_emb_size + 256
+        cs_inp = config.external_proj_size + config.lang_emb_size + 256
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -44,6 +48,12 @@ class Tokenizer(pl.LightningModule):
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
 
+        ext2int = []
+        for input_size in self._ext_word_emb:
+            module = MLP(input_size, config.external_proj_size)
+            ext2int.append(module)
+        self._ext_proj = nn.ModuleList(ext2int)
+
         self._dev_results = {i: [] for i, _ in
                              enumerate(self._language_codes)}  # {langid: [] for langid in self._id2lang}
         self._res = {}
@@ -55,7 +65,7 @@ class Tokenizer(pl.LightningModule):
     def forward(self, batch):
         x_emb = batch['x_input']
         x_lang = batch['x_lang']
-        x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb.shape[1], 1)
+        x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb[0].shape[1], 1)
         x_word_char = batch['x_word_char']
         x_word_case = batch['x_word_case']
         x_word_lang = batch['x_word_lang']
@@ -64,23 +74,22 @@ class Tokenizer(pl.LightningModule):
         x_sent_len = batch['x_sent_len']
         char_emb_packed = self._wg(x_word_char, x_word_case, x_word_lang, x_word_masks, x_word_len)
 
-        blist_char = []
         sl = x_sent_len.cpu().numpy()
-        pos = 0
-        for ii in range(x_emb.shape[0]):
-            slist_char = []
-            # slist_char.append(torch.zeros((1, 256),
-            #                              device=self._get_device(), dtype=torch.float))  # start token
-            for jj in range(sl[ii]):
-                slist_char.append(char_emb_packed[pos, :].unsqueeze(0))
-                pos += 1
-            for jj in range(x_emb.shape[1] - sl[ii]):
-                slist_char.append(torch.zeros((1, 256),
-                                              device=self._get_device(), dtype=torch.float))
-            sent_emb = torch.cat(slist_char, dim=0)
 
-            blist_char.append(sent_emb.unsqueeze(0))
-        x_char_emb = torch.cat(blist_char, dim=0)
+        x_char_emb = unpack(char_emb_packed, sl, x_emb[0].shape[1], device=self._get_device())
+
+        word_emb_ext = None
+
+        for ii in range(len(x_emb)):
+            we = x_emb[ii]
+            if word_emb_ext is None:
+                word_emb_ext = self._ext_proj[ii](we.float())
+            else:
+                word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
+
+        word_emb_ext = word_emb_ext / len(x_emb)
+        word_emb_ext = torch.tanh(word_emb_ext)
+        x_emb = word_emb_ext
         x_emb = self._mask_concat([x_emb, x_char_emb])
         x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
         x_lang = x_lang.permute(0, 2, 1)
@@ -88,7 +97,7 @@ class Tokenizer(pl.LightningModule):
         res = None
         cnt = 0
         for conv in self._convs:
-            conv_out = conv(x.float())
+            conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
             if res is None:
                 res = tmp
