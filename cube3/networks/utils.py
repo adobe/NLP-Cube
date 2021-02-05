@@ -32,6 +32,32 @@ def unpack(data: torch.Tensor, sizes: [], max_size: int, device: str):
     return blist
 
 
+def mask_concat(representations, drop_prob: float, training: bool, device: str):
+    if training:
+        masks = []
+        for ii in range(len(representations)):
+            mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
+            masks.append(mask)
+
+        for ii in range(masks[0].shape[0]):
+            for jj in range(masks[0].shape[1]):
+                mult = 1
+                for kk in range(len(masks)):
+                    p = random.random()
+                    if p < drop_prob:
+                        mult += 1
+                        masks[kk][ii, jj] = 0
+                for kk in range(len(masks)):
+                    masks[kk][ii, jj] *= mult
+        for kk in range(len(masks)):
+            masks[kk] = torch.tensor(masks[kk], device=device)
+
+        for kk in range(len(masks)):
+            representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
+
+    return torch.cat(representations, dim=-1)
+
+
 class TokenizationDataset(Dataset):
     def __init__(self, document: Document, shuffle=True):
         self._document = document

@@ -19,7 +19,7 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention, MLP
 import random
 
-from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder, unpack
+from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder, unpack, mask_concat
 
 from cube3.networks.modules import WordGram
 
@@ -144,7 +144,7 @@ class Parser(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        x = self._mask_concat([word_emb, char_emb, word_emb_ext])
+        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.33, self.training, self._get_device())
 
         x = torch.cat([x, lang_emb[:, 1:, :]], dim=-1)
         # prepend root
@@ -190,7 +190,7 @@ class Parser(pl.LightningModule):
         word_emb_ext = torch.cat(
             [torch.zeros((word_emb_ext.shape[0], 1, self._config.external_proj_size), device=self._get_device(),
                          dtype=torch.float), word_emb_ext], dim=1)
-        x = self._mask_concat([x_parse, word_emb_ext])
+        x = mask_concat([x_parse, word_emb_ext], 0.33, self.training, self._get_device())
         x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
@@ -206,31 +206,6 @@ class Parser(pl.LightningModule):
         att = torch.cat(att_stack, dim=1)
 
         return att, l_r1, l_r2, upos, attrs, aupos, aattrs
-
-    def _mask_concat(self, representations):
-        if self.training:
-            masks = []
-            for ii in range(len(representations)):
-                mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
-                masks.append(mask)
-
-            for ii in range(masks[0].shape[0]):
-                for jj in range(masks[0].shape[1]):
-                    mult = 1
-                    for kk in range(len(masks)):
-                        p = random.random()
-                        if p < 0.33:
-                            mult += 1
-                            masks[kk][ii, jj] = 0
-                    for kk in range(len(masks)):
-                        masks[kk][ii, jj] *= mult
-            for kk in range(len(masks)):
-                masks[kk] = torch.tensor(masks[kk], device=self._get_device())
-
-            for kk in range(len(masks)):
-                representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
-
-        return torch.cat(representations, dim=-1)
 
     def _get_labels(self, x1, x2, heads):
         x1 = x1[:, 1:, :]

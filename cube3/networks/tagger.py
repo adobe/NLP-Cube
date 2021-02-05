@@ -19,7 +19,7 @@ import numpy as np
 from cube3.networks.modules import ConvNorm, LinearNorm, MLP
 import random
 
-from cube3.networks.utils import MorphoCollate, MorphoDataset, unpack
+from cube3.networks.utils import MorphoCollate, MorphoDataset, unpack, mask_concat
 
 from cube3.networks.modules import WordGram
 
@@ -93,31 +93,6 @@ class Tagger(pl.LightningModule):
                 res[lang]["attrs_best"] = True
         return res
 
-    def _mask_concat(self, representations):
-        if self.training:
-            masks = []
-            for ii in range(len(representations)):
-                mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
-                masks.append(mask)
-
-            for ii in range(masks[0].shape[0]):
-                for jj in range(masks[0].shape[1]):
-                    mult = 1
-                    for kk in range(len(masks)):
-                        p = random.random()
-                        if p < 0.33:
-                            mult += 1
-                            masks[kk][ii, jj] = 0
-                    for kk in range(len(masks)):
-                        masks[kk][ii, jj] *= mult
-            for kk in range(len(masks)):
-                masks[kk] = torch.tensor(masks[kk], device=self._get_device())
-
-            for kk in range(len(masks)):
-                representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
-
-        return torch.cat(representations, dim=-1)
-
     def forward(self, X):
         x_sents = X['x_sent']
         x_lang_sent = X['x_lang_sent']
@@ -157,7 +132,7 @@ class Tagger(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        x = self._mask_concat([word_emb, char_emb, word_emb_ext])
+        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.33, self.training, self._get_device())
         x = torch.cat([x, lang_emb], dim=-1)
         x = x.permute(0, 2, 1)
         lang_emb = lang_emb.permute(0, 2, 1)

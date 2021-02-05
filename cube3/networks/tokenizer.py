@@ -1,6 +1,6 @@
 import sys
 
-from cube3.networks.utils import unpack
+from cube3.networks.utils import unpack, mask_concat
 
 sys.path.append('')
 import os, argparse
@@ -90,7 +90,7 @@ class Tokenizer(pl.LightningModule):
         word_emb_ext = word_emb_ext / len(x_emb)
         word_emb_ext = torch.tanh(word_emb_ext)
         x_emb = word_emb_ext
-        x_emb = self._mask_concat([x_emb, x_char_emb])
+        x_emb = mask_concat([x_emb, x_char_emb], 0.33, self.training, self._get_device())
         x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
         x_lang = x_lang.permute(0, 2, 1)
         half = self._config.cnn_filter // 2
@@ -111,31 +111,6 @@ class Tokenizer(pl.LightningModule):
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
         return self._output(x)
-
-    def _mask_concat(self, representations):
-        if self.training:
-            masks = []
-            for ii in range(len(representations)):
-                mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
-                masks.append(mask)
-
-            for ii in range(masks[0].shape[0]):
-                for jj in range(masks[0].shape[1]):
-                    mult = 1
-                    for kk in range(len(masks)):
-                        p = random.random()
-                        if p < 0.33:
-                            mult += 1
-                            masks[kk][ii, jj] = 0
-                    for kk in range(len(masks)):
-                        masks[kk][ii, jj] *= mult
-            for kk in range(len(masks)):
-                masks[kk] = torch.tensor(masks[kk], device=self._get_device())
-
-            for kk in range(len(masks)):
-                representations[kk] = representations[kk] * masks[kk].unsqueeze(2)
-
-        return torch.cat(representations, dim=-1)
 
     def validation_step(self, batch, batch_idx):
         x_lang = batch['x_lang']
