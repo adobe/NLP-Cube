@@ -64,11 +64,13 @@ class Parser(pl.LightningModule):
         self._convs = nn.ModuleList(conv_layers)
 
         self._aupos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.upos2int))
+        self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
         self._pre_morpho = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, NUM_FILTERS // 2)
         self._upos = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.upos2int))
         self._attrs = LinearNorm(64 + NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.attrs2int))
+        self._xpos = LinearNorm(64 + NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
 
         self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, 200, num_layers=3,
@@ -141,6 +143,7 @@ class Parser(pl.LightningModule):
 
         aupos = self._aupos(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
         aattrs = self._aattrs(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
+        axpos = self._axpos(torch.cat([char_emb, lang_emb[:, 1:, :]], dim=-1))
 
         word_emb = self._word_emb(x_sents)
 
@@ -185,6 +188,7 @@ class Parser(pl.LightningModule):
 
         upos_emb = self._upos_emb(upos_idx)
         attrs = self._attrs(torch.cat([pre_morpho, upos_emb], dim=-1))
+        xpos = self._xpos(torch.cat([pre_morpho, upos_emb], dim=-1))
 
         # parsing
         word_emb_ext = torch.cat(
@@ -205,7 +209,7 @@ class Parser(pl.LightningModule):
             att_stack.append(a.unsqueeze(1))
         att = torch.cat(att_stack, dim=1)
 
-        return att, l_r1, l_r2, upos, attrs, aupos, aattrs
+        return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
 
     def _get_labels(self, x1, x2, heads):
         x1 = x1[:, 1:, :]
@@ -233,31 +237,36 @@ class Parser(pl.LightningModule):
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        att, l_r1, l_r2, p_upos, p_attrs, a_upos, a_attrs = self.forward(batch)
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_upos = batch['y_upos']
         y_attrs = batch['y_attrs']
+        y_xpos = batch['y_xpos']
         y_head = batch['y_head']
         y_label = batch['y_label']
 
         pred_labels = self._get_labels(l_r1, l_r2, y_head.detach().cpu().numpy())
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
+        loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
         loss_aupos = F.cross_entropy(a_upos.view(-1, a_upos.shape[2]), y_upos.view(-1), ignore_index=0)
+        loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
         loss_uas = F.cross_entropy(att.view(-1, att.shape[2]), y_head.view(-1))
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
 
-        step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs) / 3.) + (
-                (loss_aupos + loss_aattrs) / 3.)) * 0.1
+        step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
+                (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
 
         return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
-        att, l_r1, l_r2, p_upos, p_attrs, a_upos, a_attrs = self.forward(batch)
         y_upos = batch['y_upos']
+        del batch[y_upos]
+        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
         y_head = batch['y_head']
         y_label = batch['y_label']
@@ -272,14 +281,16 @@ class Parser(pl.LightningModule):
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
         loss = (loss_upos + loss_attrs) / 3
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'attrs_ok': 0, 'uas_ok': 0, 'las_ok': 0}
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'xpos_ok': 0, 'attrs_ok': 0, 'uas_ok': 0, 'las_ok': 0}
                            for lang_id in range(self._num_langs)}
 
         pred_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
         pred_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
+        pred_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
         pred_labels = torch.argmax(pred_labels, dim=-1).detach().cpu().numpy()
         tar_upos = y_upos.detach().cpu().numpy()
         tar_attrs = y_attrs.detach().cpu().numpy()
+        tar_xpos = y_xpos.detach().cpu().numpy()
         tar_head = y_head.detach().cpu().numpy()
         tar_label = y_label.detach().cpu().numpy()
 
@@ -292,6 +303,8 @@ class Parser(pl.LightningModule):
                     language_result[lang_id]['upos_ok'] += 1
                 if pred_attrs[iSent, iWord] == tar_attrs[iSent, iWord]:
                     language_result[lang_id]['attrs_ok'] += 1
+                if pred_xpos[iSent, iWord] == tar_xpos[iSent, iWord]:
+                    language_result[lang_id]['xpos_ok'] += 1
                 if pred_heads[iSent][iWord] == tar_head[iSent, iWord]:
                     language_result[lang_id]['uas_ok'] += 1
                     if pred_labels[iSent, iWord] == tar_label[iSent, iWord]:
@@ -308,6 +321,7 @@ class Parser(pl.LightningModule):
         total = 0
         attrs_ok = 0
         upos_ok = 0
+        xpos_ok = 0
         uas_ok = 0
         las_ok = 0
         for out in outputs:
@@ -316,12 +330,14 @@ class Parser(pl.LightningModule):
                 valid_loss_total += out['loss']
                 language_result[lang_id]['total'] += out['acc'][lang_id]['total']
                 language_result[lang_id]['upos_ok'] += out['acc'][lang_id]['upos_ok']
+                language_result[lang_id]['xpos_ok'] += out['acc'][lang_id]['xpos_ok']
                 language_result[lang_id]['attrs_ok'] += out['acc'][lang_id]['attrs_ok']
                 language_result[lang_id]['uas_ok'] += out['acc'][lang_id]['uas_ok']
                 language_result[lang_id]['las_ok'] += out['acc'][lang_id]['las_ok']
                 # global
                 total += out['acc'][lang_id]['total']
                 upos_ok += out['acc'][lang_id]['upos_ok']
+                xpos_ok += out['acc'][lang_id]['xpos_ok']
                 attrs_ok += out['acc'][lang_id]['attrs_ok']
                 uas_ok += out['acc'][lang_id]['uas_ok']
                 las_ok += out['acc'][lang_id]['las_ok']
@@ -329,6 +345,7 @@ class Parser(pl.LightningModule):
         self.log('val/loss', valid_loss_total / len(outputs))
         self.log('val/UPOS/total', upos_ok / total)
         self.log('val/ATTRS/total', attrs_ok / total)
+        self.log('val/XPOS/total', xpos_ok / total)
         self.log('val/UAS/total', uas_ok / total)
         self.log('val/LAS/total', las_ok / total)
 
@@ -343,12 +360,14 @@ class Parser(pl.LightningModule):
                 lang = self._language_codes[lang_index]
             res[lang] = {
                 "upos": language_result[lang_index]['upos_ok'] / total,
+                "xpos": language_result[lang_index]['xpos_ok'] / total,
                 "attrs": language_result[lang_index]['attrs_ok'] / total,
                 "uas": language_result[lang_index]['uas_ok'] / total,
                 "las": language_result[lang_index]['las_ok'] / total
             }
 
             self.log('val/UPOS/{0}'.format(lang), language_result[lang_index]['upos_ok'] / total)
+            self.log('val/XPOS/{0}'.format(lang), language_result[lang_index]['xpos_ok'] / total)
             self.log('val/ATTRS/{0}'.format(lang), language_result[lang_index]['attrs_ok'] / total)
             self.log('val/UAS/{0}'.format(lang), language_result[lang_index]['uas_ok'] / total)
             self.log('val/LAS/{0}'.format(lang), language_result[lang_index]['las_ok'] / total)
@@ -410,14 +429,16 @@ class Parser(pl.LightningModule):
 
             trainer.save_checkpoint(self.store_prefix + ".last")
 
-            s = "{0:30s}\tUAS\tLAS\tUPOS\tATTRS".format("Language")
+            s = "{0:30s}\tUAS\tLAS\tUPOS\tXPOS\tATTRS".format("Language")
             print("\n\n\t" + s)
             print("\t" + ("=" * (len(s) + 16)))
             for lang in pl_module._language_codes:
                 uas = metrics["val/UAS/{0}".format(lang)]
                 las = metrics["val/LAS/{0}".format(lang)]
                 upos = metrics["val/UPOS/{0}".format(lang)]
+                xpos = metrics["val/XPOS/{0}".format(lang)]
                 attrs = metrics["val/ATTRS/{0}".format(lang)]
-                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}".format(lang, uas, las, upos, attrs)
+                msg = "\t{0:30s}:\t{1:.4f}\t{2:.4f}\t{3:.4f}\t{4:.4f}\t{5:.4f}".format(lang, uas, las, upos, xpos,
+                                                                                       attrs)
                 print(msg)
             print("\n")
