@@ -276,6 +276,7 @@ class TokenCollateHF(TokenCollate):
         if lm_model is None:
             lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
+        self._pretokenizer = LanguasitoTokenizer(no_space_language=no_space_lang)
         self._tokenizer = AutoTokenizer.from_pretrained(lm_model)
         self._lm = AutoModel.from_pretrained(lm_model, output_hidden_states=True)
         self._lm.eval()
@@ -437,23 +438,7 @@ class TokenCollateHF(TokenCollate):
         if self._no_space:
             new_text = [ch for ch in text]
         else:
-            import re
-            punctuation = '''"’'()[]{}<>:,‒–—―…!.«»-?‘’“”;/⁄␠·&@*\\•^¤¢$€£¥₩₪†‡°¡¿¬#№%‰‱¶′§~¨_|¦⁂☞∴‽※"'''
-            new_text = ''
-            for ch in text:
-                if re.match(u'[\u4e00-\u9fff]', ch):
-                    new_text += ' ' + ch + ' '
-                elif ch in punctuation:
-                    new_text += ' ' + ch + ' '
-                else:
-                    new_text += ch
-
-            tmp = new_text.replace('  ', ' ')
-            while tmp != new_text:
-                new_text = tmp
-                tmp = new_text.replace('  ', ' ')
-
-            new_text = new_text.split(' ')
+            new_text = self._pretokenizer(text)
         # print("\n" + ("_" * 50))
         # print(new_text)
         # print("_" * 50)
