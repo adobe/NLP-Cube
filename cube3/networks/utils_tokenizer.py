@@ -392,10 +392,10 @@ class TokenCollateHF(TokenCollate):
             if x_len > max_x:
                 max_x = x_len
 
-        x_out = np.ones((len(batch), max_x + 2), dtype=np.long) * PAD
+        x_out = np.ones((len(batch), max_x), dtype=np.long) * PAD
         for ii in range(len(batch)):
-            x_out[ii, 0] = START
-            pos = 1
+            # x_out[ii, 0] = START
+            pos = 0
             x = x_input[ii][0]
             for jj in range(len(x)):
                 x_out[ii, pos] = x[jj]
@@ -408,7 +408,7 @@ class TokenCollateHF(TokenCollate):
             for jj in range(len(x)):
                 x_out[ii, pos] = x[jj]
                 pos += 1
-            x_out[ii, pos] = END
+            # x_out[ii, pos] = END
 
         y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype=np.long)
         for ii in range(x_out.shape[0]):
