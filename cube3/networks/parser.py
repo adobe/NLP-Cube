@@ -313,7 +313,7 @@ class Parser(pl.LightningModule):
         return {'loss': loss, 'acc': language_result}
 
     def validation_epoch_end(self, outputs):
-        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'attrs_ok': 0, 'uas_ok': 0, 'las_ok': 0}
+        language_result = {lang_id: {'total': 0, 'upos_ok': 0, 'attrs_ok': 0, 'xpos_ok': 0, 'uas_ok': 0, 'las_ok': 0}
                            for lang_id in
                            range(self._num_langs)}
 

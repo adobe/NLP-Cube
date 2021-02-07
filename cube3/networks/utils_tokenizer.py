@@ -272,7 +272,7 @@ class TokenCollateFTLanguasito(TokenCollate):
 
 
 class TokenCollateHF(TokenCollate):
-    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False):
+    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False, lang_id=None):
         if lm_model is None:
             lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
@@ -284,11 +284,12 @@ class TokenCollateHF(TokenCollate):
         self._lm.to(lm_device)
         self._no_space = no_space_lang
         self._emb_size = [768 for _ in range(13)]
+        self._lang_id = lang_id
 
     def get_tokens(self, text):
         return self._tokenize(text)
 
-    def collate_fn(self, batch, lang_id=None):
+    def collate_fn(self, batch):
         START = 0
         END = 2
         PAD = 1
@@ -307,14 +308,17 @@ class TokenCollateHF(TokenCollate):
         for example in batch:
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                if lang_id is None:
+                if self._lang_id is None:
                     l_id = sent.lang_id
                     text = sent.text
+                    toks, ids = self._tokenize(text)
                 else:
-                    l_id = lang_id
-                    text = sent
+                    l_id = self._lang_id
+                    if len(sent) == 2:
+                        toks, ids = sent
+                    else:
+                        toks, ids = [], []
 
-                toks, ids = self._tokenize(text)
                 for word in toks:
                     a_word_len.append(len(word))
                     x_lang_word.append(l_id)
@@ -328,14 +332,16 @@ class TokenCollateHF(TokenCollate):
             sz = 0
             for qq in ['prev', 'main', 'next']:
                 sent = example[qq]
-                if lang_id is None:
+                if self._lang_id is None:
                     l_id = sent.lang_id
-                    text = sent.text
+                    toks, ids = self._tokenize(sent)
                 else:
-                    l_id = lang_id
-                    text = sent
+                    l_id = self._lang_id
+                    if len(sent) == 2:
+                        toks, ids = sent
+                    else:
+                        toks, ids = [], []
 
-                toks, ids = self._tokenize(text)
                 lst = toks
                 sz += len(lst)
                 for word in lst:
@@ -360,35 +366,43 @@ class TokenCollateHF(TokenCollate):
             current_sentence = example['main']
             prev_sentence = example['prev']
             next_sentence = example['next']
-            if lang_id is None:
+            if self._lang_id is None:
                 x_lang.append(current_sentence.lang_id + 1)
             else:
-                x_lang.append(lang_id + 1)
-            if lang_id is None:
+                x_lang.append(self._lang_id + 1)
+            if self._lang_id is None:
                 toks, ids = self._tokenize(prev_sentence.text)
             else:
-                toks, ids = self._tokenize(prev_sentence)
+                if len(prev_sentence) == 2:
+                    toks, ids = prev_sentence
+                else:
+                    toks, ids = [], []
             x_prev = ids
-            if lang_id is None:
+            if self._lang_id is None:
                 toks, ids = self._tokenize(next_sentence.text)
             else:
-                toks, ids = self._tokenize(next_sentence)
+                if len(next_sentence) == 2:
+                    toks, ids = next_sentence
+                else:
+                    toks, ids = [], []
             x_next = ids
-            y_offset.append(len(x_prev) + 1)
-            if lang_id is None:
+            y_offset.append(len(x_prev))
+            if self._lang_id is None:
                 c_toks, ids = self._tokenize(current_sentence.text)
             else:
-                c_toks, ids = self._tokenize(current_sentence)
+                if len(current_sentence) == 2:
+                    c_toks, ids = current_sentence
+                else:
+                    c_toks, ids = [], []
 
             x_main = ids
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
             x_text.append(c_toks)
-            if lang_id is None:
+            if self._lang_id is None:
                 y_output.append(self._get_targets(current_sentence))
             else:
-                print(c_toks)
                 y_output.append([0 for _ in range(len(c_toks))])
             if x_len > max_x:
                 max_x = x_len
@@ -438,6 +452,7 @@ class TokenCollateHF(TokenCollate):
         if self._no_space:
             new_text = [ch for ch in text]
         else:
+            print(text)
             new_text = self._pretokenizer(text)
         # print("\n" + ("_" * 50))
         # print(new_text)
