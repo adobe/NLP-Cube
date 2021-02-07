@@ -334,7 +334,7 @@ class TokenCollateHF(TokenCollate):
                 sent = example[qq]
                 if self._lang_id is None:
                     l_id = sent.lang_id
-                    toks, ids = self._tokenize(sent)
+                    toks, ids = self._tokenize(sent.text)
                 else:
                     l_id = self._lang_id
                     if len(sent) == 2:
@@ -452,7 +452,6 @@ class TokenCollateHF(TokenCollate):
         if self._no_space:
             new_text = [ch for ch in text]
         else:
-            print(text)
             new_text = self._pretokenizer(text)
         # print("\n" + ("_" * 50))
         # print(new_text)
