@@ -233,7 +233,7 @@ class Parser(pl.LightningModule):
         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters())
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)
         return optimizer
 
     def training_step(self, batch, batch_idx):
@@ -264,7 +264,7 @@ class Parser(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         y_upos = batch['y_upos']
-        del batch[y_upos]
+        del batch['y_upos']
         att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
