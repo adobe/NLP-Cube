@@ -1,5 +1,7 @@
 import sys
 
+from pytorch_lightning.overrides.data_parallel import LightningDistributedDataParallel
+
 sys.path.append('')
 import os, argparse
 
@@ -16,7 +18,7 @@ from cube3.io_utils.objects import Document, Sentence, Token, Word
 from cube3.io_utils.encodings import Encodings
 from cube3.io_utils.config import ParserConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention, MLP
+from cube3.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention, MLP, DeepBiaffine
 import random
 
 from cube3.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder, unpack, mask_concat
@@ -77,13 +79,16 @@ class Parser(pl.LightningModule):
                             batch_first=True, bidirectional=True, dropout=0.33)
 
         self._pre_out = LinearNorm(400 + config.lang_emb_size, config.pre_parser_size)
-        self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
-        self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
-        self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
-        self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
-        self._att_net = BilinearAttention(config.head_size, config.head_size)
-        self._label_linear = nn.Linear(config.label_size * 2, len(encodings.label2int))
-        self._label_bilinear = nn.Bilinear(config.label_size, config.label_size, len(encodings.label2int))
+        # self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
+        # self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
+        # self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
+        # self._label_r2 = LinearNorm(config.pre_parser_size, config.label_size)
+        # self._att_net = BilinearAttention(config.head_size, config.head_size)
+        # self._label_linear = nn.Linear(config.label_size * 2, len(encodings.label2int))
+        # self._label_bilinear = nn.Bilinear(config.label_size, config.label_size, len(encodings.label2int))
+        self._head = DeepBiaffine(config.pre_parser_size, config.pre_parser_size, config.head_size, 1, dropout=0.1)
+        self._label = DeepBiaffine(config.pre_parser_size, config.pre_parser_size, config.label_size,
+                                   len(encodings.label2int), dropout=0.1, pairwise=False)
         self._r_emb = nn.Embedding(1,
                                    config.char_filter_size // 2 + config.lang_emb_size + config.word_emb_size + config.external_proj_size)
 
@@ -199,33 +204,51 @@ class Parser(pl.LightningModule):
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
         pre_parsing = torch.dropout(torch.tanh(self._pre_out(output)), 0.33, self.training)
-        h_r1 = torch.tanh(self._head_r1(pre_parsing))
-        h_r2 = torch.tanh(self._head_r2(pre_parsing))
-        l_r1 = torch.tanh(self._label_r1(pre_parsing))
-        l_r2 = torch.tanh(self._label_r2(pre_parsing))
-        att_stack = []
-        for ii in range(1, h_r1.shape[1]):
-            a = self._att_net(h_r1[:, ii, :], h_r2)
-            att_stack.append(a.unsqueeze(1))
-        att = torch.cat(att_stack, dim=1)
+        # h_r1 = torch.tanh(self._head_r1(pre_parsing))
+        # h_r2 = torch.tanh(self._head_r2(pre_parsing))
+        # l_r1 = torch.tanh(self._label_r1(pre_parsing))
+        # l_r2 = torch.tanh(self._label_r2(pre_parsing))
+        # att_stack = []
+        # for ii in range(1, h_r1.shape[1]):
+        #     a = self._att_net(h_r1[:, ii, :], h_r2)
+        #     att_stack.append(a.unsqueeze(1))
+        # att = torch.cat(att_stack, dim=1)
+        heads = self._head(pre_parsing, pre_parsing)
+        labels = pre_parsing  # self._label(pre_parsing, pre_parsing)
+        return heads.squeeze(-1)[:, 1:, :], labels, upos, xpos, attrs, aupos, axpos, aattrs
 
-        return att, l_r1, l_r2, upos, xpos, attrs, aupos, axpos, aattrs
-
-    def _get_labels(self, x1, x2, heads):
-        x1 = x1[:, 1:, :]
-        x_stack = []
-        for ii in range(x1.shape[0]):
-            xx = []
-            for jj in range(x1.shape[1]):
-                if jj < len(heads[ii]):
-                    xx.append(x2[ii, heads[ii][jj]].unsqueeze(0).unsqueeze(0))
+    def _get_labels(self, labels, heads):
+        x1 = labels
+        labs = []
+        for ii in range(labels.shape[0]):
+            lab = []
+            for jj in range(1, labels.shape[1]):
+                if jj <= len(heads[ii]):
+                    lab.append(labels[ii, heads[ii][jj - 1]].unsqueeze(0).unsqueeze(0))
                 else:
-                    xx.append(x2[ii, 0].unsqueeze(0).unsqueeze(0))
-            x_stack.append(torch.cat(xx, dim=1))
-        x_stack = torch.cat(x_stack, dim=0).contiguous()
-        x1 = x1.contiguous()
-        hid = torch.cat([x1, x_stack], dim=-1)
-        return self._label_linear(hid) + self._label_bilinear(x1, x_stack)
+                    lab.append(labels[ii, 0].unsqueeze(0).unsqueeze(0))
+            lab = torch.cat(lab, dim=1)
+            labs.append(lab)
+        x2 = torch.cat(labs, dim=0)
+
+        labs = self._label(x1[:, 1:, :], x2)
+        return labs
+
+    # def _get_labels(self, x1, x2, heads):
+    #     x1 = x1[:, 1:, :]
+    #     x_stack = []
+    #     for ii in range(x1.shape[0]):
+    #         xx = []
+    #         for jj in range(x1.shape[1]):
+    #             if jj < len(heads[ii]):
+    #                 xx.append(x2[ii, heads[ii][jj]].unsqueeze(0).unsqueeze(0))
+    #             else:
+    #                 xx.append(x2[ii, 0].unsqueeze(0).unsqueeze(0))
+    #         x_stack.append(torch.cat(xx, dim=1))
+    #     x_stack = torch.cat(x_stack, dim=0).contiguous()
+    #     x1 = x1.contiguous()
+    #     hid = torch.cat([x1, x_stack], dim=-1)
+    #     return self._label_linear(hid) + self._label_bilinear(x1, x_stack)
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':
@@ -233,18 +256,18 @@ class Parser(pl.LightningModule):
         return '{0}:{1}'.format(self._lang_emb.weight.device.type, str(self._lang_emb.weight.device.index))
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-4)
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-4)
         return optimizer
 
     def training_step(self, batch, batch_idx):
-        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, labels, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_upos = batch['y_upos']
         y_attrs = batch['y_attrs']
         y_xpos = batch['y_xpos']
         y_head = batch['y_head']
         y_label = batch['y_label']
 
-        pred_labels = self._get_labels(l_r1, l_r2, y_head.detach().cpu().numpy())
+        pred_labels = self._get_labels(labels, y_head.detach().cpu().numpy())
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_xpos = F.cross_entropy(p_xpos.view(-1, p_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
@@ -254,18 +277,18 @@ class Parser(pl.LightningModule):
         loss_axpos = F.cross_entropy(a_xpos.view(-1, a_xpos.shape[2]), y_xpos.view(-1), ignore_index=0)
         loss_aattrs = F.cross_entropy(a_attrs.view(-1, a_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
 
-        loss_uas = F.cross_entropy(att.view(-1, att.shape[2]), y_head.view(-1))
+        loss_uas = F.cross_entropy(att.reshape(-1, att.shape[2]), y_head.view(-1))
         loss_las = F.cross_entropy(pred_labels.view(-1, pred_labels.shape[2]), y_label.view(-1), ignore_index=0)
 
         step_loss = loss_uas + loss_las + (((loss_upos + loss_attrs + loss_xpos) / 3.) + (
-                (loss_aupos + loss_aattrs + loss_axpos) / 3.)) * 0.1
+                (loss_aupos + loss_aattrs + loss_axpos) / 3.))
 
         return {'loss': step_loss}
 
     def validation_step(self, batch, batch_idx):
         y_upos = batch['y_upos']
         del batch['y_upos']
-        att, l_r1, l_r2, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
+        att, labels, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
         y_xpos = batch['y_xpos']
         y_attrs = batch['y_attrs']
         y_head = batch['y_head']
@@ -276,7 +299,7 @@ class Parser(pl.LightningModule):
 
         att = torch.softmax(att, dim=-1).detach().cpu().numpy()
         pred_heads = self._decoder.decode(att, sl)
-        pred_labels = self._get_labels(l_r1, l_r2, pred_heads)
+        pred_labels = self._get_labels(labels, pred_heads)
 
         loss_upos = F.cross_entropy(p_upos.view(-1, p_upos.shape[2]), y_upos.view(-1), ignore_index=0)
         loss_attrs = F.cross_entropy(p_attrs.view(-1, p_attrs.shape[2]), y_attrs.view(-1), ignore_index=0)
@@ -387,7 +410,7 @@ class Parser(pl.LightningModule):
         with torch.no_grad():
             for batch in dataloader:
                 del batch['y_upos']
-                att, l_r1, l_r2, p_upos, _, _, _, _, _ = self.forward(batch)
+                att, labels, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
 
                 x_sent_len = batch['x_sent_len']
                 sl = x_sent_len.detach().cpu().numpy()
@@ -396,7 +419,7 @@ class Parser(pl.LightningModule):
 
                 att = torch.softmax(att, dim=-1).detach().cpu().numpy()
                 pred_heads = self._decoder.decode(att, sl)
-                pred_labels = self._get_labels(l_r1, l_r2, pred_heads)
+                pred_labels = self._get_labels(labels, pred_heads)
                 pred_labels = torch.argmax(pred_labels.detach(), dim=-1).cpu()
 
                 for sentence_index in range(batch_size):  # for each sentence

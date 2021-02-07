@@ -79,10 +79,10 @@ class TokenCollateFTLanguasito(TokenCollate):
         parts = lm_model.split(':')
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=lm_device, model=parts[1])
-            self._emb_size = 300
+            self._emb_size = [300]
         elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=lm_device, model=parts[1])
-            self._emb_size = 512
+            self._emb_size = [512]
         else:
             print("UserWarning: unsupported LM type for tokenizer")
 
