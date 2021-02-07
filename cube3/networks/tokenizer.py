@@ -212,7 +212,6 @@ class Tokenizer(pl.LightningModule):
         pred = []
         import tqdm
         for batch in tqdm.tqdm(dataloader):
-
             for key in batch:
                 if isinstance(batch[key], torch.Tensor):
                     batch[key] = batch[key].to(self._device)

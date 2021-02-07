@@ -387,7 +387,7 @@ class Parser(pl.LightningModule):
         with torch.no_grad():
             for batch in dataloader:
                 del batch['y_upos']
-                att, l_r1, l_r2, p_upos, _, _, _ = self.forward(batch)
+                att, l_r1, l_r2, p_upos, _, _, _, _, _ = self.forward(batch)
 
                 x_sent_len = batch['x_sent_len']
                 sl = x_sent_len.detach().cpu().numpy()
