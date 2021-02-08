@@ -32,32 +32,37 @@ class TokenCollate:
 
 def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     batch = []
-    num_batches = len(toks) // seq_len
-    if len(toks) % seq_len != 0:
+    num_batches = len(toks[0]) // seq_len
+    if len(toks[0]) % seq_len != 0:
         num_batches += 1
     start = iBatch * seq_len
-    stop = min(iBatch * seq_len + seq_len, len(toks))
-    current = toks[start:stop]
+    stop = min(iBatch * seq_len + seq_len, len(toks[0]))
+    current = toks[0][start:stop]
     left = max(0, start - overlap)
-    right = min(len(toks), stop + overlap)
-    prev = toks[left:start]
-    next = toks[stop + 1:right]
+    right = min(len(toks[0]), stop + overlap)
+    prev = toks[0][left:start]
+    next = toks[0][stop:right]
+    current_spa = toks[1][start:stop]
+    prev_spa = toks[1][left:start]
+    next_spa = toks[1][stop:right]
     # if len(prev)==0:
     #    prev=['']
     # if len(next)==0:
     #    next=['']
-    example = {'prev': prev, 'main': current, 'next': next}
+    example = {'prev': (prev, prev_spa), 'main': (current, current_spa), 'next': (next, next_spa)}
     return example
 
 
 class TokenDatasetLive(Dataset):
     def __init__(self, raw_text, pretokenize_func, seq_len=500, overlap=200):
         self._tokenize = pretokenize_func
-        self._toks = self._tokenize(raw_text)
+        if raw_text[-1] != ' ':
+            raw_text += ' '
+        self._toks = pretokenize_func(raw_text)  # self._tokenize(raw_text)
         self._seq_len = seq_len
         self._overlap = overlap
-        self._num_examples = len(self._toks) // seq_len
-        if len(self._toks) % seq_len != 0:
+        self._num_examples = len(self._toks[0]) // seq_len
+        if len(self._toks[0]) % seq_len != 0:
             self._num_examples += 1
 
     def __len__(self):
@@ -111,7 +116,7 @@ class TokenCollateFTLanguasito(TokenCollate):
                     toks = self._tokenizer(sent.text)
                     l_id = sent.lang_id
                 else:
-                    toks = sent
+                    toks, spa = sent
                     l_id = self._lang_id
                 for word in toks:
                     a_word_len.append(len(word))
@@ -131,7 +136,7 @@ class TokenCollateFTLanguasito(TokenCollate):
                 if self._lang_id is None:
                     toks = self._tokenizer(sent.text)
                 else:
-                    toks = sent
+                    toks, spa = sent
                 lst = toks
                 sz += len(lst)
                 for word in lst:

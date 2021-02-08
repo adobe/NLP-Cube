@@ -421,7 +421,9 @@ class Parser(pl.LightningModule):
                 pred_heads = self._decoder.decode(att, sl)
                 pred_labels = self._get_labels(labels, pred_heads)
                 pred_labels = torch.argmax(pred_labels.detach(), dim=-1).cpu()
-
+                p_upos = torch.argmax(p_upos, dim=-1).detach().cpu().numpy()
+                p_xpos = torch.argmax(p_xpos, dim=-1).detach().cpu().numpy()
+                p_attrs = torch.argmax(p_attrs, dim=-1).detach().cpu().numpy()
                 for sentence_index in range(batch_size):  # for each sentence
                     # print(f"at index {index+sentence_index}, sentence {sentence_index} has {batch['x_sent_len'][sentence_index]} words.")
                     for word_index in range(batch["x_sent_len"][sentence_index]):
@@ -429,6 +431,12 @@ class Parser(pl.LightningModule):
                         label_id = pred_labels[sentence_index][word_index]
                         doc.sentences[index + sentence_index].words[word_index].head = head
                         doc.sentences[index + sentence_index].words[word_index].label = self._encodings.labels[label_id]
+                        doc.sentences[index + sentence_index].words[word_index].upos = self._encodings.upos_list[
+                            p_upos[sentence_index, word_index]]
+                        doc.sentences[index + sentence_index].words[word_index].xpos = self._encodings.xpos_list[
+                            p_xpos[sentence_index, word_index]]
+                        doc.sentences[index + sentence_index].words[word_index].attrs = self._encodings.attrs_list[
+                            p_attrs[sentence_index, word_index]]
 
                 index += batch_size
         #                break
