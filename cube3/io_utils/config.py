@@ -141,6 +141,8 @@ class ParserConfig(Config):
         self.lm_model = 'xlm-roberta-base'
         self.external_proj_size = 300
         self.rhl_win_size = 2
+        self.rnn_size = 50
+        self.rnn_layers = 3
 
         self._valid = True
 

@@ -75,10 +75,10 @@ class Parser(pl.LightningModule):
         self._xpos = LinearNorm(64 + NUM_FILTERS // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
 
-        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, 200, num_layers=3,
-                            batch_first=True, bidirectional=True, dropout=0.33)
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, config.rnn_size,
+                            num_layers=config.rnn_layers, batch_first=True, bidirectional=True, dropout=0.33)
 
-        self._pre_out = LinearNorm(400 + config.lang_emb_size, config.pre_parser_size)
+        self._pre_out = LinearNorm(config.rnn_size * 2 + config.lang_emb_size, config.pre_parser_size)
         # self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
         # self._head_r2 = LinearNorm(config.pre_parser_size, config.head_size)
         # self._label_r1 = LinearNorm(config.pre_parser_size, config.label_size)
