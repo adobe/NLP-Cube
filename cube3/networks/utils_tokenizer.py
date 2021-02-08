@@ -177,7 +177,7 @@ class TokenCollateFTLanguasito(TokenCollate):
             y_offset.append(len(x_prev))
             # c_toks, ids = self._tokenize(current_sentence.text)
             if self._lang_id is None:
-                c_toks, c_spa = self._tokenizer(current_sentence.text)
+                c_toks, c_spa = self.get_tokens(current_sentence.text)
             else:
                 c_toks, c_spa = current_sentence
             x_main = c_toks
