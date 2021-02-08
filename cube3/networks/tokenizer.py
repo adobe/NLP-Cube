@@ -31,7 +31,7 @@ class Tokenizer(pl.LightningModule):
             ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
         conv_layers = []
-        cs_inp = config.external_proj_size + config.lang_emb_size + 256
+        cs_inp = config.external_proj_size + config.lang_emb_size + 256 + 16
         NUM_FILTERS = config.cnn_filter
         for _ in range(config.cnn_layers):
             conv_layer = nn.Sequential(
@@ -46,6 +46,7 @@ class Tokenizer(pl.LightningModule):
         self._convs = nn.ModuleList(conv_layers)
         self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
+        self._spa_emb = nn.Embedding(3, 16, padding_idx=0)
         self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
 
         ext2int = []
@@ -64,6 +65,7 @@ class Tokenizer(pl.LightningModule):
 
     def forward(self, batch):
         x_emb = batch['x_input']
+        x_spa = batch['x_input_spa']
         x_lang = batch['x_lang']
         x_lang = self._lang_emb(x_lang).unsqueeze(1).repeat(1, x_emb[0].shape[1], 1)
         x_word_char = batch['x_word_char']
@@ -90,7 +92,9 @@ class Tokenizer(pl.LightningModule):
         word_emb_ext = word_emb_ext / len(x_emb)
         word_emb_ext = torch.tanh(word_emb_ext)
         x_emb = word_emb_ext
+        x_spa_emb = self._spa_emb(x_spa)
         x_emb = mask_concat([x_emb, x_char_emb], 0.33, self.training, self._get_device())
+        x_emb = torch.cat([x_emb, x_spa_emb], dim=-1)
         x = torch.cat([x_emb, x_lang], dim=-1).permute(0, 2, 1)
         x_lang = x_lang.permute(0, 2, 1)
         half = self._config.cnn_filter // 2

@@ -287,7 +287,18 @@ class TokenCollateHF(TokenCollate):
         self._lang_id = lang_id
 
     def get_tokens(self, text):
-        return self._tokenize(text)
+        toks, ids = self._tokenize(text)
+        spa = [0 for _ in range(len(toks))]
+        t_pos = 0
+        for ii in range(len(toks)):
+            t_pos += len(toks[ii])
+            if t_pos < len(text) and text[t_pos] == ' ':
+                spa[ii] = 2
+                while t_pos < len(text) and text[t_pos] == ' ':
+                    t_pos += 1
+            else:
+                spa[ii] = 1
+        return toks, ids, spa
 
     def collate_fn(self, batch):
         START = 0
@@ -295,11 +306,13 @@ class TokenCollateHF(TokenCollate):
         PAD = 1
         max_x = 0
         x_input = []
+        x_input_spa = []
         x_lang = []
         y_output = []
         y_offset = []
         y_len = []
         x_text = []
+        x_spa = []
         x_lang_word = []
         x_sent_len = []
 
@@ -311,13 +324,13 @@ class TokenCollateHF(TokenCollate):
                 if self._lang_id is None:
                     l_id = sent.lang_id
                     text = sent.text
-                    toks, ids = self._tokenize(text)
+                    toks, ids, spa = self.get_tokens(text)
                 else:
                     l_id = self._lang_id
                     if len(sent) == 2:
-                        toks, ids = sent
+                        toks, ids, spa = sent
                     else:
-                        toks, ids = [], []
+                        toks, ids, spa = [], [], []
 
                 for word in toks:
                     a_word_len.append(len(word))
@@ -334,13 +347,13 @@ class TokenCollateHF(TokenCollate):
                 sent = example[qq]
                 if self._lang_id is None:
                     l_id = sent.lang_id
-                    toks, ids = self._tokenize(sent.text)
+                    toks, ids, spa = self.get_tokens(sent.text)
                 else:
                     l_id = self._lang_id
                     if len(sent) == 2:
-                        toks, ids = sent
+                        toks, ids, spa = sent
                     else:
-                        toks, ids = [], []
+                        toks, ids, spa = [], [], []
 
                 lst = toks
                 sz += len(lst)
@@ -371,35 +384,40 @@ class TokenCollateHF(TokenCollate):
             else:
                 x_lang.append(self._lang_id + 1)
             if self._lang_id is None:
-                toks, ids = self._tokenize(prev_sentence.text)
+                toks, ids, spa = self.get_tokens(prev_sentence.text)
             else:
                 if len(prev_sentence) == 2:
-                    toks, ids = prev_sentence
+                    toks, ids, spa = prev_sentence
                 else:
-                    toks, ids = [], []
+                    toks, ids, spa = [], [], []
             x_prev = ids
+            x_prev_spa = spa
             if self._lang_id is None:
-                toks, ids = self._tokenize(next_sentence.text)
+                toks, ids, spa = self.get_tokens(next_sentence.text)
             else:
                 if len(next_sentence) == 2:
-                    toks, ids = next_sentence
+                    toks, ids, spa = next_sentence
                 else:
-                    toks, ids = [], []
+                    toks, ids, spa = [], [], []
             x_next = ids
+            x_next_spa = spa
             y_offset.append(len(x_prev))
             if self._lang_id is None:
-                c_toks, ids = self._tokenize(current_sentence.text)
+                c_toks, ids, c_spa = self.get_tokens(current_sentence.text)
             else:
                 if len(current_sentence) == 2:
-                    c_toks, ids = current_sentence
+                    c_toks, ids, c_spa = current_sentence
                 else:
-                    c_toks, ids = [], []
+                    c_toks, ids, c_spa = [], [], []
 
             x_main = ids
+            x_main_spa = c_spa
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
+            x_input_spa.append([x_prev_spa, x_main_spa, x_next_spa])
             x_text.append(c_toks)
+            x_spa.append(c_spa)
             if self._lang_id is None:
                 y_output.append(self._get_targets(current_sentence))
             else:
@@ -408,20 +426,27 @@ class TokenCollateHF(TokenCollate):
                 max_x = x_len
 
         x_out = np.ones((len(batch), max_x), dtype=np.long) * PAD
+        x_out_spa = np.zeros((len(batch), max_x), dtype=np.long)
         for ii in range(len(batch)):
             # x_out[ii, 0] = START
             pos = 0
             x = x_input[ii][0]
+            x_spa = x_input_spa[ii][0]
             for jj in range(len(x)):
                 x_out[ii, pos] = x[jj]
+                x_out_spa[ii, pos] = x_spa[jj]
                 pos += 1
             x = x_input[ii][1]
+            x_spa = x_input_spa[ii][1]
             for jj in range(len(x)):
                 x_out[ii, pos] = x[jj]
+                x_out_spa[ii, pos] = x_spa[jj]
                 pos += 1
             x = x_input[ii][2]
+            x_spa = x_input_spa[ii][2]
             for jj in range(len(x)):
                 x_out[ii, pos] = x[jj]
+                x_out_spa[ii, pos] = x_spa[jj]
                 pos += 1
             # x_out[ii, pos] = END
 
@@ -433,6 +458,7 @@ class TokenCollateHF(TokenCollate):
         x_out = torch.tensor(x_out, device=self._lm_device)
         x_lang = torch.tensor(x_lang)
         y_out = torch.tensor(y_out)
+        x_input_spa = torch.tensor(x_out_spa, dtype=torch.long)
         y_offset = torch.tensor(y_offset)
         y_len = torch.tensor(y_len)
         x_word = torch.tensor(x_word)
@@ -444,7 +470,8 @@ class TokenCollateHF(TokenCollate):
         with torch.no_grad():
             x_out = self._lm(x_out)['hidden_states']
             x_out = [t.detach() for t in x_out]
-        return {'x_input': x_out, 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
+        return {'x_input': x_out, 'x_input_spa': x_input_spa, 'x_word_char': x_word, 'x_word_case': x_word_case,
+                'x_word_masks': x_word_masks,
                 'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
                 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
 
