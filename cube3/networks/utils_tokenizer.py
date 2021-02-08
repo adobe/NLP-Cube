@@ -92,6 +92,7 @@ class TokenCollateFTLanguasito(TokenCollate):
         PAD = 1
         max_x = 0
         x_input = []
+        x_input_spa = []
         x_lang = []
         y_output = []
         y_offset = []
@@ -161,26 +162,30 @@ class TokenCollateFTLanguasito(TokenCollate):
                 x_lang.append(self._lang_id + 1)
             # toks, ids = self._tokenize(prev_sentence.text)
             if self._lang_id is None:
-                toks = self._tokenizer(prev_sentence.text)
+                toks, spa = self.get_tokens(prev_sentence.text)
             else:
-                toks = prev_sentence
+                toks, spa = prev_sentence
             x_prev = toks
+            x_prev_spa = spa
             # toks, ids = self._tokenize(next_sentence.text)
             if self._lang_id is None:
-                toks = self._tokenizer(next_sentence.text)
+                toks, spa = self.get_tokens(next_sentence.text)
             else:
-                toks = next_sentence
+                toks, spa = next_sentence
             x_next = toks
+            x_next_spa = spa
             y_offset.append(len(x_prev))
             # c_toks, ids = self._tokenize(current_sentence.text)
             if self._lang_id is None:
-                c_toks = self._tokenizer(current_sentence.text)
+                c_toks, c_spa = self._tokenizer(current_sentence.text)
             else:
-                c_toks = current_sentence
+                c_toks, c_spa = current_sentence
             x_main = c_toks
+            x_main_spa = c_spa
             y_len.append(len(x_main))
             x_len = len(x_prev) + len(x_main) + len(x_next)
             x_input.append([x_prev, x_main, x_next])
+            x_input_spa.append([x_prev_spa, x_main_spa, x_next_spa])
             x_text.append(c_toks)
             if self._lang_id is None:
                 y_output.append(self._get_targets(current_sentence))
@@ -198,10 +203,26 @@ class TokenCollateFTLanguasito(TokenCollate):
         x_emb = self._lm_helper.apply_raw(x_for_emb)
         max_len = max([len(x) for x in x_emb])
         x_out = np.zeros((len(x_emb), max_len, self._emb_size[0]), dtype=np.float)
+        x_out_spa = np.zeros((len(x_emb), max_len), dtype=np.long)
         for ii in range(x_out.shape[0]):
             for jj in range(x_out.shape[1]):
                 if jj < len(x_emb[ii]):
                     x_out[ii, jj, :] = x_emb[ii][jj]
+
+            pos = 0
+            spa = x_input_spa[ii][0]
+            for jj in range(len(spa)):
+                x_out_spa[ii, pos] = spa[jj]
+                pos += 1
+            spa = x_input_spa[ii][1]
+            for jj in range(len(spa)):
+                x_out_spa[ii, pos] = spa[jj]
+                pos += 1
+            spa = x_input_spa[ii][2]
+            for jj in range(len(spa)):
+                x_out_spa[ii, pos] = spa[jj]
+                pos += 1
+
         y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype=np.long)
         for ii in range(x_out.shape[0]):
             for jj in range(y_len[ii]):
@@ -218,10 +239,11 @@ class TokenCollateFTLanguasito(TokenCollate):
         x_word_len = torch.tensor(x_word_len)
         x_lang_word = torch.tensor(x_lang_word)
         x_sent_len = torch.tensor(x_sent_len)
+        x_input_spa = torch.tensor(x_out_spa)
 
-        return {'x_input': [x_out], 'x_word_char': x_word, 'x_word_case': x_word_case, 'x_word_masks': x_word_masks,
-                'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
-                'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
+        return {'x_input': [x_out], 'x_input_spa': x_input_spa, 'x_word_char': x_word, 'x_word_case': x_word_case,
+                'x_word_masks': x_word_masks, 'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text,
+                'x_lang': x_lang, 'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
@@ -248,9 +270,20 @@ class TokenCollateFTLanguasito(TokenCollate):
         return targets
 
     def get_tokens(self, text):
-        return self._tokenizer(text)
+        toks = self._tokenizer(text)
+        spa = [0 for _ in range(len(toks))]
+        t_pos = 0
+        for ii in range(len(toks)):
+            t_pos += len(toks[ii])
+            if t_pos < len(text) and text[t_pos] == ' ':
+                spa[ii] = 2
+                while t_pos < len(text) and text[t_pos] == ' ':
+                    t_pos += 1
+            else:
+                spa[ii] = 1
+        return toks, spa
 
-    def get_embeddings_size(self) -> int:
+    def get_embeddings_size(self) -> List[int]:
         return self._emb_size
 
     def __getstate__(self):
@@ -520,5 +553,5 @@ class TokenCollateHF(TokenCollate):
             targets[ii] = target
         return targets
 
-    def get_embeddings_size(self) -> int:
+    def get_embeddings_size(self) -> List[int]:
         return self._emb_size
