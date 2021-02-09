@@ -329,7 +329,7 @@ class TokenCollateHF(TokenCollate):
         spa = [0 for _ in range(len(toks))]
         t_pos = 0
         for ii in range(len(toks)):
-            t_pos += len(toks[ii])
+            t_pos += len(toks[ii].replace('▁', ''))
             if t_pos < len(text) and text[t_pos] == ' ':
                 spa[ii] = 2
                 while t_pos < len(text) and text[t_pos] == ' ':
