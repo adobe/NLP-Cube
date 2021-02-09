@@ -42,19 +42,34 @@ def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     right = min(len(toks[0]), stop + overlap)
     prev = toks[0][left:start]
     next = toks[0][stop:right]
-    current_spa = toks[1][start:stop]
-    prev_spa = toks[1][left:start]
-    next_spa = toks[1][stop:right]
+    if len(toks) == 2:  # TF or languasito
+        current_spa = toks[1][start:stop]
+        prev_spa = toks[1][left:start]
+        next_spa = toks[1][stop:right]
+        prev = (prev, prev_spa)
+        main = (current, current_spa)
+        next = (next, next_spa)
+    else:
+        current_spa = toks[2][start:stop]
+        prev_spa = toks[2][left:start]
+        next_spa = toks[2][stop:right]
+        current_ids = toks[1][start:stop]
+        prev_ids = toks[1][left:start]
+        next_ids = toks[1][stop:right]
+        prev = (prev, prev_ids, prev_spa)
+        main = (current, current_ids, current_spa)
+        next = (next, next_ids, next_spa)
+
     # if len(prev)==0:
     #    prev=['']
     # if len(next)==0:
     #    next=['']
-    example = {'prev': (prev, prev_spa), 'main': (current, current_spa), 'next': (next, next_spa)}
+    example = {'prev': prev, 'main': main, 'next': next}
     return example
 
 
 class TokenDatasetLive(Dataset):
-    def __init__(self, raw_text, pretokenize_func, seq_len=500, overlap=200):
+    def __init__(self, raw_text, pretokenize_func, seq_len=300, overlap=100):
         self._tokenize = pretokenize_func
         if raw_text[-1] != ' ':
             raw_text += ' '
@@ -365,11 +380,10 @@ class TokenCollateHF(TokenCollate):
                     toks, ids, spa = self.get_tokens(text)
                 else:
                     l_id = self._lang_id
-                    if len(sent) == 2:
+                    if len(sent) == 3:
                         toks, ids, spa = sent
                     else:
                         toks, ids, spa = [], [], []
-
                 for word in toks:
                     a_word_len.append(len(word))
                     x_lang_word.append(l_id)
@@ -388,7 +402,7 @@ class TokenCollateHF(TokenCollate):
                     toks, ids, spa = self.get_tokens(sent.text)
                 else:
                     l_id = self._lang_id
-                    if len(sent) == 2:
+                    if len(sent) == 3:
                         toks, ids, spa = sent
                     else:
                         toks, ids, spa = [], [], []
@@ -424,7 +438,7 @@ class TokenCollateHF(TokenCollate):
             if self._lang_id is None:
                 toks, ids, spa = self.get_tokens(prev_sentence.text)
             else:
-                if len(prev_sentence) == 2:
+                if len(prev_sentence) == 3:
                     toks, ids, spa = prev_sentence
                 else:
                     toks, ids, spa = [], [], []
@@ -433,7 +447,7 @@ class TokenCollateHF(TokenCollate):
             if self._lang_id is None:
                 toks, ids, spa = self.get_tokens(next_sentence.text)
             else:
-                if len(next_sentence) == 2:
+                if len(next_sentence) == 3:
                     toks, ids, spa = next_sentence
                 else:
                     toks, ids, spa = [], [], []
@@ -443,7 +457,7 @@ class TokenCollateHF(TokenCollate):
             if self._lang_id is None:
                 c_toks, ids, c_spa = self.get_tokens(current_sentence.text)
             else:
-                if len(current_sentence) == 2:
+                if len(current_sentence) == 3:
                     c_toks, ids, c_spa = current_sentence
                 else:
                     c_toks, ids, c_spa = [], [], []
