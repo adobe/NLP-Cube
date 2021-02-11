@@ -32,13 +32,13 @@ class Languasito(pl.LightningModule):
         self._loss_function = nn.CrossEntropyLoss(ignore_index=0)
         self._repr1_ff = nn.Sequential(nn.Linear(RNN_SIZE, NUM_FILTERS), nn.ReLU(),
                                        nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
-        self._repr2_ff = nn.Sequential(nn.Linear(ATT_DIM * NUM_HEADS // 2, NUM_FILTERS), nn.ReLU(),
+        self._repr2_ff = nn.Sequential(nn.Linear(ATT_DIM * NUM_HEADS, NUM_FILTERS), nn.ReLU(),
                                        nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
         self._key = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._value = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._att_fn_fw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
         self._att_fn_bw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
-        cond_size = NUM_FILTERS
+        cond_size = NUM_FILTERS * 2
         self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.char2int))
 
     def forward(self, X, return_w=False):
@@ -86,24 +86,12 @@ class Languasito(pl.LightningModule):
         y = {'lexical': lexical, 'context': context, 'emb': concat}  # , 'sent': sent}
 
         if return_w:
-            att_query = context
-            att_mask = np.ones((context.shape[1], context.shape[1]))
-            for ii in range(context.shape[1]):
-                att_mask[ii, ii] = 0
-            att_mask = torch.tensor(att_mask, device=self._get_device())
-            att_key = self._key(context)
-            att_val = self._value(context)
-            # print(att_query.shape)
-            # print(att_key.shape)
-            # print(att_val.shape)
-            # print(att_mask.shape)
-
-            # att_value, _ = self._att_fn_fw(att_query, att_key, att_val, attn_mask=att_mask)
-            # print(att_value.shape)
+            att_value = self._apply_masked_attention(out_fw[:, :-2, :], out_bw[:, 2:, :])
+            
             repr1 = self._repr1_ff(context)
-            # repr2 = self._repr2_ff(att_value)
-            # cond = torch.cat([repr1, repr2], dim=-1)
-            cond = repr1
+            repr2 = self._repr2_ff(att_value)
+            cond = torch.cat([repr1, repr2], dim=-1)
+            # cond = repr1
             cond_packed = []
             for ii in range(x_sent_len.shape[0]):
                 for jj in range(x_sent_len[ii]):
@@ -114,6 +102,35 @@ class Languasito(pl.LightningModule):
             y['x_char_pred'] = x_char_pred
 
         return y
+
+    def _apply_masked_attention(self, fw, bw):
+        # forward
+        att_query = fw
+        att_mask = np.ones((fw.shape[1], fw.shape[1]), dtype=np.float)
+        for ii in range(fw.shape[1]):
+            for jj in range(ii + 1, fw.shape[1]):
+                att_mask[ii, jj] = 0
+        att_mask = torch.tensor(att_mask, device=self._get_device())
+        att_key = self._key(fw)
+        att_val = self._value(fw)
+
+        att_value_fw, _ = self._att_fn_fw(att_query.permute(1, 0, 2), att_key.permute(1, 0, 2),
+                                          att_val.permute(1, 0, 2), attn_mask=att_mask)
+
+        att_query = bw
+        att_mask = np.ones((bw.shape[1], bw.shape[1]), dtype=np.float)
+        for ii in range(bw.shape[1]):
+            for jj in range(0, ii):
+                att_mask[ii, jj] = 0
+        att_mask = torch.tensor(att_mask, device=self._get_device())
+
+        att_key = self._key(bw)
+        att_val = self._value(bw)
+
+        att_value_bw, _ = self._att_fn_bw(att_query.permute(1, 0, 2), att_key.permute(1, 0, 2),
+                                          att_val.permute(1, 0, 2), attn_mask=att_mask)
+
+        return torch.cat([att_value_fw, att_value_bw], dim=-1).permute(1, 0, 2)
 
     def training_step(self, batch, batch_idx):
         Y = self.forward(batch, return_w=True)
