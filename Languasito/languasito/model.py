@@ -110,7 +110,7 @@ class Languasito(pl.LightningModule):
                     cond_packed.append(cond[ii, jj].unsqueeze(0))
             cond_packed = torch.cat(cond_packed, dim=0)
 
-            x_char_pred = self._word_reconstruct(cond_packed, gs_chars=x_words_chars)[:, 1:, :]
+            x_char_pred = self._word_reconstruct(cond_packed, gs_chars=x_words_chars)[:, :1, :]
             y['x_char_pred'] = x_char_pred
 
         return y
