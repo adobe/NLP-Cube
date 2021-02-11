@@ -216,6 +216,33 @@ class GE2ELoss(nn.Module):
         return L.mean()
 
 
+class WordDecoder(nn.Module):
+    def __init__(self, cond_size: int, char_emb_size: int, vocab_size: int, rnn_size: int = 200, rnn_layers: int = 2):
+        super().__init__()
+        self._char_emb_size = char_emb_size
+        self._vocab_size = vocab_size
+        self._cond_size = cond_size
+
+        self._char_emb = nn.Embedding(vocab_size, char_emb_size)
+        self._rnn = nn.LSTM(cond_size + char_emb_size, rnn_size, num_layers=rnn_layers, batch_first=True)
+        self._output = nn.Linear(rnn_size, vocab_size)
+
+    def forward(self, cond, gs_chars=None):
+        if gs_chars is not None:
+            cond = cond.unsqueeze(1).repeat(1, gs_chars.shape[1], 1)
+            gs_chars = self._char_emb(gs_chars)
+            x_input = torch.cat([cond, gs_chars], dim=-1)
+            x_out_rnn, _ = self._rnn(x_input)
+            return self._output(x_out_rnn)
+        else:
+            pass  # TODO: write runtime for testing
+
+    def _get_device(self, x):
+        if self._char_emb.weight.device.type == 'cpu':
+            return 'cpu'
+        return '{0}:{1}'.format(self._char_emb.weight.device.type, str(self._char_emb.weight.device.index))
+
+
 def log1pexp(x):
     return torch.where(x < 50, torch.log1p(torch.exp(x)), x)
 

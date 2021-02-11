@@ -148,7 +148,7 @@ class Encodings:
         self._max_vocab_size = max_vocab_size
         self._min_word_occ = min_word_occ
         self._min_char_occ = min_char_occ
-        self.char2int = {'<PAD>': 0, '<UNK>': 1}
+        self.char2int = {'<PAD>': 0, '<UNK>': 1, '<SOT>': 2, '<EOT>': 3}
         self.word2int = {}
 
     def load(self, filename: str):
@@ -216,10 +216,10 @@ class LanguasitoCollate:
         max_sent_len = np.max(x_sent_len)
         max_word_len = np.max(x_word_len)
         x_sent_masks = np.zeros((len(batch), max_sent_len), dtype=np.float)
-        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
+        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len + 2), dtype=np.float)
 
-        x_word_char = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
-        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        x_word_char = np.zeros((x_word_len.shape[0], max_word_len + 2), dtype=np.long)
+        x_word_case = np.zeros((x_word_len.shape[0], max_word_len + 2), dtype=np.long)
         c_word = 0
         x_lang_sent = np.zeros((len(batch)), dtype=np.long)
         x_lang_word = []
@@ -228,6 +228,7 @@ class LanguasitoCollate:
             sent = batch[iSent]
             x_lang_sent[iSent] = 1
             for iWord in range(len(sent)):
+                x_word_char[iWord, 0] = 2  # start of token
                 word = sent[iWord]
                 x_sent_masks[iSent, iWord] = 1
                 x_lang_word.append(1)
@@ -243,9 +244,11 @@ class LanguasitoCollate:
                         x_word_case[c_word, iChar] = 3
                     ch = ch.lower()
                     if ch in self._encodings.char2int:
-                        x_word_char[c_word, iChar] = self._encodings.char2int[ch]
+                        x_word_char[c_word, iChar + 1] = self._encodings.char2int[ch]
                     else:
-                        x_word_char[c_word, iChar] = self._encodings.char2int['<UNK>']
+                        x_word_char[c_word, iChar + 1] = self._encodings.char2int['<UNK>']
+                x_word_char[c_word, len(word) + 1] = 3  # end of token
+                x_word_masks[c_word, len(word) + 1] = 1
                 c_word += 1
 
         x_lang_word = np.array(x_lang_word)

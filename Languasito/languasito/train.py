@@ -77,7 +77,6 @@ if __name__ == '__main__':
         gpus=params.gpus,
         accelerator=acc,
         num_nodes=1,
-        auto_select_gpus=True,
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(params)],
         val_check_interval=min(10000, len(train) // params.batch_size),
