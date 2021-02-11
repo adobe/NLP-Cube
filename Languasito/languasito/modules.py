@@ -233,7 +233,7 @@ class WordDecoder(nn.Module):
             gs_chars = self._char_emb(gs_chars)
             x_input = torch.cat([cond, gs_chars], dim=-1)
             x_out_rnn, _ = self._rnn(x_input)
-            return self._output(x_out_rnn)
+            return self._output(x_out_rnn)[:, :-1, :]
         else:
             pass  # TODO: write runtime for testing
 
