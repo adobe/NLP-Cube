@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
+import numpy as np
 
 
 class LinearNorm(pl.LightningModule):
@@ -235,9 +236,34 @@ class WordDecoder(nn.Module):
             x_out_rnn, _ = self._rnn(x_input)
             return self._output(x_out_rnn)[:, :-1, :]
         else:
-            pass  # TODO: write runtime for testing
+            reached_end = [False for ii in range(cond.shape[0])]
+            last_char = np.ones((cond.shape[0], 1)) * 2  # <SOT>
+            last_char = torch.tensor(last_char, dtype=torch.long, device=self._get_device())
+            last_char = self._char_emb(last_char)
+            cond = cond.unsqueeze(1)
+            index = 0
+            decoder_hidden = None
+            output_list = []
+            while True:
+                decoder_input = torch.cat([cond, last_char], dim=-1)
+                decoder_output, decoder_hidden = self._rnn(decoder_input, hx=decoder_hidden)
+                output = self._output(decoder_output)
+                last_char = torch.argmax(output, dim=-1)
+                output = last_char.detach().cpu().numpy()
+                for ii in range(output.shape[0]):
+                    if output[ii] == 3:  # <EOT>
+                        reached_end[ii] = True
 
-    def _get_device(self, x):
+                output_list.append(last_char.detach().cpu())
+                last_char = self._char_emb(last_char)
+
+                index += 1
+                if np.all(reached_end):
+                    break
+            output = torch.cat(output_list, dim=1).detach().cpu().numpy()
+            return output
+
+    def _get_device(self):
         if self._char_emb.weight.device.type == 'cpu':
             return 'cpu'
         return '{0}:{1}'.format(self._char_emb.weight.device.type, str(self._char_emb.weight.device.index))

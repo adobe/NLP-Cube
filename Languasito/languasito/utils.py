@@ -150,12 +150,17 @@ class Encodings:
         self._min_char_occ = min_char_occ
         self.char2int = {'<PAD>': 0, '<UNK>': 1, '<SOT>': 2, '<EOT>': 3}
         self.word2int = {}
+        self.char_list = []
 
     def load(self, filename: str):
         json_obj = json.load(open(filename))
         self.char2int = json_obj['char2int']
         if 'word2int' in json_obj:
             self.word2int = json_obj['word2int']
+
+        self.char_list = [' ' for _ in range(len(self.char2int))]
+        for char in self.char2int:
+            self.char_list[self.char2int[char]] = char
 
     def save(self, filename: str, full: bool = True):
         json_obj = {'char2int': self.char2int}
@@ -192,6 +197,10 @@ class Encodings:
         for ch in char2count:
             if char2count[ch] > self._min_char_occ:
                 self.char2int[ch] = len(self.char2int)
+
+        self.char_list = [' ' for _ in range(len(self.char2int))]
+        for char in self.char2int:
+            self.char_list[self.char2int[char]] = char
 
 
 class LanguasitoCollate:

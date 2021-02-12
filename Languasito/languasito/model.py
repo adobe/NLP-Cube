@@ -32,7 +32,8 @@ class Languasito(pl.LightningModule):
         self._loss_function = nn.CrossEntropyLoss(ignore_index=0)
         self._repr1_ff = nn.Sequential(nn.LayerNorm(RNN_SIZE), nn.Linear(RNN_SIZE, NUM_FILTERS), nn.ReLU(),
                                        nn.LayerNorm(NUM_FILTERS), nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
-        self._repr2_ff = nn.Sequential(nn.LayerNorm(ATT_DIM * NUM_HEADS), nn.Linear(ATT_DIM * NUM_HEADS, NUM_FILTERS), nn.ReLU(),
+        self._repr2_ff = nn.Sequential(nn.LayerNorm(ATT_DIM * NUM_HEADS), nn.Linear(ATT_DIM * NUM_HEADS, NUM_FILTERS),
+                                       nn.ReLU(),
                                        nn.LayerNorm(NUM_FILTERS), nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
         self._key = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._value = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
@@ -41,7 +42,7 @@ class Languasito(pl.LightningModule):
         cond_size = NUM_FILTERS * 2
         self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.char2int))
 
-    def forward(self, X, return_w=False):
+    def forward(self, X, return_w=False, imagine=False):
         x_words_chars = X['x_word_char']
         x_words_case = X['x_word_case']
         x_lang_word = X['x_lang_word']
@@ -87,7 +88,7 @@ class Languasito(pl.LightningModule):
 
         if return_w:
             att_value = self._apply_masked_attention(out_fw[:, :-2, :], out_bw[:, 2:, :])
-            
+
             repr1 = self._repr1_ff(context)
             repr2 = self._repr2_ff(att_value)
             cond = torch.cat([repr1, repr2], dim=-1)
@@ -97,8 +98,10 @@ class Languasito(pl.LightningModule):
                 for jj in range(x_sent_len[ii]):
                     cond_packed.append(cond[ii, jj].unsqueeze(0))
             cond_packed = torch.cat(cond_packed, dim=0)
-
-            x_char_pred = self._word_reconstruct(cond_packed, gs_chars=x_words_chars)
+            if imagine:
+                x_char_pred = self._word_reconstruct(cond_packed, gs_chars=None)
+            else:
+                x_char_pred = self._word_reconstruct(cond_packed, gs_chars=x_words_chars)
             y['x_char_pred'] = x_char_pred
 
         return y
