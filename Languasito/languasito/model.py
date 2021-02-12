@@ -30,10 +30,10 @@ class Languasito(pl.LightningModule):
         self._start_stop = nn.Embedding(2, NUM_FILTERS // 2)
         self._epoch_results = None
         self._loss_function = nn.CrossEntropyLoss(ignore_index=0)
-        self._repr1_ff = nn.Sequential(nn.Linear(RNN_SIZE, NUM_FILTERS), nn.ReLU(),
-                                       nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
-        self._repr2_ff = nn.Sequential(nn.Linear(ATT_DIM * NUM_HEADS, NUM_FILTERS), nn.ReLU(),
-                                       nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
+        self._repr1_ff = nn.Sequential(nn.LayerNorm(RNN_SIZE), nn.Linear(RNN_SIZE, NUM_FILTERS), nn.ReLU(),
+                                       nn.LayerNorm(NUM_FILTERS), nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
+        self._repr2_ff = nn.Sequential(nn.LayerNorm(ATT_DIM * NUM_HEADS), nn.Linear(ATT_DIM * NUM_HEADS, NUM_FILTERS), nn.ReLU(),
+                                       nn.LayerNorm(NUM_FILTERS), nn.Linear(NUM_FILTERS, NUM_FILTERS), nn.ReLU())
         self._key = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._value = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._att_fn_fw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
