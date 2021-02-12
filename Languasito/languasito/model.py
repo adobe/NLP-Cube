@@ -88,7 +88,8 @@ class Languasito(pl.LightningModule):
 
         if return_w:
             att_value = self._apply_masked_attention(out_fw[:, :-2, :], out_bw[:, 2:, :])
-
+            # att_value = torch.zeros_like(att_value)
+            # context = torch.zeros_like(context)
             repr1 = self._repr1_ff(context)
             repr2 = self._repr2_ff(att_value)
             cond = torch.cat([repr1, repr2], dim=-1)
@@ -116,7 +117,7 @@ class Languasito(pl.LightningModule):
         att_mask = torch.tensor(att_mask, device=self._get_device())
         att_key = self._key(fw)
         att_val = self._value(fw)
-
+        att_mask = att_mask.float().masked_fill(att_mask == 0, float('-inf')).masked_fill(att_mask == 1, float(0.0))
         att_value_fw, _ = self._att_fn_fw(att_query.permute(1, 0, 2), att_key.permute(1, 0, 2),
                                           att_val.permute(1, 0, 2), attn_mask=att_mask)
 
@@ -126,7 +127,7 @@ class Languasito(pl.LightningModule):
             for jj in range(0, ii):
                 att_mask[ii, jj] = 0
         att_mask = torch.tensor(att_mask, device=self._get_device())
-
+        att_mask = att_mask.float().masked_fill(att_mask == 0, float('-inf')).masked_fill(att_mask == 1, float(0.0))
         att_key = self._key(bw)
         att_val = self._value(bw)
 
