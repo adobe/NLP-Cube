@@ -34,6 +34,9 @@ def _get_word(w_emb):
 
 
 w_emb = y['x_char_pred']
-print(w_emb.shape)
-for w in w_emb:
-    print('"{0}"'.format(_get_word(w)))
+index = 0
+for ii in range(len(text)):
+    for jj in range(len(text[ii])):
+        print('{1:30}"{0}"'.format(_get_word(w_emb[index]).strip(), text[ii][jj]))
+        index += 1
+    print()
