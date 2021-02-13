@@ -4,7 +4,7 @@ import json
 from tqdm.autonotebook import tqdm as tqdm
 import torch
 import numpy as np
-
+import random
 
 class LanguasitoTokenizer:
     def __init__(self, no_space_language=False):
