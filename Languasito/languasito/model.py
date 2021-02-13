@@ -8,7 +8,7 @@ from typing import *
 import numpy as np
 import random
 
-from languasito.utils import Encodings
+from languasito.utils import Encodings, mask_concat
 from languasito.modules import WordGram, LinearNorm, CosineLoss, WordDecoder
 
 
@@ -92,7 +92,8 @@ class Languasito(pl.LightningModule):
             # context = torch.zeros_like(context)
             repr1 = self._repr1_ff(context)
             repr2 = self._repr2_ff(att_value)
-            cond = torch.cat([repr1, repr2], dim=-1)
+            # cond = torch.cat([repr1, repr2], dim=-1)
+            cond = mask_concat([repr1, repr2], 0.33, self.training, self._get_device())
             # cond = repr1
             cond_packed = []
             for ii in range(x_sent_len.shape[0]):
