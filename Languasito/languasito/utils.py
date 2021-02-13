@@ -68,7 +68,7 @@ class LanguasitoDataset(Dataset):
                 #    print(len(lines))
                 if len(lines) > 10000000:
                     break
-        print("Filtering...")
+        # print("Filtering...")
         """
         def mp_worker(lines):
             return lines
@@ -120,7 +120,7 @@ class LanguasitoDataset(Dataset):
     def _filter(self, lines):
         filtered_lines = []
         new_lines = []
-        for line in tqdm(lines):
+        for line in lines:
             toks = self._st(line)
             if len(toks) > 5 and len(toks) < 50:
                 valid = True
