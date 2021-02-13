@@ -68,10 +68,15 @@ if __name__ == '__main__':
     else:
         acc = 'ddp'
 
-    #if params.resume:
+    # if params.resume:
     #    chk = torch.load('{0}.last'.format(params.output_base))
-    #else:
+    # else:
     #    chk = None
+
+    if params.resume:
+        checkpoint_path = '{0}.last'.format(params.output_base)
+    else:
+        checkpoint_path = None
 
     trainer = pl.Trainer(
         gpus=params.gpus,
@@ -80,7 +85,7 @@ if __name__ == '__main__':
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(params)],
         val_check_interval=min(10000, len(train) // params.batch_size),
-        resume_from_checkpoint=None,#'{0}.last'.format(params.output_base),
+        resume_from_checkpoint=checkpoint_path,
         # limit_train_batches=5,
         # limit_val_batches=2
     )
