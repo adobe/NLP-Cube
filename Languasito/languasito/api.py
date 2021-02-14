@@ -58,5 +58,6 @@ class LanguasitoAPI:
         tmp = torch.load('{0}.best'.format(model_name), map_location='cpu')
         # model.load(tmp['state_dict'])
         model.load_state_dict(tmp['state_dict'])
+        model.eval()
         api = LanguasitoAPI(model, enc)
         return api
