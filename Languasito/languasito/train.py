@@ -41,8 +41,12 @@ if __name__ == '__main__':
 
     (params, _) = parser.parse_args(sys.argv)
 
-    train = load_dataset(params.train_file)
-    dev = load_dataset(params.dev_file)
+    #train = load_dataset(params.train_file)
+    #dev = load_dataset(params.dev_file)
+    train = LanguasitoDataset()
+    train.load_file(params.train_file)
+    dev = LanguasitoDataset()
+    dev.load_file(params.dev_file)
 
     enc = Encodings()
     enc.update(train)

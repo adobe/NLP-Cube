@@ -51,52 +51,71 @@ class LanguasitoTokenizer:
     #         new_text = new_text.strip()
     #         return new_text.split(' ')
 
+def mp_job(data):
+    no_space_lang, lines = data
+    print(f"\t\ttokenizing {len(lines)} ...")
+    _st = LanguasitoTokenizer(no_space_language=no_space_lang)
+    filtered_lines = []
+    #new_lines = []
+    for line in lines:
+        toks = _st(line)
+        if len(toks) > 5 and len(toks) < 50:
+            valid = True
+            for tok in toks:
+                if len(tok) > 20:
+                    valid = False
+                    break
+            if valid:
+                filtered_lines.append(toks)
+                #new_lines.append(line)
+
+    return filtered_lines
+
 
 class LanguasitoDataset(Dataset):
     def __init__(self, no_space_lang=False):
         self._examples = []
         self._st = LanguasitoTokenizer(no_space_language=no_space_lang)
+        self.no_space_lang = no_space_lang
 
     def load_file(self, filename: str):
+        print(f"Loading {filename}")
         import multiprocessing
         # lines = open(filename, encoding='utf-8').readlines()
         lines = []
+        chunks = []
         with open(filename, "r", encoding="utf8") as f:
             for line in f:
-                lines.append(line)
-                # if len(lines) % 1000000 == 0:
-                #    print(len(lines))
-                if len(lines) > 10000000:
+                l = line.strip()
+                if l == "":
+                    continue
+                lines.append(l)
+                if len(lines) > 999999: # 1M
+                    chunks.append(lines)
+                    lines=[]
+                    print(f"\treading chunk #{len(chunks)} ...")
+                if len(chunks)>200: # 200 M lines
                     break
-        # print("Filtering...")
+            if len(lines)>0:
+                chunks.append(lines)
+
+        cpu_count = int(multiprocessing.cpu_count()/2)
+        print(f"\tloaded {len(chunks)} chunks, now filtering on {cpu_count} threads ...")
+
+        packed_chunks = [(self.no_space_lang, lines) for lines in chunks]
+
+        p = multiprocessing.Pool(processes=cpu_count)
+        return_data = p.map(mp_job, packed_chunks)
+        p.close()
+        p.join()
+
+        cnt = 0
+        for lines in return_data:
+            for line in lines:
+                self._examples.append([line, cnt])
+                cnt += 1
+
         """
-        def mp_worker(lines):
-            return lines
-
-        def update(*a):
-            pbar.update(1)
-
-
-        pbar = tqdm(total=8, unit="chunks")
-        pool = multiprocessing.Pool(8)
-
-        data = []
-        results = []
-        chunk = len(lines)//8
-        for i in range(8):
-            data.append(lines[i*chunk:(i+1)*chunk])
-
-        for datachunk in data:
-            results.extend( pool.apply_async(mp_worker, args=(datachunk,), callback=update).get() )
-
-        print(len(results))
-        print(results[0])
-
-        pool.close()
-        pool.join()
-        pbar.close()
-        """
-
         filtered_lines, o_lines = self._filter(lines)
         n = len(filtered_lines)
         for ii in range(n):
@@ -108,6 +127,8 @@ class LanguasitoDataset(Dataset):
             else:
                 ni = len(self._examples) - 1
             self._examples.append([tokenized, ni])
+        """
+        print(f"\tdataset has {len(self._examples)} lines.")
 
     def __len__(self):
         return len(self._examples)
@@ -136,7 +157,8 @@ class LanguasitoDataset(Dataset):
 
 def load_dataset(filename: str) -> LanguasitoDataset:
     dataset = LanguasitoDataset()
-    lines = open(filename).readlines()
+    print(f"Reading dataset file {filename} ...")
+    lines = open(filename,"r",encoding="utf8").readlines()
     for ii in tqdm(range(len(lines)), desc='Loading dataset "{0}"'.format(filename), ncols=100):
         fname = lines[ii].strip()
         dataset.load_file(fname)
