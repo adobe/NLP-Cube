@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
+from languasito.utils.import mask_concat
 
 
 class LinearNorm(pl.LightningModule):
@@ -232,7 +233,7 @@ class WordDecoder(nn.Module):
         if gs_chars is not None:
             cond = cond.unsqueeze(1).repeat(1, gs_chars.shape[1], 1)
             gs_chars = self._char_emb(gs_chars)
-            x_input = torch.cat([cond, gs_chars], dim=-1)
+            x_input = mask_concat([cond, gs_chars], 0.33, True, self._get_device())
             x_out_rnn, _ = self._rnn(x_input)
             return self._output(x_out_rnn)[:, :-1, :]
         else:
