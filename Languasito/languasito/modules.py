@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
-from languasito.utils.import mask_concat
+from languasito.utils import mask_concat
 
 
 class LinearNorm(pl.LightningModule):
