@@ -103,7 +103,7 @@ class WordGram(pl.LightningModule):
         # embeds_normalized = embeds.div(norm)
         # return embeds_normalized
 
-        return torch.tanh(self._pre_out(norm))
+        return self._pre_out(norm)
 
     def _get_device(self):
         if self._lang_emb.weight.device.type == 'cpu':

@@ -75,12 +75,12 @@ class Languasito(pl.LightningModule):
             blist_char.append(sent_emb.unsqueeze(0))
 
         char_emb = torch.cat(blist_char, dim=0)
-        out_fw, _ = self._rnn_fw(char_emb)
-        out_bw, _ = self._rnn_bw(torch.flip(char_emb, [1]))
+        out_fw, _ = self._rnn_fw(torch.tanh(char_emb))
+        out_bw, _ = self._rnn_bw(torch.flip(torch.tanh(char_emb), [1]))
         out_bw = torch.flip(out_bw, [1])
         lexical = char_emb[:, 1:-1, :]
         context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
-        context = torch.tanh(self._linear_out(context))
+        context = torch.tanh(self._linear_out(context) + char_emb)
 
         concat = torch.cat([lexical, context], dim=-1)
 
