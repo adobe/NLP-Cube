@@ -145,7 +145,7 @@ class Languasito(pl.LightningModule):
         loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
         y_lexical = Y['lexical']
         y_context = Y['context']
-        sl = Y['x_sent_len'].detach().cpu().numpy()
+        sl = batch['x_sent_len'].detach().cpu().numpy()
         word_repr = []
         # sent_repr = y_sent
         for ii in range(sl.shape[0]):
@@ -170,7 +170,7 @@ class Languasito(pl.LightningModule):
 
         y_lexical = Y['lexical']
         y_context = Y['context']
-        sl = Y['x_sent_len'].detach().cpu().numpy()
+        sl = batch['x_sent_len'].detach().cpu().numpy()
         word_repr = []
         # sent_repr = y_sent
         for ii in range(sl.shape[0]):
