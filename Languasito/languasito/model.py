@@ -41,6 +41,7 @@ class Languasito(pl.LightningModule):
         self._att_fn_bw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
         cond_size = NUM_FILTERS * 2
         self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.char2int))
+        self._cosine_loss = CosineLoss()
 
     def forward(self, X, return_w=False, imagine=False):
         x_words_chars = X['x_word_char']
@@ -75,12 +76,12 @@ class Languasito(pl.LightningModule):
             blist_char.append(sent_emb.unsqueeze(0))
 
         char_emb = torch.cat(blist_char, dim=0)
-        out_fw, _ = self._rnn_fw(torch.tanh(char_emb))
-        out_bw, _ = self._rnn_bw(torch.flip(torch.tanh(char_emb), [1]))
+        out_fw, _ = self._rnn_fw(char_emb)
+        out_bw, _ = self._rnn_bw(torch.flip(char_emb, [1]))
         out_bw = torch.flip(out_bw, [1])
         lexical = char_emb[:, 1:-1, :]
         context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
-        context = torch.tanh(self._linear_out(context) + char_emb)
+        context = torch.tanh(self._linear_out(context))
 
         concat = torch.cat([lexical, context], dim=-1)
 
@@ -141,30 +142,47 @@ class Languasito(pl.LightningModule):
         Y = self.forward(batch, return_w=True)
         x_char_target = batch['x_word_char'][:, 1:]
         x_char_pred = Y['x_char_pred']
-        loss = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
+        loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
+        y_lexical = Y['lexical']
+        y_context = Y['context']
+        sl = Y['x_sent_len'].detach().cpu().numpy()
+        word_repr = []
+        # sent_repr = y_sent
+        for ii in range(sl.shape[0]):
+            for jj in range(sl[ii]):
+                if True:  # random.random() < 0.15:
+                    word_repr.append(y_lexical[ii, jj].unsqueeze(0))
+                    word_repr.append(y_context[ii, jj].unsqueeze(0))
 
-        # word_repr = []
-        # # sent_repr = y_sent
-        # for ii in range(sl.shape[0]):
-        #     for jj in range(sl[ii]):
-        #         if True:  # random.random() < 0.15:
-        #             word_repr.append(y_lexical[ii, jj].unsqueeze(0))
-        #             word_repr.append(y_context[ii, jj].unsqueeze(0))
-        #
-        # word_repr = torch.cat(word_repr, dim=0)
-        # word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
-        # loss_word = self._ge2e_word(word_repr)
+        word_repr = torch.cat(word_repr, dim=0)
+        word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
+        loss_cosine = self._cosine_loss(word_repr)
         #
         # # sent_repr = sent_repr.reshape(-1, 2, sent_repr.shape[1])
         # # loss_sent = self._ge2e_sent(sent_repr)
-        return loss
+        return loss_rec + loss_cosine
 
     def validation_step(self, batch, batch_idx):
         Y = self.forward(batch, return_w=True)
         x_char_target = batch['x_word_char'][:, 1:]
         x_char_pred = Y['x_char_pred']
-        loss = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
-        return {'total_loss': loss}
+        loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
+
+        y_lexical = Y['lexical']
+        y_context = Y['context']
+        sl = Y['x_sent_len'].detach().cpu().numpy()
+        word_repr = []
+        # sent_repr = y_sent
+        for ii in range(sl.shape[0]):
+            for jj in range(sl[ii]):
+                if True:  # random.random() < 0.15:
+                    word_repr.append(y_lexical[ii, jj].unsqueeze(0))
+                    word_repr.append(y_context[ii, jj].unsqueeze(0))
+
+        word_repr = torch.cat(word_repr, dim=0)
+        word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
+        loss_cosine = self._cosine_loss(word_repr)
+        return {'total_loss': loss_rec + loss_cosine}
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
 
