@@ -1,9 +1,9 @@
 dev_files:
   en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
-language:
-  en_gumreddit: en_gumreddit
-language2id:
+language_codes:
 - en_gumreddit
+language_map:
+  en_gumreddit: en_gumreddit
 test_files:
   en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
 train_files:

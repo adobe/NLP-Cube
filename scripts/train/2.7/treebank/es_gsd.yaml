@@ -1,9 +1,9 @@
 dev_files:
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-dev.conllu
-language:
-  es_gsd: es_gsd
-language2id:
+language_codes:
 - es_gsd
+language_map:
+  es_gsd: es_gsd
 test_files:
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-test.conllu
 train_files:

@@ -1,11 +1,11 @@
 dev_files:
   hy_armtdp: corpus/ud-treebanks-v2.7/UD_Armenian-ArmTDP/hy_armtdp-ud-dev.conllu
-language:
+language_codes:
+- hy_armtdp
+language_map:
   armenian: hy_armtdp
   hy: hy_armtdp
   hy_armtdp: hy_armtdp
-language2id:
-- hy_armtdp
 test_files:
   hy_armtdp: corpus/ud-treebanks-v2.7/UD_Armenian-ArmTDP/hy_armtdp-ud-test.conllu
 train_files:

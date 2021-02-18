@@ -1,9 +1,9 @@
 dev_files:
   vi_vtb: corpus/ud-treebanks-v2.7/UD_Vietnamese-VTB/vi_vtb-ud-dev.conllu
-language:
-  vi_vtb: vi_vtb
-language2id:
+language_codes:
 - vi_vtb
+language_map:
+  vi_vtb: vi_vtb
 test_files:
   vi_vtb: corpus/ud-treebanks-v2.7/UD_Vietnamese-VTB/vi_vtb-ud-test.conllu
 train_files:

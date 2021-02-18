@@ -1,9 +1,9 @@
 dev_files:
   sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
-language:
-  sa_vedic: sa_vedic
-language2id:
+language_codes:
 - sa_vedic
+language_map:
+  sa_vedic: sa_vedic
 test_files:
   sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
 train_files:

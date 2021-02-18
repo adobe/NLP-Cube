@@ -1,11 +1,11 @@
 dev_files:
   fro_srcmf: corpus/ud-treebanks-v2.7/UD_Old_French-SRCMF/fro_srcmf-ud-dev.conllu
-language:
+language_codes:
+- fro_srcmf
+language_map:
   fro: fro_srcmf
   fro_srcmf: fro_srcmf
   old french: fro_srcmf
-language2id:
-- fro_srcmf
 test_files:
   fro_srcmf: corpus/ud-treebanks-v2.7/UD_Old_French-SRCMF/fro_srcmf-ud-test.conllu
 train_files:

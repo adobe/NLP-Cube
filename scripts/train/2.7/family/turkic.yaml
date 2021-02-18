@@ -3,24 +3,22 @@ dev_files:
   tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-dev.conllu
   tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-dev.conllu
   ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-dev.conllu
-language:
+language_codes:
+- kk_ktb
+- tr_imst
+- tr_boun
+- ug_udt
+language_map:
   kazakh: kk_ktb
   kk: kk_ktb
   kk_ktb: kk_ktb
   tr: tr_imst
   tr_boun: tr_boun
   tr_imst: tr_imst
-  tr_pud: tr_pud
   turkish: tr_imst
   ug: ug_udt
   ug_udt: ug_udt
   uyghur: ug_udt
-language2id:
-- kk_ktb
-- tr_pud
-- ug_udt
-- tr_boun
-- tr_imst
 test_files:
   kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
   tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-test.conllu
@@ -30,5 +28,4 @@ train_files:
   kk_ktb: corpus/ud-treebanks-v2.7/UD_Kazakh-KTB/kk_ktb-ud-train.conllu
   tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-train.conllu
   tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-train.conllu
-  tr_pud: corpus/ud-treebanks-v2.7/UD_Turkish-PUD/tr_pud-ud-train.conllu
   ug_udt: corpus/ud-treebanks-v2.7/UD_Uyghur-UDT/ug_udt-ud-train.conllu

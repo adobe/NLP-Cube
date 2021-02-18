@@ -1,9 +1,9 @@
 dev_files:
   lt_hse: corpus/ud-treebanks-v2.7/UD_Lithuanian-HSE/lt_hse-ud-dev.conllu
-language:
-  lt_hse: lt_hse
-language2id:
+language_codes:
 - lt_hse
+language_map:
+  lt_hse: lt_hse
 test_files:
   lt_hse: corpus/ud-treebanks-v2.7/UD_Lithuanian-HSE/lt_hse-ud-test.conllu
 train_files:

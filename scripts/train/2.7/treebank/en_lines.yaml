@@ -1,9 +1,9 @@
 dev_files:
   en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-dev.conllu
-language:
-  en_lines: en_lines
-language2id:
+language_codes:
 - en_lines
+language_map:
+  en_lines: en_lines
 test_files:
   en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-test.conllu
 train_files:

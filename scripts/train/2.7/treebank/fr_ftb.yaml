@@ -1,9 +1,9 @@
 dev_files:
   fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-dev.conllu
-language:
-  fr_ftb: fr_ftb
-language2id:
+language_codes:
 - fr_ftb
+language_map:
+  fr_ftb: fr_ftb
 test_files:
   fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-test.conllu
 train_files:

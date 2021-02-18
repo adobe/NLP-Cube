@@ -1,9 +1,9 @@
 dev_files:
   af_afribooms: corpus/ud-treebanks-v2.7/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu
-language:
-  af_afribooms: af_afribooms
-language2id:
+language_codes:
 - af_afribooms
+language_map:
+  af_afribooms: af_afribooms
 test_files:
   af_afribooms: corpus/ud-treebanks-v2.7/UD_Afrikaans-AfriBooms/af_afribooms-ud-test.conllu
 train_files:

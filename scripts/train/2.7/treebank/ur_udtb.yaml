@@ -1,9 +1,9 @@
 dev_files:
   ur_udtb: corpus/ud-treebanks-v2.7/UD_Urdu-UDTB/ur_udtb-ud-dev.conllu
-language:
-  ur_udtb: ur_udtb
-language2id:
+language_codes:
 - ur_udtb
+language_map:
+  ur_udtb: ur_udtb
 test_files:
   ur_udtb: corpus/ud-treebanks-v2.7/UD_Urdu-UDTB/ur_udtb-ud-test.conllu
 train_files:

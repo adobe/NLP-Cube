@@ -1,9 +1,9 @@
 dev_files:
   no_nynorsk: corpus/ud-treebanks-v2.7/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu
-language:
-  no_nynorsk: no_nynorsk
-language2id:
+language_codes:
 - no_nynorsk
+language_map:
+  no_nynorsk: no_nynorsk
 test_files:
   no_nynorsk: corpus/ud-treebanks-v2.7/UD_Norwegian-Nynorsk/no_nynorsk-ud-test.conllu
 train_files:

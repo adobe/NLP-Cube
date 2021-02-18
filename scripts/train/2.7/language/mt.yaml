@@ -1,11 +1,11 @@
 dev_files:
   mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-dev.conllu
-language:
+language_codes:
+- mt_mudt
+language_map:
   maltese: mt_mudt
   mt: mt_mudt
   mt_mudt: mt_mudt
-language2id:
-- mt_mudt
 test_files:
   mt_mudt: corpus/ud-treebanks-v2.7/UD_Maltese-MUDT/mt_mudt-ud-test.conllu
 train_files:

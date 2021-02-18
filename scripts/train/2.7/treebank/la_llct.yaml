@@ -1,9 +1,9 @@
 dev_files:
   la_llct: corpus/ud-treebanks-v2.7/UD_Latin-LLCT/la_llct-ud-dev.conllu
-language:
-  la_llct: la_llct
-language2id:
+language_codes:
 - la_llct
+language_map:
+  la_llct: la_llct
 test_files:
   la_llct: corpus/ud-treebanks-v2.7/UD_Latin-LLCT/la_llct-ud-test.conllu
 train_files:

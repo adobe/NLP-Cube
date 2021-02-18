@@ -1,14 +1,14 @@
 dev_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
   fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
-language:
+language_codes:
+- fa_seraji
+- fa_perdt
+language_map:
   fa: fa_seraji
   fa_perdt: fa_perdt
   fa_seraji: fa_seraji
   persian: fa_seraji
-language2id:
-- fa_seraji
-- fa_perdt
 test_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
   fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-test.conllu

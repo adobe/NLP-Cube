@@ -1,9 +1,9 @@
 dev_files:
   ar_nyuad: corpus/ud-treebanks-v2.7/UD_Arabic-NYUAD/ar_nyuad-ud-dev.conllu
-language:
-  ar_nyuad: ar_nyuad
-language2id:
+language_codes:
 - ar_nyuad
+language_map:
+  ar_nyuad: ar_nyuad
 test_files:
   ar_nyuad: corpus/ud-treebanks-v2.7/UD_Arabic-NYUAD/ar_nyuad-ud-test.conllu
 train_files:

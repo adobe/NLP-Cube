@@ -1,20 +1,17 @@
 dev_files:
   fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-dev.conllu
   fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-dev.conllu
-language:
-  fi: fi_tdt
-  fi_ftb: fi_ftb
-  fi_pud: fi_pud
-  fi_tdt: fi_tdt
-  finnish: fi_tdt
-language2id:
+language_codes:
 - fi_ftb
 - fi_tdt
-- fi_pud
+language_map:
+  fi: fi_tdt
+  fi_ftb: fi_ftb
+  fi_tdt: fi_tdt
+  finnish: fi_tdt
 test_files:
   fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-test.conllu
   fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-test.conllu
 train_files:
   fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-train.conllu
-  fi_pud: corpus/ud-treebanks-v2.7/UD_Finnish-PUD/fi_pud-ud-train.conllu
   fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-train.conllu

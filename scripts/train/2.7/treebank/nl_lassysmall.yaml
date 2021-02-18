@@ -1,9 +1,9 @@
 dev_files:
   nl_lassysmall: corpus/ud-treebanks-v2.7/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu
-language:
-  nl_lassysmall: nl_lassysmall
-language2id:
+language_codes:
 - nl_lassysmall
+language_map:
+  nl_lassysmall: nl_lassysmall
 test_files:
   nl_lassysmall: corpus/ud-treebanks-v2.7/UD_Dutch-LassySmall/nl_lassysmall-ud-test.conllu
 train_files:

@@ -1,9 +1,9 @@
 dev_files:
   fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-dev.conllu
-language:
-  fi_ftb: fi_ftb
-language2id:
+language_codes:
 - fi_ftb
+language_map:
+  fi_ftb: fi_ftb
 test_files:
   fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-test.conllu
 train_files:

@@ -1,11 +1,11 @@
 dev_files:
   ca_ancora: corpus/ud-treebanks-v2.7/UD_Catalan-AnCora/ca_ancora-ud-dev.conllu
-language:
+language_codes:
+- ca_ancora
+language_map:
   ca: ca_ancora
   ca_ancora: ca_ancora
   catalan: ca_ancora
-language2id:
-- ca_ancora
 test_files:
   ca_ancora: corpus/ud-treebanks-v2.7/UD_Catalan-AnCora/ca_ancora-ud-test.conllu
 train_files:

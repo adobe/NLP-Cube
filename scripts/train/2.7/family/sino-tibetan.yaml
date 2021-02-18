@@ -2,7 +2,11 @@ dev_files:
   lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-dev.conllu
   zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-dev.conllu
   zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-dev.conllu
-language:
+language_codes:
+- zh_gsdsimp
+- lzh_kyoto
+- zh_gsd
+language_map:
   chinese: zh_gsdsimp
   classical chinese: lzh_kyoto
   lzh: lzh_kyoto
@@ -10,12 +14,6 @@ language:
   zh: zh_gsdsimp
   zh_gsd: zh_gsd
   zh_gsdsimp: zh_gsdsimp
-  zh_pud: zh_pud
-language2id:
-- zh_gsd
-- zh_gsdsimp
-- zh_pud
-- lzh_kyoto
 test_files:
   lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-test.conllu
   zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-test.conllu
@@ -24,4 +22,3 @@ train_files:
   lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-train.conllu
   zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-train.conllu
   zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-train.conllu
-  zh_pud: corpus/ud-treebanks-v2.7/UD_Chinese-PUD/zh_pud-ud-train.conllu

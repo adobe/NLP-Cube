@@ -1,11 +1,11 @@
 dev_files:
   pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-dev.conllu
-language:
+language_codes:
+- pcm_nsc
+language_map:
   naija: pcm_nsc
   pcm: pcm_nsc
   pcm_nsc: pcm_nsc
-language2id:
-- pcm_nsc
 test_files:
   pcm_nsc: corpus/ud-treebanks-v2.7/UD_Naija-NSC/pcm_nsc-ud-test.conllu
 train_files:

@@ -1,11 +1,11 @@
 dev_files:
   uk_iu: corpus/ud-treebanks-v2.7/UD_Ukrainian-IU/uk_iu-ud-dev.conllu
-language:
+language_codes:
+- uk_iu
+language_map:
   uk: uk_iu
   uk_iu: uk_iu
   ukrainian: uk_iu
-language2id:
-- uk_iu
 test_files:
   uk_iu: corpus/ud-treebanks-v2.7/UD_Ukrainian-IU/uk_iu-ud-test.conllu
 train_files:

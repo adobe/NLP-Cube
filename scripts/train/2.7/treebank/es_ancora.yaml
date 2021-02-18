@@ -1,9 +1,9 @@
 dev_files:
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-dev.conllu
-language:
-  es_ancora: es_ancora
-language2id:
+language_codes:
 - es_ancora
+language_map:
+  es_ancora: es_ancora
 test_files:
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-test.conllu
 train_files:

@@ -1,9 +1,9 @@
 dev_files:
   lt_alksnis: corpus/ud-treebanks-v2.7/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-dev.conllu
-language:
-  lt_alksnis: lt_alksnis
-language2id:
+language_codes:
 - lt_alksnis
+language_map:
+  lt_alksnis: lt_alksnis
 test_files:
   lt_alksnis: corpus/ud-treebanks-v2.7/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-test.conllu
 train_files:

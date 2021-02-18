@@ -1,9 +1,9 @@
 dev_files:
   gl_treegal: corpus/ud-treebanks-v2.7/UD_Galician-TreeGal/gl_treegal-ud-test.conllu
-language:
-  gl_treegal: gl_treegal
-language2id:
+language_codes:
 - gl_treegal
+language_map:
+  gl_treegal: gl_treegal
 test_files:
   gl_treegal: corpus/ud-treebanks-v2.7/UD_Galician-TreeGal/gl_treegal-ud-test.conllu
 train_files:

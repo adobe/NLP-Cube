@@ -3,20 +3,18 @@ dev_files:
   cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-dev.conllu
   cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-dev.conllu
   cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-dev.conllu
-language:
+language_codes:
+- cs_fictree
+- cs_cac
+- cs_pdt
+- cs_cltt
+language_map:
   cs: cs_pdt
   cs_cac: cs_cac
   cs_cltt: cs_cltt
   cs_fictree: cs_fictree
   cs_pdt: cs_pdt
-  cs_pud: cs_pud
   czech: cs_pdt
-language2id:
-- cs_fictree
-- cs_cac
-- cs_cltt
-- cs_pdt
-- cs_pud
 test_files:
   cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-test.conllu
   cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-test.conllu
@@ -27,4 +25,3 @@ train_files:
   cs_cltt: corpus/ud-treebanks-v2.7/UD_Czech-CLTT/cs_cltt-ud-train.conllu
   cs_fictree: corpus/ud-treebanks-v2.7/UD_Czech-FicTree/cs_fictree-ud-train.conllu
   cs_pdt: corpus/ud-treebanks-v2.7/UD_Czech-PDT/cs_pdt-ud-train.conllu
-  cs_pud: corpus/ud-treebanks-v2.7/UD_Czech-PUD/cs_pud-ud-train.conllu

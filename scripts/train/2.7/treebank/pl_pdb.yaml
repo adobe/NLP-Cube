@@ -1,9 +1,9 @@
 dev_files:
   pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-dev.conllu
-language:
-  pl_pdb: pl_pdb
-language2id:
+language_codes:
 - pl_pdb
+language_map:
+  pl_pdb: pl_pdb
 test_files:
   pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-test.conllu
 train_files:

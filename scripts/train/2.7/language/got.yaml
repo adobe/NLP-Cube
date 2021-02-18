@@ -1,11 +1,11 @@
 dev_files:
   got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
-language:
+language_codes:
+- got_proiel
+language_map:
   got: got_proiel
   got_proiel: got_proiel
   gothic: got_proiel
-language2id:
-- got_proiel
 test_files:
   got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
 train_files:

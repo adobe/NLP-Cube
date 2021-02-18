@@ -19,20 +19,38 @@ dev_files:
   pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-dev.conllu
   ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-dev.conllu
   ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-dev.conllu
-  ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-dev.conllu
-language:
+language_codes:
+- fr_partut
+- pt_gsd
+- fr_ftb
+- gl_ctg
+- it_twittiro
+- pt_bosque
+- fr_gsd
+- it_isdt
+- ro_rrt
+- es_gsd
+- it_partut
+- ca_ancora
+- gl_treegal
+- it_postwita
+- ro_nonstandard
+- fr_sequoia
+- fr_spoken
+- it_vit
+- es_ancora
+- fro_srcmf
+language_map:
   ca: ca_ancora
   ca_ancora: ca_ancora
   catalan: ca_ancora
   es: es_gsd
   es_ancora: es_ancora
   es_gsd: es_gsd
-  es_pud: es_pud
   fr: fr_gsd
   fr_ftb: fr_ftb
   fr_gsd: fr_gsd
   fr_partut: fr_partut
-  fr_pud: fr_pud
   fr_sequoia: fr_sequoia
   fr_spoken: fr_spoken
   french: fr_gsd
@@ -46,7 +64,6 @@ language:
   it_isdt: it_isdt
   it_partut: it_partut
   it_postwita: it_postwita
-  it_pud: it_pud
   it_twittiro: it_twittiro
   it_vit: it_vit
   italian: it_isdt
@@ -55,39 +72,11 @@ language:
   pt: pt_bosque
   pt_bosque: pt_bosque
   pt_gsd: pt_gsd
-  pt_pud: pt_pud
   ro: ro_rrt
   ro_nonstandard: ro_nonstandard
   ro_rrt: ro_rrt
-  ro_simonero: ro_simonero
   romanian: ro_rrt
   spanish: es_gsd
-language2id:
-- it_isdt
-- es_ancora
-- it_partut
-- it_postwita
-- it_twittiro
-- ro_nonstandard
-- ro_simonero
-- fr_partut
-- it_vit
-- fr_ftb
-- fr_gsd
-- pt_gsd
-- it_pud
-- gl_ctg
-- fr_pud
-- es_gsd
-- fr_sequoia
-- ro_rrt
-- pt_bosque
-- fr_spoken
-- pt_pud
-- gl_treegal
-- fro_srcmf
-- es_pud
-- ca_ancora
 test_files:
   ca_ancora: corpus/ud-treebanks-v2.7/UD_Catalan-AnCora/ca_ancora-ud-test.conllu
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-test.conllu
@@ -109,16 +98,13 @@ test_files:
   pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-test.conllu
   ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-test.conllu
   ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-test.conllu
-  ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-test.conllu
 train_files:
   ca_ancora: corpus/ud-treebanks-v2.7/UD_Catalan-AnCora/ca_ancora-ud-train.conllu
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-train.conllu
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-train.conllu
-  es_pud: corpus/ud-treebanks-v2.7/UD_Spanish-PUD/es_pud-ud-train.conllu
   fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-train.conllu
   fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-train.conllu
   fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-train.conllu
-  fr_pud: corpus/ud-treebanks-v2.7/UD_French-PUD/fr_pud-ud-train.conllu
   fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-train.conllu
   fr_spoken: corpus/ud-treebanks-v2.7/UD_French-Spoken/fr_spoken-ud-train.conllu
   fro_srcmf: corpus/ud-treebanks-v2.7/UD_Old_French-SRCMF/fro_srcmf-ud-train.conllu
@@ -127,12 +113,9 @@ train_files:
   it_isdt: corpus/ud-treebanks-v2.7/UD_Italian-ISDT/it_isdt-ud-train.conllu
   it_partut: corpus/ud-treebanks-v2.7/UD_Italian-ParTUT/it_partut-ud-train.conllu
   it_postwita: corpus/ud-treebanks-v2.7/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu
-  it_pud: corpus/ud-treebanks-v2.7/UD_Italian-PUD/it_pud-ud-train.conllu
   it_twittiro: corpus/ud-treebanks-v2.7/UD_Italian-TWITTIRO/it_twittiro-ud-train.conllu
   it_vit: corpus/ud-treebanks-v2.7/UD_Italian-VIT/it_vit-ud-train.conllu
   pt_bosque: corpus/ud-treebanks-v2.7/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu
   pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-train.conllu
-  pt_pud: corpus/ud-treebanks-v2.7/UD_Portuguese-PUD/pt_pud-ud-train.conllu
   ro_nonstandard: corpus/ud-treebanks-v2.7/UD_Romanian-Nonstandard/ro_nonstandard-ud-train.conllu
   ro_rrt: corpus/ud-treebanks-v2.7/UD_Romanian-RRT/ro_rrt-ud-train.conllu
-  ro_simonero: corpus/ud-treebanks-v2.7/UD_Romanian-SiMoNERo/ro_simonero-ud-train.conllu

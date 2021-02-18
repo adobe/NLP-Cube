@@ -1,11 +1,11 @@
 dev_files:
   te_mtg: corpus/ud-treebanks-v2.7/UD_Telugu-MTG/te_mtg-ud-dev.conllu
-language:
+language_codes:
+- te_mtg
+language_map:
   te: te_mtg
   te_mtg: te_mtg
   telugu: te_mtg
-language2id:
-- te_mtg
 test_files:
   te_mtg: corpus/ud-treebanks-v2.7/UD_Telugu-MTG/te_mtg-ud-test.conllu
 train_files:

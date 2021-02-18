@@ -1,9 +1,9 @@
 dev_files:
   ru_gsd: corpus/ud-treebanks-v2.7/UD_Russian-GSD/ru_gsd-ud-dev.conllu
-language:
-  ru_gsd: ru_gsd
-language2id:
+language_codes:
 - ru_gsd
+language_map:
+  ru_gsd: ru_gsd
 test_files:
   ru_gsd: corpus/ud-treebanks-v2.7/UD_Russian-GSD/ru_gsd-ud-test.conllu
 train_files:

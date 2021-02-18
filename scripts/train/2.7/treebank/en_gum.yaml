@@ -1,9 +1,9 @@
 dev_files:
   en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-dev.conllu
-language:
-  en_gum: en_gum
-language2id:
+language_codes:
 - en_gum
+language_map:
+  en_gum: en_gum
 test_files:
   en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-test.conllu
 train_files:

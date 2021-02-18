@@ -1,9 +1,9 @@
 dev_files:
   cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
-language:
-  cy_ccg: cy_ccg
-language2id:
+language_codes:
 - cy_ccg
+language_map:
+  cy_ccg: cy_ccg
 test_files:
   cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
 train_files:

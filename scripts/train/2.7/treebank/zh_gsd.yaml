@@ -1,9 +1,9 @@
 dev_files:
   zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-dev.conllu
-language:
-  zh_gsd: zh_gsd
-language2id:
+language_codes:
 - zh_gsd
+language_map:
+  zh_gsd: zh_gsd
 test_files:
   zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-test.conllu
 train_files:

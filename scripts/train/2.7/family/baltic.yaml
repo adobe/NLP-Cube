@@ -2,7 +2,11 @@ dev_files:
   lt_alksnis: corpus/ud-treebanks-v2.7/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-dev.conllu
   lt_hse: corpus/ud-treebanks-v2.7/UD_Lithuanian-HSE/lt_hse-ud-dev.conllu
   lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu
-language:
+language_codes:
+- lt_hse
+- lt_alksnis
+- lv_lvtb
+language_map:
   latvian: lv_lvtb
   lithuanian: lt_alksnis
   lt: lt_alksnis
@@ -10,10 +14,6 @@ language:
   lt_hse: lt_hse
   lv: lv_lvtb
   lv_lvtb: lv_lvtb
-language2id:
-- lv_lvtb
-- lt_hse
-- lt_alksnis
 test_files:
   lt_alksnis: corpus/ud-treebanks-v2.7/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-test.conllu
   lt_hse: corpus/ud-treebanks-v2.7/UD_Lithuanian-HSE/lt_hse-ud-test.conllu

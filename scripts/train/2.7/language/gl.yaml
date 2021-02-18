@@ -1,14 +1,14 @@
 dev_files:
   gl_ctg: corpus/ud-treebanks-v2.7/UD_Galician-CTG/gl_ctg-ud-dev.conllu
   gl_treegal: corpus/ud-treebanks-v2.7/UD_Galician-TreeGal/gl_treegal-ud-test.conllu
-language:
+language_codes:
+- gl_ctg
+- gl_treegal
+language_map:
   galician: gl_ctg
   gl: gl_ctg
   gl_ctg: gl_ctg
   gl_treegal: gl_treegal
-language2id:
-- gl_ctg
-- gl_treegal
 test_files:
   gl_ctg: corpus/ud-treebanks-v2.7/UD_Galician-CTG/gl_ctg-ud-test.conllu
   gl_treegal: corpus/ud-treebanks-v2.7/UD_Galician-TreeGal/gl_treegal-ud-test.conllu

@@ -1,20 +1,17 @@
 dev_files:
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-dev.conllu
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-dev.conllu
-language:
+language_codes:
+- es_ancora
+- es_gsd
+language_map:
   es: es_gsd
   es_ancora: es_ancora
   es_gsd: es_gsd
-  es_pud: es_pud
   spanish: es_gsd
-language2id:
-- es_gsd
-- es_pud
-- es_ancora
 test_files:
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-test.conllu
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-test.conllu
 train_files:
   es_ancora: corpus/ud-treebanks-v2.7/UD_Spanish-AnCora/es_ancora-ud-train.conllu
   es_gsd: corpus/ud-treebanks-v2.7/UD_Spanish-GSD/es_gsd-ud-train.conllu
-  es_pud: corpus/ud-treebanks-v2.7/UD_Spanish-PUD/es_pud-ud-train.conllu

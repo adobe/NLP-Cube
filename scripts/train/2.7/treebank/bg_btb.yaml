@@ -1,9 +1,9 @@
 dev_files:
   bg_btb: corpus/ud-treebanks-v2.7/UD_Bulgarian-BTB/bg_btb-ud-dev.conllu
-language:
-  bg_btb: bg_btb
-language2id:
+language_codes:
 - bg_btb
+language_map:
+  bg_btb: bg_btb
 test_files:
   bg_btb: corpus/ud-treebanks-v2.7/UD_Bulgarian-BTB/bg_btb-ud-test.conllu
 train_files:

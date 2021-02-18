@@ -1,9 +1,9 @@
 dev_files:
   grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-dev.conllu
-language:
-  grc_proiel: grc_proiel
-language2id:
+language_codes:
 - grc_proiel
+language_map:
+  grc_proiel: grc_proiel
 test_files:
   grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-test.conllu
 train_files:

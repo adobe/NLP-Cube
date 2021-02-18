@@ -1,16 +1,16 @@
 dev_files:
   ta_ttb: corpus/ud-treebanks-v2.7/UD_Tamil-TTB/ta_ttb-ud-dev.conllu
   te_mtg: corpus/ud-treebanks-v2.7/UD_Telugu-MTG/te_mtg-ud-dev.conllu
-language:
+language_codes:
+- te_mtg
+- ta_ttb
+language_map:
   ta: ta_ttb
   ta_ttb: ta_ttb
   tamil: ta_ttb
   te: te_mtg
   te_mtg: te_mtg
   telugu: te_mtg
-language2id:
-- ta_ttb
-- te_mtg
 test_files:
   ta_ttb: corpus/ud-treebanks-v2.7/UD_Tamil-TTB/ta_ttb-ud-test.conllu
   te_mtg: corpus/ud-treebanks-v2.7/UD_Telugu-MTG/te_mtg-ud-test.conllu

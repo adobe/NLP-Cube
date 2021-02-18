@@ -1,9 +1,9 @@
 dev_files:
   wo_wtb: corpus/ud-treebanks-v2.7/UD_Wolof-WTB/wo_wtb-ud-dev.conllu
-language:
-  wo_wtb: wo_wtb
-language2id:
+language_codes:
 - wo_wtb
+language_map:
+  wo_wtb: wo_wtb
 test_files:
   wo_wtb: corpus/ud-treebanks-v2.7/UD_Wolof-WTB/wo_wtb-ud-test.conllu
 train_files:

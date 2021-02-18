@@ -1,9 +1,9 @@
 dev_files:
   it_twittiro: corpus/ud-treebanks-v2.7/UD_Italian-TWITTIRO/it_twittiro-ud-dev.conllu
-language:
-  it_twittiro: it_twittiro
-language2id:
+language_codes:
 - it_twittiro
+language_map:
+  it_twittiro: it_twittiro
 test_files:
   it_twittiro: corpus/ud-treebanks-v2.7/UD_Italian-TWITTIRO/it_twittiro-ud-test.conllu
 train_files:

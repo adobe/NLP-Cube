@@ -1,9 +1,9 @@
 dev_files:
   bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
-language:
-  bxr_bdt: bxr_bdt
-language2id:
+language_codes:
 - bxr_bdt
+language_map:
+  bxr_bdt: bxr_bdt
 test_files:
   bxr_bdt: corpus/ud-treebanks-v2.7/UD_Buryat-BDT/bxr_bdt-ud-test.conllu
 train_files:

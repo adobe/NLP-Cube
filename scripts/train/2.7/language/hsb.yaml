@@ -1,11 +1,11 @@
 dev_files:
   hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
-language:
+language_codes:
+- hsb_ufal
+language_map:
   hsb: hsb_ufal
   hsb_ufal: hsb_ufal
   upper sorbian: hsb_ufal
-language2id:
-- hsb_ufal
 test_files:
   hsb_ufal: corpus/ud-treebanks-v2.7/UD_Upper_Sorbian-UFAL/hsb_ufal-ud-test.conllu
 train_files:

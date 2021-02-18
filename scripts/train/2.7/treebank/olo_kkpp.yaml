@@ -1,9 +1,9 @@
 dev_files:
   olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
-language:
-  olo_kkpp: olo_kkpp
-language2id:
+language_codes:
 - olo_kkpp
+language_map:
+  olo_kkpp: olo_kkpp
 test_files:
   olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
 train_files:

@@ -5,8 +5,8 @@ from bs4 import BeautifulSoup
 path_to_corpus_folder = "corpus/ud-treebanks-v2.5"
 path_to_save_folder = "scripts/train/2.5"
 
-#path_to_corpus_folder = "corpus/ud-treebanks-v2.7/"
-#path_to_save_folder = "scripts/train/2.7"
+path_to_corpus_folder = "corpus/ud-treebanks-v2.7/"
+path_to_save_folder = "scripts/train/2.7"
 
 # read default language map
 default_language_map = {}
@@ -90,6 +90,10 @@ for tag in soup.div.findChildren(recursive=False):
                     telem["language_code"] = language_code
                     telem["major_language_code"] = major_language_code
                     print(telem)
+                    if "simonero" in language_code:
+                        continue
+                    if "_pud" in language_code:
+                        continue
                     table.append(telem)
                     treebank_name, treebank_folder, language_code, major_language_code = None, None, None, None
 

@@ -1,9 +1,9 @@
 dev_files:
   mr_ufal: corpus/ud-treebanks-v2.7/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu
-language:
-  mr_ufal: mr_ufal
-language2id:
+language_codes:
 - mr_ufal
+language_map:
+  mr_ufal: mr_ufal
 test_files:
   mr_ufal: corpus/ud-treebanks-v2.7/UD_Marathi-UFAL/mr_ufal-ud-test.conllu
 train_files:

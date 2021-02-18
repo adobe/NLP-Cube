@@ -1,20 +1,17 @@
 dev_files:
   sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-dev.conllu
   sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu
-language:
+language_codes:
+- sv_lines
+- sv_talbanken
+language_map:
   sv: sv_talbanken
   sv_lines: sv_lines
-  sv_pud: sv_pud
   sv_talbanken: sv_talbanken
   swedish: sv_talbanken
-language2id:
-- sv_talbanken
-- sv_lines
-- sv_pud
 test_files:
   sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-test.conllu
   sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-test.conllu
 train_files:
   sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-train.conllu
-  sv_pud: corpus/ud-treebanks-v2.7/UD_Swedish-PUD/sv_pud-ud-train.conllu
   sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu

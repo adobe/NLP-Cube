@@ -1,11 +1,11 @@
 dev_files:
   sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
-language:
+language_codes:
+- sme_giella
+language_map:
   north sami: sme_giella
   sme: sme_giella
   sme_giella: sme_giella
-language2id:
-- sme_giella
 test_files:
   sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
 train_files:

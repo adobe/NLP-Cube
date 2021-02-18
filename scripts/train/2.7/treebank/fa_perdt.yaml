@@ -1,9 +1,9 @@
 dev_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
-language:
-  fa_perdt: fa_perdt
-language2id:
+language_codes:
 - fa_perdt
+language_map:
+  fa_perdt: fa_perdt
 test_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
 train_files:

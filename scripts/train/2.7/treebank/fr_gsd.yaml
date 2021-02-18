@@ -1,9 +1,9 @@
 dev_files:
   fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-dev.conllu
-language:
-  fr_gsd: fr_gsd
-language2id:
+language_codes:
 - fr_gsd
+language_map:
+  fr_gsd: fr_gsd
 test_files:
   fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-test.conllu
 train_files:

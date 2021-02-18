@@ -2,7 +2,11 @@ dev_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-dev.conllu
   fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-dev.conllu
   kmr_mg: corpus/ud-treebanks-v2.7/UD_Kurmanji-MG/kmr_mg-ud-test.conllu
-language:
+language_codes:
+- fa_seraji
+- kmr_mg
+- fa_perdt
+language_map:
   fa: fa_seraji
   fa_perdt: fa_perdt
   fa_seraji: fa_seraji
@@ -10,10 +14,6 @@ language:
   kmr_mg: kmr_mg
   kurmanji: kmr_mg
   persian: fa_seraji
-language2id:
-- fa_seraji
-- kmr_mg
-- fa_perdt
 test_files:
   fa_perdt: corpus/ud-treebanks-v2.7/UD_Persian-PerDT/fa_perdt-ud-test.conllu
   fa_seraji: corpus/ud-treebanks-v2.7/UD_Persian-Seraji/fa_seraji-ud-test.conllu

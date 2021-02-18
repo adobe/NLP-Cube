@@ -1,9 +1,9 @@
 dev_files:
   en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-dev.conllu
-language:
-  en_partut: en_partut
-language2id:
+language_codes:
 - en_partut
+language_map:
+  en_partut: en_partut
 test_files:
   en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-test.conllu
 train_files:

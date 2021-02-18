@@ -1,9 +1,9 @@
 dev_files:
   tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-dev.conllu
-language:
-  tr_imst: tr_imst
-language2id:
+language_codes:
 - tr_imst
+language_map:
+  tr_imst: tr_imst
 test_files:
   tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-test.conllu
 train_files:

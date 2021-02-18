@@ -1,9 +1,9 @@
 dev_files:
   cop_scriptorium: corpus/ud-treebanks-v2.7/UD_Coptic-Scriptorium/cop_scriptorium-ud-dev.conllu
-language:
-  cop_scriptorium: cop_scriptorium
-language2id:
+language_codes:
 - cop_scriptorium
+language_map:
+  cop_scriptorium: cop_scriptorium
 test_files:
   cop_scriptorium: corpus/ud-treebanks-v2.7/UD_Coptic-Scriptorium/cop_scriptorium-ud-test.conllu
 train_files:
