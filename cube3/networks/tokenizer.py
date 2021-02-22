@@ -23,10 +23,12 @@ from cube3.networks.modules import WordGram
 
 
 class Tokenizer(pl.LightningModule):
-    def __init__(self, config: TokenizerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
+    def __init__(self, config: TokenizerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0,
+                 max_seq_len=-1):
         super().__init__()
         self._language_codes = language_codes
         self._config = config
+        self._max_seq_len = max_seq_len
         if not isinstance(ext_word_emb, list):
             ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
@@ -193,6 +195,8 @@ class Tokenizer(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         y_target = batch['y_output']
+        if self._max_seq_len != -1 and y_target.shape[1] > self._max_seq_len:  # fix for HF
+            return 0
         y_pred = self.forward(batch)
 
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
