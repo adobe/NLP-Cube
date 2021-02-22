@@ -84,7 +84,7 @@ class LanguasitoDataset(Dataset):
 
         if os.path.exists(filename+".pickle"):
             print("\tloading from cached file ...")
-            self._examples = pickle.load(open(filename+".pickle"), "rb")
+            self._examples = pickle.load(open(filename+".pickle", "rb"))
             print(f"\tdataset has {len(self._examples)} lines.")
             return
 
@@ -136,7 +136,7 @@ class LanguasitoDataset(Dataset):
             self._examples.append([tokenized, ni])
         """
         print(f"\tdataset has {len(self._examples)} lines.")
-        pickle.dump(self._examples, open(filename + ".pickle"), "wb")
+        pickle.dump(self._examples, open(filename + ".pickle", "wb"))
 
     def __len__(self):
         return len(self._examples)
