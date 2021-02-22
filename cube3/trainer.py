@@ -149,7 +149,7 @@ class Trainer():
 
             callbacks = [early_stopping_callback, Tokenizer.PrintAndSaveCallback(self.store_prefix)]
             model = Tokenizer(config=config, encodings=enc, language_codes=self.language_codes,
-                              ext_word_emb=collate.get_embeddings_size())
+                              ext_word_emb=collate.get_embeddings_size(), max_seq_len=collate.max_seq_len)
 
         if self.task == "tagger":
             early_stopping_callback = EarlyStopping(
