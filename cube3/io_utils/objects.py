@@ -83,6 +83,8 @@ class Sentence:
         t = None
         if sequence is not None:
             for w in sequence:
+                if '.' in str(w.index):
+                    continue
                 if skip == 0:
                     t = Token(index=w.index, text=w.word, space_after=(not 'spaceafter=no' in w.space_after.lower()),
                               words=[])
