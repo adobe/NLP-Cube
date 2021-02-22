@@ -1,10 +1,11 @@
 import re
 from torch.utils.data import Dataset
-import json
+import json, os
 from tqdm.autonotebook import tqdm as tqdm
 import torch
 import numpy as np
 import random
+import pickle
 
 class LanguasitoTokenizer:
     def __init__(self, no_space_language=False):
@@ -80,8 +81,14 @@ class LanguasitoDataset(Dataset):
 
     def load_file(self, filename: str):
         print(f"Loading {filename}")
+
+        if os.path.exists(filename+".pickle"):
+            print("\tloading from cached file ...")
+            self._examples = pickle.load(open(filename+".pickle"), "rb")
+            print(f"\tdataset has {len(self._examples)} lines.")
+            return
+
         import multiprocessing
-        # lines = open(filename, encoding='utf-8').readlines()
         lines = []
         chunks = []
         with open(filename, "r", encoding="utf8") as f:
@@ -90,11 +97,11 @@ class LanguasitoDataset(Dataset):
                 if l == "":
                     continue
                 lines.append(l)
-                if len(lines) > 999999: # 1M
+                if len(lines) > 9999: # 1M
                     chunks.append(lines)
                     lines=[]
                     print(f"\treading chunk #{len(chunks)} ...")
-                if len(chunks)>200: # 200 M lines
+                if len(chunks)>20: # 200 M lines
                     break
             if len(lines)>0:
                 chunks.append(lines)
@@ -129,6 +136,7 @@ class LanguasitoDataset(Dataset):
             self._examples.append([tokenized, ni])
         """
         print(f"\tdataset has {len(self._examples)} lines.")
+        pickle.dump(self._examples, open(filename + ".pickle"), "wb")
 
     def __len__(self):
         return len(self._examples)

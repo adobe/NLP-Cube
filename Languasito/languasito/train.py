@@ -69,8 +69,10 @@ if __name__ == '__main__':
 
     if params.gpus == 0:
         acc = 'ddp_cpu'
+        plugins = None
     else:
         acc = 'ddp'
+        plugins= 'ddp_sharded'
 
     # if params.resume:
     #    chk = torch.load('{0}.last'.format(params.output_base))
@@ -85,6 +87,7 @@ if __name__ == '__main__':
     trainer = pl.Trainer(
         gpus=params.gpus,
         accelerator=acc,
+        plugins=plugins,
         num_nodes=1,
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(params)],

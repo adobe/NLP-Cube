@@ -1,4 +1,5 @@
 .DS_Store
+Languasito/data/
 *.txt
 lightning_logs
 *.gz
