@@ -97,11 +97,11 @@ class LanguasitoDataset(Dataset):
                 if l == "":
                     continue
                 lines.append(l)
-                if len(lines) > 9999: # 1M
+                if len(lines) > 999999: # 1M
                     chunks.append(lines)
                     lines=[]
                     print(f"\treading chunk #{len(chunks)} ...")
-                if len(chunks)>20: # 200 M lines
+                if len(chunks)>100: # 200 M lines
                     break
             if len(lines)>0:
                 chunks.append(lines)
