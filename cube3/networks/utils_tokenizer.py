@@ -96,6 +96,7 @@ class TokenCollateFTLanguasito(TokenCollate):
         self._lm_model = lm_model
         self._lm_device = lm_device
         self._lang_id = lang_id
+        self.max_seq_len = -1
         parts = lm_model.split(':')
         if parts[0] == 'fasttext':
             self._lm_helper = LMHelperFT(device=lm_device, model=parts[1])
@@ -339,6 +340,8 @@ class TokenCollateHF(TokenCollate):
         self._emb_size = [768 for _ in range(13)]
         self._lang_id = lang_id
 
+        self.max_seq_len = self._tokenizer.model_max_length
+    
     def get_tokens(self, text):
         toks, ids = self._tokenize(text)
         spa = [0 for _ in range(len(toks))]
