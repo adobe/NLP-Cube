@@ -80,6 +80,8 @@ class Languasito(pl.LightningModule):
         out_bw, _ = self._rnn_bw(torch.flip(char_emb, [1]))
         out_bw = torch.flip(out_bw, [1])
         lexical = char_emb[:, 1:-1, :]
+        out_fw = out_fw + char_emb
+        out_bw = out_bw + char_emb
         context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
         context = torch.tanh(self._linear_out(context))
 
@@ -143,24 +145,24 @@ class Languasito(pl.LightningModule):
         x_char_target = batch['x_word_char'][:, 1:]
         x_char_pred = Y['x_char_pred']
         loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
-        y_lexical = Y['lexical']
-        y_context = Y['context']
-        sl = batch['x_sent_len'].detach().cpu().numpy()
-        word_repr = []
+        # y_lexical = Y['lexical']
+        # y_context = Y['context']
+        # sl = batch['x_sent_len'].detach().cpu().numpy()
+        # word_repr = []
         # sent_repr = y_sent
-        for ii in range(sl.shape[0]):
-            for jj in range(sl[ii]):
-                if True:  # random.random() < 0.15:
-                    word_repr.append(y_lexical[ii, jj].unsqueeze(0))
-                    word_repr.append(y_context[ii, jj].unsqueeze(0))
-
-        word_repr = torch.cat(word_repr, dim=0)
-        word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
-        loss_cosine = self._cosine_loss(word_repr)
+        # for ii in range(sl.shape[0]):
+        #     for jj in range(sl[ii]):
+        #         if True:  # random.random() < 0.15:
+        #             word_repr.append(y_lexical[ii, jj].unsqueeze(0))
+        #             word_repr.append(y_context[ii, jj].unsqueeze(0))
+        #
+        # word_repr = torch.cat(word_repr, dim=0)
+        # word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
+        # loss_cosine = self._cosine_loss(word_repr)
         #
         # # sent_repr = sent_repr.reshape(-1, 2, sent_repr.shape[1])
         # # loss_sent = self._ge2e_sent(sent_repr)
-        return loss_rec + loss_cosine
+        return loss_rec  # + loss_cosine
 
     def validation_step(self, batch, batch_idx):
         Y = self.forward(batch, return_w=True)
@@ -168,21 +170,22 @@ class Languasito(pl.LightningModule):
         x_char_pred = Y['x_char_pred']
         loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
 
-        y_lexical = Y['lexical']
-        y_context = Y['context']
-        sl = batch['x_sent_len'].detach().cpu().numpy()
-        word_repr = []
-        # sent_repr = y_sent
-        for ii in range(sl.shape[0]):
-            for jj in range(sl[ii]):
-                if True:  # random.random() < 0.15:
-                    word_repr.append(y_lexical[ii, jj].unsqueeze(0))
-                    word_repr.append(y_context[ii, jj].unsqueeze(0))
-
-        word_repr = torch.cat(word_repr, dim=0)
-        word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
-        loss_cosine = self._cosine_loss(word_repr)
-        return {'total_loss': loss_rec + loss_cosine}
+        # y_lexical = Y['lexical']
+        # y_context = Y['context']
+        # sl = batch['x_sent_len'].detach().cpu().numpy()
+        # word_repr = []
+        # # sent_repr = y_sent
+        # for ii in range(sl.shape[0]):
+        #     for jj in range(sl[ii]):
+        #         if True:  # random.random() < 0.15:
+        #             word_repr.append(y_lexical[ii, jj].unsqueeze(0))
+        #             word_repr.append(y_context[ii, jj].unsqueeze(0))
+        #
+        # word_repr = torch.cat(word_repr, dim=0)
+        # word_repr = word_repr.reshape(-1, 2, word_repr.shape[1])
+        # loss_cosine = self._cosine_loss(word_repr)
+        # return {'total_loss': loss_rec + loss_cosine}
+        return {'total_loss': loss_rec}
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
 
