@@ -7,6 +7,7 @@ import numpy as np
 import random
 import pickle
 
+
 class LanguasitoTokenizer:
     def __init__(self, no_space_language=False):
         self._no_space_language = no_space_language
@@ -52,12 +53,13 @@ class LanguasitoTokenizer:
     #         new_text = new_text.strip()
     #         return new_text.split(' ')
 
+
 def mp_job(data):
     no_space_lang, lines = data
     print(f"\t\ttokenizing {len(lines)} ...")
     _st = LanguasitoTokenizer(no_space_language=no_space_lang)
     filtered_lines = []
-    #new_lines = []
+    # new_lines = []
     for line in lines:
         toks = _st(line)
         if len(toks) > 5 and len(toks) < 50:
@@ -68,7 +70,7 @@ def mp_job(data):
                     break
             if valid:
                 filtered_lines.append(toks)
-                #new_lines.append(line)
+                # new_lines.append(line)
 
     return filtered_lines
 
@@ -82,9 +84,9 @@ class LanguasitoDataset(Dataset):
     def load_file(self, filename: str):
         print(f"Loading {filename}")
 
-        if os.path.exists(filename+".pickle"):
+        if os.path.exists(filename + ".pickle"):
             print("\tloading from cached file ...")
-            self._examples = pickle.load(open(filename+".pickle", "rb"))
+            self._examples = pickle.load(open(filename + ".pickle", "rb"))
             print(f"\tdataset has {len(self._examples)} lines.")
             return
 
@@ -97,16 +99,16 @@ class LanguasitoDataset(Dataset):
                 if l == "":
                     continue
                 lines.append(l)
-                if len(lines) > 999999: # 1M
+                if len(lines) > 999999:  # 1M
                     chunks.append(lines)
-                    lines=[]
+                    lines = []
                     print(f"\treading chunk #{len(chunks)} ...")
-                if len(chunks)>100: # 200 M lines
+                if len(chunks) > 100:  # 200 M lines
                     break
-            if len(lines)>0:
+            if len(lines) > 0:
                 chunks.append(lines)
 
-        cpu_count = int(multiprocessing.cpu_count()/2)
+        cpu_count = int(multiprocessing.cpu_count() / 2)
         print(f"\tloaded {len(chunks)} chunks, now filtering on {cpu_count} threads ...")
 
         packed_chunks = [(self.no_space_lang, lines) for lines in chunks]
@@ -163,10 +165,110 @@ class LanguasitoDataset(Dataset):
         return filtered_lines, new_lines
 
 
+class LangusitoWordDecomposer:
+    def __init__(self):
+        self._tok2int = {}
+
+    def train(self, dataset: LanguasitoDataset, w_cutoff=7, max_vocab_size=3000, max_ngram=-1):
+        word2count = {}
+        n = len(dataset)
+        for ii in tqdm(range(n), ncols=100, desc='Updating encodings'):
+            tokenized = dataset[ii]['sent1']
+            for tok in tokenized:
+                if tok in word2count:
+                    word2count[tok] += 1
+                else:
+                    word2count[tok] = 1
+
+        word_list = []
+        for word in word2count:
+            if word2count[word] > w_cutoff:
+                word_list.append(word)
+                for c in word:
+                    if c not in self._tok2int:
+                        self._tok2int[c] = len(self._tok2int)
+
+        ngram2count = {}
+        for word in word_list:
+            # get all ngrams
+            ngrams = self._extract_ngrams(word, max_ngram)
+            for ngram in ngrams:
+                if ngram in ngram2count:
+                    ngram2count[ngram] += 1
+                else:
+                    ngram2count[ngram] = 1
+
+        order2count = {}
+        for ngram in ngram2count:
+            key = len(ngram)
+            if key not in order2count:
+                order2count[key] = ngram2count[ngram]
+            else:
+                order2count[key] += ngram2count[ngram]
+
+        sorted_ngrams = [k for k, v in sorted(ngram2count.items(), reverse=True,
+                                              key=lambda item: item[1])]
+        for ngram in sorted_ngrams[:min(len(sorted_ngrams), max_vocab_size - len(self._tok2int))]:
+            self._tok2int[ngram] = len(self._tok2int)
+
+    @staticmethod
+    def _extract_ngrams(word, max_len):
+        if max_len == -1:
+            max_len = len(word)
+        max_size = min(max_len, len(word))
+
+        ngrams = []
+        for ii in range(1, max_size):
+            for jj in range(len(word) - ii):
+                ngrams.append(word[jj:jj + ii + 1])
+        return ngrams
+
+    @staticmethod
+    def _find_shortest_path(graph, start, end, path=[]):
+        path = path + [start]
+        if start == end:
+            return path
+
+        shortest = None
+        for node in graph[start]:
+            if node not in path:
+                newpath = LangusitoWordDecomposer._find_shortest_path(graph, node, end, path)
+                if newpath:
+                    if not shortest or len(newpath) < len(shortest):
+                        shortest = newpath
+        return shortest
+
+    def _build_graph(self, word):
+        graph = {}
+        for ii in range(len(word) - 1):
+            start_node = ii
+            graph[start_node] = []
+            for jj in range(ii + 1, len(word) + 1):
+                end_node = jj
+                tok = word[ii:jj]
+                if tok in self._tok2int:
+                    print(tok)
+                    graph[start_node].append(end_node)
+        graph[len(word) - 1] = [len(word)]
+        graph[len(word)] = []
+        return graph
+
+    def tokenize(self, word_list: list):
+        tokenized = []
+        for word in word_list:
+            graph = self._build_graph(word)
+            spath = LangusitoWordDecomposer._find_shortest_path(graph, 0, len(word))
+            toks = []
+            for ii in range(1, len(spath)):
+                toks.append(word[spath[ii - 1]:spath[ii]])
+            tokenized.append(toks)
+        return tokenized
+
+
 def load_dataset(filename: str) -> LanguasitoDataset:
     dataset = LanguasitoDataset()
     print(f"Reading dataset file {filename} ...")
-    lines = open(filename,"r",encoding="utf8").readlines()
+    lines = open(filename, "r", encoding="utf8").readlines()
     for ii in tqdm(range(len(lines)), desc='Loading dataset "{0}"'.format(filename), ncols=100):
         fname = lines[ii].strip()
         dataset.load_file(fname)
@@ -207,6 +309,7 @@ class Encodings:
         self.char2int = {'<PAD>': 0, '<UNK>': 1, '<SOT>': 2, '<EOT>': 3}
         self.word2int = {}
         self.char_list = []
+        self.word_decomposer = LangusitoWordDecomposer()
 
     def load(self, filename: str):
         json_obj = json.load(open(filename))
@@ -225,6 +328,7 @@ class Encodings:
         json.dump(json_obj, open(filename, 'w'))
 
     def update(self, dataset: LanguasitoDataset):
+        self.word_decomposer.train(dataset)
         word2count = {}
         char2count = {}
         n = len(dataset)
