@@ -169,7 +169,7 @@ class LangusitoWordDecomposer:
     def __init__(self):
         self._tok2int = {}
 
-    def train(self, dataset: LanguasitoDataset, w_cutoff=7, max_vocab_size=3000, max_ngram=-1):
+    def train(self, dataset: LanguasitoDataset, w_cutoff=7, max_vocab_size=1000, max_ngram=-1):
         word2count = {}
         n = len(dataset)
         for ii in tqdm(range(n), ncols=100, desc='Updating encodings'):
@@ -247,7 +247,6 @@ class LangusitoWordDecomposer:
                 end_node = jj
                 tok = word[ii:jj]
                 if tok in self._tok2int:
-                    print(tok)
                     graph[start_node].append(end_node)
         graph[len(word) - 1] = [len(word)]
         graph[len(word)] = []
@@ -377,9 +376,11 @@ class LanguasitoCollate:
             batch = new_batch
         a_sent_len = [len(sent) for sent in batch]
         a_word_len = []
+        word_list = []
         for sent in batch:
             for word in sent:
                 a_word_len.append(len(word))
+                word_list.append(word)
         x_sent_len = np.array(a_sent_len, dtype=np.long)
         x_word_len = np.array(a_word_len, dtype=np.long)
         max_sent_len = np.max(x_sent_len)
@@ -389,6 +390,9 @@ class LanguasitoCollate:
 
         x_word_char = np.zeros((x_word_len.shape[0], max_word_len + 2), dtype=np.long)
         x_word_case = np.zeros((x_word_len.shape[0], max_word_len + 2), dtype=np.long)
+        word_targets = self._encodings.word_decomposer.tokenize(word_list)
+        max_word_dec = max([len(w) for w in word_targets])
+        x_word_decoder = np.zeros((x_word_len.shape[0], max_word_dec + 2), dtype=np.long)
         c_word = 0
         x_lang_sent = np.zeros((len(batch)), dtype=np.long)
         x_lang_word = []
@@ -401,6 +405,13 @@ class LanguasitoCollate:
                 word = sent[iWord]
                 x_sent_masks[iSent, iWord] = 1
                 x_lang_word.append(1)
+                target = word_targets[c_word]
+                x_word_decoder[c_word, 0] = 2
+                for iTarget in range(len(target)):
+                    tgt = target[iTarget]
+                    if tgt in self._encodings.word_decomposer._tok2int:
+                        x_word_decoder[c_word, iTarget] = self._encodings.word_decomposer._tok2int[tgt] + 4
+                x_word_decoder[c_word, len(target) + 1] = 3
 
                 for iChar in range(len(word)):
                     x_word_masks[c_word, iChar] = 1
@@ -429,6 +440,7 @@ class LanguasitoCollate:
             'x_word_len': torch.tensor(x_word_len),
             'x_sent_masks': torch.tensor(x_sent_masks),
             'x_word_masks': torch.tensor(x_word_masks),
+            'x_word_targets': torch.tensor(x_word_decoder),
             'x_max_len': max_sent_len
         }
 

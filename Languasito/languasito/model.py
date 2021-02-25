@@ -40,7 +40,7 @@ class Languasito(pl.LightningModule):
         self._att_fn_fw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
         self._att_fn_bw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
         cond_size = NUM_FILTERS * 2
-        self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.char2int))
+        self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.word_decomposer._tok2int) + 4)
         self._cosine_loss = CosineLoss()
 
     def forward(self, X, return_w=False, imagine=False):
@@ -106,7 +106,7 @@ class Languasito(pl.LightningModule):
             if imagine:
                 x_char_pred = self._word_reconstruct(cond_packed, gs_chars=None)
             else:
-                x_char_pred = self._word_reconstruct(cond_packed, gs_chars=x_words_chars)
+                x_char_pred = self._word_reconstruct(cond_packed, gs_chars=X['x_word_targets'])
             y['x_char_pred'] = x_char_pred
 
         return y
@@ -142,7 +142,7 @@ class Languasito(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         Y = self.forward(batch, return_w=True)
-        x_char_target = batch['x_word_char'][:, 1:]
+        x_char_target = batch['x_word_targets'][:, 1:]
         x_char_pred = Y['x_char_pred']
         loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
         # y_lexical = Y['lexical']
@@ -166,8 +166,9 @@ class Languasito(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         Y = self.forward(batch, return_w=True)
-        x_char_target = batch['x_word_char'][:, 1:]
+        x_char_target = batch['x_word_targets'][:, 1:]
         x_char_pred = Y['x_char_pred']
+
         loss_rec = self._loss_function(x_char_pred.reshape(-1, x_char_pred.shape[2]), x_char_target.reshape(-1))
 
         # y_lexical = Y['lexical']
