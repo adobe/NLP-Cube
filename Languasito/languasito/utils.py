@@ -242,8 +242,8 @@ class LangusitoWordDecomposer:
         graph = {}
         for ii in range(len(word) - 1):
             start_node = ii
-            graph[start_node] = []
-            for jj in range(ii + 1, len(word) + 1):
+            graph[start_node] = [start_node + 1]
+            for jj in range(ii + 2, len(word) + 1):
                 end_node = jj
                 tok = word[ii:jj]
                 if tok in self._tok2int:
