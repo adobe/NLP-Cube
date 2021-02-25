@@ -320,8 +320,11 @@ class Encodings:
         for char in self.char2int:
             self.char_list[self.char2int[char]] = char
 
+        self.word_decomposer._tok2int = json_obj['tok2int']
+
     def save(self, filename: str, full: bool = True):
         json_obj = {'char2int': self.char2int}
+        json_obj = {'tok2int': self.word_decomposer._tok2int}
         if full:
             json_obj['word2int'] = self.word2int
         json.dump(json_obj, open(filename, 'w'))
