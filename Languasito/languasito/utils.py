@@ -413,7 +413,7 @@ class LanguasitoCollate:
                 for iTarget in range(len(target)):
                     tgt = target[iTarget]
                     if tgt in self._encodings.word_decomposer._tok2int:
-                        x_word_decoder[c_word, iTarget] = self._encodings.word_decomposer._tok2int[tgt] + 4
+                        x_word_decoder[c_word, iTarget + 1] = self._encodings.word_decomposer._tok2int[tgt] + 4
                 x_word_decoder[c_word, len(target) + 1] = 3
 
                 for iChar in range(len(word)):
