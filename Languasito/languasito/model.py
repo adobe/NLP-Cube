@@ -82,10 +82,10 @@ class Languasito(pl.LightningModule):
         lexical = char_emb[:, 1:-1, :]
         out_fw = out_fw + char_emb
         out_bw = out_bw + char_emb
-        context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
-        context = torch.tanh(self._linear_out(context))
+        pre_context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
+        context = torch.tanh(self._linear_out(pre_context))
 
-        concat = torch.cat([lexical, context], dim=-1)
+        concat = torch.cat([lexical, context, pre_context], dim=-1)
 
         y = {'lexical': lexical, 'context': context, 'emb': concat}  # , 'sent': sent}
 

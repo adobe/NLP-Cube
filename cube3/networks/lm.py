@@ -77,7 +77,7 @@ class LMHelperLanguasito(LMHelper):
 
     def get_embedding_size(self):
         # TODO: a better way to get the embedding size (right now it is hardcoded)
-        return [512]
+        return [1024]
 
     def apply(self, document: Document):
         BATCH_SIZE = 8
