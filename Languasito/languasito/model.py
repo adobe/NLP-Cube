@@ -39,7 +39,7 @@ class Languasito(pl.LightningModule):
         self._value = nn.Sequential(nn.Linear(RNN_SIZE, ATT_DIM), nn.Tanh())
         self._att_fn_fw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
         self._att_fn_bw = nn.MultiheadAttention(RNN_SIZE, NUM_HEADS, kdim=ATT_DIM, vdim=ATT_DIM)
-        cond_size = NUM_FILTERS * 2
+        cond_size = NUM_FILTERS
         self._word_reconstruct = WordDecoder(cond_size, CHAR_EMB_SIZE, len(encodings.word_decomposer._tok2int) + 4)
         self._cosine_loss = CosineLoss()
 
@@ -93,10 +93,12 @@ class Languasito(pl.LightningModule):
             att_value = self._apply_masked_attention(out_fw[:, :-2, :], out_bw[:, 2:, :])
             # att_value = torch.zeros_like(att_value)
             # context = torch.zeros_like(context)
-            repr1 = self._repr1_ff(context)
+            # repr1 = self._repr1_ff(context)
             repr2 = self._repr2_ff(att_value)
             # cond = torch.cat([repr1, repr2], dim=-1)
-            cond = mask_concat([repr1, repr2], 0.33, self.training, self._get_device())
+            # cond = mask_concat([repr1, repr2], 0.33, self.training, self._get_device())
+            cond = repr2
+
             # cond = repr1
             cond_packed = []
             for ii in range(x_sent_len.shape[0]):
