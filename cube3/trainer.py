@@ -241,8 +241,8 @@ if __name__ == '__main__':
     parser.add_argument('--patience', action='store', type=int, default=20, dest='patience',
                         help='Number of epochs before early stopping (default=20)')
     parser.add_argument('--store', action='store', dest='store', help='Output base', default='data/model')
-    parser.add_argument('--gpus', action='store', dest='gpus', type=int,
-                        help='How many GPUs to use (default=1)', default=1)
+    parser.add_argument('--gpus', action='store', dest='gpus', type=str,
+                        help='How many GPUs to use (default=1)', default="1")
     parser.add_argument('--num-workers', action='store', dest='num_workers', type=int,
                         help='How many dataloaders to use (default=4)', default=4)
     parser.add_argument('--accelerator', action='store', type=str, default="ddp", dest='accelerator',
