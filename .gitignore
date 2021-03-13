@@ -8,6 +8,7 @@ lightning_logs
 data/*
 nlp-cube-models/*
 corpus/
+models/
 scripts/packer
 *.pyc
 build/
