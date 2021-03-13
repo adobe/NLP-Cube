@@ -333,7 +333,7 @@ class Tagger(pl.LightningModule):
             super().__init__()
             self.store_prefix = store_prefix
 
-        def on_epoch_end(self, trainer, pl_module):
+        def on_validation_end(self, trainer, pl_module):
             metrics = trainer.callback_metrics
             epoch = trainer.current_epoch
 
