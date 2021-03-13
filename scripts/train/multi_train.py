@@ -1,5 +1,7 @@
 import json, os, traceback
 from argparse import ArgumentParser
+import pytorch_lightning as pl
+from pprint import pprint
 import subprocess
 
 parser = ArgumentParser(description='Multiple language trainer')
@@ -10,16 +12,10 @@ parser.add_argument('--train', action='store', dest='train_file',
 parser.add_argument('--patience', action='store', type=int, default=20, dest='patience',
                     help='Number of epochs before early stopping (default=20)')
 parser.add_argument('--store_folder', action='store', dest='store_folder', help='Output folder')
-parser.add_argument('--gpus', action='store', dest='gpus', type=str,
-                    help='How many GPUs to use (default=1)', default="1")
 parser.add_argument('--num-workers', action='store', dest='num_workers', type=int,
                     help='How many dataloaders to use (default=4)', default=4)
-parser.add_argument('--accelerator', action='store', type=str, default="ddp", dest='accelerator',
-                    help='Accelerator (see Pytorch Lightning accelerators)')
 parser.add_argument('--batch-size', action='store', type=int, default=16, dest='batch_size',
                     help='Batch size (default=16)')
-parser.add_argument('--grad-acc', action='store', type=int, default=1, dest='grad_acc',
-                    help='Gradient accumulation steps (default=1)')
 parser.add_argument('--debug', action='store_true', dest='debug',
                     help='Do some standard stuff to debug the model')
 parser.add_argument('--resume', action='store_true', dest='resume', help='Resume training')
@@ -29,12 +25,15 @@ parser.add_argument('--lm-device', action='store', dest='lm_device', default='cu
                     help='Where to load LM (default=cuda:0)')
 parser.add_argument('--config', action='store', dest='config_file', help='Load config file')
 
+parser = pl.Trainer.add_argparse_args(parser)  # add all pytorch lightning params here as well
+
 parser.add_argument('--force_all', action='store_true', dest='force_all', help='Overwrite everything')
 parser.add_argument('--retry_failed', action='store_true', dest='retry_failed', help='Retry unfinished training runs')
 parser.add_argument('--yaml_folder', action='store', dest='yaml_folder', help='Where the yaml config files are stored')
 parser.add_argument('--suffix', action='store', dest='suffix', help='Model name suffix')
 args = parser.parse_args()
 
+print(args)
 
 print(f"Running {args.task} on {args.yaml_folder}")
 
@@ -74,7 +73,7 @@ for yaml in yamls:
     with open(f"{args.task}-status.json", "w") as f:
         json.dump(jobs, f)
     try:
-        subprocess.run(["python3", "cube3/trainer.py",
+        cmd = ["python3", "cube3/trainer.py",
                         "--task", f"{args.task}",
                         "--train", f"{yamls[yaml]}",
                         "--store", f"{store}",
@@ -82,10 +81,17 @@ for yaml in yamls:
                         "--num-workers", f"{args.num_workers}",
                         "--accelerator", f"{args.accelerator}",
                         "--batch-size", f"{args.batch_size}",
-                        "--grad-acc", f"{args.grad_acc}",
+                        "--accumulate_grad_batches", f"{args.accumulate_grad_batches}",
+                        "--deterministic", f"{args.deterministic}",
+                        "--num_nodes", f"{args.num_nodes}",
+                        "--num_processes", f"{args.num_processes}",
+                        "--precision", f"{args.precision}",
+                        #"--tpu_cores", f"{args.tpu_cores}",
                         #"--resume", f"{args.resume}",
                         "--lm-model", f"{args.lm_model}",
-                        "--lm-device", f"{args.lm_device}"], check=True)
+                        "--lm-device", f"{args.lm_device}"]
+        print("\n" + " ".join(cmd).strip())
+        subprocess.run(cmd, check=True)
 
         jobs[yaml] = "Done"
         with open(f"{args.task}-status.json", "w") as f:

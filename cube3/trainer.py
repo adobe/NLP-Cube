@@ -193,8 +193,12 @@ class Trainer():
                 verbose=True,
                 mode='max'
             )
-            callbacks = [early_stopping_callback, Lemmatizer.PrintAndSaveCallback(self.store_prefix)]
+            callbacks = [early_stopping_callback, Compound.PrintAndSaveCallback(self.store_prefix)]
             model = Compound(config=config, encodings=enc, language_codes=self.language_codes)
+            # extra check to see if there is actually any compound in this language
+            if len(trainset._examples) == 0 or len(devset._examples) == 0:
+                print("\nTrain/dev data for this language does not contain any compound words; there is nothing to train.")
+                return
 
         # dataloaders
         train_loader = DataLoader(trainset, batch_size=self.args.batch_size, collate_fn=collate.collate_fn,
@@ -241,16 +245,10 @@ if __name__ == '__main__':
     parser.add_argument('--patience', action='store', type=int, default=20, dest='patience',
                         help='Number of epochs before early stopping (default=20)')
     parser.add_argument('--store', action='store', dest='store', help='Output base', default='data/model')
-    parser.add_argument('--gpus', action='store', dest='gpus', type=str,
-                        help='How many GPUs to use (default=1)', default="1")
     parser.add_argument('--num-workers', action='store', dest='num_workers', type=int,
                         help='How many dataloaders to use (default=4)', default=4)
-    parser.add_argument('--accelerator', action='store', type=str, default="ddp", dest='accelerator',
-                        help='Accelerator (see Pytorch Lightning accelerators)')
     parser.add_argument('--batch-size', action='store', type=int, default=16, dest='batch_size',
                         help='Batch size (default=16)')
-    parser.add_argument('--grad-acc', action='store', type=int, default=1, dest='grad_acc',
-                        help='Gradient accumulation steps (default=1)')
     parser.add_argument('--debug', action='store_true', dest='debug',
                         help='Do some standard stuff to debug the model')
     parser.add_argument('--resume', action='store_true', dest='resume', help='Resume training')
@@ -259,6 +257,8 @@ if __name__ == '__main__':
     parser.add_argument('--lm-device', action='store', dest='lm_device', default='cuda:0',
                         help='Where to load LM (default=cuda:0)')
     parser.add_argument('--config', action='store', dest='config_file', help='Load config file')
+
+    parser = pl.Trainer.add_argparse_args(parser) # add all pytorch lightning params here as well
 
     args = parser.parse_args()
 
