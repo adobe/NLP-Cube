@@ -226,7 +226,7 @@ class Trainer():
             default_root_dir='data/',
             callbacks=callbacks,
             resume_from_checkpoint=resume_from_checkpoint,
-            accumulate_grad_batches=args.grad_acc,
+            accumulate_grad_batches=args.accumulate_grad_batches,
             # limit_train_batches=100,
             # limit_val_batches=4,
         )
