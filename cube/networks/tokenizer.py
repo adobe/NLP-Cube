@@ -1,6 +1,6 @@
 import sys
 
-from cube3.networks.utils import unpack, mask_concat
+from cube.networks.utils import unpack, mask_concat
 
 sys.path.append('')
 import os, argparse
@@ -10,16 +10,16 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from cube3.io_utils.objects import Document, Sentence, Token, Word
-from cube3.io_utils.encodings import Encodings
-from cube3.io_utils.config import TokenizerConfig
-from cube3.networks.utils_tokenizer import TokenCollate
+from cube.io_utils.objects import Document, Sentence, Token, Word
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.config import TokenizerConfig
+from cube.networks.utils_tokenizer import TokenCollate
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, MLP
+from cube.networks.modules import ConvNorm, LinearNorm, MLP
 from torch.utils.data import DataLoader
 import random
 
-from cube3.networks.modules import WordGram
+from cube.networks.modules import WordGram
 
 
 class Tokenizer(pl.LightningModule):
@@ -119,6 +119,8 @@ class Tokenizer(pl.LightningModule):
         return self._output(x)
 
     def validation_step(self, batch, batch_idx):
+        if batch is None:
+            return
         x_lang = batch['x_lang']
         x_text = batch['x_text']
         y_offset = batch['y_offset'].cpu().numpy()
@@ -194,6 +196,10 @@ class Tokenizer(pl.LightningModule):
         self.log('val/early_meta', self._early_stop_meta_val)
 
     def training_step(self, batch, batch_idx):
+        if batch is None:
+            print("Return 0")
+            return 0
+
         y_target = batch['y_output']
         if self._max_seq_len != -1 and y_target.shape[1] > self._max_seq_len:  # fix for HF
             return 0
@@ -210,7 +216,7 @@ class Tokenizer(pl.LightningModule):
             new_text = raw_text.replace('  ', ' ')
 
         self.eval()
-        from cube3.networks.utils_tokenizer import TokenDatasetLive
+        from cube.networks.utils_tokenizer import TokenDatasetLive
         dataset = TokenDatasetLive(raw_text, collate.get_tokens)
         collate._lang_id = lang_id
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
@@ -370,7 +376,7 @@ def _conll_eval(gold, pred):
 
 """
 if __name__ == '__main__':
-    from cube3.io_utils.misc import ArgParser
+    from cube.io_utils.misc import ArgParser
 
     argparser = ArgParser()
     # run argparser

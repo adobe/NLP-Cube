@@ -73,7 +73,7 @@ for yaml in yamls:
     with open(f"{args.task}-status.json", "w") as f:
         json.dump(jobs, f)
     try:
-        cmd = ["python3", "cube3/trainer.py",
+        cmd = ["python3", "cube/trainer.py",
                         "--task", f"{args.task}",
                         "--train", f"{yamls[yaml]}",
                         "--store", f"{store}",

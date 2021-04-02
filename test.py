@@ -2,14 +2,14 @@ import sys
 
 sys.path.append('')
 import torch
-from cube3.networks.tokenizer import Tokenizer
-from cube3.networks.tagger import Tagger
-from cube3.io_utils.config import TokenizerConfig, TaggerConfig, ParserConfig
-from cube3.io_utils.encodings import Encodings
-from cube3.networks.utils_tokenizer import TokenCollateFTLanguasito, TokenCollateHF
-from cube3.networks.lm import LMHelperFT, LMHelperHF
-from cube3.networks.utils import MorphoCollate
-from cube3.networks.parser import Parser
+from cube.networks.tokenizer import Tokenizer
+from cube.networks.tagger import Tagger
+from cube.io_utils.config import TokenizerConfig, TaggerConfig, ParserConfig
+from cube.io_utils.encodings import Encodings
+from cube.networks.utils_tokenizer import TokenCollateFTLanguasito, TokenCollateHF
+from cube.networks.lm import LMHelperFT, LMHelperHF
+from cube.networks.utils import MorphoCollate
+from cube.networks.parser import Parser
 
 # # tokenizer
 # enc = Encodings()

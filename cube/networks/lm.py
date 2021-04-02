@@ -10,7 +10,7 @@ sys.path.append('')
 sys.path.append('./Languasito')
 from transformers import AutoTokenizer
 from transformers import AutoModel
-from cube3.io_utils.objects import Sentence, Document
+from cube.io_utils.objects import Sentence, Document
 from languasito.api import LanguasitoAPI
 import fasttext
 import fasttext.util

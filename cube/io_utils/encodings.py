@@ -2,7 +2,7 @@ import logging, re
 import sys
 
 sys.path.append('')
-from cube3.io_utils.objects import Document
+from cube.io_utils.objects import Document
 
 
 class Encodings:

@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append('')
-from cube3.io_utils.misc import fopen
+from cube.io_utils.misc import fopen
 
 
 class Document:

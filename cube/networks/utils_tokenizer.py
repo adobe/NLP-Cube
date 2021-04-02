@@ -6,9 +6,9 @@ sys.path.append('')
 from typing import *
 from abc import abstractmethod
 from transformers import AutoModel, AutoTokenizer
-from cube3.io_utils.encodings import Encodings
-from cube3.io_utils.objects import Sentence
-from cube3.networks.lm import LMHelperLanguasito, LMHelperFT
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.objects import Sentence
+from cube.networks.lm import LMHelperLanguasito, LMHelperFT
 from languasito.utils import LanguasitoTokenizer
 from torch.utils.data.dataset import Dataset
 
@@ -523,6 +523,10 @@ class TokenCollateHF(TokenCollate):
         x_lang_word = torch.tensor(x_lang_word)
         x_sent_len = torch.tensor(x_sent_len)
         with torch.no_grad():
+            if x_out.size()[1] > self.max_seq_len:
+                print()
+                print(x_out.size())
+                return None # hack to skip batch if len is to big
             x_out = self._lm(x_out)['hidden_states']
             x_out = [t.detach() for t in x_out]
         return {'x_input': x_out, 'x_input_spa': x_input_spa, 'x_word_char': x_word, 'x_word_case': x_word_case,
@@ -549,6 +553,8 @@ class TokenCollateHF(TokenCollate):
             if toks[ii] != '▁':
                 r_toks.append(toks[ii])
                 r_ids.append(ids[ii])
+        #if len(r_toks) > 509 or len(r_ids) > 509 or len(r_toks) < 1 or len(r_ids) < 1:
+        #    print(f"\n>> text:[{text}] [{len(r_toks)}] [{len(r_ids)}]")
         return r_toks, r_ids
 
     def _get_targets(self, sentence: Sentence):

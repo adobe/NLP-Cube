@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
 
-from cube3.io_utils.objects import Document, Sentence, Token, Word
-from cube3.io_utils.encodings import Encodings
+from cube.io_utils.objects import Document, Sentence, Token, Word
+from cube.io_utils.encodings import Encodings
 
 from collections import namedtuple
 from transformers import AutoModel, AutoTokenizer

@@ -8,17 +8,17 @@ import pytorch_lightning as pl
 import numpy as np
 
 sys.path.append('')
-from cube3.io_utils.encodings import Encodings
-from cube3.io_utils.config import LemmatizerConfig
-from cube3.networks.modules import LinearNorm, ConvNorm, Attention
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.config import CompoundConfig
+from cube.networks.modules import LinearNorm, ConvNorm, Attention
 
 
-class Lemmatizer(pl.LightningModule):
+class Compound(pl.LightningModule):
     encodings: Encodings
-    config: LemmatizerConfig
+    config: CompoundConfig
 
-    def __init__(self, config: LemmatizerConfig, encodings: Encodings, language_codes: [] = None):
-        super(Lemmatizer, self).__init__()
+    def __init__(self, config: CompoundConfig, encodings: Encodings, language_codes: [] = None):
+        super(Compound, self).__init__()
         NUM_FILTERS = 512
         NUM_LAYERS = 5
         self._config = config
@@ -32,12 +32,11 @@ class Lemmatizer(pl.LightningModule):
         for char in encodings.char2int:
             self._char_list[encodings.char2int[char]] = char
         self._lang_emb = nn.Embedding(self._num_languages + 1, config.lang_emb_size, padding_idx=0)
-        self._upos_emb = nn.Embedding(len(encodings.upos2int), config.upos_emb_size, padding_idx=0)
         self._char_emb = nn.Embedding(len(encodings.char2int) + 2, config.char_emb_size,
                                       padding_idx=0)  # start/stop index
         self._case_emb = nn.Embedding(4, 16, padding_idx=0)  # 0-pad 1-symbol 2-upper 3-lower
         convolutions = []
-        cs_inp = config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16
+        cs_inp = config.char_emb_size + config.lang_emb_size + 16
 
         for _ in range(NUM_LAYERS):
             conv_layer = nn.Sequential(
@@ -52,17 +51,17 @@ class Lemmatizer(pl.LightningModule):
 
         self._convolutions_char = nn.ModuleList(convolutions)
         self._decoder = nn.LSTM(
-            NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16,
+            NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + 16,
             config.decoder_size, config.decoder_layers,
             batch_first=True, bidirectional=False)
         self._attention = Attention(
-            (NUM_FILTERS // 2 + config.lang_emb_size + config.upos_emb_size + 16) // 2,
+            (NUM_FILTERS // 2 + config.lang_emb_size + 16) // 2,
             config.decoder_size, config.att_proj_size)
 
         self._output_char = LinearNorm(config.decoder_size, len(self._encodings.char2int) + 2)
         self._output_case = LinearNorm(config.decoder_size, 4)
         self._start_frame = nn.Embedding(1,
-                                         NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + config.upos_emb_size + 16)
+                                         NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + 16)
 
         self._res = {}
         for language_code in self._language_codes:
@@ -84,9 +83,8 @@ class Lemmatizer(pl.LightningModule):
         char_emb = self._char_emb(x_char)
         case_emb = self._case_emb(x_case)
 
-        upos_emb = self._upos_emb(x_upos).unsqueeze(1).repeat(1, char_emb.shape[1], 1)
         lang_emb = self._lang_emb(x_lang).unsqueeze(1).repeat(1, char_emb.shape[1], 1)
-        conditioning = torch.cat((case_emb, upos_emb), dim=-1)
+        conditioning = case_emb
         if gs_output is not None:
             output_idx = gs_output
 

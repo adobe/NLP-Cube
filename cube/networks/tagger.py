@@ -12,16 +12,16 @@ from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import numpy as np
-from cube3.io_utils.objects import Document, Sentence, Token, Word
-from cube3.io_utils.encodings import Encodings
-from cube3.io_utils.config import TaggerConfig
+from cube.io_utils.objects import Document, Sentence, Token, Word
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.config import TaggerConfig
 import numpy as np
-from cube3.networks.modules import ConvNorm, LinearNorm, MLP
+from cube.networks.modules import ConvNorm, LinearNorm, MLP
 import random
 
-from cube3.networks.utils import MorphoCollate, MorphoDataset, unpack, mask_concat
+from cube.networks.utils import MorphoCollate, MorphoDataset, unpack, mask_concat
 
-from cube3.networks.modules import WordGram
+from cube.networks.modules import WordGram
 
 
 class Tagger(pl.LightningModule):

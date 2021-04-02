@@ -1,14 +1,16 @@
 from cube.data.objects import Doc, Sentence, Word, Token
 
-class ComponentType ():
+
+class ComponentType:
     Tokenizer = 1
-    MWExpander = 2
+    CWExpander = 2
     POSTagger = 3
     Lemmatizer = 4
     Parser = 5
     NER = 6
 
-class Model():
+
+class Model:
     def __init__(self):
         pass
 
@@ -17,12 +19,11 @@ class Model():
 
 
 class Component():
-    def __init__(self, use_gpu:bool = True, gpu_batch_size:int = 1):
-        self.input_format = Doc # type of data object or str
-        self.output_format = Doc # type of data object
-        self.depends = [] # list of other components
-        self.provides = [] # list of other components
-
+    def __init__(self, use_gpu: bool = True, gpu_batch_size: int = 1):
+        self.input_format = Doc  # type of data object or str
+        self.output_format = Doc  # type of data object
+        self.depends = []  # list of other components
+        self.provides = []  # list of other components
 
         self.model_filepath = None
 
@@ -31,12 +32,12 @@ class Component():
 
         self.model = None
 
-    def load_model (self, model_path):
+    def load_model(self, model_path):
         pass
 
     def process(self, input_object):
-        assert(self.model is not None), "Model is none, please load model first"
-        return self.model(input_object = input_object)
+        assert (self.model is not None), "Model is none, please load model first"
+        return self.model(input_object=input_object)
 
 
 class TokenizerComponent(Component):
@@ -46,39 +47,44 @@ class TokenizerComponent(Component):
         self.depends = []
         self.provides = [ComponentType.Tokenizer]
 
-class MWExpanderComponent(Component):
+
+class CWExpanderComponent(Component):
     def __init__(self):
         super().__init__()
         self.depends = [ComponentType.Tokenizer]
-        self.provides = [ComponentType.MWExpander]
+        self.provides = [ComponentType.CWExpander]
+
 
 class POSTaggerComponent(Component):
     def __init__(self):
         super().__init__()
-        self.depends = [ComponentType.Tokenizer, ComponentType.MWExpander]
+        self.depends = [ComponentType.Tokenizer, ComponentType.CWExpander]
         self.provides = [ComponentType.POSTagger]
+
 
 class LemmatizerComponent(Component):
     def __init__(self):
         super().__init__()
-        self.depends = [ComponentType.Tokenizer, ComponentType.MWExpander, ComponentType.POSTagger]
+        self.depends = [ComponentType.Tokenizer, ComponentType.CWExpander, ComponentType.Parser]
         self.provides = [ComponentType.Lemmatizer]
+
 
 class ParserComponent(Component):
     def __init__(self):
         super().__init__()
-        self.depends = [ComponentType.Tokenizer, ComponentType.MWExpander]
+        self.depends = [ComponentType.Tokenizer, ComponentType.CWExpander]
         self.provides = [ComponentType.Parser]
+
 
 class NERComponent(Component):
     def __init__(self):
         super().__init__()
-        self.depends = [ComponentType.Tokenizer, ComponentType.MWExpander, ComponentType.POSTagger]
+        self.depends = [ComponentType.Tokenizer, ComponentType.CWExpander, ComponentType.Parser]
         self.provides = [ComponentType.NER]
 
 
-class Pipeline ():
-    def is_valid (components:Component):
+class Pipeline():
+    def is_valid(components: Component):
         available = set()
         required = set()
         for component in components:
