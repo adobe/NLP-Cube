@@ -57,13 +57,14 @@ class Tokenizer(pl.LightningModule):
             ext2int.append(module)
         self._ext_proj = nn.ModuleList(ext2int)
 
-        self._dev_results = {i: [] for i, _ in
-                             enumerate(self._language_codes)}  # {langid: [] for langid in self._id2lang}
-        self._res = {}
-        for language_code in self._language_codes:
-            self._res[language_code] = {"sent": 0., "token": 0.}
-        self._early_stop_meta_val = 0
-        self._epoch_results = {}
+        if self._language_codes: # only for training
+            self._dev_results = {i: [] for i, _ in enumerate(self._language_codes)}
+
+            self._res = {}
+            for language_code in self._language_codes:
+                self._res[language_code] = {"sent": 0., "token": 0.}
+            self._early_stop_meta_val = 0
+            self._epoch_results = {}
 
     def forward(self, batch):
         x_emb = batch['x_input']
@@ -207,6 +208,10 @@ class Tokenizer(pl.LightningModule):
 
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
         return loss
+
+    def load(self, model_path:str, device: str = 'cpu'):
+        self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
+        self.to(device)
 
     def process(self, raw_text, collate: TokenCollate, batch_size=32, num_workers: int = 4, lang_id: int = 0):
         raw_text = raw_text.replace('\n', ' ').replace('\r', ' ')

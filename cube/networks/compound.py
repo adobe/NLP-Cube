@@ -63,11 +63,12 @@ class Compound(pl.LightningModule):
         self._start_frame = nn.Embedding(1,
                                          NUM_FILTERS // 2 + config.char_emb_size + config.lang_emb_size + 16)
 
-        self._res = {}
-        for language_code in self._language_codes:
-            self._res[language_code] = {"loss": 0., "acc": 0.}
-        self._early_stop_meta_val = 0
-        self._epoch_results = None
+        if self._language_codes:
+            self._res = {}
+            for language_code in self._language_codes:
+                self._res[language_code] = {"loss": 0., "acc": 0.}
+            self._early_stop_meta_val = 0
+            self._epoch_results = None
 
     def forward(self, X):
         x_char = X['x_char']
@@ -166,8 +167,10 @@ class Compound(pl.LightningModule):
     def save(self, path):
         torch.save(self.state_dict(), path)
 
-    def load(self, path):
-        self.load_state_dict(torch.load(path, map_location=self._target_device))
+    def load(self, model_path:str, device: str = 'cpu'):
+        self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
+        self.to(device)
+
 
     def _get_device(self):
         if self._char_emb.weight.device.type == 'cpu':

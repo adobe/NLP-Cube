@@ -95,10 +95,11 @@ class Parser(pl.LightningModule):
         # self._decoder = GreedyDecoder()
         self._decoder = ChuLiuEdmondsDecoder()
 
-        self._res = {}
-        for language_code in self._language_codes:
-            self._res[language_code] = {"upos": 0., "attrs": 0., 'uas': 0., 'las': 0.}
-        self._early_stop_meta_val = 0
+        if self._language_codes:
+            self._res = {}
+            for language_code in self._language_codes:
+                self._res[language_code] = {"upos": 0., "attrs": 0., 'uas': 0., 'las': 0.}
+            self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
         for lang in res:
@@ -398,6 +399,10 @@ class Parser(pl.LightningModule):
         # single value for early stopping
         self._epoch_results = self._compute_early_stop(res)
         self.log('val/early_meta', self._early_stop_meta_val)
+
+    def load(self, model_path:str, device: str = 'cpu'):
+        self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
+        self.to(device)
 
     def process(self, doc: Document, collate: MorphoCollate, batch_size: int = 32, num_workers: int = 4) -> Document:
         self.eval()

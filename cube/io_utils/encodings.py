@@ -6,7 +6,7 @@ from cube.io_utils.objects import Document
 
 
 class Encodings:
-    def __init__(self, verbose=True):
+    def __init__(self, verbose=False):
         self.word_list = {}
         self.hol_word_list = []
         self.char2int = {}

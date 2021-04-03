@@ -1,28 +1,18 @@
 import sys
-
 sys.path.append('')
 import os, yaml
-
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-import numpy as np
-from cube.io_utils.objects import Document, Sentence, Token, Word
+from cube.io_utils.objects import Document
 from cube.io_utils.encodings import Encodings
 from cube.io_utils.config import TaggerConfig
-import numpy as np
 from cube.networks.modules import ConvNorm, LinearNorm, MLP
-import random
-
 from cube.networks.utils import MorphoCollate, MorphoDataset, unpack, mask_concat
-
 from cube.networks.modules import WordGram
-
 
 class Tagger(pl.LightningModule):
     def __init__(self, config: TaggerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
@@ -72,10 +62,11 @@ class Tagger(pl.LightningModule):
         self._axpos = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.xpos2int))
         self._aattrs = LinearNorm(config.char_filter_size // 2 + config.lang_emb_size, len(encodings.attrs2int))
 
-        self._res = {}
-        for language_code in self._language_codes:
-            self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0.}
-        self._early_stop_meta_val = 0
+        if self._language_codes:
+            self._res = {}
+            for language_code in self._language_codes:
+                self._res[language_code] = {"upos": 0., "xpos": 0., "attrs": 0.}
+            self._early_stop_meta_val = 0
 
     def _compute_early_stop(self, res):
         for lang in res:
@@ -284,6 +275,10 @@ class Tagger(pl.LightningModule):
 
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
+
+    def load(self, model_path:str, device: str = 'cpu'):
+        self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
+        self.to(device)
 
     def process(self, doc: Document, collate: MorphoCollate, upos: bool = True, xpos: bool = True, attrs: bool = True,
                 batch_size: int = 32, num_workers: int = 4) -> Document:
