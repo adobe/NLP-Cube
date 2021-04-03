@@ -404,16 +404,16 @@ class Parser(pl.LightningModule):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
 
-    def process(self, doc: Document, collate: MorphoCollate, batch_size: int = 32, num_workers: int = 4) -> Document:
+    def process(self, doc: Document, collate: MorphoCollate, batch_size: int = 4, num_workers: int = 4) -> Document:
         self.eval()
         dataset = MorphoDataset(doc)
 
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
                                 shuffle=False, num_workers=num_workers, pin_memory=True)
         index = 0
-
         with torch.no_grad():
             for batch in dataloader:
+
                 del batch['y_upos']
                 att, labels, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
 

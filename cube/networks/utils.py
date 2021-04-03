@@ -225,6 +225,7 @@ class MorphoCollate:
     def collate_fn(self, batch: [Sentence]):
         a_sent_len = [len(sent.words) for sent in batch]
         a_word_len = []
+
         x_word_embeddings = [[] for _ in range(len(batch[0].words[0].emb))]
         for sent in batch:
             for word in sent.words:
