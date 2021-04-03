@@ -177,9 +177,10 @@ class Compound(pl.LightningModule):
             return 'cpu'
         return '{0}:{1}'.format(self._char_emb.weight.device.type, str(self._char_emb.weight.device.index))
 
-    def process(self, sequences, lang_id):
+    def process(self, doc, lang_id):
         self.eval()
-        pass
+        print("please implement me - compound process")
+        return doc
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())

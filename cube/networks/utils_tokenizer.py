@@ -326,7 +326,7 @@ class TokenCollateFTLanguasito(TokenCollate):
 
 
 class TokenCollateHF(TokenCollate):
-    def __init__(self, encodings: Encodings, lm_model=None, lm_device='cuda:0', no_space_lang=False, lang_id=None):
+    def __init__(self, encodings: Encodings, lm_device, lm_model=None, no_space_lang=False, lang_id=None):
         if lm_model is None:
             lm_model = 'xlm-roberta-base'
         self._encodings = encodings  # this is currently not used - we keep it for future development
