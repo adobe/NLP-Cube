@@ -11,11 +11,20 @@ os.sys.path.insert(0, parent_dir)
 
 from cube.io_utils.modelstore import ModelStore
 
+def check (filename, language_family, files):
+    for file in files:
+        if filename in file:
+            return 1
+    print(f"{language_family} is missing [{filename}].\n")
+    with open("log.txt", "a") as f:
+        f.write(f"{language_family} is missing [{filename}].\n")
+    return 0
+
 if __name__ == "__main__":
     refresh = False
     folder_with_base_confs = os.path.abspath("scripts//train//2.7//language//")
-    folder_with_all_trained_models = os.path.abspath("models")
-    folder_where_to_output_everything = os.path.abspath("nlp-cube-models")
+    folder_with_all_trained_models = "/media/echo/5CA436CBA436A802/work/models" #os.path.abspath("models")
+    folder_where_to_output_everything = "/media/echo/5CA436CBA436A802/work/nlp-cube-models" #os.path.abspath("nlp-cube-models")
     url_root_for_models = "https://github.com/adobe/NLP-Cube-Models/blob/3.0/models/" # !! make sure it ends with an /
 
     logger = logging.getLogger("cube")
@@ -33,7 +42,7 @@ if __name__ == "__main__":
     """
     language_family_confs = os.listdir(folder_with_base_confs) # this just lists the files without path
     language_family_confs = [os.path.abspath(os.path.join(folder_with_base_confs, x)) for x in language_family_confs]
-    language_family_confs = [x for x in language_family_confs if os.path.isfile(x) and x.endswith(".json")]
+    language_family_confs = [x for x in language_family_confs if os.path.isfile(x) and x.endswith(".yaml")]
     print("I see {} language families in {}.".format(len(language_family_confs), folder_with_base_confs))
 
     d = {}
@@ -72,6 +81,16 @@ if __name__ == "__main__":
         model_files = os.listdir(folder_with_all_trained_models)
         #print(model_files)
         model_files = [x for x in model_files if x.startswith(fam+"-") and ".last" not in x and ".zip" not in x]
+
+        # check model is complete
+        list_of_files = [
+            "tokenizer.config",
+            "tokenizer.encodings",
+            "tokenizer.yaml",
+
+        ]
+        #check("")
+
         #print(model_files)
         model_files = [os.path.abspath(os.path.join(folder_with_all_trained_models,x)) for x in model_files]
         if len(model_files) == 0:
@@ -114,6 +133,6 @@ if __name__ == "__main__":
         Generate catalog
     """
     print("Writing catalog ...")
-    json.dump(catalog, open(os.path.join(folder_where_to_output_everything, "catalog.json"),"w", encoding="utf8"), indent=4, sort_keys=True)
+    json.dump(catalog, open(os.path.join(folder_where_to_output_everything, "catalog.json"), "w", encoding="utf8"), indent=4, sort_keys=True)
 
     print("Done.")

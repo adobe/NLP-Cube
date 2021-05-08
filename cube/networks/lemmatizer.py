@@ -6,6 +6,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 import numpy as np
+from torch.utils.data import DataLoader
+
+from cube.io_utils.objects import Document
+from cube.networks.utils import LemmaDataset, Word2TargetCollate
 
 sys.path.append('')
 from cube.io_utils.encodings import Encodings
@@ -178,9 +182,45 @@ class Lemmatizer(pl.LightningModule):
             return 'cpu'
         return '{0}:{1}'.format(self._char_emb.weight.device.type, str(self._char_emb.weight.device.index))
 
-    def process(self, sequences, lang_id):
+    def process(self, doc: Document, collate: Word2TargetCollate, batch_size: int = 4, num_workers: int = 4) -> Document:
         self.eval()
-        pass
+        dataset = LemmaDataset(doc, for_training=False)
+
+        dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
+                                shuffle=False, num_workers=num_workers, pin_memory=True)
+
+        data_iterator = iter(dataloader)
+
+        end_char_value = len(self._encodings.char2int)
+
+        with torch.no_grad():
+            for sentence_index in range(len(doc.sentences)):
+                for word_index in range(len(doc.sentences[sentence_index].words)):
+                    # run for one word
+                    batch = next(data_iterator)
+                    del batch['y_char'] # set for prediction, not training
+                    del batch['y_case']
+
+                    y_char_pred, y_case_pred = self.forward(batch)
+                    y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy() # list of lists of int
+                    y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy() # list of lists of int
+
+                    # get letters
+                    lemma = []
+                    for char_val, case_val in zip(y_char_pred[0], y_case_pred[0]): # [[24, 12, 88]], get the inside list
+                        if char_val == end_char_value:
+                            break
+                        chr = self._encodings.characters[char_val]
+                        if case_val == 2:
+                            chr = chr.upper()
+                        elif case_val == 3:
+                            chr = chr.lower()
+                        lemma.append(chr)
+
+                    doc.sentences[sentence_index].words[word_index].lemma = "".join(lemma)
+                    #print(f"{doc.sentences[sentence_index].words[word_index].word} -> {doc.sentences[sentence_index].words[word_index].lemma}")
+
+        return doc
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())

@@ -97,7 +97,7 @@ class MorphoDataset(Dataset):
 
 
 class LemmaDataset(Dataset):
-    def __init__(self, document: Document):
+    def __init__(self, document: Document, for_training=True):
         self._examples = []
         lookup = {}
         for sent in document.sentences:
@@ -108,7 +108,7 @@ class LemmaDataset(Dataset):
                 upos = w.upos
 
                 key = (word, lang_id, upos)
-                if key not in lookup:
+                if key not in lookup or for_training is False:
                     lookup[key] = 1
                     example = {'word': word, 'upos': upos, 'lang_id': lang_id, 'target': lemma}
                     self._examples.append(example)
@@ -121,19 +121,24 @@ class LemmaDataset(Dataset):
 
 
 class CompoundDataset(Dataset):
-    def __init__(self, document: Document):
+    def __init__(self, document: Document, for_training=True):
         self._examples = []
         lookup = {}
         for sent in document.sentences:
             lang_id = sent.lang_id
-            for t in sent.tokens:
-                if len(t.words) > 1:
-                    word = t.text
-                    target = ' '.join([w.word for w in t.words])
-                    key = (word, lang_id)
-                    # if key not in lookup:
-                    lookup[key] = 1
-                    example = {'word': word, 'lang_id': lang_id, 'target': target}
+            if for_training is True:
+                for t in sent.tokens:
+                    if len(t.words) > 1:
+                        word = t.text
+                        target = ' '.join([w.word for w in t.words])
+                        key = (word, lang_id)
+                        # if key not in lookup:
+                        lookup[key] = 1
+                        example = {'word': word, 'lang_id': lang_id, 'target': target}
+                        self._examples.append(example)
+            else:
+                for t in sent.tokens:
+                    example = {'word': t.words[0].word, 'lang_id': lang_id, 'target': ""}
                     self._examples.append(example)
 
     def __len__(self):

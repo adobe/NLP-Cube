@@ -120,8 +120,9 @@ class Tokenizer(pl.LightningModule):
         return self._output(x)
 
     def validation_step(self, batch, batch_idx):
-        if batch is None:
-            return
+        if batch['x_input'] is None:
+            print("Return 0")
+            return None
         x_lang = batch['x_lang']
         x_text = batch['x_text']
         y_offset = batch['y_offset'].cpu().numpy()
@@ -197,13 +198,13 @@ class Tokenizer(pl.LightningModule):
         self.log('val/early_meta', self._early_stop_meta_val)
 
     def training_step(self, batch, batch_idx):
-        if batch is None:
+        if batch['x_input'] is None:
             print("Return 0")
-            return 0
+            return None
 
         y_target = batch['y_output']
         if self._max_seq_len != -1 and y_target.shape[1] > self._max_seq_len:  # fix for HF
-            return 0
+            return None
         y_pred = self.forward(batch)
 
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
@@ -285,6 +286,10 @@ class Tokenizer(pl.LightningModule):
             spaceafter = "_"
             for w in sent:
                 cnt += 1
+                print(w)
+                print(mwe)
+                print("---")
+
                 seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
             s = Sentence(sequence=seq, lang_id=lang_id)
 

@@ -444,7 +444,7 @@ class Parser(pl.LightningModule):
                             p_attrs[sentence_index, word_index]]
 
                 index += batch_size
-        #                break
+
         return doc
 
     class PrintAndSaveCallback(pl.callbacks.Callback):

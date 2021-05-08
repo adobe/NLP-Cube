@@ -13,8 +13,8 @@ if __name__ == "__main__":
     # set vars here
     VERSION = "1.0"
     FOLDER_WITH_YAMLS = os.path.abspath("scripts//train//2.7//language//")
-    FOLDER_WITH_TRAINED_MODELS = os.path.abspath("models")
-    FOLDER_WHERE_TO_OUTPUT_EVERYTHING = os.path.abspath("nlp-cube-models")
+    FOLDER_WITH_TRAINED_MODELS = "/media/echo/5CA436CBA436A802/work/models"  # os.path.abspath("models")
+    FOLDER_WHERE_TO_OUTPUT_EVERYTHING = "/media/echo/5CA436CBA436A802/work/nlp-cube-models"  # os.path.abspath("nlp-cube-models")
     URL_ROOT_FOR_MODELS = "https://raw.githubusercontent.com/adobe/NLP-Cube-Models/3.0/models/" # !! make sure it ends with a /
 
     """    
@@ -123,6 +123,8 @@ if __name__ == "__main__":
 
         if not(found_tokenizer and found_lemmatizer and found_parser):
             print(f"\t {lang_code} does not have all files: tokenizer={found_tokenizer}, lemmatizer={found_lemmatizer}, parser={found_parser}, skipping")
+            with open("log.txt", "a") as f:
+                f.write(f"\t {lang_code} does not have all files: tokenizer={found_tokenizer}, lemmatizer={found_lemmatizer}, parser={found_parser}, skipping\n")
             continue
 
         temp_folder = os.path.join(FOLDER_WHERE_TO_OUTPUT_EVERYTHING, str(uuid.uuid4().hex))

@@ -282,6 +282,7 @@ class TokenCollateFTLanguasito(TokenCollate):
                 target = 2  # token
                 if len(sentence.tokens[iToken - 1].words) > 1:
                     target = 3  # multiword token
+                    print(target)
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
                 for tt in range(ii, len(targets)):
@@ -524,9 +525,15 @@ class TokenCollateHF(TokenCollate):
         x_sent_len = torch.tensor(x_sent_len)
         with torch.no_grad():
             if x_out.size()[1] > self.max_seq_len:
-                print()
-                print(x_out.size())
-                return None # hack to skip batch if len is to big
+                #print()
+                #print(x_out.size())
+                # hack to skip batch if len is to big
+                # we cannot return none because pytorch lightning will complain, so we set x_input = None and check
+                # it in the train_step. TODO check long string in processing input
+                return {'x_input': None, 'x_input_spa': x_input_spa, 'x_word_char': x_word, 'x_word_case': x_word_case,
+                        'x_word_masks': x_word_masks,
+                        'x_word_len': x_word_len, 'x_word_lang': x_lang_word, 'x_text': x_text, 'x_lang': x_lang,
+                        'y_output': y_out, 'y_offset': y_offset, 'y_len': y_len, 'x_sent_len': x_sent_len}
             x_out = self._lm(x_out)['hidden_states']
             x_out = [t.detach() for t in x_out]
         return {'x_input': x_out, 'x_input_spa': x_input_spa, 'x_word_char': x_word, 'x_word_case': x_word_case,
