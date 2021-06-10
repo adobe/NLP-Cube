@@ -3,9 +3,9 @@
 
 ## News
 
-**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both 1.0 and 1.1 models are trained on the same [UD2.2 corpus](http://hdl.handle.net/11234/1-2837); however, models 1.1 do not use vector embeddings, thus reducing disk space and time required to use them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
+**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both 1.0 and 1.1 models are trained on the same [UD2.2 corpus](http://hdl.handle.net/11234/1-2837); however, models 1.1 do not use vector embeddings, thus reducing disk space and time required to use them. Some languages have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
 
-To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en", 1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. Same goes for any language/version you want to use.
+To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en", 1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. The same goes for any language/version you want to use.
 
 If you already have NLP Cube installed and **want to use the newer 1.1 models**, type either ``cube.load("en", 1.1)`` or ``cube.load("en", "latest")`` to auto-download them. After this, calling ``cube.load("en")`` without version number will automatically use the latest ones from your disk.
 
@@ -13,14 +13,14 @@ If you already have NLP Cube installed and **want to use the newer 1.1 models**,
 
 # NLP-Cube
 
-NLP-Cube is an opensource Natural Language Processing Framework with support for languages which are included in the [UD Treebanks](http://universaldependencies.org/) (list of all available languages below). Use NLP-Cube if you need:
+NLP-Cube is an open-source Natural Language Processing Framework with support for languages that are included in the [UD Treebanks](http://universaldependencies.org/) (list of all available languages below). Use NLP-Cube if you need:
 * Sentence segmentation
 * Tokenization
 * POS Tagging (both language independent (UPOSes) and language dependent (XPOSes and ATTRs))
 * Lemmatization
 * Dependency parsing
 
-Example input: **"This is a test."**, output is: 
+Example input: **"This is a test."**, the output is: 
 ```
 1       This    this    PRON    DT      Number=Sing|PronType=Dem        4       nsubj   _
 2       is      be      AUX     VBZ     Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin   4       cop     _
@@ -47,8 +47,8 @@ The summary would be:
 ```
 from cube.api import Cube       # import the Cube object
 cube=Cube(verbose=True)         # initialize it
-cube.load("en")                 # select the desired language (it will auto-download the model on first run)
-text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
+cube.load("en")                 # select the desired language (it will auto-download the model on the first run)
+text="This is the text I want segmented, tokenized, lemmatized, and annotated with POS and dependencies."
 sentences=cube(text)            # call with your own text (string) to obtain the annotations
 ```
 The ``sentences`` object now contains the annotated text, one sentence at a time. To print the third word's POS (in the first sentence), just run:
@@ -63,7 +63,7 @@ To use NLP-Cube as a **web service**, you need to
 [locally install NLP-Cube](examples/2.%20Advanced%20usage%20-%20NLP-Cube%20local%20installation.ipynb) 
 and start the server:
 
-For example, the following command will start the server and preload languages: en, fr and de.
+For example, the following command will start the server and preload languages: en, fr, and de.
 ```bash
 cd cube
 python3 webserver.py --port 8080 --lang=en --lang=fr --lang=de
@@ -76,7 +76,7 @@ To test, open the following [link](http://localhost:8080/nlp?lang=en&text=This%2
 If you use NLP-Cube in your research we would be grateful if you would cite the following paper: 
 * [**NLP-Cube: End-to-End Raw Text Processing With Neural Networks**](http://www.aclweb.org/anthology/K18-2017), Boroș, Tiberiu and Dumitrescu, Stefan Daniel and Burtica, Ruxandra, Proceedings of the CoNLL 2018 Shared Task: Multilingual Parsing from Raw Text to Universal Dependencies, Association for Computational Linguistics. p. 171--179. October 2018 
 
-or, in bibtex format: 
+or, in BibTex format: 
 
 ```
 @InProceedings{boro-dumitrescu-burtica:2018:K18-2,
