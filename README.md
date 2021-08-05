@@ -2,7 +2,7 @@
 ![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) 
 
 ## News
-**[05 August 2021]** - We are releasing version 3.0 of NLPCube and models. This is a major update, but we did our best to maintain the same API, so previous implementation will not crash. The supported language list is smaller, but you can open an issue for unsupported languages, and we will do our best to add them. Other options include fixing the pip package version below 3. 
+**[05 August 2021]** - We are releasing version 3.0 of NLPCube and models and introducing [FLAVOURS](#flavours). This is a major update, but we did our best to maintain the same API, so previous implementation will not crash. The supported language list is smaller, but you can open an issue for unsupported languages, and we will do our best to add them. Other options include fixing the pip package version below 3. 
 
 **[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both models 1.0 and 1.1 are trained on the same UD2.2 corpus; however, models 1.1 do not use vector embeddings, thus reducing the time and disk space required to download them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
 
@@ -45,7 +45,7 @@ pip3 install -U nlpcube
 
 To use NLP-Cube ***programmatically** (in Python), follow [this tutorial](examples/1.%20NLP-Cube%20Quick%20Tutorial.ipynb)
 The summary would be:
-```
+```python
 from cube.api import Cube       # import the Cube object
 cube=Cube(verbose=True)         # initialize it
 cube.load("en")                 # select the desired language (it will auto-download the model on first run)
@@ -57,6 +57,27 @@ The ``document`` object now contains the annotated text, one sentence at a time.
 print(document.sentences[0][2].upos) # [0] is the first sentence and [2] is the third word
 ```
 Each token object has the following attributes: ``index``, ``word``, ``lemma``, ``upos``, ``xpos``, ``attrs``, ``head``, ``label``, ``deps``, ``space_after``. For detailed info about each attribute please see the standard CoNLL format.
+
+### Flavours
+
+Previous versions on NLP-Cube were trained on individual treebanks. This means that the same language was supported by 
+multiple models at the same time. For instance, you could parse English (en) text with `en_ewt`, `en_esl`, `en_lines`, 
+etc. The current version of NLPCube combines all flavours of a treebank under the same umbrella, by jointly optimizing
+a conditioned model. You only need to load the base language, for example `en` and then select which flavour to apply
+at runtime:
+
+```text
+from cube.api import Cube       # import the Cube object
+cube=Cube(verbose=True)         # initialize it
+cube.load("en")                 # select the desired language (it will auto-download the model on first run)
+text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
+
+
+# Parse using the default flavour (in this case EWT)
+document=cube(text)            # call with your own text (string) to obtain the annotations
+# or you can specify a flavour
+document=cube(text, flavour='en_lines') 
+```
 
 ### Webserver Usage 
 The current version dropped supported, since most people preferred to implement their one NLPCube as a service.
