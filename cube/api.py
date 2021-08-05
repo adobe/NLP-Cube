@@ -94,10 +94,11 @@ class CubeObj:
     def __call__(self, text: Union[str, Document], flavour: Optional[str] = None):
         lang_id = self._default_lang_id
         if flavour is not None:
-            if lang_id not in self._lang2id:
+            if flavour not in self._lang2id:
                 print("Unsupported language flavour")
                 print("Please choose from: {0}".format(' '.join([k for k in self._lang2id])))
-                raise Exception("Unsupported language flavour")
+                raise Exception("Unsupported language flavour\nPlease choose from: {0}".
+                                format(' '.join([k for k in self._lang2id])))
             lang_id = self._lang2id[flavour]
         if isinstance(text, str):
             doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id)

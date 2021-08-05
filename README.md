@@ -48,7 +48,7 @@ The summary would be:
 ```python
 from cube.api import Cube       # import the Cube object
 cube=Cube(verbose=True)         # initialize it
-cube.load("en")                 # select the desired language (it will auto-download the model on first run)
+cube.load("en", device='cpu')   # select the desired language (it will auto-download the model on first run)
 text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
 document=cube(text)            # call with your own text (string) to obtain the annotations
 ```
@@ -69,7 +69,7 @@ at runtime:
 ```text
 from cube.api import Cube       # import the Cube object
 cube=Cube(verbose=True)         # initialize it
-cube.load("en")                 # select the desired language (it will auto-download the model on first run)
+cube.load("en", device='cpu')   # select the desired language (it will auto-download the model on first run)
 text="This is the text I want segmented, tokenized, lemmatized and annotated with POS and dependencies."
 
 
@@ -105,7 +105,6 @@ or, in bibtex format:
 ```
 
 
-## <a name="languages"></a>Languages and performance
-## Evaluation
+##Languages and performance
 
 Currently under review. We will add end-to-end results here

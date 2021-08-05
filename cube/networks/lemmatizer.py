@@ -200,6 +200,10 @@ class Lemmatizer(pl.LightningModule):
                 del batch['y_char']  # set for prediction, not training
                 del batch['y_case']
 
+                for key in batch:
+                    if isinstance(batch[key], torch.Tensor):
+                        batch[key] = batch[key].to(self._device)
+
                 y_char_pred, y_case_pred = self.forward(batch)
                 y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
                 y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int

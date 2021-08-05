@@ -400,7 +400,7 @@ class Parser(pl.LightningModule):
         self._epoch_results = self._compute_early_stop(res)
         self.log('val/early_meta', self._early_stop_meta_val)
 
-    def load(self, model_path:str, device: str = 'cpu'):
+    def load(self, model_path: str, device: str = 'cpu'):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
 
@@ -415,6 +415,9 @@ class Parser(pl.LightningModule):
             for batch in dataloader:
 
                 del batch['y_upos']
+                for key in batch:
+                    if isinstance(batch[key], torch.Tensor):
+                        batch[key] = batch[key].to(self._device)
                 att, labels, p_upos, p_xpos, p_attrs, a_upos, a_xpos, a_attrs = self.forward(batch)
 
                 x_sent_len = batch['x_sent_len']
