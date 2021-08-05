@@ -53,7 +53,7 @@ class LanguasitoTokenizer:
                 toks.append(tok)
 
             return toks
-        
+
 def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     batch = []
     num_batches = len(toks[0]) // seq_len

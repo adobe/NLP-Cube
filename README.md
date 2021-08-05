@@ -107,4 +107,17 @@ or, in bibtex format:
 
 ##Languages and performance
 
-Currently under review. We will add end-to-end results here
+Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script. Please see more info about what [each metric represents here](http://universaldependencies.org/conll18/evaluation.html). 
+
+Notes: 
+* version 1.1 of the models no longer need the large external vector embedding files. This makes loading the 1.1 models faster and less RAM-intensive.
+* all reported results here are end-2-end. (e.g. we test the tagging accuracy on our own segmented text, as this is the real use-case; CoNLL results are mostly reported on "gold" - or pre-segmented text, leading to higher accuracy for the tagger/parser/etc.)
+
+|Language|Model|Token|Sentence|UPOS|XPOS|AllTags|Lemmas|UAS|LAS|
+|--------|-----|:---:|:------:|:--:|:--:|:-----:|:----:|:-:|:-:|
+|Romanian|
+| |ro-1.0|99.74|95.56|97.42|96.59|95.49|96.91|90.38|85.23|
+| |ro-1.1|99.71|95.42|96.96|96.32|94.98|96.57|90.14|85.06|
+| |ro-3.0|99.80|95.64|97.67|97.11|96.76|97.55|92.06|87.67|
+
+
