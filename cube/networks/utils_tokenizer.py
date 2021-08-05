@@ -9,7 +9,6 @@ from transformers import AutoModel, AutoTokenizer
 from cube.io_utils.encodings import Encodings
 from cube.io_utils.objects import Sentence
 from cube.networks.lm import LMHelperLanguasito, LMHelperFT
-from languasito.utils import LanguasitoTokenizer
 from torch.utils.data.dataset import Dataset
 
 
@@ -30,6 +29,31 @@ class TokenCollate:
         pass
 
 
+class LanguasitoTokenizer:
+    def __init__(self, no_space_language=False):
+        self._no_space_language = no_space_language
+
+    def __call__(self, text):
+        if self._no_space_language:
+            return [ch for ch in text]
+        else:
+            toks = []
+            tok = ''
+            for ch in text:
+                if not ch.isalnum() or ch == ' ':
+                    tok = tok.strip()
+                    if len(tok) != 0:
+                        toks.append(tok)
+                        tok = ''
+                    if ch != ' ':
+                        toks.append(ch)
+                else:
+                    tok += ch
+            if tok.strip() != '':
+                toks.append(tok)
+
+            return toks
+        
 def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     batch = []
     num_batches = len(toks[0]) // seq_len
@@ -91,6 +115,7 @@ class TokenCollateFTLanguasito(TokenCollate):
     def __init__(self, encodings: Encodings, lm_model: str = None, lm_device: str = 'cuda:0', no_space_lang=False,
                  lang_id=None):
         self._encodings = encodings
+        from languasito.utils import LanguasitoTokenizer
         self._tokenizer = LanguasitoTokenizer(no_space_language=no_space_lang)
         self._emb_size = 0
         self._lm_model = lm_model

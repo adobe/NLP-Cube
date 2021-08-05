@@ -7,11 +7,9 @@ import numpy as np
 from typing import *
 
 sys.path.append('')
-sys.path.append('./Languasito')
 from transformers import AutoTokenizer
 from transformers import AutoModel
 from cube.io_utils.objects import Sentence, Document
-from languasito.api import LanguasitoAPI
 import fasttext
 import fasttext.util
 
@@ -72,6 +70,7 @@ class LMHelperLanguasito(LMHelper):
     def __init__(self, device: str = 'cpu', model: str = None):
         if model is None:
             print("UserWarning: No languasito model was specified. Instance will fail")
+        from languasito.api import LanguasitoAPI
         self._languasito = LanguasitoAPI.load(model)
         self._languasito.to(device)
 
