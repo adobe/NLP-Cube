@@ -186,7 +186,7 @@ class LMHelperHF(LMHelper):
 
     def apply(self, doc: Document):
         import tqdm
-        for sent in tqdm.tqdm(doc.sentences, desc="Pre-computing embeddings", unit="sent"):
+        for sent in doc.sentences:  # tqdm.tqdm(doc.sentences, desc="Pre-computing embeddings", unit="sent"):
             wemb = self._compute_we([sent])
             for ii in range(len(wemb)):
                 ww = wemb[ii]

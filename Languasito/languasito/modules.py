@@ -218,6 +218,36 @@ class GE2ELoss(nn.Module):
         return L.mean()
 
 
+class SkipEncoder(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers):
+        fw_list = []
+        bw_list = []
+        self._num_layers = num_layers
+        inp_size = input_size
+        for ii in range(num_layers):
+            fw_list.append(nn.LSTM(inp_size, hidden_size, num_layers=1, batch_first=True, bidirectional=False))
+            bw_list.append(nn.LSTM(inp_size, hidden_size, num_layers=1, batch_first=True, bidirectional=False))
+            inp_size = hidden_size
+
+        self._rnn_fw = nn.ModuleList(fw_list)
+        self._rnn_bw = nn.ModuleList(bw_list)
+
+    def forward(self, x):
+        out_fw = []
+        out_bw = []
+        out = []
+        hidden_fw = x
+        hidden_bw = x
+        for ii in range(self._num_layers):
+            out_fw, _ = self._rnn_fw(hidden_fw)
+            out_bw, _ = self._rnn_bw(torch.flip(hidden_bw, [1]))
+            out_bw = torch.flip(out_bw, [1])
+            out_fw = out_fw
+            out_bw = out_bw
+            context = torch.cat([out_fw[:, :-2, :], out_bw[:, 2:, :]], dim=-1)
+            context = torch.tanh(self._linear_out(context))
+
+
 class WordDecoder(nn.Module):
     def __init__(self, cond_size: int, char_emb_size: int, vocab_size: int, rnn_size: int = 200, rnn_layers: int = 2):
         super().__init__()

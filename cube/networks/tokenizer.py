@@ -231,7 +231,7 @@ class Tokenizer(pl.LightningModule):
         toks = []
         pred = []
         import tqdm
-        for batch in tqdm.tqdm(dataloader):
+        for batch in dataloader: #tqdm.tqdm(dataloader):
             for key in batch:
                 if isinstance(batch[key], torch.Tensor):
                     batch[key] = batch[key].to(self._device)
@@ -286,9 +286,6 @@ class Tokenizer(pl.LightningModule):
             spaceafter = "_"
             for w in sent:
                 cnt += 1
-                print(w)
-                print(mwe)
-                print("---")
 
                 seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
             s = Sentence(sequence=seq, lang_id=lang_id)

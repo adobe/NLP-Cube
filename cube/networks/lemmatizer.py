@@ -182,7 +182,8 @@ class Lemmatizer(pl.LightningModule):
             return 'cpu'
         return '{0}:{1}'.format(self._char_emb.weight.device.type, str(self._char_emb.weight.device.index))
 
-    def process(self, doc: Document, collate: Word2TargetCollate, batch_size: int = 4, num_workers: int = 4) -> Document:
+    def process(self, doc: Document, collate: Word2TargetCollate, batch_size: int = 4,
+                num_workers: int = 4) -> Document:
         self.eval()
         dataset = LemmaDataset(doc, for_training=False)
 
@@ -194,20 +195,19 @@ class Lemmatizer(pl.LightningModule):
         end_char_value = len(self._encodings.char2int)
 
         with torch.no_grad():
-            for sentence_index in range(len(doc.sentences)):
-                for word_index in range(len(doc.sentences[sentence_index].words)):
-                    # run for one word
-                    batch = next(data_iterator)
-                    del batch['y_char'] # set for prediction, not training
-                    del batch['y_case']
+            all_lemmas = []
+            for batch in dataloader:
+                del batch['y_char']  # set for prediction, not training
+                del batch['y_case']
 
-                    y_char_pred, y_case_pred = self.forward(batch)
-                    y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy() # list of lists of int
-                    y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy() # list of lists of int
-
+                y_char_pred, y_case_pred = self.forward(batch)
+                y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
+                y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
+                for word_index in range(y_char_pred.shape[0]):
                     # get letters
                     lemma = []
-                    for char_val, case_val in zip(y_char_pred[0], y_case_pred[0]): # [[24, 12, 88]], get the inside list
+                    for char_val, case_val in zip(y_char_pred[word_index],
+                                                  y_case_pred[word_index]):  # [[24, 12, 88]], get the inside list
                         if char_val == end_char_value:
                             break
                         chr = self._encodings.characters[char_val]
@@ -217,8 +217,12 @@ class Lemmatizer(pl.LightningModule):
                             chr = chr.lower()
                         lemma.append(chr)
 
-                    doc.sentences[sentence_index].words[word_index].lemma = "".join(lemma)
-                    #print(f"{doc.sentences[sentence_index].words[word_index].word} -> {doc.sentences[sentence_index].words[word_index].lemma}")
+                    all_lemmas.append("".join(lemma))
+            lemma_index = 0
+            for sentence_index in range(len(doc.sentences)):
+                for word_index in range(len(doc.sentences[sentence_index].words)):
+                    doc.sentences[sentence_index].words[word_index].lemma = all_lemmas[lemma_index]
+                    lemma_index += 1
 
         return doc
 

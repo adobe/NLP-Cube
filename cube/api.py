@@ -1,181 +1,189 @@
-# -*- coding: utf-8 -*-
-import logging
+#
+# Copyright (c) 2018 Adobe Systems Incorporated. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import sys
 import os
+import yaml
+import string
+import requests
+import tarfile
+from tqdm import tqdm
+
 sys.path.append('')
+from typing import Optional, Union
+from cube.io_utils.objects import Document, Word, Token, Sentence
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.config import CompoundConfig, TokenizerConfig, ParserConfig, LemmatizerConfig
+from cube.networks.compound import Compound
+from cube.networks.parser import Parser
+from cube.networks.tokenizer import Tokenizer
+from cube.networks.lemmatizer import Lemmatizer
+from pathlib import Path
 from cube.networks.lm import LMHelperHF
-from cube.networks.utils import MorphoCollate, Word2TargetCollate
 from cube.networks.utils_tokenizer import TokenCollateHF
-
-sys.path.append('')
-"""
-Usage:
-import cube
-nlp = cube.load("en")
-"""
-from cube.io_utils.modelstore import ModelStore
-#from cube.io_utils.objects import Doc, Sentence, Word, Token
-from typing import Optional
+from cube.networks.utils import MorphoCollate, Word2TargetCollate
 
 
-def load(lang: str, log_level: str = "ERROR", device="cpu", batch_size:int=1, num_workers:int=0, verbose=False):
-    # TODO set log level
-
-    # gets component paths (by downloading them or from the local cache)
-    component_paths, lang_id = ModelStore.solve(lang)
-
-    # instantiate cube object and load components
-    cube = Cube(component_paths=component_paths, device=device, batch_size=batch_size, model_name=lang, verbose=verbose)
-    cube.lang_id = lang_id
-
-    return cube
-
-
-class Cube(object):
-    def __init__(self, component_paths: dict, device="cpu", batch_size:int=1, num_workers:int=0, model_name:str="", verbose:bool=False):
-        self.lang_id = 0
-        self.device = device
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.model_name=model_name
-        self.verbose=verbose
-
-        self.tokenizer = None
-        self.compound = None
-        self.lemmatizer = None
-        self.tagger_UPOS = None
-        self.tagger_XPOS = None
-        self.tagger_ATTRS = None
-        self.parser = None
-
-        print(component_paths)
-
-        # load LM Helper TODO: allow other helpers, allow other languages (future version)
-        self.lmhelper = LMHelperHF(model='xlm-roberta-base', device=device)
-        if verbose:
-            print(f"\t loaded language model helper")
-
-
-        if "tokenizer" in component_paths and component_paths["tokenizer"]:
-            from cube.networks.tokenizer import Tokenizer
-            from cube.io_utils.encodings import Encodings
-            from cube.io_utils.config import TokenizerConfig
-            tokenizer_config = TokenizerConfig(filename=component_paths["tokenizer"]["config"])
+class Cube:
+    def __init__(self, model_base: str, device: str = 'cpu', lang: str = None):
+        self._lm_helper = LMHelperHF(model='xlm-roberta-base')
+        self._cwe = None
+        # word expander
+        path = '{0}-trf-cwe'.format(model_base)
+        if os.path.exists('{0}.best'.format(path)):
+            config = CompoundConfig(filename='{0}.config'.format(path))
             encodings = Encodings()
-            encodings.load(filename=component_paths["tokenizer"]["encodings"])
-            self.tokenizer = Tokenizer(config=tokenizer_config, encodings=encodings, ext_word_emb=self.lmhelper.get_embedding_size())
-            self.tokenizer.load(model_path=component_paths["tokenizer"]["model"])
+            encodings.load('{0}.encodings'.format(path))
+            self._cwe = Compound(config, encodings)
+            self._cwe.load('{0}.best'.format(path))
+            self._cwe.to(device)
 
-            self.tokenizer_collate_fn = TokenCollateHF(encodings, lm_model='xlm-roberta-base', lm_device=self.device) # TODO lm_model fixed
-            if verbose:
-                print(f"\t loaded tokenizer model : {component_paths['tokenizer']['model']}")
+        # tokenizer
+        path = '{0}-trf-tokenizer'.format(model_base)
+        g_conf = yaml.safe_load(open('{0}.yaml'.format(path)))
+        self._lang2id = {}
+        for lang in g_conf['language_codes']:
+            self._lang2id[lang] = len(self._lang2id)
+        self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
+        self._default_lang = lang
+        config = TokenizerConfig(filename='{0}.config'.format(path))
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        self._tokenizer = Tokenizer(config, encodings, language_codes=g_conf['language_codes'],
+                                    ext_word_emb=self._lm_helper.get_embedding_size())
+        self._tokenizer.load('{0}.best'.format(path))
+        self._tokenizer.to(device)
+        self._tokenizer_collate = TokenCollateHF(encodings,
+                                                 lm_device=device,
+                                                 lm_model='xlm-roberta-base',
+                                                 no_space_lang=config.no_space_lang,
+                                                 lang_id=self._default_lang_id)
 
-        if "cwe" in component_paths and component_paths["cwe"]:
-            from cube.networks.compound import Compound
-            from cube.io_utils.encodings import Encodings
-            from cube.io_utils.config import CompoundConfig
-            compound_config = CompoundConfig(filename=component_paths["cwe"]["config"])
-            encodings = Encodings()
-            encodings.load(filename=component_paths["cwe"]["encodings"])
-            self.compound = Compound(config=compound_config, encodings=encodings)
-            self.compound.load(model_path=component_paths["cwe"]["model"])
-            self.compound_collate_fn = Word2TargetCollate(encodings)
-            if verbose:
-                print(f"\t loaded compound word expander model : {component_paths['cwe']['model']}")
+        # lemmatizer
+        path = '{0}-trf-lemmatizer'.format(model_base)
+        config = LemmatizerConfig(filename='{0}.config'.format(path))
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        self._lemmatizer = Lemmatizer(config, encodings)
+        self._lemmatizer.load('{0}.best'.format(path))
+        self._lemmatizer.to(device)
+        self._lemmatizer_collate = Word2TargetCollate(encodings)
+        # parser-tagger
+        path = '{0}-trf-parser'.format(model_base)
+        config = ParserConfig(filename='{0}.config'.format(path))
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        self._parser = Parser(config, encodings, language_codes=g_conf['language_codes'],
+                              ext_word_emb=self._lm_helper.get_embedding_size())
+        self._parser.load('{0}.best'.format(path))
+        self._parser.to(device)
+        self._parser_collate = MorphoCollate(encodings)
 
-        if "lemmatizer" in component_paths and component_paths["lemmatizer"]:
-            from cube.io_utils.config import LemmatizerConfig
-            from cube.io_utils.encodings import Encodings
-            from cube.networks.lemmatizer import Lemmatizer
-            lemmatizer_config = LemmatizerConfig(filename=component_paths["lemmatizer"]["config"])
-            encodings = Encodings()
-            encodings.load(filename=component_paths["lemmatizer"]["encodings"])
-            self.lemmatizer = Lemmatizer(config=lemmatizer_config, encodings=encodings)
-            self.lemmatizer.load(model_path=component_paths["lemmatizer"]["model"])
-            self.lemmatizer_collate_fn = Word2TargetCollate(encodings)
-            if verbose:
-                print(f"\t loaded lemmatizer model : {component_paths['lemmatizer']['model']}")
-
-        if "tagger" in component_paths and component_paths["tagger"]:
-            from cube.io_utils.config import TaggerConfig
-            from cube.io_utils.encodings import Encodings
-            from cube.networks.tagger import Tagger
-            tagger_config = TaggerConfig(filename=component_paths["tagger"]["config"])
-            encodings = Encodings()
-            encodings.load(filename=component_paths["tagger"]["encodings"])
-            self.tagger_UPOS = Tagger(config=tagger_config, encodings=encodings)
-            self.tagger_UPOS.load(model_path=component_paths["tagger"]["model_UPOS"])
-            self.tagger_XPOS = Tagger(config=tagger_config, encodings=encodings)
-            self.tagger_XPOS.load(model_path=component_paths["tagger"]["model_XPOS"])
-            self.tagger_ATTRS = Tagger(config=tagger_config, encodings=encodings)
-            self.tagger_ATTRS.load(model_path=component_paths["tagger"]["model_ATTRS"])
-
-        if "parser" in component_paths and component_paths["parser"]:
-            from cube.io_utils.config import ParserConfig
-            from cube.io_utils.encodings import Encodings
-            from cube.networks.parser import Parser
-            parser_config = ParserConfig(filename=component_paths["parser"]["config"])
-            encodings = Encodings()
-            encodings.load(filename=component_paths["parser"]["encodings"])
-            self.parser = Parser(config=parser_config, encodings=encodings, ext_word_emb=self.lmhelper.get_embedding_size())
-            self.parser.load(model_path=component_paths["parser"]["model"])
-            self.parser_collate_fn = MorphoCollate(encodings)
-            if verbose:
-                print(f"\t loaded parser model : {component_paths['parser']['model']}")
-
-        print("Model loaded!")
-
-    def __call__(self, data):
-        if isinstance(data, str):
-            if self.tokenizer is None:
-                raise Exception("Tokenizer needs raw text as input!")
-
-            doc = self.tokenizer.process(data, self.tokenizer_collate_fn, lang_id=self.lang_id, batch_size=self.batch_size)
+    def __call__(self, text: Union[str, Document], flavour: Optional[str] = None):
+        lang_id = self._default_lang_id
+        if flavour is not None:
+            if lang_id not in self._lang2id:
+                print("Unsupported language flavour")
+                print("Please choose from: {0}".format(' '.join([k for k in self._lang2id])))
+                raise Exception("Unsupported language flavour")
+            lang_id = self._lang2id[flavour]
+        if isinstance(text, str):
+            doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id)
         else:
-            doc = data # TODO: check data is a Document object and check validity
+            doc = text
 
-            print("After tokenizer")
-            print(doc)
-
-        print("Applying LMHelper on document")
-        self.lmhelper.apply(doc)
-
-        # apply lang_id on each sentence, for the parser
-        for ii in range(len(doc.sentences)):
-            doc.sentences[ii].lang_id = self.lang_id
-
-        if self.compound:
-            doc = self.compound.process(doc, collate=self.compound_collate_fn, batch_size=self.batch_size, num_workers=self.num_workers)
-
-            print("After compound")
-            print(doc)
-
-
-        if self.parser:
-            doc = self.parser.process(doc, collate=self.parser_collate_fn, batch_size=self.batch_size, num_workers=self.num_workers)
-
-            print("After parser")
-            print(doc)
-
-
-        if self.lemmatizer:
-            doc = self.lemmatizer.process(doc, collate=self.lemmatizer_collate_fn, batch_size=self.batch_size, num_workers=self.num_workers)
-
-            print("After lemmatizer")
-            print(doc)
-
+        self._lm_helper.apply(doc)
+        self._parser.process(doc, self._parser_collate)
+        self._lemmatizer.process(doc, self._lemmatizer_collate)
         return doc
 
 
-if __name__ == "__main__":
-    import cube
-    nlp = cube.load("es_gsd", device="cpu", verbose=True)
+def _download_file(url: str, filename: str, description=None):
+    r = requests.get(url, stream=True)
+    if r.status_code != 200:
+        raise Exception(f"Error getting {url}, received status_code {r.status_code}")
+    file_size = int(r.headers['Content-Length'])
+    chunk_size = 1024
 
-    #doc = nlp(
-    #    "Acesta este un simplu test. Ana are mere dar nu are pere și mănâncă banane.\nHai să vedem ce face când dă de ENTER. Știu că avea și o problemă cu băiatul, băieții sau băieților, din cauza corpusului de antrenare.")
-    #doc = nlp("Trees have apples. Another sentence.")
-    #doc = nlp("עשרות אנשים מגיעים מתאילנד לישראל כשהם נרשמים כמתנדבים, אך למעשה משמשים עובדים שכירים זולים.")
-    doc = nlp("Vámonos al mar.")
+    with open(filename, 'wb') as fp:
+        with tqdm(total=file_size, unit='B', unit_scale=True, desc=description, unit_divisor=1024,
+                  disable=True if description is None else False, leave=False) as progressbar:
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                if chunk is not None:
+                    fp.write(chunk)
+                    fp.flush()
+                    progressbar.update(len(chunk))
 
-    print(doc)
+    return r.status_code
 
+
+def _download_model(local_path, lang):
+    download_base = "https://github.com/adobe/NLP-Cube-Models/raw/3.0/models/{0}.tar.gz-a".format(lang)
+    file_base = "{0}.tar.gz-a".format(lang)
+    terminations = string.ascii_lowercase[:20]
+    file_list = []
+    for t in terminations:
+        download_url = '{0}{1}'.format(download_base, t)
+        target_file = str(os.path.join(local_path, file_base))
+        target_file = '{0}{1}'.format(target_file, t)
+        try:
+            if _download_file(download_url, target_file, description='Part {0}'.format(t)) != 200:
+                break
+        except:
+            break
+        file_list.append(target_file)
+
+    target_file = os.path.join(local_path, file_base[:-2])
+
+    f_out = open(target_file, 'wb')
+    for file in file_list:
+        f_in = open(file, 'rb')
+        while True:
+            buffer = f_in.read(1024 * 1024)
+            if not buffer:
+                break
+            f_out.write(buffer)
+    f_out.close()
+
+    tar = tarfile.open(target_file, 'r:gz')
+    tar.extractall(local_path)
+    tar.close()
+
+
+def load(lang: str, device: Optional[str] = 'cpu') -> Cube:
+    try:
+        local_user_home = str(Path.home())
+        local_user_storage = os.path.join(local_user_home, '.nlpcube', '3.0')
+        os.makedirs(local_user_storage, exist_ok=True)
+        lang_path = os.path.join(local_user_storage, lang)
+        if not os.path.exists(lang_path):
+            _download_model(local_user_storage, lang)
+
+        return Cube('{0}/{1}'.format(lang_path, lang), device=device, lang=lang)
+    except:
+        raise Exception("There was a problem retrieving this language. Either it is unsupported or your Internet "
+                        "connection is down.\n\nTo check for supported languages, visit "
+                        "https://github.com/adobe/NLP-Cube/\n\nIt is hard to maintain models for all UD Treebanks. "
+                        "This is way we are only including a handful of"
+                        "languages with the official distribution. "
+                        "However, we can include additional languages upon request"
+                        "\n\nTo make a request for supporting a new language please create an issue on GitHub")
+
+
+if __name__ == '__main__':
+    # cube = load("ro")
+    # print(cube("Ana are mere, dar nu are pere. Acesta este un test."))
+    cube = load("en")
+    print(cube("All the faith he had had, had had no influence on the outcome of his life."))
