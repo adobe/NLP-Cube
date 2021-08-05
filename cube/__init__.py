@@ -1,4 +1,4 @@
-from cube.api import load
+from cube.api import _load
 from cube.version import __version__
 
 import logging

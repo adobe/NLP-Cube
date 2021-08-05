@@ -36,7 +36,7 @@ from cube.networks.utils_tokenizer import TokenCollateHF
 from cube.networks.utils import MorphoCollate, Word2TargetCollate
 
 
-class Cube:
+class CubeObj:
     def __init__(self, model_base: str, device: str = 'cpu', lang: str = None):
         self._lm_helper = LMHelperHF(model='xlm-roberta-base')
         self._cwe = None
@@ -162,7 +162,7 @@ def _download_model(local_path, lang):
     tar.close()
 
 
-def load(lang: str, device: Optional[str] = 'cpu') -> Cube:
+def _load(lang: str, device: Optional[str] = 'cpu') -> CubeObj:
     try:
         local_user_home = str(Path.home())
         local_user_storage = os.path.join(local_user_home, '.nlpcube', '3.0')
@@ -171,7 +171,7 @@ def load(lang: str, device: Optional[str] = 'cpu') -> Cube:
         if not os.path.exists(lang_path):
             _download_model(local_user_storage, lang)
 
-        return Cube('{0}/{1}'.format(lang_path, lang), device=device, lang=lang)
+        return CubeObj('{0}/{1}'.format(lang_path, lang), device=device, lang=lang)
     except:
         raise Exception("There was a problem retrieving this language. Either it is unsupported or your Internet "
                         "connection is down.\n\nTo check for supported languages, visit "
@@ -182,8 +182,12 @@ def load(lang: str, device: Optional[str] = 'cpu') -> Cube:
                         "\n\nTo make a request for supporting a new language please create an issue on GitHub")
 
 
-if __name__ == '__main__':
-    # cube = load("ro")
-    # print(cube("Ana are mere, dar nu are pere. Acesta este un test."))
-    cube = load("en")
-    print(cube("All the faith he had had, had had no influence on the outcome of his life."))
+class Cube:
+    def __init__(self, verbose=False):
+        self._instance = None
+
+    def load(self, lang: str, device: Optional[str] = 'cpu'):
+        self._instance = _load(lang, device)
+
+    def __call__(self, text: Union[str, Document], flavour: Optional[str] = None):
+        return self._instance(text, flavour=flavour)
