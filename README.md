@@ -105,7 +105,9 @@ or, in bibtex format:
 ```
 
 
-##Languages and performance
+## Languages and performance
+
+For comparison, the performance of 3.0 models is reported on the 2.2 UD corpus, but distributed models are obtained from UD 2.7.
 
 Results are reported against the test files for each language (available in the UD 2.2 corpus) using the 2018 conll eval script. Please see more info about what [each metric represents here](http://universaldependencies.org/conll18/evaluation.html). 
 
