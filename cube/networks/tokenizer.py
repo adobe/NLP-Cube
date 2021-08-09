@@ -289,8 +289,8 @@ class Tokenizer(pl.LightningModule):
                 cnt += 1
 
                 seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
-                #if m:
-                #    seq[-1].is_compound_entry = True
+                if m:
+                    seq[-1].space_after += ';compund'
             s = Sentence(sequence=seq, lang_id=lang_id)
 
             d.sentences.append(s)

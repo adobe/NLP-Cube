@@ -116,8 +116,8 @@ class CubeObj:
             lang_id = self._lang2id[flavour]
         if isinstance(text, str):
             doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id, num_workers=0)
-            # if self._cwe is not None:
-            #     self._cwe.process(doc, self._lemmatizer_collate, num_workers=0)
+            if self._cwe is not None:
+                doc = self._cwe.process(doc, self._lemmatizer_collate, num_workers=0)
         else:
             doc = text
 

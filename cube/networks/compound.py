@@ -220,14 +220,29 @@ class Compound(pl.LightningModule):
 
                     all_lemmas.append("".join(lemma))
             compound_index = 0
+            doc_new = Document()
             for sentence_index in range(len(doc.sentences)):
+                seq = []
+                cnt = 1
+                from cube.io_utils.objects import Word, Sentence
+
                 for word_index in range(len(doc.sentences[sentence_index].words)):
-                    if doc.sentences[sentence_index].words[word_index].is_compound_entry:
-                        from ipdb import set_trace
-                        set_trace()
-                    # doc.sentences[sentence_index].words[word_index].lemma = all_lemmas[lemma_index]
+                    spaceafter = doc.sentences[sentence_index].words[word_index].space_after.replace(';compund', '')
+                    w = doc.sentences[sentence_index].words[word_index].word
+
+                    seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
+                    if ';compund' in doc.sentences[sentence_index].words[word_index].space_after:
+                        parts = all_lemmas[compound_index].split(' ')
+                        seq[-1].index = '{0}-{1}'.format(cnt, cnt + len(parts) - 1)
+                        seq[-1].is_compound_entry = True
+                        for p in parts:
+                            seq.append(Word(cnt, p, '_', '_', '_', '_', 0, '_', '_', '_'))
+                            cnt += 1
+                    else:
+                        cnt += 1
                     compound_index += 1
-        return doc
+                doc_new.sentences.append(Sentence(seq, lang_id=doc.sentences[sentence_index].lang_id))
+        return doc_new
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters())
