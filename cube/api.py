@@ -53,8 +53,8 @@ class CubeObj:
         path = '{0}-trf-tokenizer'.format(model_base)
         g_conf = yaml.safe_load(open('{0}.yaml'.format(path)))
         self._lang2id = {}
-        for lang in g_conf['language_codes']:
-            self._lang2id[lang] = len(self._lang2id)
+        for lng in g_conf['language_codes']:
+            self._lang2id[lng] = len(self._lang2id)
         self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
         self._default_lang = lang
         config = TokenizerConfig(filename='{0}.config'.format(path))
