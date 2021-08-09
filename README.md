@@ -2,7 +2,7 @@
 ![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) 
 
 ## News
-**[05 August 2021]** - We are releasing version 3.0 of NLPCube and models and introducing [FLAVOURS](#flavours). This is a major update, but we did our best to maintain the same API, so previous implementation will not crash. The supported language list is smaller, but you can open an issue for unsupported languages, and we will do our best to add them. Other options include fixing the pip package version below 3. 
+**[05 August 2021]** - We are releasing version 3.0 of NLPCube and models and introducing [FLAVOURS](#flavours). This is a major update, but we did our best to maintain the same API, so previous implementation will not crash. The supported language list is smaller, but you can open an issue for unsupported languages, and we will do our best to add them. Other options include fixing the pip package version 1.0.8 ```pip install nlpcube==0.1.0.8```. 
 
 **[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both models 1.0 and 1.1 are trained on the same UD2.2 corpus; however, models 1.1 do not use vector embeddings, thus reducing the time and disk space required to download them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
 
