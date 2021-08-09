@@ -57,7 +57,7 @@ class Tokenizer(pl.LightningModule):
             ext2int.append(module)
         self._ext_proj = nn.ModuleList(ext2int)
 
-        if self._language_codes: # only for training
+        if self._language_codes:  # only for training
             self._dev_results = {i: [] for i, _ in enumerate(self._language_codes)}
 
             self._res = {}
@@ -210,7 +210,7 @@ class Tokenizer(pl.LightningModule):
         loss = F.cross_entropy(y_pred.view(-1, y_pred.shape[2]), y_target.view(-1), ignore_index=0)
         return loss
 
-    def load(self, model_path:str, device: str = 'cpu'):
+    def load(self, model_path: str, device: str = 'cpu'):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
 
@@ -229,9 +229,9 @@ class Tokenizer(pl.LightningModule):
                                 shuffle=False, num_workers=num_workers, pin_memory=True)
 
         toks = []
-        pred = []
+        preds = []
         import tqdm
-        for batch in dataloader: #tqdm.tqdm(dataloader):
+        for batch in dataloader:  # tqdm.tqdm(dataloader):
             for key in batch:
                 if isinstance(batch[key], torch.Tensor):
                     batch[key] = batch[key].to(self._device)
@@ -246,14 +246,14 @@ class Tokenizer(pl.LightningModule):
                 ofs = y_offset[ii]
                 for jj in range(y_len[ii]):
                     toks.append(x_text[ii][jj])
-                    pred.append(y_pred[ii, jj + ofs])
+                    preds.append(y_pred[ii, jj + ofs])
 
         p_sents = []
         tok_p = ''
         p_mwes = []
         p_sent = []
         p_mwe = []
-        for pred, text in zip(pred, toks):
+        for pred, text in zip(preds, toks):
             text = text.replace('▁', '')
             tok_p += text
 
@@ -280,14 +280,17 @@ class Tokenizer(pl.LightningModule):
             p_mwes.append(p_mwe)
 
         d = Document()
+
         for sent, mwe in zip(p_sents, p_mwes):
             seq = []
             cnt = 0
             spaceafter = "_"
-            for w in sent:
+            for w, m in zip(sent, mwe):
                 cnt += 1
 
                 seq.append(Word(cnt, w, '_', '_', '_', '_', 0, '_', '_', spaceafter))
+                #if m:
+                #    seq[-1].is_compound_entry = True
             s = Sentence(sequence=seq, lang_id=lang_id)
 
             d.sentences.append(s)

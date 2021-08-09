@@ -54,6 +54,7 @@ class LanguasitoTokenizer:
 
             return toks
 
+
 def _make_example_from_raw(toks, iBatch, seq_len, overlap):
     batch = []
     num_batches = len(toks[0]) // seq_len
@@ -367,7 +368,7 @@ class TokenCollateHF(TokenCollate):
         self._lang_id = lang_id
 
         self.max_seq_len = self._tokenizer.model_max_length
-    
+
     def get_tokens(self, text):
         toks, ids = self._tokenize(text)
         spa = [0 for _ in range(len(toks))]
@@ -550,8 +551,8 @@ class TokenCollateHF(TokenCollate):
         x_sent_len = torch.tensor(x_sent_len)
         with torch.no_grad():
             if x_out.size()[1] > self.max_seq_len:
-                #print()
-                #print(x_out.size())
+                # print()
+                # print(x_out.size())
                 # hack to skip batch if len is to big
                 # we cannot return none because pytorch lightning will complain, so we set x_input = None and check
                 # it in the train_step. TODO check long string in processing input
@@ -585,7 +586,7 @@ class TokenCollateHF(TokenCollate):
             if toks[ii] != '▁':
                 r_toks.append(toks[ii])
                 r_ids.append(ids[ii])
-        #if len(r_toks) > 509 or len(r_ids) > 509 or len(r_toks) < 1 or len(r_ids) < 1:
+        # if len(r_toks) > 509 or len(r_ids) > 509 or len(r_toks) < 1 or len(r_ids) < 1:
         #    print(f"\n>> text:[{text}] [{len(r_toks)}] [{len(r_ids)}]")
         return r_toks, r_ids
 

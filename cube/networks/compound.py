@@ -171,10 +171,9 @@ class Compound(pl.LightningModule):
     def save(self, path):
         torch.save(self.state_dict(), path)
 
-    def load(self, model_path:str, device: str = 'cpu'):
+    def load(self, model_path: str, device: str = 'cpu'):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
-
 
     def _get_device(self):
         if self._char_emb.weight.device.type == 'cpu':
@@ -184,9 +183,7 @@ class Compound(pl.LightningModule):
     def process(self, doc: Document, collate: Word2TargetCollate, batch_size: int = 4,
                 num_workers: int = 4) -> Document:
         self.eval()
-        print(doc)
         dataset = CompoundDataset(doc, for_training=False)
-
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
                                 shuffle=False, num_workers=num_workers, pin_memory=True)
 
@@ -195,24 +192,23 @@ class Compound(pl.LightningModule):
         end_char_value = len(self._encodings.char2int)
 
         with torch.no_grad():
-            for sentence_index in range(len(doc.sentences)):
-                for word_index in range(len(doc.sentences[sentence_index].words)):
-                    # run for one word
-                    batch = next(data_iterator)
-                    del batch['y_char']  # set for prediction, not training
-                    del batch['y_case']
+            all_lemmas = []
+            for batch in dataloader:
+                del batch['y_char']  # set for prediction, not training
+                del batch['y_case']
 
-                    y_char_pred, y_case_pred = self.forward(batch)
-                    y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
-                    y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
-                    print(doc.sentences[sentence_index].tokens[0].words)
-                    print(batch)
-                    print(y_char_pred)
+                for key in batch:
+                    if isinstance(batch[key], torch.Tensor):
+                        batch[key] = batch[key].to(self._device)
 
+                y_char_pred, y_case_pred = self.forward(batch)
+                y_char_pred = torch.argmax(y_char_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
+                y_case_pred = torch.argmax(y_case_pred.detach(), dim=-1).cpu().numpy()  # list of lists of int
+                for word_index in range(y_char_pred.shape[0]):
                     # get letters
                     lemma = []
-                    for char_val, case_val in zip(y_char_pred[0],
-                                                  y_case_pred[0]):  # [[24, 12, 88]], get the inside list
+                    for char_val, case_val in zip(y_char_pred[word_index],
+                                                  y_case_pred[word_index]):  # [[24, 12, 88]], get the inside list
                         if char_val == end_char_value:
                             break
                         chr = self._encodings.characters[char_val]
@@ -222,9 +218,15 @@ class Compound(pl.LightningModule):
                             chr = chr.lower()
                         lemma.append(chr)
 
-                    doc.sentences[sentence_index].words[word_index].lemma = "".join(lemma)
-                    print(f"{doc.sentences[sentence_index].words[word_index].word} -> {doc.sentences[sentence_index].words[word_index].lemma}")
-                    print()
+                    all_lemmas.append("".join(lemma))
+            compound_index = 0
+            for sentence_index in range(len(doc.sentences)):
+                for word_index in range(len(doc.sentences[sentence_index].words)):
+                    if doc.sentences[sentence_index].words[word_index].is_compound_entry:
+                        from ipdb import set_trace
+                        set_trace()
+                    # doc.sentences[sentence_index].words[word_index].lemma = all_lemmas[lemma_index]
+                    compound_index += 1
         return doc
 
     def configure_optimizers(self):
