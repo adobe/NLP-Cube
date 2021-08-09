@@ -31,14 +31,13 @@ from cube.networks.parser import Parser
 from cube.networks.tokenizer import Tokenizer
 from cube.networks.lemmatizer import Lemmatizer
 from pathlib import Path
-from cube.networks.lm import LMHelperHF
-from cube.networks.utils_tokenizer import TokenCollateHF
+from cube.networks.lm import LMHelperHF, LMHelperFT
+from cube.networks.utils_tokenizer import TokenCollateHF, TokenCollateFTLanguasito
 from cube.networks.utils import MorphoCollate, Word2TargetCollate
 
 
 class CubeObj:
     def __init__(self, model_base: str, device: str = 'cpu', lang: str = None):
-        self._lm_helper = LMHelperHF(model='xlm-roberta-base')
         self._cwe = None
         # word expander
         path = '{0}-trf-cwe'.format(model_base)
@@ -59,17 +58,26 @@ class CubeObj:
         self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
         self._default_lang = lang
         config = TokenizerConfig(filename='{0}.config'.format(path))
+        lm_model = config.lm_model
+        if lm_model.startswith('transformer'):
+            self._tokenizer_collate = TokenCollateHF(encodings,
+                                                     lm_device=device,
+                                                     lm_model=lm_model.split(':')[-1],
+                                                     no_space_lang=config.no_space_lang,
+                                                     lang_id=self._default_lang_id)
+        else:
+            self._tokenizer_collate = TokenCollateFTLanguasito(encodings,
+                                                               lm_device=device,
+                                                               lm_model=lm_model,
+                                                               no_space_lang=config.no_space_lang,
+                                                               lang_id=self._default_lang_id)
+
         encodings = Encodings()
         encodings.load('{0}.encodings'.format(path))
         self._tokenizer = Tokenizer(config, encodings, language_codes=g_conf['language_codes'],
-                                    ext_word_emb=self._lm_helper.get_embedding_size())
+                                    ext_word_emb=self._tokenizer_collate.get_embeddings_size())
         self._tokenizer.load('{0}.best'.format(path))
         self._tokenizer.to(device)
-        self._tokenizer_collate = TokenCollateHF(encodings,
-                                                 lm_device=device,
-                                                 lm_model='xlm-roberta-base',
-                                                 no_space_lang=config.no_space_lang,
-                                                 lang_id=self._default_lang_id)
 
         # lemmatizer
         path = '{0}-trf-lemmatizer'.format(model_base)
@@ -83,6 +91,12 @@ class CubeObj:
         # parser-tagger
         path = '{0}-trf-parser'.format(model_base)
         config = ParserConfig(filename='{0}.config'.format(path))
+        lm_model = config.lm_model
+        if lm_model.startswith('transformer'):
+            self._lm_helper = LMHelperHF(model=lm_model.split(':')[-1])
+        else:
+            self._lm_helper = LMHelperFT(model=lm_model.split(':')[-1])
+
         encodings = Encodings()
         encodings.load('{0}.encodings'.format(path))
         self._parser = Parser(config, encodings, language_codes=g_conf['language_codes'],

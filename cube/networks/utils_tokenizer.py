@@ -115,7 +115,7 @@ class TokenCollateFTLanguasito(TokenCollate):
     def __init__(self, encodings: Encodings, lm_model: str = None, lm_device: str = 'cuda:0', no_space_lang=False,
                  lang_id=None):
         self._encodings = encodings
-        from languasito.utils import LanguasitoTokenizer
+        # from languasito.utils import LanguasitoTokenizer
         self._tokenizer = LanguasitoTokenizer(no_space_language=no_space_lang)
         self._emb_size = 0
         self._lm_model = lm_model
