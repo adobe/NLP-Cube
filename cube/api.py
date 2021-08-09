@@ -59,6 +59,8 @@ class CubeObj:
         self._default_lang = lang
         config = TokenizerConfig(filename='{0}.config'.format(path))
         lm_model = config.lm_model
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
         if lm_model.startswith('transformer'):
             self._tokenizer_collate = TokenCollateHF(encodings,
                                                      lm_device=device,
@@ -72,8 +74,7 @@ class CubeObj:
                                                                no_space_lang=config.no_space_lang,
                                                                lang_id=self._default_lang_id)
 
-        encodings = Encodings()
-        encodings.load('{0}.encodings'.format(path))
+
         self._tokenizer = Tokenizer(config, encodings, language_codes=g_conf['language_codes'],
                                     ext_word_emb=self._tokenizer_collate.get_embeddings_size())
         self._tokenizer.load('{0}.best'.format(path))
