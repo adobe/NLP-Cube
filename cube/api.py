@@ -53,8 +53,8 @@ class CubeObj:
         path = '{0}-trf-tokenizer'.format(model_base)
         g_conf = yaml.safe_load(open('{0}.yaml'.format(path)))
         self._lang2id = {}
-        for lang in g_conf['language_codes']:
-            self._lang2id[lang] = len(self._lang2id)
+        for lng in g_conf['language_codes']:
+            self._lang2id[lng] = len(self._lang2id)
         self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
         self._default_lang = lang
         config = TokenizerConfig(filename='{0}.config'.format(path))
@@ -116,15 +116,15 @@ class CubeObj:
                                 format(' '.join([k for k in self._lang2id])))
             lang_id = self._lang2id[flavour]
         if isinstance(text, str):
-            doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id)
-            # if self._cwe is not None:
-            #     self._cwe.process(doc, self._lemmatizer_collate)
+            doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id, num_workers=0)
+            if self._cwe is not None:
+                doc = self._cwe.process(doc, self._lemmatizer_collate, num_workers=0)
         else:
             doc = text
 
         self._lm_helper.apply(doc)
-        self._parser.process(doc, self._parser_collate)
-        self._lemmatizer.process(doc, self._lemmatizer_collate)
+        self._parser.process(doc, self._parser_collate, num_workers=0)
+        self._lemmatizer.process(doc, self._lemmatizer_collate, num_workers=0)
         return doc
 
 
