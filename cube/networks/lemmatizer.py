@@ -188,7 +188,7 @@ class Lemmatizer(pl.LightningModule):
         dataset = LemmaDataset(doc, for_training=False)
 
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
-                                shuffle=False, num_workers=num_workers, pin_memory=True)
+                                shuffle=False, num_workers=num_workers)
 
         data_iterator = iter(dataloader)
 

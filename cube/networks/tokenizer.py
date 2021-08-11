@@ -226,7 +226,7 @@ class Tokenizer(pl.LightningModule):
         dataset = TokenDatasetLive(raw_text, collate.get_tokens)
         collate._lang_id = lang_id
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
-                                shuffle=False, num_workers=num_workers, pin_memory=True)
+                                shuffle=False, num_workers=num_workers)
 
         toks = []
         preds = []

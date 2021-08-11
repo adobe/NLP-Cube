@@ -409,7 +409,7 @@ class Parser(pl.LightningModule):
         dataset = MorphoDataset(doc)
 
         dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate.collate_fn,
-                                shuffle=False, num_workers=num_workers, pin_memory=True)
+                                shuffle=False, num_workers=num_workers)
         index = 0
         with torch.no_grad():
             for batch in dataloader:
