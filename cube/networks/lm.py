@@ -164,8 +164,18 @@ class LMHelperHF(LMHelper):
                 if jj < len(new_sents[ii]):
                     input_ids[ii, jj] = new_sents[ii][jj]
         with torch.no_grad():
-            out = self._xlmr(torch.tensor(input_ids, device=self._device), return_dict=True)
-            we = torch.cat(out['hidden_states'], dim=-1).detach().cpu().numpy()
+            x = torch.tensor(input_ids, device=self._device)
+            max_s_len = x.shape[1]
+            count = max_s_len // 512
+
+            if max_s_len % 512 != 0:
+                count += 1
+            we_list = []
+            for index in range(count):
+                out = self._xlmr(x[:, index * 512:min(x.shape[1], index * 512 + 512)], return_dict=True)
+                we = torch.cat(out['hidden_states'], dim=-1).detach().cpu()
+                we_list.append(we)
+            we = torch.cat(we_list, dim=1).numpy()
 
         word_emb = []
         for ii in range(len(batch)):
