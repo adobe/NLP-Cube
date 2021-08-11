@@ -579,6 +579,8 @@ class TokenCollateHF(TokenCollate):
         ids = self._tokenizer(new_text, is_split_into_words=True)['input_ids'][1:-1]
         r_toks = []
         r_ids = []
+        strip_text = text.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '')
+        strip_index = 0
         if len(toks) != 0:  # empty text
             r_toks.append(toks[0])
             r_ids.append(ids[0])
@@ -588,7 +590,14 @@ class TokenCollateHF(TokenCollate):
                 r_ids.append(ids[ii])
         # if len(r_toks) > 509 or len(r_ids) > 509 or len(r_toks) < 1 or len(r_ids) < 1:
         #    print(f"\n>> text:[{text}] [{len(r_toks)}] [{len(r_ids)}]")
-        return r_toks, r_ids
+        f_toks = []
+        for tok in r_toks:
+            tok = tok.replace('▁', '')
+            s_len = len(tok)
+            f_toks.append(strip_text[strip_index:strip_index + s_len])
+            strip_index += s_len
+        
+        return f_toks, r_ids
 
     def _get_targets(self, sentence: Sentence):
         text = sentence.text
