@@ -20,7 +20,7 @@ def unpack(data: torch.Tensor, sizes: [], max_size: int, device: str):
     for ii in range(len(sizes)):
         slist = []
         for jj in range(sizes[ii]):
-            slist.append(data[pos, :].unsqueeze(0))
+            slist.append(data[pos, :].unsqueeze(0).to(device))
             pos += 1
 
         for jj in range(max_size - sizes[ii]):
