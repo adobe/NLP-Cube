@@ -364,7 +364,7 @@ class TokenCollateHF(TokenCollate):
         self._lm_device = lm_device
         self._lm.to(lm_device)
         self._no_space = no_space_lang
-        tmp = self._lm(torch.tensor([[100]]))
+        tmp = self._lm(torch.tensor([[100]], device=lm_device))
         h_state_size = tmp['hidden_states'][0].shape[-1]
         self._emb_size = [h_state_size for _ in range(len(tmp['hidden_states']))]
         self._lang_id = lang_id
