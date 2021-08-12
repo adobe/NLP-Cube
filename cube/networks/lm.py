@@ -130,7 +130,7 @@ class LMHelperHF(LMHelper):
         self._xlmr.eval()
         self._xlmr.to(device)
         self._device = device
-        tmp = self._lm(torch.tensor[[100]])
+        tmp = self._lm(torch.tensor([[100]]))
         h_state_size = tmp['hidden_states'][0].shape[-1]
         self._emb_size = [h_state_size for _ in range(len(tmp['hidden_states']))]
 
