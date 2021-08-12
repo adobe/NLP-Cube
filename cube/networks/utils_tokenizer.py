@@ -364,7 +364,9 @@ class TokenCollateHF(TokenCollate):
         self._lm_device = lm_device
         self._lm.to(lm_device)
         self._no_space = no_space_lang
-        self._emb_size = [768 for _ in range(13)]
+        tmp = self._lm(torch.tensor[[100]])
+        h_state_size = tmp['hidden_states'][0].shape[-1]
+        self._emb_size = [h_state_size for _ in range(len(tmp['hidden_states']))]
         self._lang_id = lang_id
 
         self.max_seq_len = self._tokenizer.model_max_length
@@ -596,7 +598,7 @@ class TokenCollateHF(TokenCollate):
             s_len = len(tok)
             f_toks.append(strip_text[strip_index:strip_index + s_len])
             strip_index += s_len
-        
+
         return f_toks, r_ids
 
     def _get_targets(self, sentence: Sentence):
