@@ -479,7 +479,7 @@ class WordGram(pl.LightningModule):
         x = x.permute(0, 2, 1)
         x = x * x_mask.unsqueeze(2)
         pre = torch.sum(x, dim=1, dtype=torch.float)
-        norm = pre / x_word_len.unsqueeze(1)
+        norm = pre / torch.clip(x_word_len.unsqueeze(1), min=1)
         return torch.tanh(self._pre_out(norm))
 
     def _get_device(self):
