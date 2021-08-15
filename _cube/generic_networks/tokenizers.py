@@ -863,7 +863,8 @@ class TieredTokenizer:
                         if input_string[index + 1] in string.whitespace:
                             space_after_end_of_sentence = True
                     seq = self._get_tokens(w.strip(), space_after_end_of_sentence=space_after_end_of_sentence)
-                    sequences.append(seq)
+                    if seq:
+                        sequences.append(seq)
                     w = ""
                     last_ss_break = index
                 last_checked_index = index

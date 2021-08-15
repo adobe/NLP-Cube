@@ -1,14 +1,14 @@
-![Monthly](https://img.shields.io/pypi/dm/nlpcube.svg) ![Weekly](https://img.shields.io/pypi/dw/nlpcube.svg) ![daily](https://img.shields.io/pypi/dd/nlpcube.svg)
-![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) 
+[![Downloads](https://pepy.tech/badge/nlpcube)](https://pepy.tech/project/nlpcube) [![Downloads](https://pepy.tech/badge/nlpcube/month)](https://pepy.tech/project/nlpcube/month) ![Weekly](https://img.shields.io/pypi/dw/nlpcube.svg) ![daily](https://img.shields.io/pypi/dd/nlpcube.svg)
+![Version](https://badge.fury.io/py/nlpcube.svg) [![Python 3](https://img.shields.io/badge/python-3-blue.svg)](https://www.python.org/downloads/release/python-360/) [![GitHub stars](https://img.shields.io/github/stars/adobe/NLP-Cube.svg?style=social&label=Star&maxAge=2592000)](https://github.com/adobe/NLP-Cube/stargazers/)
 
 ## News
 **[05 August 2021]** - We are releasing version 3.0 of NLPCube and models and introducing [FLAVOURS](#flavours). This is a major update, but we did our best to maintain the same API, so previous implementation will not crash. The supported language list is smaller, but you can open an issue for unsupported languages, and we will do our best to add them. Other options include fixing the pip package version 1.0.8 ```pip install nlpcube==0.1.0.8```. 
 
-**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both models 1.0 and 1.1 are trained on the same UD2.2 corpus; however, models 1.1 do not use vector embeddings, thus reducing the time and disk space required to download them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
+**[15 April 2019]** - We are releasing version 1.1 models - check all [supported languages below](#languages). Both 1.0 and 1.1 models are trained on the same [UD2.2 corpus](http://hdl.handle.net/11234/1-2837); however, models 1.1 do not use vector embeddings, thus reducing disk space and time required to use them. Some languages actually have a slightly increased accuracy, some a bit decreased. By default, NLP Cube will use the latest (at this time) 1.1 models.
 
-To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en",1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. Same goes for any language/version you want to use.
+To use the older 1.0 models just specify this version in the ``load`` call: ``cube.load("en", 1.0)`` (``en`` for English, or any other language code). This will download (if not already downloaded) and use _this_ specific model version. Same goes for any language/version you want to use.
 
-If you already have NLP Cube installed and **want to use the newer 1.1 models**, type either ``cube.load("en",1.1)`` or ``cube.load("en","latest")`` to auto-download them. After this, calling ``cube.load("en")`` without version number will automatically use the latest ones from your disk.
+If you already have NLP Cube installed and **want to use the newer 1.1 models**, type either ``cube.load("en", 1.1)`` or ``cube.load("en", "latest")`` to auto-download them. After this, calling ``cube.load("en")`` without version number will automatically use the latest ones from your disk.
 
 <hr>
 
