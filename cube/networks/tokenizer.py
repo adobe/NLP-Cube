@@ -88,7 +88,7 @@ class Tokenizer(pl.LightningModule):
         for ii in range(len(x_emb)):
             we = x_emb[ii]
             if word_emb_ext is None:
-                word_emb_ext = self._ext_proj[ii](we.float())
+                word_emb_ext = self._ext_proj[ii](we.float().to(self._get_device()))
             else:
                 word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
 
