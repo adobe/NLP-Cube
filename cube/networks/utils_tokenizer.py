@@ -308,7 +308,6 @@ class TokenCollateFTLanguasito(TokenCollate):
                 target = 2  # token
                 if len(sentence.tokens[iToken - 1].words) > 1:
                     target = 3  # multiword token
-                    print(target)
             if iToken == len(sentence.tokens):
                 target = 4  # sentence end (+token)
                 for tt in range(ii, len(targets)):
@@ -583,10 +582,10 @@ class TokenCollateHF(TokenCollate):
         r_ids = []
         strip_text = text.replace(' ', '').replace('\n', '').replace('\r', '').replace('\t', '')
         strip_index = 0
-        if len(toks) != 0:  # empty text
-            r_toks.append(toks[0])
-            r_ids.append(ids[0])
-        for ii in range(1, len(toks)):
+        # if len(toks) != 0:  # empty text
+        #     r_toks.append(toks[0])
+        #     r_ids.append(ids[0])
+        for ii in range(0, len(toks)):
             if toks[ii] != '▁':
                 r_toks.append(toks[ii])
                 r_ids.append(ids[ii])

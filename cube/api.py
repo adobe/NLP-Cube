@@ -58,6 +58,7 @@ class CubeObj:
         self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
         self._default_lang = lang
         config = TokenizerConfig(filename='{0}.config'.format(path))
+        print(self._default_lang_id)
         lm_model = config.lm_model
         encodings = Encodings()
         encodings.load('{0}.encodings'.format(path))
