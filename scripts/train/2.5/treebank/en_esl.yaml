@@ -1,0 +1,10 @@
+dev_files:
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-dev.conllu
+language_codes:
+- en_esl
+language_map:
+  en_esl: en_esl
+test_files:
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-test.conllu
+train_files:
+  en_esl: corpus/ud-treebanks-v2.5/UD_English-ESL/en_esl-ud-train.conllu

@@ -1,0 +1,10 @@
+dev_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-dev.conllu
+language_codes:
+- lzh_kyoto
+language_map:
+  lzh_kyoto: lzh_kyoto
+test_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-test.conllu
+train_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-train.conllu

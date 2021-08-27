@@ -1,0 +1,24 @@
+dev_files:
+  el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-dev.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-dev.conllu
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-dev.conllu
+language_codes:
+- grc_perseus
+- grc_proiel
+- el_gdt
+language_map:
+  ancient greek: grc_proiel
+  el: el_gdt
+  el_gdt: el_gdt
+  grc: grc_proiel
+  grc_perseus: grc_perseus
+  grc_proiel: grc_proiel
+  greek: el_gdt
+test_files:
+  el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-test.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-test.conllu
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-test.conllu
+train_files:
+  el_gdt: corpus/ud-treebanks-v2.7/UD_Greek-GDT/el_gdt-ud-train.conllu
+  grc_perseus: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-Perseus/grc_perseus-ud-train.conllu
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-train.conllu

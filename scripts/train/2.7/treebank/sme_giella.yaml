@@ -1,0 +1,10 @@
+dev_files:
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
+language_codes:
+- sme_giella
+language_map:
+  sme_giella: sme_giella
+test_files:
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
+train_files:
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-train.conllu

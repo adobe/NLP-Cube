@@ -1,0 +1,12 @@
+[
+    [
+        "sv_lines",
+        "corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Swedish-LinES/sv_lines-ud-dev.conllu"
+    ],
+    [
+        "sv_talbanken",
+        "corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu"
+    ]
+]

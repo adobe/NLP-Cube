@@ -1,0 +1,10 @@
+dev_files:
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu
+language_codes:
+- no_nynorsklia
+language_map:
+  no_nynorsklia: no_nynorsklia
+test_files:
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-test.conllu
+train_files:
+  no_nynorsklia: corpus/ud-treebanks-v2.5/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu

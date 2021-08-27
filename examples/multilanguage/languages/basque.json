@@ -1,0 +1,7 @@
+[
+    [
+        "eu_bdt",
+        "corpus/ud-treebanks-v2.5/UD_Basque-BDT/eu_bdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Basque-BDT/eu_bdt-ud-dev.conllu"
+    ]
+]

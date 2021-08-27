@@ -1,0 +1,10 @@
+dev_files:
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-dev.conllu
+language_codes:
+- fo_farpahc
+language_map:
+  fo_farpahc: fo_farpahc
+test_files:
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-test.conllu
+train_files:
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-train.conllu

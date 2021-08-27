@@ -1,0 +1,10 @@
+dev_files:
+  sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-test.conllu
+language_codes:
+- sl_sst
+language_map:
+  sl_sst: sl_sst
+test_files:
+  sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-test.conllu
+train_files:
+  sl_sst: corpus/ud-treebanks-v2.7/UD_Slovenian-SST/sl_sst-ud-train.conllu

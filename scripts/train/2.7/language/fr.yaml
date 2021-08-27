@@ -1,0 +1,32 @@
+dev_files:
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-dev.conllu
+  fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-dev.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-dev.conllu
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-dev.conllu
+  fr_spoken: corpus/ud-treebanks-v2.7/UD_French-Spoken/fr_spoken-ud-dev.conllu
+language_codes:
+- fr_partut
+- fr_gsd
+- fr_sequoia
+- fr_spoken
+- fr_ftb
+language_map:
+  fr: fr_gsd
+  fr_ftb: fr_ftb
+  fr_gsd: fr_gsd
+  fr_partut: fr_partut
+  fr_sequoia: fr_sequoia
+  fr_spoken: fr_spoken
+  french: fr_gsd
+test_files:
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-test.conllu
+  fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-test.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-test.conllu
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-test.conllu
+  fr_spoken: corpus/ud-treebanks-v2.7/UD_French-Spoken/fr_spoken-ud-test.conllu
+train_files:
+  fr_ftb: corpus/ud-treebanks-v2.7/UD_French-FTB/fr_ftb-ud-train.conllu
+  fr_gsd: corpus/ud-treebanks-v2.7/UD_French-GSD/fr_gsd-ud-train.conllu
+  fr_partut: corpus/ud-treebanks-v2.7/UD_French-ParTUT/fr_partut-ud-train.conllu
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-train.conllu
+  fr_spoken: corpus/ud-treebanks-v2.7/UD_French-Spoken/fr_spoken-ud-train.conllu

@@ -1,61 +1,19 @@
-version: 2
+version: 2.1
+
+orbs:
+  python: circleci/python@0.2.1
+
 jobs:
-  test_api_and_main_and_upload:
-    docker:
-      - image: circleci/python
+  build-and-test:
+    executor: python/default
     steps:
       - checkout
-      - run: 
-          name: init .pypirc
-          command: |
-            echo -e "[pypi]" >> ~/.pypirc
-      - run:
-          name: install requirements
-          command: |
-            sudo apt-get install -y libblas3 liblapack3
-            sudo apt-get install -y liblapack-dev libblas-dev
-            cd /home/circleci/project/
-            pip3 install --user -r requirements.txt
-      - run:
-          name: test main
-          command: |
-            cd /home/circleci/project/
-            python3 tests/main_tests.py 
-      - run:
-          name: test api
-          command: |
-            cd /home/circleci/project/
-            python3 tests/api_tests.py
-      - run:
-          name: create packages
-          command: |
-            python3 setup.py sdist
-            python3 setup.py bdist_wheel
-      - run:
-          name: upload to pypi
-          command: |
-            if [[ "$PYPI_USERNAME" == "" ]]; then
-              echo "Skip upload"
-              exit 0
-            fi
-            python3 -m pip install --user jq
-            if [[ "$CIRCLE_BRANCH" == "master" ]]; then
-              PYPI="pypi.org"
-            else
-              PYPI="test.pypi.org"
-            fi
-            LATEST_VERSION="$(curl -s https://$PYPI/pypi/nlpcube/json | jq -r '.info.version')"
-            THIS_VERSION=`python3 <<< "import pkg_resources;print(pkg_resources.require('nlpcube')[0].version)"`
-            if [[ $THIS_VERSION != $LATEST_VERSION ]]; then
-              echo "\n\nthis: $THIS_VERSION - latest: $LATEST_VERSION => releasing to $PYPI\n\n"
-              python3 -m pip install --user --upgrade twine
-              python3 -m twine upload --repository-url https://$PYPI/legacy/ dist/* -u $PYPI_USERNAME -p $PYPI_PASSWORD || echo "Package already exists"
-            else
-              echo "this: $THIS_VERSION = latest: $LATEST_VERSION => skip release"
-            fi
+      - python/load-cache
+      - python/install-deps
+      - python/save-cache
+      - run: echo "done"
 
 workflows:
-  version: 2
-  test_api_and_main_and_upload:
+  main:
     jobs:
-      - test_api_and_main_and_upload
+      - build-and-test

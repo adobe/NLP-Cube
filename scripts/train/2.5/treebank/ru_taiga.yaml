@@ -1,0 +1,10 @@
+dev_files:
+  ru_taiga: corpus/ud-treebanks-v2.5/UD_Russian-Taiga/ru_taiga-ud-dev.conllu
+language_codes:
+- ru_taiga
+language_map:
+  ru_taiga: ru_taiga
+test_files:
+  ru_taiga: corpus/ud-treebanks-v2.5/UD_Russian-Taiga/ru_taiga-ud-test.conllu
+train_files:
+  ru_taiga: corpus/ud-treebanks-v2.5/UD_Russian-Taiga/ru_taiga-ud-train.conllu

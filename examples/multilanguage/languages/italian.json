@@ -1,0 +1,27 @@
+[
+    [
+        "it_isdt",
+        "corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Italian-ISDT/it_isdt-ud-dev.conllu"
+    ],
+    [
+        "it_partut",
+        "corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Italian-ParTUT/it_partut-ud-dev.conllu"
+    ],
+    [
+        "it_postwita",
+        "corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Italian-PoSTWITA/it_postwita-ud-dev.conllu"
+    ],
+    [
+        "it_twittiro",
+        "corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Italian-TWITTIRO/it_twittiro-ud-dev.conllu"
+    ],
+    [
+        "it_vit",
+        "corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Italian-VIT/it_vit-ud-dev.conllu"
+    ]
+]

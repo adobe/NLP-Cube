@@ -1,0 +1,10 @@
+dev_files:
+  pt_bosque: corpus/ud-treebanks-v2.5/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu
+language_codes:
+- pt_bosque
+language_map:
+  pt_bosque: pt_bosque
+test_files:
+  pt_bosque: corpus/ud-treebanks-v2.5/UD_Portuguese-Bosque/pt_bosque-ud-test.conllu
+train_files:
+  pt_bosque: corpus/ud-treebanks-v2.5/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu

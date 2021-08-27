@@ -1,0 +1,17 @@
+dev_files:
+  tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-dev.conllu
+  tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-dev.conllu
+language_codes:
+- tr_imst
+- tr_boun
+language_map:
+  tr: tr_imst
+  tr_boun: tr_boun
+  tr_imst: tr_imst
+  turkish: tr_imst
+test_files:
+  tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-test.conllu
+  tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-test.conllu
+train_files:
+  tr_boun: corpus/ud-treebanks-v2.7/UD_Turkish-BOUN/tr_boun-ud-train.conllu
+  tr_imst: corpus/ud-treebanks-v2.7/UD_Turkish-IMST/tr_imst-ud-train.conllu

@@ -1,240 +1,212 @@
-# -*- coding: utf-8 -*-
-
+#
+# Copyright (c) 2018 Adobe Systems Incorporated. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 import sys
 import os
+import yaml
+import string
+import requests
+import tarfile
+from tqdm import tqdm
 
-class Cube(object):
-    def __init__(self, verbose=False, random_seed=None, memory=512, autobatch=False, use_gpu=False):
-        """
-        Create an empty instance for Cube
-        Before it can be used, you must call @method load with @param language_code set to your target language        
-        """
-        self._loaded = False
-        self._verbose = verbose           
-        import dynet_config
-        
-        if random_seed != None:
-            if not isinstance(random_seed, int):
-                raise Exception ("Random seed must be an integer!")   
-            if random_seed == 0:
-                print("[Warning] While Python and Numpy's seeds are now set to 0, DyNet uses 0 to reset the seed generator (fully random). Use any non-zero int value to set DyNet to a fixed random seed.")
-            # set python random seed
-            import random
-            random.seed(random_seed)
-            #set numpy random seed
-            import numpy as np
-            np.random.seed(random_seed)
+sys.path.append('')
+from typing import Optional, Union
+from cube.io_utils.objects import Document, Word, Token, Sentence
+from cube.io_utils.encodings import Encodings
+from cube.io_utils.config import CompoundConfig, TokenizerConfig, ParserConfig, LemmatizerConfig
+from cube.networks.compound import Compound
+from cube.networks.parser import Parser
+from cube.networks.tokenizer import Tokenizer
+from cube.networks.lemmatizer import Lemmatizer
+from pathlib import Path
+from cube.networks.lm import LMHelperHF, LMHelperFT
+from cube.networks.utils_tokenizer import TokenCollateHF, TokenCollateFTLanguasito
+from cube.networks.utils import MorphoCollate, Word2TargetCollate
+
+
+class CubeObj:
+    def __init__(self, model_base: str, device: str = 'cpu', lang: str = None):
+        self._cwe = None
+        # word expander
+        path = '{0}-trf-cwe'.format(model_base)
+        if os.path.exists('{0}.best'.format(path)):
+            config = CompoundConfig(filename='{0}.config'.format(path))
+            encodings = Encodings()
+            encodings.load('{0}.encodings'.format(path))
+            self._cwe = Compound(config, encodings)
+            self._cwe.load('{0}.best'.format(path))
+            self._cwe.to(device)
+
+        # tokenizer
+        path = '{0}-trf-tokenizer'.format(model_base)
+        g_conf = yaml.safe_load(open('{0}.yaml'.format(path)))
+        self._lang2id = {}
+        for lng in g_conf['language_codes']:
+            self._lang2id[lng] = len(self._lang2id)
+        self._default_lang_id = self._lang2id[g_conf['language_map'][lang]]
+        self._default_lang = lang
+        config = TokenizerConfig(filename='{0}.config'.format(path))
+        print(self._default_lang_id)
+        lm_model = config.lm_model
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        if lm_model.startswith('transformer'):
+            self._tokenizer_collate = TokenCollateHF(encodings,
+                                                     lm_device=device,
+                                                     lm_model=lm_model.split(':')[-1],
+                                                     no_space_lang=config.no_space_lang,
+                                                     lang_id=self._default_lang_id)
         else:
-            random_seed = 0 # this is the default value for DyNet (meaning full random)        
-            
-        dynet_config.set(mem=memory, random_seed=random_seed, autobatch=autobatch)
-        if use_gpu:
-            dynet_config.set_gpu()        
+            self._tokenizer_collate = TokenCollateFTLanguasito(encodings,
+                                                               lm_device=device,
+                                                               lm_model=lm_model,
+                                                               no_space_lang=config.no_space_lang,
+                                                               lang_id=self._default_lang_id)
 
-    def load(self, language_code, version="latest", local_models_repository=None, local_embeddings_file=None, tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True):
-        """
-        Loads the pipeline with all available models for the target language.
 
-        @param lang_code: Target language code. See http://opensource.adobe.com/NLP-Cube/ for available languages and their codes
-        @param version: "latest" to get the latest version, or other specific version in like "1.0", "2.1", etc .
-       
-        """
-        from .io_utils.encodings import Encodings
-        from .io_utils.embeddings import WordEmbeddings
-        from .io_utils.model_store import ModelMetadata, ModelStore
-        from .io_utils.config import TieredTokenizerConfig, CompoundWordConfig, LemmatizerConfig, TaggerConfig, ParserConfig
-        from .generic_networks.tokenizers import TieredTokenizer
-        from .generic_networks.token_expanders import CompoundWordExpander
-        from .generic_networks.lemmatizers import FSTLemmatizer
-        from .generic_networks.taggers import BDRNNTagger
-        from .generic_networks.parsers import BDRNNParser        
-        
-        self._tokenizer = None  # tokenizer object, default is None
-        self._compound_word_expander = None  # compound word expander, default is None
-        self._lemmatizer = None  # lemmatizer object, default is None
-        self._parser = None  # parser object, default is None
-        self._tagger = None  # tagger object, default is None
-        self.metadata = ModelMetadata()
-        
-        # Initialize a ModelStore object
-        if local_models_repository: 
-            model_store_object = ModelStore(disk_path=local_models_repository)
-        else: 
-            model_store_object = ModelStore()
+        self._tokenizer = Tokenizer(config, encodings, language_codes=g_conf['language_codes'],
+                                    ext_word_emb=self._tokenizer_collate.get_embeddings_size())
+        self._tokenizer.load('{0}.best'.format(path))
+        self._tokenizer.to(device)
 
-        # Find a local model or download it if it does not exist, returning the local model folder path
-        model_folder_path = model_store_object.find(lang_code=language_code, version=version, verbose=self._verbose)
-
-        # If the model contains metadata, load it        
-        if os.path.isfile(os.path.join(model_folder_path, "metadata.json")): 
-            self.metadata.read(os.path.join(model_folder_path, "metadata.json"))
+        # lemmatizer
+        path = '{0}-trf-lemmatizer'.format(model_base)
+        config = LemmatizerConfig(filename='{0}.config'.format(path))
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        self._lemmatizer = Lemmatizer(config, encodings)
+        self._lemmatizer.load('{0}.best'.format(path))
+        self._lemmatizer.to(device)
+        self._lemmatizer_collate = Word2TargetCollate(encodings)
+        # parser-tagger
+        path = '{0}-trf-parser'.format(model_base)
+        config = ParserConfig(filename='{0}.config'.format(path))
+        lm_model = config.lm_model
+        if lm_model.startswith('transformer'):
+            self._lm_helper = LMHelperHF(model=lm_model.split(':')[-1])
         else:
-            self.metadata = None
+            self._lm_helper = LMHelperFT(model=lm_model.split(':')[-1])
 
-        # Load embeddings                
-        embeddings = WordEmbeddings(verbose=False)
-        if self._verbose:
-            sys.stdout.write('\tLoading embeddings ... \n')
-        if local_embeddings_file is not None:        
-            embeddings.read_from_file(local_embeddings_file, None, full_load=False)
-        else: # embeddings file is not manually specified
-            if self.metadata is None: # no metadata exists
-                raise Exception("When using a locally-trained model please specify a path to a local embeddings file (local_embeddings_file cannot be None).")    
-            else: # load from the metadata path
-                if self.metadata.embeddings_file_name is None or self.metadata.embeddings_file_name == "":
-                    # load a dummy embedding
-                    embeddings.load_dummy_embeddings()
-                else:
-                    # load full embedding from file
-                    emb_path = os.path.join(model_store_object.embeddings_repository, self.metadata.embeddings_file_name)
-                    if not os.path.exists(emb_path):
-                        raise Exception("Embeddings file not found: {}".format(emb_path))
-                    embeddings.read_from_file(emb_path, None, full_load=False)
-       
-        # 1. Load tokenizer
-        if tokenization:
-            if not os.path.isfile(os.path.join(model_folder_path, 'tokenizer-tok.bestAcc')):
-                sys.stdout.write('\tTokenization is not available on this model. \n')
-            else:
-                if self._verbose:
-                    sys.stdout.write('\tLoading tokenization model ...\n')
-                tokenizer_encodings = Encodings(verbose=False)
-                tokenizer_encodings.load(os.path.join(model_folder_path, 'tokenizer.encodings'))
-                config = TieredTokenizerConfig(os.path.join(model_folder_path, 'tokenizer.conf'))
-                self._tokenizer = TieredTokenizer(config, tokenizer_encodings, embeddings, runtime=True)
-                self._tokenizer.load(os.path.join(model_folder_path, 'tokenizer'))
+        encodings = Encodings()
+        encodings.load('{0}.encodings'.format(path))
+        self._parser = Parser(config, encodings, language_codes=g_conf['language_codes'],
+                              ext_word_emb=self._lm_helper.get_embedding_size())
+        self._parser.load('{0}.best'.format(path))
+        self._parser.to(device)
+        self._parser_collate = MorphoCollate(encodings)
 
-        # 2. Load compound
-        if compound_word_expanding:
-            if not os.path.isfile(os.path.join(model_folder_path, 'compound.bestAcc')):
-                if self._verbose:  # supress warning here because many languages do not have compund words
-                    sys.stdout.write('\tCompound word expansion is not available on this model. \n')
-            else:
-                if self._verbose:
-                    sys.stdout.write('\tLoading compound word expander model ...\n')
-                compound_encodings = Encodings(verbose=False)
-                compound_encodings.load(os.path.join(model_folder_path, 'compound.encodings'))
-                config = CompoundWordConfig(os.path.join(model_folder_path, 'compound.conf'))
-                self._compound_word_expander = CompoundWordExpander(config, compound_encodings, embeddings,
-                                                                    runtime=True)
-                self._compound_word_expander.load(os.path.join(model_folder_path, 'compound.bestAcc'))
-
-        # 3. Load lemmatizer
-        if lemmatization:
-            if not os.path.isfile(os.path.join(model_folder_path, 'lemmatizer.bestAcc')):
-                sys.stdout.write('\tLemmatizer is not available on this model. \n')
-            else:
-                if self._verbose:
-                    sys.stdout.write('\tLoading lemmatization model ...\n')
-                lemmatizer_encodings = Encodings(verbose=False)
-                lemmatizer_encodings.load(os.path.join(model_folder_path, 'lemmatizer.encodings'))
-                config = LemmatizerConfig(os.path.join(model_folder_path, 'lemmatizer.conf'))
-                self._lemmatizer = FSTLemmatizer(config, lemmatizer_encodings, embeddings, runtime=True)
-                self._lemmatizer.load(os.path.join(model_folder_path, 'lemmatizer.bestAcc'))
-
-        # 4. Load tagger
-        if tagging or lemmatization:  # we need tagging for lemmatization
-            if not os.path.isfile(os.path.join(model_folder_path, 'tagger.bestUPOS')):
-                sys.stdout.write('\tTagging is not available on this model. \n')
-                if lemmatization:
-                    sys.stdout.write('\t\tDisabling the lemmatization model due to missing tagger. \n')
-                    self._lemmatizer = None
-            else:
-                if self._verbose:
-                    sys.stdout.write('\tLoading tagger model ...\n')
-                tagger_encodings = Encodings(verbose=False)
-                tagger_encodings.load(os.path.join(model_folder_path, 'tagger.encodings'))
-                config = TaggerConfig(os.path.join(model_folder_path, 'tagger.conf'))
-                self._tagger = [None, None, None]
-                self._tagger[0] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
-                self._tagger[0].load(os.path.join(model_folder_path, 'tagger.bestUPOS'))
-                self._tagger[1] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
-                self._tagger[1].load(os.path.join(model_folder_path, 'tagger.bestXPOS'))
-                self._tagger[2] = BDRNNTagger(config, tagger_encodings, embeddings, runtime=True)
-                self._tagger[2].load(os.path.join(model_folder_path, 'tagger.bestATTRS'))
-
-        # 5. Load parser
-        if parsing:
-            if not os.path.isfile(os.path.join(model_folder_path, 'parser.bestUAS')):
-                sys.stdout.write('\tParsing is not available on this model... \n')
-            else:
-                if self._verbose:
-                    sys.stdout.write('\tLoading parser model ...\n')
-                parser_encodings = Encodings(verbose=False)
-                parser_encodings.load(os.path.join(model_folder_path, 'parser.encodings'))
-                config = ParserConfig(os.path.join(model_folder_path, 'parser.conf'))
-                self._parser = BDRNNParser(config, parser_encodings, embeddings, runtime=True)
-                self._parser.load(os.path.join(model_folder_path, 'parser.bestUAS'))
-
-        self._loaded = True
-        if self._verbose:
-            sys.stdout.write('Model loading complete.\n\n')
-
-    def __call__(self, text):
-        if not self._loaded:
-            raise Exception("Cube object is initialized but no model is loaded (eg.: call cube.load('en') )")
-
-        sequences = []
-        if self._tokenizer:
-            if not isinstance(text, str):
-                raise Exception("The text argument must be a string!")
-            # split text by lines
-            input_lines = text.split("\n")
-            for input_line in input_lines:                
-                sequences+=self._tokenizer.tokenize(input_line)                
+    def __call__(self, text: Union[str, Document], flavour: Optional[str] = None):
+        lang_id = self._default_lang_id
+        if flavour is not None:
+            if flavour not in self._lang2id:
+                print("Unsupported language flavour")
+                print("Please choose from: {0}".format(' '.join([k for k in self._lang2id])))
+                raise Exception("Unsupported language flavour\nPlease choose from: {0}".
+                                format(' '.join([k for k in self._lang2id])))
+            lang_id = self._lang2id[flavour]
+        if isinstance(text, str):
+            doc = self._tokenizer.process(text, self._tokenizer_collate, lang_id=lang_id, num_workers=0)
+            if self._cwe is not None:
+                doc = self._cwe.process(doc, self._lemmatizer_collate, num_workers=0)
         else:
-            if not isinstance(text, list):
-                raise Exception("The text argument must be a list of lists of tokens!")
-            sequences = text  # the input should already be tokenized
+            doc = text
 
-        if self._compound_word_expander:
-            sequences = self._compound_word_expander.expand_sequences(sequences)
-
-        if self._parser:
-            sequences = self._parser.parse_sequences(sequences)
-
-        if self._tagger or self._lemmatizer:
-            import copy
-            new_sequences = []
-            for sequence in sequences:                
-                new_sequence = copy.deepcopy(sequence)                
-                predicted_tags_UPOS = self._tagger[0].tag(new_sequence)
-                predicted_tags_XPOS = self._tagger[1].tag(new_sequence)
-                predicted_tags_ATTRS = self._tagger[2].tag(new_sequence)
-                for entryIndex in range(len(new_sequence)):
-                    new_sequence[entryIndex].upos = predicted_tags_UPOS[entryIndex][0]
-                    new_sequence[entryIndex].xpos = predicted_tags_XPOS[entryIndex][1]
-                    new_sequence[entryIndex].attrs = predicted_tags_ATTRS[entryIndex][2]
-                new_sequences.append(new_sequence)
-            sequences = new_sequences
-
-        if self._lemmatizer:
-            sequences = self._lemmatizer.lemmatize_sequences(sequences)
-
-        return sequences
+        self._lm_helper.apply(doc)
+        self._parser.process(doc, self._parser_collate, num_workers=0)
+        self._lemmatizer.process(doc, self._lemmatizer_collate, num_workers=0)
+        return doc
 
 
-if __name__ == "__main__":
-    cube = Cube(verbose=True)
-    cube.load('en', tokenization=True, compound_word_expanding=False, tagging=True, lemmatization=True, parsing=True)
-    cube.metadata.info()
+def _download_file(url: str, filename: str, description=None):
+    r = requests.get(url, stream=True)
+    if r.status_code != 200:
+        raise Exception(f"Error getting {url}, received status_code {r.status_code}")
+    file_size = int(r.headers['Content-Length'])
+    chunk_size = 1024
 
-    text = "I'm a success today because I had a friend who believed in me and I didn't have the heart to let him down. This is a quote by Abraham Lincoln."
+    with open(filename, 'wb') as fp:
+        with tqdm(total=file_size, unit='B', unit_scale=True, desc=description, unit_divisor=1024,
+                  disable=True if description is None else False, leave=False) as progressbar:
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                if chunk is not None:
+                    fp.write(chunk)
+                    fp.flush()
+                    progressbar.update(len(chunk))
 
-    sentences = cube(text)
+    return r.status_code
 
-    for sentence in sentences:
-        print()
-        for token in sentence:
-            line = ""
-            line += str(token.index) + "\t"
-            line += token.word + "\t"
-            line += token.lemma + "\t"
-            line += token.upos + "\t"
-            line += token.xpos + "\t"
-            line += token.attrs + "\t"
-            line += str(token.head) + "\t"
-            line += token.label + "\t"
-            line += token.deps + "\t"
-            line += token.space_after
-            print(line)
+
+def _download_model(local_path, lang):
+    download_base = "https://github.com/adobe/NLP-Cube-Models/raw/3.0/models/{0}.tar.gz-a".format(lang)
+    file_base = "{0}.tar.gz-a".format(lang)
+    terminations = string.ascii_lowercase[:20]
+    file_list = []
+    for t in terminations:
+        download_url = '{0}{1}'.format(download_base, t)
+        target_file = str(os.path.join(local_path, file_base))
+        target_file = '{0}{1}'.format(target_file, t)
+        try:
+            if _download_file(download_url, target_file, description='Part {0}'.format(t)) != 200:
+                break
+        except:
+            break
+        file_list.append(target_file)
+
+    target_file = os.path.join(local_path, file_base[:-2])
+
+    f_out = open(target_file, 'wb')
+    for file in file_list:
+        f_in = open(file, 'rb')
+        while True:
+            buffer = f_in.read(1024 * 1024)
+            if not buffer:
+                break
+            f_out.write(buffer)
+    f_out.close()
+
+    tar = tarfile.open(target_file, 'r:gz')
+    tar.extractall(local_path)
+    tar.close()
+
+
+def _load(lang: str, device: Optional[str] = 'cpu') -> CubeObj:
+    try:
+        local_user_home = str(Path.home())
+        local_user_storage = os.path.join(local_user_home, '.nlpcube', '3.0')
+        os.makedirs(local_user_storage, exist_ok=True)
+        lang_path = os.path.join(local_user_storage, lang)
+        if not os.path.exists(lang_path):
+            _download_model(local_user_storage, lang)
+
+        return CubeObj('{0}/{1}'.format(lang_path, lang), device=device, lang=lang)
+    except:
+        raise Exception("There was a problem retrieving this language. Either it is unsupported or your Internet "
+                        "connection is down.\n\nTo check for supported languages, visit "
+                        "https://github.com/adobe/NLP-Cube/\n\nIt is hard to maintain models for all UD Treebanks. "
+                        "This is way we are only including a handful of"
+                        "languages with the official distribution. "
+                        "However, we can include additional languages upon request"
+                        "\n\nTo make a request for supporting a new language please create an issue on GitHub")
+
+
+class Cube:
+    def __init__(self, verbose=False):
+        self._instance = None
+
+    def load(self, lang: str, device: Optional[str] = 'cpu'):
+        self._instance = _load(lang, device)
+
+    def __call__(self, text: Union[str, Document], flavour: Optional[str] = None):
+        return self._instance(text, flavour=flavour)

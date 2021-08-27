@@ -1,3 +1,15 @@
+.DS_Store
+Languasito/data/
+*.txt
+lightning_logs
+*.gz
+*.encodings
+*.npy
+data/*
+nlp-cube-models/*
+corpus/
+models/
+scripts/packer
 *.pyc
 build/
 dist/
@@ -11,12 +23,14 @@ cube/venv/*
 .idea/*
 venv/*
 cube/*.py
+*.json
 
-models/
+scratch/
 tests/scratch/*
 scripts/*.json
 scripts/*.conllu
 scripts/*.md
+scripts/wikiextractor.py
 
 # Jupyter notebooks
 notebooks/.ipynb_checkpoints/*

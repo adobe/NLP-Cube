@@ -1,0 +1,7 @@
+[
+    [
+        "orv_torot",
+        "corpus/ud-treebanks-v2.5/UD_Old_Russian-TOROT/orv_torot-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Old_Russian-TOROT/orv_torot-ud-dev.conllu"
+    ]
+]

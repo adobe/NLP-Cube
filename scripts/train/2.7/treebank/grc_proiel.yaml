@@ -1,0 +1,10 @@
+dev_files:
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-dev.conllu
+language_codes:
+- grc_proiel
+language_map:
+  grc_proiel: grc_proiel
+test_files:
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-test.conllu
+train_files:
+  grc_proiel: corpus/ud-treebanks-v2.7/UD_Ancient_Greek-PROIEL/grc_proiel-ud-train.conllu

@@ -1,0 +1,10 @@
+dev_files:
+  sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-dev.conllu
+language_codes:
+- sr_set
+language_map:
+  sr_set: sr_set
+test_files:
+  sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-test.conllu
+train_files:
+  sr_set: corpus/ud-treebanks-v2.7/UD_Serbian-SET/sr_set-ud-train.conllu

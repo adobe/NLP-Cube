@@ -1,0 +1,7 @@
+[
+    [
+        "hu_szeged",
+        "corpus/ud-treebanks-v2.5/UD_Hungarian-Szeged/hu_szeged-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Hungarian-Szeged/hu_szeged-ud-dev.conllu"
+    ]
+]

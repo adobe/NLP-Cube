@@ -1,0 +1,17 @@
+dev_files:
+  pt_bosque: corpus/ud-treebanks-v2.7/UD_Portuguese-Bosque/pt_bosque-ud-dev.conllu
+  pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-dev.conllu
+language_codes:
+- pt_bosque
+- pt_gsd
+language_map:
+  portuguese: pt_bosque
+  pt: pt_bosque
+  pt_bosque: pt_bosque
+  pt_gsd: pt_gsd
+test_files:
+  pt_bosque: corpus/ud-treebanks-v2.7/UD_Portuguese-Bosque/pt_bosque-ud-test.conllu
+  pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-test.conllu
+train_files:
+  pt_bosque: corpus/ud-treebanks-v2.7/UD_Portuguese-Bosque/pt_bosque-ud-train.conllu
+  pt_gsd: corpus/ud-treebanks-v2.7/UD_Portuguese-GSD/pt_gsd-ud-train.conllu

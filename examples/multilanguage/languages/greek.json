@@ -1,0 +1,7 @@
+[
+    [
+        "el_gdt",
+        "corpus/ud-treebanks-v2.5/UD_Greek-GDT/el_gdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Greek-GDT/el_gdt-ud-dev.conllu"
+    ]
+]

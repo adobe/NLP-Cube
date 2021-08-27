@@ -1,0 +1,7 @@
+[
+    [
+        "ga_idt",
+        "corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-dev.conllu"
+    ]
+]

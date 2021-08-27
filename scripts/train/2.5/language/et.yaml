@@ -1,0 +1,17 @@
+dev_files:
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-dev.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
+language_codes:
+- et_edt
+- et_ewt
+language_map:
+  estonian: et_edt
+  et: et_edt
+  et_edt: et_edt
+  et_ewt: et_ewt
+test_files:
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-test.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-test.conllu
+train_files:
+  et_edt: corpus/ud-treebanks-v2.5/UD_Estonian-EDT/et_edt-ud-train.conllu
+  et_ewt: corpus/ud-treebanks-v2.5/UD_Estonian-EWT/et_ewt-ud-train.conllu

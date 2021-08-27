@@ -1,0 +1,10 @@
+dev_files:
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu
+language_codes:
+- nl_alpino
+language_map:
+  nl_alpino: nl_alpino
+test_files:
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-test.conllu
+train_files:
+  nl_alpino: corpus/ud-treebanks-v2.5/UD_Dutch-Alpino/nl_alpino-ud-train.conllu

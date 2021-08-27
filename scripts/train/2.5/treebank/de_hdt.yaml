@@ -1,0 +1,10 @@
+dev_files:
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-dev.conllu
+language_codes:
+- de_hdt
+language_map:
+  de_hdt: de_hdt
+test_files:
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-test.conllu
+train_files:
+  de_hdt: corpus/ud-treebanks-v2.5/UD_German-HDT/de_hdt-ud-train.conllu

@@ -1,0 +1,12 @@
+[
+    [
+        "fi_ftb",
+        "corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Finnish-FTB/fi_ftb-ud-dev.conllu"
+    ],
+    [
+        "fi_tdt",
+        "corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-dev.conllu"
+    ]
+]

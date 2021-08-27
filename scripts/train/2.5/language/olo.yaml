@@ -1,0 +1,12 @@
+dev_files:
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+language_codes:
+- olo_kkpp
+language_map:
+  livvi: olo_kkpp
+  olo: olo_kkpp
+  olo_kkpp: olo_kkpp
+test_files:
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+train_files:
+  olo_kkpp: corpus/ud-treebanks-v2.5/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu

@@ -1,0 +1,7 @@
+[
+    [
+        "lv_lvtb",
+        "corpus/ud-treebanks-v2.5/UD_Latvian-LVTB/lv_lvtb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu"
+    ]
+]

@@ -1,0 +1,10 @@
+dev_files:
+  grc_perseus: corpus/ud-treebanks-v2.5/UD_Ancient_Greek-Perseus/grc_perseus-ud-dev.conllu
+language_codes:
+- grc_perseus
+language_map:
+  grc_perseus: grc_perseus
+test_files:
+  grc_perseus: corpus/ud-treebanks-v2.5/UD_Ancient_Greek-Perseus/grc_perseus-ud-test.conllu
+train_files:
+  grc_perseus: corpus/ud-treebanks-v2.5/UD_Ancient_Greek-Perseus/grc_perseus-ud-train.conllu

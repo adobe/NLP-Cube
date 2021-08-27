@@ -1,0 +1,20 @@
+dev_files:
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-dev.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-dev.conllu
+language_codes:
+- ar_pud
+- ar_nyuad
+- ar_padt
+language_map:
+  ar: ar_padt
+  ar_nyuad: ar_nyuad
+  ar_padt: ar_padt
+  ar_pud: ar_pud
+  arabic: ar_padt
+test_files:
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-test.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-test.conllu
+train_files:
+  ar_nyuad: corpus/ud-treebanks-v2.5/UD_Arabic-NYUAD/ar_nyuad-ud-train.conllu
+  ar_padt: corpus/ud-treebanks-v2.5/UD_Arabic-PADT/ar_padt-ud-train.conllu
+  ar_pud: corpus/ud-treebanks-v2.5/UD_Arabic-PUD/ar_pud-ud-train.conllu

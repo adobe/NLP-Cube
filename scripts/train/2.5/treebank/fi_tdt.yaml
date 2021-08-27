@@ -1,0 +1,10 @@
+dev_files:
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-dev.conllu
+language_codes:
+- fi_tdt
+language_map:
+  fi_tdt: fi_tdt
+test_files:
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-test.conllu
+train_files:
+  fi_tdt: corpus/ud-treebanks-v2.5/UD_Finnish-TDT/fi_tdt-ud-train.conllu

@@ -1,0 +1,17 @@
+dev_files:
+  pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-dev.conllu
+  pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-dev.conllu
+language_codes:
+- pl_pdb
+- pl_lfg
+language_map:
+  pl: pl_pdb
+  pl_lfg: pl_lfg
+  pl_pdb: pl_pdb
+  polish: pl_pdb
+test_files:
+  pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-test.conllu
+  pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-test.conllu
+train_files:
+  pl_lfg: corpus/ud-treebanks-v2.7/UD_Polish-LFG/pl_lfg-ud-train.conllu
+  pl_pdb: corpus/ud-treebanks-v2.7/UD_Polish-PDB/pl_pdb-ud-train.conllu

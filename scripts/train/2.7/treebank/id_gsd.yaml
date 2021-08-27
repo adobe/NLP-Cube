@@ -1,0 +1,10 @@
+dev_files:
+  id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-dev.conllu
+language_codes:
+- id_gsd
+language_map:
+  id_gsd: id_gsd
+test_files:
+  id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-test.conllu
+train_files:
+  id_gsd: corpus/ud-treebanks-v2.7/UD_Indonesian-GSD/id_gsd-ud-train.conllu

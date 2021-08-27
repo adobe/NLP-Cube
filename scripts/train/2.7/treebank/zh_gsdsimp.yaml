@@ -1,0 +1,10 @@
+dev_files:
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-dev.conllu
+language_codes:
+- zh_gsdsimp
+language_map:
+  zh_gsdsimp: zh_gsdsimp
+test_files:
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-test.conllu
+train_files:
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-train.conllu

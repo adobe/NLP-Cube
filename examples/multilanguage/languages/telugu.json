@@ -1,0 +1,7 @@
+[
+    [
+        "te_mtg",
+        "corpus/ud-treebanks-v2.5/UD_Telugu-MTG/te_mtg-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Telugu-MTG/te_mtg-ud-dev.conllu"
+    ]
+]

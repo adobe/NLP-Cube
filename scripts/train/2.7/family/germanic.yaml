@@ -1,0 +1,126 @@
+dev_files:
+  af_afribooms: corpus/ud-treebanks-v2.7/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-dev.conllu
+  de_gsd: corpus/ud-treebanks-v2.7/UD_German-GSD/de_gsd-ud-dev.conllu
+  de_hdt: corpus/ud-treebanks-v2.7/UD_German-HDT/de_hdt-ud-dev.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-dev.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-dev.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-dev.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-dev.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-dev.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-dev.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-dev.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-dev.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-dev.conllu
+  nl_alpino: corpus/ud-treebanks-v2.7/UD_Dutch-Alpino/nl_alpino-ud-dev.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.7/UD_Dutch-LassySmall/nl_lassysmall-ud-dev.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.7/UD_Norwegian-Bokmaal/no_bokmaal-ud-dev.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.7/UD_Norwegian-Nynorsk/no_nynorsk-ud-dev.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.7/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-dev.conllu
+  sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-dev.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu
+language_codes:
+- fo_oft
+- sv_talbanken
+- en_lines
+- en_ewt
+- is_icepahc
+- de_hdt
+- got_proiel
+- en_partut
+- no_bokmaal
+- nl_alpino
+- sv_lines
+- fo_farpahc
+- de_gsd
+- nl_lassysmall
+- no_nynorsk
+- no_nynorsklia
+- af_afribooms
+- da_ddt
+- en_gum
+- en_gumreddit
+- en_esl
+language_map:
+  af: af_afribooms
+  af_afribooms: af_afribooms
+  afrikaans: af_afribooms
+  da: da_ddt
+  da_ddt: da_ddt
+  danish: da_ddt
+  de: de_hdt
+  de_gsd: de_gsd
+  de_hdt: de_hdt
+  dutch: nl_alpino
+  en: en_ewt
+  en_esl: en_esl
+  en_ewt: en_ewt
+  en_gum: en_gum
+  en_gumreddit: en_gumreddit
+  en_lines: en_lines
+  en_partut: en_partut
+  english: en_ewt
+  faroese: fo_oft
+  fo: fo_oft
+  fo_farpahc: fo_farpahc
+  german: de_hdt
+  got: got_proiel
+  got_proiel: got_proiel
+  gothic: got_proiel
+  icelandic: is_icepahc
+  is: is_icepahc
+  is_icepahc: is_icepahc
+  nl: nl_alpino
+  nl_alpino: nl_alpino
+  nl_lassysmall: nl_lassysmall
+  'no': no_bokmaal
+  no_bokmaal: no_bokmaal
+  no_nynorsk: no_nynorsk
+  no_nynorsklia: no_nynorsklia
+  norwegian: no_bokmaal
+  sv: sv_talbanken
+  sv_lines: sv_lines
+  sv_talbanken: sv_talbanken
+  swedish: sv_talbanken
+test_files:
+  af_afribooms: corpus/ud-treebanks-v2.7/UD_Afrikaans-AfriBooms/af_afribooms-ud-test.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-test.conllu
+  de_gsd: corpus/ud-treebanks-v2.7/UD_German-GSD/de_gsd-ud-test.conllu
+  de_hdt: corpus/ud-treebanks-v2.7/UD_German-HDT/de_hdt-ud-test.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-test.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-test.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-test.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-test.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-test.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-test.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-test.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-test.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-test.conllu
+  nl_alpino: corpus/ud-treebanks-v2.7/UD_Dutch-Alpino/nl_alpino-ud-test.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.7/UD_Dutch-LassySmall/nl_lassysmall-ud-test.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.7/UD_Norwegian-Bokmaal/no_bokmaal-ud-test.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.7/UD_Norwegian-Nynorsk/no_nynorsk-ud-test.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.7/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-test.conllu
+  sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-test.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-test.conllu
+train_files:
+  af_afribooms: corpus/ud-treebanks-v2.7/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu
+  da_ddt: corpus/ud-treebanks-v2.7/UD_Danish-DDT/da_ddt-ud-train.conllu
+  de_gsd: corpus/ud-treebanks-v2.7/UD_German-GSD/de_gsd-ud-train.conllu
+  de_hdt: corpus/ud-treebanks-v2.7/UD_German-HDT/de_hdt-ud-train.conllu
+  en_esl: corpus/ud-treebanks-v2.7/UD_English-ESL/en_esl-ud-train.conllu
+  en_ewt: corpus/ud-treebanks-v2.7/UD_English-EWT/en_ewt-ud-train.conllu
+  en_gum: corpus/ud-treebanks-v2.7/UD_English-GUM/en_gum-ud-train.conllu
+  en_gumreddit: corpus/ud-treebanks-v2.7/UD_English-GUMReddit/en_gumreddit-ud-train.conllu
+  en_lines: corpus/ud-treebanks-v2.7/UD_English-LinES/en_lines-ud-train.conllu
+  en_partut: corpus/ud-treebanks-v2.7/UD_English-ParTUT/en_partut-ud-train.conllu
+  fo_farpahc: corpus/ud-treebanks-v2.7/UD_Faroese-FarPaHC/fo_farpahc-ud-train.conllu
+  got_proiel: corpus/ud-treebanks-v2.7/UD_Gothic-PROIEL/got_proiel-ud-train.conllu
+  is_icepahc: corpus/ud-treebanks-v2.7/UD_Icelandic-IcePaHC/is_icepahc-ud-train.conllu
+  nl_alpino: corpus/ud-treebanks-v2.7/UD_Dutch-Alpino/nl_alpino-ud-train.conllu
+  nl_lassysmall: corpus/ud-treebanks-v2.7/UD_Dutch-LassySmall/nl_lassysmall-ud-train.conllu
+  no_bokmaal: corpus/ud-treebanks-v2.7/UD_Norwegian-Bokmaal/no_bokmaal-ud-train.conllu
+  no_nynorsk: corpus/ud-treebanks-v2.7/UD_Norwegian-Nynorsk/no_nynorsk-ud-train.conllu
+  no_nynorsklia: corpus/ud-treebanks-v2.7/UD_Norwegian-NynorskLIA/no_nynorsklia-ud-train.conllu
+  sv_lines: corpus/ud-treebanks-v2.7/UD_Swedish-LinES/sv_lines-ud-train.conllu
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu

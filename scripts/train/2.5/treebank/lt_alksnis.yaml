@@ -1,0 +1,10 @@
+dev_files:
+  lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-dev.conllu
+language_codes:
+- lt_alksnis
+language_map:
+  lt_alksnis: lt_alksnis
+test_files:
+  lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-test.conllu
+train_files:
+  lt_alksnis: corpus/ud-treebanks-v2.5/UD_Lithuanian-ALKSNIS/lt_alksnis-ud-train.conllu

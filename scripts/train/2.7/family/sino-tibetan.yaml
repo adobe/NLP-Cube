@@ -1,0 +1,24 @@
+dev_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-dev.conllu
+  zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-dev.conllu
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-dev.conllu
+language_codes:
+- zh_gsdsimp
+- lzh_kyoto
+- zh_gsd
+language_map:
+  chinese: zh_gsdsimp
+  classical chinese: lzh_kyoto
+  lzh: lzh_kyoto
+  lzh_kyoto: lzh_kyoto
+  zh: zh_gsdsimp
+  zh_gsd: zh_gsd
+  zh_gsdsimp: zh_gsdsimp
+test_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-test.conllu
+  zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-test.conllu
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-test.conllu
+train_files:
+  lzh_kyoto: corpus/ud-treebanks-v2.7/UD_Classical_Chinese-Kyoto/lzh_kyoto-ud-train.conllu
+  zh_gsd: corpus/ud-treebanks-v2.7/UD_Chinese-GSD/zh_gsd-ud-train.conllu
+  zh_gsdsimp: corpus/ud-treebanks-v2.7/UD_Chinese-GSDSimp/zh_gsdsimp-ud-train.conllu

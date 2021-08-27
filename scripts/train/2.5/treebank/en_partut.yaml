@@ -1,0 +1,10 @@
+dev_files:
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-dev.conllu
+language_codes:
+- en_partut
+language_map:
+  en_partut: en_partut
+test_files:
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-test.conllu
+train_files:
+  en_partut: corpus/ud-treebanks-v2.5/UD_English-ParTUT/en_partut-ud-train.conllu

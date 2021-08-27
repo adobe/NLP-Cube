@@ -1,0 +1,10 @@
+dev_files:
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-dev.conllu
+language_codes:
+- sv_talbanken
+language_map:
+  sv_talbanken: sv_talbanken
+test_files:
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-test.conllu
+train_files:
+  sv_talbanken: corpus/ud-treebanks-v2.7/UD_Swedish-Talbanken/sv_talbanken-ud-train.conllu

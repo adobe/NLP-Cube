@@ -1,0 +1,10 @@
+dev_files:
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-dev.conllu
+language_codes:
+- eu_bdt
+language_map:
+  eu_bdt: eu_bdt
+test_files:
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-test.conllu
+train_files:
+  eu_bdt: corpus/ud-treebanks-v2.7/UD_Basque-BDT/eu_bdt-ud-train.conllu

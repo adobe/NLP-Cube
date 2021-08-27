@@ -1,0 +1,10 @@
+dev_files:
+  it_isdt: corpus/ud-treebanks-v2.7/UD_Italian-ISDT/it_isdt-ud-dev.conllu
+language_codes:
+- it_isdt
+language_map:
+  it_isdt: it_isdt
+test_files:
+  it_isdt: corpus/ud-treebanks-v2.7/UD_Italian-ISDT/it_isdt-ud-test.conllu
+train_files:
+  it_isdt: corpus/ud-treebanks-v2.7/UD_Italian-ISDT/it_isdt-ud-train.conllu

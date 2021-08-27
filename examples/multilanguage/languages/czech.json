@@ -1,0 +1,22 @@
+[
+    [
+        "cs_cac",
+        "corpus/ud-treebanks-v2.5/UD_Czech-CAC/cs_cac-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Czech-CAC/cs_cac-ud-dev.conllu"
+    ],
+    [
+        "cs_cltt",
+        "corpus/ud-treebanks-v2.5/UD_Czech-CLTT/cs_cltt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Czech-CLTT/cs_cltt-ud-dev.conllu"
+    ],
+    [
+        "cs_fictree",
+        "corpus/ud-treebanks-v2.5/UD_Czech-FicTree/cs_fictree-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Czech-FicTree/cs_fictree-ud-dev.conllu"
+    ],
+    [
+        "cs_pdt",
+        "corpus/ud-treebanks-v2.5/UD_Czech-PDT/cs_pdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Czech-PDT/cs_pdt-ud-dev.conllu"
+    ]
+]

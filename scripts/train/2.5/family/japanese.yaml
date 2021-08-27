@@ -1,0 +1,20 @@
+dev_files:
+  ja_bccwj: corpus/ud-treebanks-v2.5/UD_Japanese-BCCWJ/ja_bccwj-ud-dev.conllu
+  ja_gsd: corpus/ud-treebanks-v2.5/UD_Japanese-GSD/ja_gsd-ud-dev.conllu
+language_codes:
+- ja_gsd
+- ja_bccwj
+- ja_pud
+language_map:
+  ja: ja_gsd
+  ja_bccwj: ja_bccwj
+  ja_gsd: ja_gsd
+  ja_pud: ja_pud
+  japanese: ja_gsd
+test_files:
+  ja_bccwj: corpus/ud-treebanks-v2.5/UD_Japanese-BCCWJ/ja_bccwj-ud-test.conllu
+  ja_gsd: corpus/ud-treebanks-v2.5/UD_Japanese-GSD/ja_gsd-ud-test.conllu
+train_files:
+  ja_bccwj: corpus/ud-treebanks-v2.5/UD_Japanese-BCCWJ/ja_bccwj-ud-train.conllu
+  ja_gsd: corpus/ud-treebanks-v2.5/UD_Japanese-GSD/ja_gsd-ud-train.conllu
+  ja_pud: corpus/ud-treebanks-v2.5/UD_Japanese-PUD/ja_pud-ud-train.conllu

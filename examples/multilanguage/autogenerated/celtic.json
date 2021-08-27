@@ -1,0 +1,12 @@
+[
+    [
+        "ga_idt",
+        "corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Irish-IDT/ga_idt-ud-dev.conllu"
+    ],
+    [
+        "gd_arcosg",
+        "corpus/ud-treebanks-v2.5/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-dev.conllu"
+    ]
+]

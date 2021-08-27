@@ -1,0 +1,10 @@
+dev_files:
+  ko_gsd: corpus/ud-treebanks-v2.5/UD_Korean-GSD/ko_gsd-ud-dev.conllu
+language_codes:
+- ko_gsd
+language_map:
+  ko_gsd: ko_gsd
+test_files:
+  ko_gsd: corpus/ud-treebanks-v2.5/UD_Korean-GSD/ko_gsd-ud-test.conllu
+train_files:
+  ko_gsd: corpus/ud-treebanks-v2.5/UD_Korean-GSD/ko_gsd-ud-train.conllu

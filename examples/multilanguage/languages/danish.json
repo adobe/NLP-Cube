@@ -1,0 +1,7 @@
+[
+    [
+        "da_ddt",
+        "corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-dev.conllu"
+    ]
+]

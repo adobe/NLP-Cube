@@ -1,0 +1,17 @@
+[
+    [
+        "kk_ktb",
+        "corpus/ud-treebanks-v2.5/UD_Kazakh-KTB/kk_ktb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Kazakh-KTB/kk_ktb-ud-test.conllu"
+    ],
+    [
+        "tr_imst",
+        "corpus/ud-treebanks-v2.5/UD_Turkish-IMST/tr_imst-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Turkish-IMST/tr_imst-ud-dev.conllu"
+    ],
+    [
+        "ug_udt",
+        "corpus/ud-treebanks-v2.5/UD_Uyghur-UDT/ug_udt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Uyghur-UDT/ug_udt-ud-dev.conllu"
+    ]
+]

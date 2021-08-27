@@ -1,0 +1,10 @@
+dev_files:
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-dev.conllu
+language_codes:
+- fr_sequoia
+language_map:
+  fr_sequoia: fr_sequoia
+test_files:
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-test.conllu
+train_files:
+  fr_sequoia: corpus/ud-treebanks-v2.7/UD_French-Sequoia/fr_sequoia-ud-train.conllu

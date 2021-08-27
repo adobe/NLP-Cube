@@ -1,0 +1,12 @@
+dev_files:
+  sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
+language_codes:
+- sa_vedic
+language_map:
+  sa: sa_vedic
+  sa_vedic: sa_vedic
+  sanskrit: sa_vedic
+test_files:
+  sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-test.conllu
+train_files:
+  sa_vedic: corpus/ud-treebanks-v2.7/UD_Sanskrit-Vedic/sa_vedic-ud-train.conllu

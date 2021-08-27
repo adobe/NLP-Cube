@@ -1,0 +1,17 @@
+[
+    [
+        "la_perseus",
+        "corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Latin-Perseus/la_perseus-ud-test.conllu"
+    ],
+    [
+        "la_proiel",
+        "corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Latin-PROIEL/la_proiel-ud-dev.conllu"
+    ],
+    [
+        "la_ittb",
+        "corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Latin-ITTB/la_ittb-ud-dev.conllu"
+    ]
+]

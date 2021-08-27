@@ -1,0 +1,7 @@
+[
+    [
+        "mr_ufal",
+        "corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Marathi-UFAL/mr_ufal-ud-dev.conllu"
+    ]
+]

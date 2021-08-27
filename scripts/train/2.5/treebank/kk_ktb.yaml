@@ -1,0 +1,10 @@
+dev_files:
+  kk_ktb: corpus/ud-treebanks-v2.5/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
+language_codes:
+- kk_ktb
+language_map:
+  kk_ktb: kk_ktb
+test_files:
+  kk_ktb: corpus/ud-treebanks-v2.5/UD_Kazakh-KTB/kk_ktb-ud-test.conllu
+train_files:
+  kk_ktb: corpus/ud-treebanks-v2.5/UD_Kazakh-KTB/kk_ktb-ud-train.conllu

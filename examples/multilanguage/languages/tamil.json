@@ -1,0 +1,7 @@
+[
+    [
+        "ta_ttb",
+        "corpus/ud-treebanks-v2.5/UD_Tamil-TTB/ta_ttb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Tamil-TTB/ta_ttb-ud-dev.conllu"
+    ]
+]

@@ -1,0 +1,10 @@
+dev_files:
+  cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-dev.conllu
+language_codes:
+- cs_cac
+language_map:
+  cs_cac: cs_cac
+test_files:
+  cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-test.conllu
+train_files:
+  cs_cac: corpus/ud-treebanks-v2.7/UD_Czech-CAC/cs_cac-ud-train.conllu

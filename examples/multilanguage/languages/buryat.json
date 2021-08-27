@@ -1,0 +1,7 @@
+[
+    [
+        "bxr_bdt",
+        "corpus/ud-treebanks-v2.5/UD_Buryat-BDT/bxr_bdt-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Buryat-BDT/bxr_bdt-ud-test.conllu"
+    ]
+]

@@ -1,0 +1,17 @@
+[
+    [
+        "ru_gsd",
+        "corpus/ud-treebanks-v2.5/UD_Russian-GSD/ru_gsd-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Russian-GSD/ru_gsd-ud-dev.conllu"
+    ],
+    [
+        "ru_syntagrus",
+        "corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Russian-SynTagRus/ru_syntagrus-ud-dev.conllu"
+    ],
+    [
+        "ru_taiga",
+        "corpus/ud-treebanks-v2.5/UD_Russian-Taiga/ru_taiga-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Russian-Taiga/ru_taiga-ud-dev.conllu"
+    ]
+]

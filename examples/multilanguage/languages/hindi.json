@@ -1,0 +1,7 @@
+[
+    [
+        "hi_hdtb",
+        "corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Hindi-HDTB/hi_hdtb-ud-dev.conllu"
+    ]
+]

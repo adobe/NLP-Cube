@@ -1,0 +1,12 @@
+dev_files:
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-dev.conllu
+language_codes:
+- lv_lvtb
+language_map:
+  latvian: lv_lvtb
+  lv: lv_lvtb
+  lv_lvtb: lv_lvtb
+test_files:
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-test.conllu
+train_files:
+  lv_lvtb: corpus/ud-treebanks-v2.7/UD_Latvian-LVTB/lv_lvtb-ud-train.conllu

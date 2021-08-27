@@ -1,0 +1,12 @@
+dev_files:
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-dev.conllu
+language_codes:
+- da_ddt
+language_map:
+  da: da_ddt
+  da_ddt: da_ddt
+  danish: da_ddt
+test_files:
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-test.conllu
+train_files:
+  da_ddt: corpus/ud-treebanks-v2.5/UD_Danish-DDT/da_ddt-ud-train.conllu

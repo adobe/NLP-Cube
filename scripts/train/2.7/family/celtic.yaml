@@ -1,0 +1,26 @@
+dev_files:
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
+  ga_idt: corpus/ud-treebanks-v2.7/UD_Irish-IDT/ga_idt-ud-dev.conllu
+  gd_arcosg: corpus/ud-treebanks-v2.7/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-dev.conllu
+language_codes:
+- gd_arcosg
+- ga_idt
+- cy_ccg
+language_map:
+  cy: cy_ccg
+  cy_ccg: cy_ccg
+  ga: ga_idt
+  ga_idt: ga_idt
+  gd: gd_arcosg
+  gd_arcosg: gd_arcosg
+  irish: ga_idt
+  scottish gaelic: gd_arcosg
+  welsh: cy_ccg
+test_files:
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-test.conllu
+  ga_idt: corpus/ud-treebanks-v2.7/UD_Irish-IDT/ga_idt-ud-test.conllu
+  gd_arcosg: corpus/ud-treebanks-v2.7/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-test.conllu
+train_files:
+  cy_ccg: corpus/ud-treebanks-v2.7/UD_Welsh-CCG/cy_ccg-ud-train.conllu
+  ga_idt: corpus/ud-treebanks-v2.7/UD_Irish-IDT/ga_idt-ud-train.conllu
+  gd_arcosg: corpus/ud-treebanks-v2.7/UD_Scottish_Gaelic-ARCOSG/gd_arcosg-ud-train.conllu

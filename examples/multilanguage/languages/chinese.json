@@ -1,0 +1,12 @@
+[
+    [
+        "zh_gsd",
+        "corpus/ud-treebanks-v2.5/UD_Chinese-GSD/zh_gsd-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Chinese-GSD/zh_gsd-ud-dev.conllu"
+    ],
+    [
+        "zh_gsdsimp",
+        "corpus/ud-treebanks-v2.5/UD_Chinese-GSDSimp/zh_gsdsimp-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Chinese-GSDSimp/zh_gsdsimp-ud-dev.conllu"
+    ]
+]

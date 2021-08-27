@@ -1,0 +1,10 @@
+dev_files:
+  ja_gsd: corpus/ud-treebanks-v2.7/UD_Japanese-GSD/ja_gsd-ud-dev.conllu
+language_codes:
+- ja_gsd
+language_map:
+  ja_gsd: ja_gsd
+test_files:
+  ja_gsd: corpus/ud-treebanks-v2.7/UD_Japanese-GSD/ja_gsd-ud-test.conllu
+train_files:
+  ja_gsd: corpus/ud-treebanks-v2.7/UD_Japanese-GSD/ja_gsd-ud-train.conllu

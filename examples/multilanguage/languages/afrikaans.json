@@ -1,0 +1,7 @@
+[
+    [
+        "af_afribooms",
+        "corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-train.conllu",
+        "corpus/ud-treebanks-v2.5/UD_Afrikaans-AfriBooms/af_afribooms-ud-dev.conllu"
+    ]
+]

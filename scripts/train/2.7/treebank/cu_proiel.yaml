@@ -1,0 +1,10 @@
+dev_files:
+  cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-dev.conllu
+language_codes:
+- cu_proiel
+language_map:
+  cu_proiel: cu_proiel
+test_files:
+  cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-test.conllu
+train_files:
+  cu_proiel: corpus/ud-treebanks-v2.7/UD_Old_Church_Slavonic-PROIEL/cu_proiel-ud-train.conllu

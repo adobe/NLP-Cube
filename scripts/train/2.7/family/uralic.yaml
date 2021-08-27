@@ -1,0 +1,50 @@
+dev_files:
+  et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-dev.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-dev.conllu
+  fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-dev.conllu
+  fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-dev.conllu
+  hu_szeged: corpus/ud-treebanks-v2.7/UD_Hungarian-Szeged/hu_szeged-ud-dev.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
+language_codes:
+- et_edt
+- fi_ftb
+- sme_giella
+- et_ewt
+- hu_szeged
+- olo_kkpp
+- fi_tdt
+language_map:
+  estonian: et_edt
+  et: et_edt
+  et_edt: et_edt
+  et_ewt: et_ewt
+  fi: fi_tdt
+  fi_ftb: fi_ftb
+  fi_tdt: fi_tdt
+  finnish: fi_tdt
+  hu: hu_szeged
+  hu_szeged: hu_szeged
+  hungarian: hu_szeged
+  livvi: olo_kkpp
+  north sami: sme_giella
+  olo: olo_kkpp
+  olo_kkpp: olo_kkpp
+  sme: sme_giella
+  sme_giella: sme_giella
+test_files:
+  et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-test.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-test.conllu
+  fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-test.conllu
+  fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-test.conllu
+  hu_szeged: corpus/ud-treebanks-v2.7/UD_Hungarian-Szeged/hu_szeged-ud-test.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-test.conllu
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-test.conllu
+train_files:
+  et_edt: corpus/ud-treebanks-v2.7/UD_Estonian-EDT/et_edt-ud-train.conllu
+  et_ewt: corpus/ud-treebanks-v2.7/UD_Estonian-EWT/et_ewt-ud-train.conllu
+  fi_ftb: corpus/ud-treebanks-v2.7/UD_Finnish-FTB/fi_ftb-ud-train.conllu
+  fi_tdt: corpus/ud-treebanks-v2.7/UD_Finnish-TDT/fi_tdt-ud-train.conllu
+  hu_szeged: corpus/ud-treebanks-v2.7/UD_Hungarian-Szeged/hu_szeged-ud-train.conllu
+  olo_kkpp: corpus/ud-treebanks-v2.7/UD_Livvi-KKPP/olo_kkpp-ud-train.conllu
+  sme_giella: corpus/ud-treebanks-v2.7/UD_North_Sami-Giella/sme_giella-ud-train.conllu

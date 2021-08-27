@@ -1,0 +1,10 @@
+dev_files:
+  qtd_sagt: corpus/ud-treebanks-v2.7/UD_Turkish_German-SAGT/qtd_sagt-ud-dev.conllu
+language_codes:
+- qtd_sagt
+language_map:
+  qtd_sagt: qtd_sagt
+test_files:
+  qtd_sagt: corpus/ud-treebanks-v2.7/UD_Turkish_German-SAGT/qtd_sagt-ud-test.conllu
+train_files:
+  qtd_sagt: corpus/ud-treebanks-v2.7/UD_Turkish_German-SAGT/qtd_sagt-ud-train.conllu
