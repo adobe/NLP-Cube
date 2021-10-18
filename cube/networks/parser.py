@@ -137,9 +137,9 @@ class Parser(pl.LightningModule):
         for ii in range(len(x_word_emb_packed)):
             we = unpack(x_word_emb_packed[ii], sl, x_sents.shape[1], self._get_device())
             if word_emb_ext is None:
-                word_emb_ext = self._ext_proj[ii](we)
+                word_emb_ext = self._ext_proj[ii](we.float())
             else:
-                word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
+                word_emb_ext = word_emb_ext + self._ext_proj[ii](we.float())
 
         word_emb_ext = word_emb_ext / len(x_word_emb_packed)
         word_emb_ext = torch.tanh(word_emb_ext)
