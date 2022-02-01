@@ -110,7 +110,7 @@ class Tokenizer(pl.LightningModule):
                 res = tmp
             else:
                 res = res + tmp
-            x = torch.dropout(tmp, 0.2, self.training)
+            x = torch.dropout(tmp, 0.1, self.training)
             cnt += 1
             if cnt != self._config.cnn_layers:
                 x = torch.cat([x, x_lang], dim=1)
