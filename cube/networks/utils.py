@@ -106,6 +106,8 @@ class LemmaDataset(Dataset):
                 word = w.word
                 lemma = w.lemma
                 upos = w.upos
+                if len(word)>25:
+                    continue
 
                 key = (word, lang_id, upos)
                 if key not in lookup or for_training is False:
