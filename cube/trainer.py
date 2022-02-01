@@ -231,6 +231,7 @@ class Trainer():
             callbacks=callbacks,
             resume_from_checkpoint=resume_from_checkpoint,
             accumulate_grad_batches=args.accumulate_grad_batches,
+            gradient_clip_val=1.0,
             # limit_train_batches=100,
             # limit_val_batches=4,
         )
