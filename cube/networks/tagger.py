@@ -1,6 +1,8 @@
 import sys
+
 sys.path.append('')
 import os, yaml
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -13,6 +15,7 @@ from cube.io_utils.config import TaggerConfig
 from cube.networks.modules import ConvNorm, LinearNorm, MLP
 from cube.networks.utils import MorphoCollate, MorphoDataset, unpack, mask_concat
 from cube.networks.modules import WordGram
+
 
 class Tagger(pl.LightningModule):
     def __init__(self, config: TaggerConfig, encodings: Encodings, language_codes: [] = None, ext_word_emb=0):
@@ -276,7 +279,7 @@ class Tagger(pl.LightningModule):
         # print("\n\n\n", upos_ok / total, xpos_ok / total, attrs_ok / total,
         #      aupos_ok / total, axpos_ok / total, aattrs_ok / total, "\n\n\n")
 
-    def load(self, model_path:str, device: str = 'cpu'):
+    def load(self, model_path: str, device: str = 'cpu'):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
 

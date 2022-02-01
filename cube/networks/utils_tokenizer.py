@@ -8,7 +8,7 @@ from abc import abstractmethod
 from transformers import AutoModel, AutoTokenizer
 from cube.io_utils.encodings import Encodings
 from cube.io_utils.objects import Sentence
-from cube.networks.lm import LMHelperLanguasito, LMHelperFT
+from cube.networks.lm import LMHelperLanguasito, LMHelperFT, LMHelperDummy
 from torch.utils.data.dataset import Dataset
 
 
@@ -130,6 +130,9 @@ class TokenCollateFTLanguasito(TokenCollate):
         elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=lm_device, model=parts[1])
             self._emb_size = [512]
+        elif parts[0] == 'dummy':
+            self._lm_helper = LMHelperDummy(device=lm_device, model=None)
+            self._emb_size = [1]
         else:
             print("UserWarning: unsupported LM type for tokenizer")
 
@@ -349,6 +352,9 @@ class TokenCollateFTLanguasito(TokenCollate):
         elif parts[0] == 'languasito':
             self._lm_helper = LMHelperLanguasito(device=self._lm_device, model=parts[1])
             self._emb_size = [512]
+        elif parts[0] == 'dummy':
+            self._lm_helper = LMHelperDummy(device=self._lm_device, model=None)
+            self._emb_size = [1]
 
 
 class TokenCollateHF(TokenCollate):

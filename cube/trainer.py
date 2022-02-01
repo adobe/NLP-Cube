@@ -21,7 +21,7 @@ from cube.networks.compound import Compound
 from cube.networks.utils import MorphoDataset, MorphoCollate, TokenizationDataset, \
     Word2TargetCollate, LemmaDataset, CompoundDataset
 from cube.networks.utils_tokenizer import TokenCollateHF, TokenCollateFTLanguasito
-from cube.networks.lm import LMHelperFT, LMHelperHF, LMHelperLanguasito
+from cube.networks.lm import LMHelperDummy, LMHelperFT, LMHelperHF, LMHelperLanguasito
 
 
 class Trainer():
@@ -103,7 +103,7 @@ class Trainer():
         if self.task != "tokenizer" and self.task != 'lemmatizer' and self.task != 'cwe':
             lm_model = config.lm_model
             parts = lm_model.split(':')
-            if parts[0] not in ['transformer', 'fasttext', 'languasito']:
+            if parts[0] not in ['transformer', 'fasttext', 'languasito', 'dummy']:
                 print("Error: model prefix should be in the form of transformer: fasttext: or languasito:")
                 sys.exit(0)
             if parts[0] == 'transformer':
@@ -112,6 +112,8 @@ class Trainer():
                 helper = LMHelperFT(device=self.args.lm_device, model=parts[1])
             elif parts[0] == 'languasito':
                 helper = LMHelperLanguasito(device=self.args.lm_device, model=parts[1])
+            elif parts[0] == 'dummy':
+                helper = LMHelperDummy(device=self.args.lm_device)
             helper.apply(self.doc_dev)
             helper.apply(self.doc_train)
 
@@ -197,7 +199,8 @@ class Trainer():
             model = Compound(config=config, encodings=enc, language_codes=self.language_codes)
             # extra check to see if there is actually any compound in this language
             if len(trainset._examples) == 0 or len(devset._examples) == 0:
-                print("\nTrain/dev data for this language does not contain any compound words; there is nothing to train.")
+                print(
+                    "\nTrain/dev data for this language does not contain any compound words; there is nothing to train.")
                 return
 
         # dataloaders
@@ -223,7 +226,7 @@ class Trainer():
         trainer = pl.Trainer(
             gpus=args.gpus,
             accelerator=args.accelerator,
-            #num_nodes=1,
+            # num_nodes=1,
             default_root_dir='data/',
             callbacks=callbacks,
             resume_from_checkpoint=resume_from_checkpoint,
@@ -259,7 +262,7 @@ if __name__ == '__main__':
                         help='Where to load LM (default=cuda:0)')
     parser.add_argument('--config', action='store', dest='config_file', help='Load config file')
 
-    parser = pl.Trainer.add_argparse_args(parser) # add all pytorch lightning params here as well
+    parser = pl.Trainer.add_argparse_args(parser)  # add all pytorch lightning params here as well
 
     args = parser.parse_args()
 
