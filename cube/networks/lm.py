@@ -221,14 +221,14 @@ class LMHelperDummy(LMHelper):
     def apply(self, document: Document):
         for ii in tqdm.tqdm(range(len(document.sentences)), desc="Pre-computing embeddings", unit="sent"):
             for jj in range(len(document.sentences[ii].words)):
-                document.sentences[ii].words[jj].emb = [[1]]
+                document.sentences[ii].words[jj].emb = [[1.0]]
 
     def apply_raw(self, batch):
         embeddings = []
         for ii in range(len(batch)):
             c_emb = []
             for jj in range(len(batch[ii])):
-                c_emb.append([1])
+                c_emb.append([1.0])
             embeddings.append(c_emb)
         return embeddings
 
