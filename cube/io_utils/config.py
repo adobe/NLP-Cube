@@ -86,7 +86,7 @@ class TokenizerConfig(Config):
         super().__init__()
         self.cnn_filter = 512
         self.lang_emb_size = 100
-        self.cnn_layers = 5
+        self.cnn_layers = 12
         self.external_proj_size = 300
         self.no_space_lang = False
 

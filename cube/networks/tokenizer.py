@@ -39,8 +39,8 @@ class Tokenizer(pl.LightningModule):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
                          NUM_FILTERS,
-                         kernel_size=5, stride=1,
-                         padding=2,
+                         kernel_size=3, stride=1,
+                         padding=1,
                          dilation=1, w_init_gain='tanh'),
                 nn.BatchNorm1d(NUM_FILTERS))
             conv_layers.append(conv_layer)
@@ -103,6 +103,7 @@ class Tokenizer(pl.LightningModule):
         half = self._config.cnn_filter // 2
         res = None
         cnt = 0
+        skip = None
         for conv in self._convs:
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
@@ -113,6 +114,9 @@ class Tokenizer(pl.LightningModule):
             x = torch.dropout(tmp, 0.1, self.training)
             cnt += 1
             if cnt != self._config.cnn_layers:
+                if skip is not None:
+                    x = x + skip
+                skip = x
                 x = torch.cat([x, x_lang], dim=1)
         x = x + res
         x = torch.cat([x, x_lang], dim=1)
