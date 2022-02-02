@@ -301,7 +301,8 @@ class Tokenizer(pl.LightningModule):
         return d
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters())
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-4)
+        return optimizer
 
     def _compute_early_stop(self, res):
         for lang in res:
