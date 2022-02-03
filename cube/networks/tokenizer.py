@@ -49,7 +49,12 @@ class Tokenizer(pl.LightningModule):
         self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._spa_emb = nn.Embedding(3, 16, padding_idx=0)
-        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size,
+                            config.rnn_size,
+                            num_layers=config.rnn_layers,
+                            bidirectional=True,
+                            batch_first=True)
+        self._output = LinearNorm(config.rnn_size * 2, 5)
 
         ext2int = []
         for input_size in self._ext_word_emb:
@@ -121,6 +126,7 @@ class Tokenizer(pl.LightningModule):
         x = x + res
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
+        x, _ = self._rnn(x)
         return self._output(x)
 
     def validation_step(self, batch, batch_idx):

@@ -153,7 +153,7 @@ class Parser(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.33, self.training, self._get_device())
+        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.1, self.training, self._get_device())
 
         x = torch.cat([x, lang_emb[:, 1:, :]], dim=-1)
         # prepend root
@@ -200,7 +200,7 @@ class Parser(pl.LightningModule):
         word_emb_ext = torch.cat(
             [torch.zeros((word_emb_ext.shape[0], 1, self._config.external_proj_size), device=self._get_device(),
                          dtype=torch.float), word_emb_ext], dim=1)
-        x = mask_concat([x_parse, word_emb_ext], 0.33, self.training, self._get_device())
+        x = torch.cat([x_parse, word_emb_ext], dim=-1) #mask_concat([x_parse, word_emb_ext], 0.1, self.training, self._get_device())
         x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
