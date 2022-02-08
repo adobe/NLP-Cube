@@ -277,6 +277,26 @@ class CompoundWordConfig(Config):
             self.load(filename)
 
 
+class DCWEConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 256
+        self.case_emb_size = 32
+        self.num_filters = 512
+        self.kernel_size = 5
+        self.lang_emb_size = 32
+        self.num_layers = 8
+        self.output_size = 300 # this will be automatically updated at training time, so do not change
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
+
+
 class GDBConfig(Config):
     def __init__(self, filename=None, verbose=False):
         super().__init__()
