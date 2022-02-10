@@ -427,9 +427,9 @@ class WordGram(pl.LightningModule):
         super(WordGram, self).__init__()
         NUM_FILTERS = num_filters
         self._num_filters = NUM_FILTERS
-        self._lang_emb = nn.Embedding(num_langs + 1, lang_emb_size)
-        self._tok_emb = nn.Embedding(num_chars + 1, char_emb_size)
-        self._case_emb = nn.Embedding(4, case_emb_size)
+        self._lang_emb = nn.Embedding(num_langs + 1, lang_emb_size, padding_idx=0)
+        self._tok_emb = nn.Embedding(num_chars + 3, char_emb_size, padding_idx=0)
+        self._case_emb = nn.Embedding(4, case_emb_size, padding_idx=0)
         self._num_layers = num_layers
         convolutions_char = []
         cs_inp = char_emb_size + lang_emb_size + case_emb_size

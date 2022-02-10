@@ -78,3 +78,6 @@ class DCWE(pl.LightningModule):
     def load(self, model_path: str, device: str = 'cpu'):
         self.load_state_dict(torch.load(model_path, map_location='cpu')['state_dict'])
         self.to(device)
+
+
+
