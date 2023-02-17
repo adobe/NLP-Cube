@@ -87,7 +87,10 @@ class TokenizerConfig(Config):
         self.cnn_filter = 512
         self.lang_emb_size = 100
         self.cnn_layers = 5
-        self.external_proj_size = 300
+        self.rnn_size = 50
+        self.rnn_layers = 2
+        self.external_proj_size = 2
+
         self.no_space_lang = False
 
         if filename is None:
@@ -139,9 +142,10 @@ class ParserConfig(Config):
         self.head_size = 100
         self.label_size = 200
         self.lm_model = 'xlm-roberta-base'
-        self.external_proj_size = 300
+        self.external_proj_size = 2
         self.rhl_win_size = 2
-        self.rnn_size = 50
+        self.rnn_size = 200
+
         self.rnn_layers = 3
 
         self._valid = True
@@ -265,6 +269,26 @@ class CompoundWordConfig(Config):
         self.encoder_layers = 2
         self.decoder_size = 200
         self.decoder_layers = 2
+
+        if filename is None:
+            if verbose:
+                sys.stdout.write("No configuration file supplied. Using default values.\n")
+        else:
+            if verbose:
+                sys.stdout.write("Reading configuration file " + filename + " \n")
+            self.load(filename)
+
+
+class DCWEConfig(Config):
+    def __init__(self, filename=None, verbose=False):
+        super().__init__()
+        self.char_emb_size = 256
+        self.case_emb_size = 32
+        self.num_filters = 512
+        self.kernel_size = 5
+        self.lang_emb_size = 32
+        self.num_layers = 8
+        self.output_size = 300 # this will be automatically updated at training time, so do not change
 
         if filename is None:
             if verbose:

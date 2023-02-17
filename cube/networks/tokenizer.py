@@ -39,8 +39,8 @@ class Tokenizer(pl.LightningModule):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
                          NUM_FILTERS,
-                         kernel_size=5, stride=1,
-                         padding=2,
+                         kernel_size=3, stride=1,
+                         padding=1,
                          dilation=1, w_init_gain='tanh'),
                 nn.BatchNorm1d(NUM_FILTERS))
             conv_layers.append(conv_layer)
@@ -49,7 +49,13 @@ class Tokenizer(pl.LightningModule):
         self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._spa_emb = nn.Embedding(3, 16, padding_idx=0)
-        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
+        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size,
+                            config.rnn_size,
+                            num_layers=config.rnn_layers,
+                            bidirectional=True,
+                            batch_first=True)
+        self._output = LinearNorm(config.rnn_size * 2, 5)
+
 
         ext2int = []
         for input_size in self._ext_word_emb:
@@ -103,6 +109,8 @@ class Tokenizer(pl.LightningModule):
         half = self._config.cnn_filter // 2
         res = None
         cnt = 0
+
+        skip = None
         for conv in self._convs:
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
@@ -110,13 +118,20 @@ class Tokenizer(pl.LightningModule):
                 res = tmp
             else:
                 res = res + tmp
-            x = torch.dropout(tmp, 0.2, self.training)
+            x = torch.dropout(tmp, 0.1, self.training)
             cnt += 1
             if cnt != self._config.cnn_layers:
+                if skip is not None:
+                    x = x + skip
+                skip = x
+
                 x = torch.cat([x, x_lang], dim=1)
         x = x + res
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
+
+        x, _ = self._rnn(x)
+
         return self._output(x)
 
     def validation_step(self, batch, batch_idx):
@@ -297,7 +312,9 @@ class Tokenizer(pl.LightningModule):
         return d
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters())
+        optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-4)
+        return optimizer
+
 
     def _compute_early_stop(self, res):
         for lang in res:

@@ -126,10 +126,7 @@ class CubeObj:
         self._lm_helper.apply(doc)
         self._parser.process(doc, self._parser_collate, num_workers=0)
         self._lemmatizer.process(doc, self._lemmatizer_collate, num_workers=0)
-        for seq in doc.sentences:
-            for w in seq.words:
-                if w.upos =='PUNCT':
-                    w.lemma = w.word
+
         return doc
 
 

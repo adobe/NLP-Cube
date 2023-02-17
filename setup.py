@@ -10,6 +10,7 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="nlpcube",
     version="0.3.1.1",
+
     author="Multiple authors",
     author_email="tiberiu44@gmail.com",
     description="Natural Language Processing Toolkit with support for tokenization, sentence splitting, lemmatization, tagging and parsing for more than 60 languages",

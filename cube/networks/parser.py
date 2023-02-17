@@ -76,7 +76,8 @@ class Parser(pl.LightningModule):
         self._upos_emb = nn.Embedding(len(encodings.upos2int), 64)
 
         self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, config.rnn_size,
-                            num_layers=config.rnn_layers, batch_first=True, bidirectional=True, dropout=0.33)
+                            num_layers=config.rnn_layers, batch_first=True, bidirectional=True, dropout=0.1)
+
 
         self._pre_out = LinearNorm(config.rnn_size * 2 + config.lang_emb_size, config.pre_parser_size)
         # self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
@@ -137,9 +138,10 @@ class Parser(pl.LightningModule):
         for ii in range(len(x_word_emb_packed)):
             we = unpack(x_word_emb_packed[ii], sl, x_sents.shape[1], self._get_device())
             if word_emb_ext is None:
-                word_emb_ext = self._ext_proj[ii](we.float())
+                word_emb_ext = self._ext_proj[ii](we)
             else:
-                word_emb_ext = word_emb_ext + self._ext_proj[ii](we.float())
+                word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
+
 
         word_emb_ext = word_emb_ext / len(x_word_emb_packed)
         word_emb_ext = torch.tanh(word_emb_ext)
@@ -153,7 +155,8 @@ class Parser(pl.LightningModule):
 
         word_emb = self._word_emb(x_sents)
 
-        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.33, self.training, self._get_device())
+        x = mask_concat([word_emb, char_emb, word_emb_ext], 0.1, self.training, self._get_device())
+
 
         x = torch.cat([x, lang_emb[:, 1:, :]], dim=-1)
         # prepend root
@@ -172,7 +175,8 @@ class Parser(pl.LightningModule):
                 res = tmp
             else:
                 res = res + tmp
-            x = torch.dropout(tmp, 0.2, self.training)
+            x = torch.dropout(tmp, 0.1, self.training)
+
             cnt += 1
             if cnt == self._config.aux_softmax_location:
                 hidden = torch.cat([x + res, lang_emb], dim=1)
@@ -184,7 +188,8 @@ class Parser(pl.LightningModule):
         # aux tagging
         lang_emb = lang_emb.permute(0, 2, 1)
         hidden = hidden.permute(0, 2, 1)[:, 1:, :]
-        pre_morpho = torch.dropout(torch.tanh(self._pre_morpho(hidden)), 0.33, self.training)
+        pre_morpho = torch.dropout(torch.tanh(self._pre_morpho(hidden)), 0.1, self.training)
+
         pre_morpho = torch.cat([pre_morpho, lang_emb[:, 1:, :]], dim=2)
         upos = self._upos(pre_morpho)
         if gs_upos is None:
@@ -200,11 +205,12 @@ class Parser(pl.LightningModule):
         word_emb_ext = torch.cat(
             [torch.zeros((word_emb_ext.shape[0], 1, self._config.external_proj_size), device=self._get_device(),
                          dtype=torch.float), word_emb_ext], dim=1)
-        x = mask_concat([x_parse, word_emb_ext], 0.33, self.training, self._get_device())
+        x = torch.cat([x_parse, word_emb_ext], dim=-1) #mask_concat([x_parse, word_emb_ext], 0.1, self.training, self._get_device())
         x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
-        pre_parsing = torch.dropout(torch.tanh(self._pre_out(output)), 0.33, self.training)
+        pre_parsing = torch.dropout(torch.tanh(self._pre_out(output)), 0.1, self.training)
+
         # h_r1 = torch.tanh(self._head_r1(pre_parsing))
         # h_r2 = torch.tanh(self._head_r2(pre_parsing))
         # l_r1 = torch.tanh(self._label_r1(pre_parsing))

@@ -16,7 +16,8 @@ regex
 torch
 tqdm
 configparser
-pytorch_lightning
+pytorch_lightning==1.2.10
+
 
 transformers==4.2.2
 sentencepiece
