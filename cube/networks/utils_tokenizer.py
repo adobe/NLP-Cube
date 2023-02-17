@@ -357,6 +357,7 @@ class TokenCollateFTLanguasito(TokenCollate):
             self._emb_size = [1]
 
 
+
 class TokenCollateHF(TokenCollate):
     def __init__(self, encodings: Encodings, lm_device, lm_model=None, no_space_lang=False, lang_id=None):
         if lm_model is None:

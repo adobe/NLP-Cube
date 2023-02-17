@@ -90,6 +90,7 @@ class TokenizerConfig(Config):
         self.rnn_size = 50
         self.rnn_layers = 2
         self.external_proj_size = 2
+
         self.no_space_lang = False
 
         if filename is None:
@@ -144,6 +145,7 @@ class ParserConfig(Config):
         self.external_proj_size = 2
         self.rhl_win_size = 2
         self.rnn_size = 200
+
         self.rnn_layers = 3
 
         self._valid = True

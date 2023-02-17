@@ -18,6 +18,7 @@ tqdm
 configparser
 pytorch_lightning==1.2.10
 
+
 transformers==4.2.2
 sentencepiece
 fasttext==0.9.2

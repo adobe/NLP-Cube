@@ -24,6 +24,7 @@ from cube.networks.utils_tokenizer import TokenCollateHF, TokenCollateFTLanguasi
 from cube.networks.lm import LMHelperDummy, LMHelperFT, LMHelperHF, LMHelperLanguasito
 
 
+
 class Trainer():
     def __init__(self, task: str, language_map: {}, language_codes: [], train_files: {}, dev_files: {}, test_files: {},
                  args):
@@ -103,6 +104,7 @@ class Trainer():
         if self.task != "tokenizer" and self.task != 'lemmatizer' and self.task != 'cwe':
             lm_model = config.lm_model
             parts = lm_model.split(':')
+
             if parts[0] not in ['transformer', 'fasttext', 'languasito', 'dummy']:
                 print("Error: model prefix should be in the form of transformer: fasttext: or languasito:")
                 sys.exit(0)
@@ -114,6 +116,7 @@ class Trainer():
                 helper = LMHelperLanguasito(device=self.args.lm_device, model=parts[1])
             elif parts[0] == 'dummy':
                 helper = LMHelperDummy(device=self.args.lm_device)
+
             helper.apply(self.doc_dev)
             helper.apply(self.doc_train)
 
@@ -201,6 +204,7 @@ class Trainer():
             if len(trainset._examples) == 0 or len(devset._examples) == 0:
                 print(
                     "\nTrain/dev data for this language does not contain any compound words; there is nothing to train.")
+
                 return
 
         # dataloaders

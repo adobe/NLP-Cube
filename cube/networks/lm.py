@@ -232,7 +232,6 @@ class LMHelperDummy(LMHelper):
             embeddings.append(c_emb)
         return embeddings
 
-
 if __name__ == "__main__":
     from ipdb import set_trace
 

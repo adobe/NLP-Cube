@@ -56,6 +56,7 @@ class Tokenizer(pl.LightningModule):
                             batch_first=True)
         self._output = LinearNorm(config.rnn_size * 2, 5)
 
+
         ext2int = []
         for input_size in self._ext_word_emb:
             module = MLP(input_size, config.external_proj_size)
@@ -108,6 +109,7 @@ class Tokenizer(pl.LightningModule):
         half = self._config.cnn_filter // 2
         res = None
         cnt = 0
+
         skip = None
         for conv in self._convs:
             conv_out = conv(x)
@@ -122,11 +124,14 @@ class Tokenizer(pl.LightningModule):
                 if skip is not None:
                     x = x + skip
                 skip = x
+
                 x = torch.cat([x, x_lang], dim=1)
         x = x + res
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
+
         x, _ = self._rnn(x)
+
         return self._output(x)
 
     def validation_step(self, batch, batch_idx):
@@ -309,6 +314,7 @@ class Tokenizer(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-4)
         return optimizer
+
 
     def _compute_early_stop(self, res):
         for lang in res:

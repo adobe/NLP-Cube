@@ -126,6 +126,7 @@ class CubeObj:
         self._lm_helper.apply(doc)
         self._parser.process(doc, self._parser_collate, num_workers=0)
         self._lemmatizer.process(doc, self._lemmatizer_collate, num_workers=0)
+
         return doc
 
 
