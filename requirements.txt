@@ -19,6 +19,6 @@ configparser
 pytorch_lightning==1.2.10
 
 
-transformers==4.2.2
+transformers==4.30.0
 sentencepiece
 fasttext==0.9.2
