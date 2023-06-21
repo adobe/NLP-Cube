@@ -55,9 +55,9 @@ class DCWECollate:
             vectors.append(example[2])
 
         max_word_len = max([len(word) for word in words]) + 2
-        x_char = np.zeros((len(examples), max_word_len), dtype=np.long)
-        x_case = np.zeros((len(examples), max_word_len), dtype=np.long)
-        x_word_len = np.zeros((len(examples)), dtype=np.long)
+        x_char = np.zeros((len(examples), max_word_len), dtype='long')
+        x_case = np.zeros((len(examples), max_word_len), dtype='long')
+        x_word_len = np.zeros((len(examples)), dtype='long')
         x_mask = np.ones((len(examples), 1))
         x_lang = np.ones((len(examples), 1))
         for ii in range(len(words)):
@@ -85,5 +85,5 @@ class DCWECollate:
                     'x_char': torch.tensor(x_char),
                     'x_case': torch.tensor(x_case),
                     'x_mask': torch.tensor(x_mask),
-                    'x_lang': torch.tensor(x_lang)
+                    'x_lang': torch.tensor(x_lang),
                     'x_word_len': torch.tensor(x_word_len)}

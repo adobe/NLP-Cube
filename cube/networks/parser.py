@@ -1,7 +1,5 @@
 import sys
 
-from pytorch_lightning.overrides.data_parallel import LightningDistributedDataParallel
-
 sys.path.append('')
 import os, argparse
 
@@ -10,16 +8,11 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-import numpy as np
-from cube.io_utils.objects import Document, Sentence, Token, Word
+from cube.io_utils.objects import Document
 from cube.io_utils.encodings import Encodings
 from cube.io_utils.config import ParserConfig
-import numpy as np
-from cube.networks.modules import ConvNorm, LinearNorm, BilinearAttention, Attention, MLP, DeepBiaffine
-import random
+from cube.networks.modules import ConvNorm, LinearNorm, MLP, DeepBiaffine
 
 from cube.networks.utils import MorphoCollate, MorphoDataset, GreedyDecoder, ChuLiuEdmondsDecoder, unpack, mask_concat
 
@@ -35,7 +28,7 @@ class Parser(pl.LightningModule):
             ext_word_emb = [ext_word_emb]
         self._ext_word_emb = ext_word_emb
 
-        self._word_net = WordGram(len(encodings.char2int), num_langs=encodings.num_langs + 1,
+        self._word_net = WordGram(len(encodings.char2int) - 2, num_langs=encodings.num_langs + 1,
                                   num_filters=config.char_filter_size, char_emb_size=config.char_emb_size,
                                   lang_emb_size=config.lang_emb_size, num_layers=config.char_layers)
         self._zero_emb = nn.Embedding(1, config.char_filter_size // 2)
@@ -77,7 +70,6 @@ class Parser(pl.LightningModule):
 
         self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size + config.external_proj_size, config.rnn_size,
                             num_layers=config.rnn_layers, batch_first=True, bidirectional=True, dropout=0.1)
-
 
         self._pre_out = LinearNorm(config.rnn_size * 2 + config.lang_emb_size, config.pre_parser_size)
         # self._head_r1 = LinearNorm(config.pre_parser_size, config.head_size)
@@ -142,7 +134,6 @@ class Parser(pl.LightningModule):
             else:
                 word_emb_ext = word_emb_ext + self._ext_proj[ii](we)
 
-
         word_emb_ext = word_emb_ext / len(x_word_emb_packed)
         word_emb_ext = torch.tanh(word_emb_ext)
 
@@ -156,7 +147,6 @@ class Parser(pl.LightningModule):
         word_emb = self._word_emb(x_sents)
 
         x = mask_concat([word_emb, char_emb, word_emb_ext], 0.1, self.training, self._get_device())
-
 
         x = torch.cat([x, lang_emb[:, 1:, :]], dim=-1)
         # prepend root
@@ -205,7 +195,8 @@ class Parser(pl.LightningModule):
         word_emb_ext = torch.cat(
             [torch.zeros((word_emb_ext.shape[0], 1, self._config.external_proj_size), device=self._get_device(),
                          dtype=torch.float), word_emb_ext], dim=1)
-        x = torch.cat([x_parse, word_emb_ext], dim=-1) #mask_concat([x_parse, word_emb_ext], 0.1, self.training, self._get_device())
+        x = torch.cat([x_parse, word_emb_ext],
+                      dim=-1)  # mask_concat([x_parse, word_emb_ext], 0.1, self.training, self._get_device())
         x = torch.cat([x, lang_emb], dim=-1)
         output, _ = self._rnn(x)
         output = torch.cat([output, lang_emb], dim=-1)
