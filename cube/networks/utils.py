@@ -36,7 +36,7 @@ def mask_concat(representations, drop_prob: float, training: bool, device: str):
     if training:
         masks = []
         for ii in range(len(representations)):
-            mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype=np.long)
+            mask = np.ones((representations[ii].shape[0], representations[ii].shape[1]), dtype='long')
             masks.append(mask)
 
         for ii in range(masks[0].shape[0]):
@@ -161,12 +161,12 @@ class Word2TargetCollate:
         max_input_len = max([len(e['word']) for e in batch])
         max_target_len = max([len(e['target']) for e in batch])
         n = len(batch)
-        x_char = np.zeros((n, max_input_len + 2), dtype=np.long)
-        x_case = np.zeros((n, max_input_len + 2), dtype=np.long)
-        y_char = np.zeros((n, max_target_len + 1), dtype=np.long)
-        y_case = np.zeros((n, max_target_len + 1), dtype=np.long)
-        x_lang = np.zeros(n, dtype=np.long)
-        x_upos = np.zeros(n, dtype=np.long)
+        x_char = np.zeros((n, max_input_len + 2), dtype='long')
+        x_case = np.zeros((n, max_input_len + 2), dtype='long')
+        y_char = np.zeros((n, max_target_len + 1), dtype='long')
+        y_case = np.zeros((n, max_target_len + 1), dtype='long')
+        x_lang = np.zeros(n, dtype='long')
+        x_upos = np.zeros(n, dtype='long')
 
         for ii in range(n):
             word = batch[ii]['word']
@@ -239,27 +239,27 @@ class MorphoCollate:
                 a_word_len.append(len(word.word))
                 for ii in range(len(word.emb)):
                     x_word_embeddings[ii].append(word.emb[ii])
-        x_sent_len = np.array(a_sent_len, dtype=np.long)
-        x_word_len = np.array(a_word_len, dtype=np.long)
+        x_sent_len = np.array(a_sent_len, dtype='long')
+        x_word_len = np.array(a_word_len, dtype='long')
         max_sent_len = np.max(x_sent_len)
         max_word_len = np.max(x_word_len)
-        x_sent_masks = np.zeros((len(batch), max_sent_len), dtype=np.float)
-        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
+        x_sent_masks = np.zeros((len(batch), max_sent_len), dtype='float')
+        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype='float')
 
-        x_sent = np.zeros((len(batch), max_sent_len), dtype=np.long)
-        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
-        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        x_sent = np.zeros((len(batch), max_sent_len), dtype='long')
+        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
+        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
         c_word = 0
-        x_lang_sent = np.zeros((len(batch)), dtype=np.long)
+        x_lang_sent = np.zeros((len(batch)), dtype='long')
         x_lang_word = []
 
-        y_upos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
-        y_xpos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
-        y_attrs = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+        y_upos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
+        y_xpos = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
+        y_attrs = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
 
-        y_head = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
-        y_label = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
-        y_rhl = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype=np.long)
+        y_head = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
+        y_label = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
+        y_rhl = np.zeros((x_sent.shape[0], x_sent.shape[1]), dtype='long')
 
         for iSent in range(len(batch)):
             sent = batch[iSent]

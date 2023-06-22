@@ -22,10 +22,7 @@ from builtins import object, super
 from cube.io_utils.misc import fopen
 import collections
 
-if sys.version_info[0] == 2:
-    import ConfigParser
-else:
-    import configparser
+import configparser
 
 
 class Config(object):

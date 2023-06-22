@@ -167,11 +167,11 @@ class TokenCollateFTLanguasito(TokenCollate):
                     a_word_len.append(len(word))
                     x_lang_word.append(l_id)
 
-        x_word_len = np.array(a_word_len, dtype=np.long)
+        x_word_len = np.array(a_word_len, dtype='long')
         max_word_len = np.max(x_word_len)
-        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
-        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
-        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype='float')
+        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
+        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
         c_word = 0
         for example in batch:
             sz = 0
@@ -252,8 +252,8 @@ class TokenCollateFTLanguasito(TokenCollate):
 
         x_emb = self._lm_helper.apply_raw(x_for_emb)
         max_len = max([len(x) for x in x_emb])
-        x_out = np.zeros((len(x_emb), max_len, self._emb_size[0]), dtype=np.float)
-        x_out_spa = np.zeros((len(x_emb), max_len), dtype=np.long)
+        x_out = np.zeros((len(x_emb), max_len, self._emb_size[0]), dtype='float')
+        x_out_spa = np.zeros((len(x_emb), max_len), dtype='long')
         for ii in range(x_out.shape[0]):
             for jj in range(x_out.shape[1]):
                 if jj < len(x_emb[ii]):
@@ -273,7 +273,7 @@ class TokenCollateFTLanguasito(TokenCollate):
                 x_out_spa[ii, pos] = spa[jj]
                 pos += 1
 
-        y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype=np.long)
+        y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype='long')
         for ii in range(x_out.shape[0]):
             for jj in range(y_len[ii]):
                 index = y_offset[ii] + jj
@@ -425,11 +425,11 @@ class TokenCollateHF(TokenCollate):
                 for word in toks:
                     a_word_len.append(len(word))
                     x_lang_word.append(l_id)
-        x_word_len = np.array(a_word_len, dtype=np.long)
+        x_word_len = np.array(a_word_len, dtype='long')
         max_word_len = np.max(x_word_len)
-        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.float)
-        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
-        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype=np.long)
+        x_word_masks = np.zeros((x_word_len.shape[0], max_word_len), dtype='float')
+        x_word = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
+        x_word_case = np.zeros((x_word_len.shape[0], max_word_len), dtype='long')
         c_word = 0
         for example in batch:
             sz = 0
@@ -515,8 +515,8 @@ class TokenCollateHF(TokenCollate):
             if x_len > max_x:
                 max_x = x_len
 
-        x_out = np.ones((len(batch), max_x), dtype=np.long) * PAD
-        x_out_spa = np.zeros((len(batch), max_x), dtype=np.long)
+        x_out = np.ones((len(batch), max_x), dtype='long') * PAD
+        x_out_spa = np.zeros((len(batch), max_x), dtype='long')
         for ii in range(len(batch)):
             # x_out[ii, 0] = START
             pos = 0
@@ -540,7 +540,7 @@ class TokenCollateHF(TokenCollate):
                 pos += 1
             # x_out[ii, pos] = END
 
-        y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype=np.long)
+        y_out = np.zeros((x_out.shape[0], x_out.shape[1]), dtype='long')
         for ii in range(x_out.shape[0]):
             for jj in range(y_len[ii]):
                 index = y_offset[ii] + jj

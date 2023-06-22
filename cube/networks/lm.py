@@ -161,7 +161,7 @@ class LMHelperHF(LMHelper):
             c_sent.append(END)
             new_sents.append(c_sent)
         max_len = max([len(s) for s in new_sents])
-        input_ids = np.ones((len(new_sents), max_len), dtype=np.long) * PAD  # pad everything
+        input_ids = np.ones((len(new_sents), max_len), dtype='long') * PAD  # pad everything
         for ii in range(input_ids.shape[0]):
             for jj in range(input_ids.shape[1]):
                 if jj < len(new_sents[ii]):
@@ -190,7 +190,7 @@ class LMHelperHF(LMHelper):
                         m += we[pieces[zz][0], pieces[zz][1]]
                     m = m / len(pieces)
                 else:
-                    m = np.zeros((768 * 13), dtype=np.float)
+                    m = np.zeros((768 * 13), dtype='float')
                 word_emb.append(m)
         # word_emb = torch.cat(word_emb, dim=0)
 
@@ -232,7 +232,3 @@ class LMHelperDummy(LMHelper):
             embeddings.append(c_emb)
         return embeddings
 
-if __name__ == "__main__":
-    from ipdb import set_trace
-
-    set_trace()

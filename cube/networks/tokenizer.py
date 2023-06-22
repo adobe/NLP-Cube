@@ -39,23 +39,18 @@ class Tokenizer(pl.LightningModule):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
                          NUM_FILTERS,
-                         kernel_size=3, stride=1,
-                         padding=1,
+                         kernel_size=5, stride=1,
+                         padding=2,
                          dilation=1, w_init_gain='tanh'),
                 nn.BatchNorm1d(NUM_FILTERS))
             conv_layers.append(conv_layer)
             cs_inp = NUM_FILTERS // 2 + config.lang_emb_size
         self._convs = nn.ModuleList(conv_layers)
-        self._wg = WordGram(len(encodings.char2int), num_langs=encodings.num_langs)
+        self._wg = WordGram(len(encodings.char2int) - 2, num_langs=encodings.num_langs)
         self._lang_emb = nn.Embedding(encodings.num_langs + 1, config.lang_emb_size, padding_idx=0)
         self._spa_emb = nn.Embedding(3, 16, padding_idx=0)
-        self._rnn = nn.LSTM(NUM_FILTERS // 2 + config.lang_emb_size,
-                            config.rnn_size,
-                            num_layers=config.rnn_layers,
-                            bidirectional=True,
-                            batch_first=True)
-        self._output = LinearNorm(config.rnn_size * 2, 5)
 
+        self._output = LinearNorm(NUM_FILTERS // 2 + config.lang_emb_size, 5)
 
         ext2int = []
         for input_size in self._ext_word_emb:
@@ -124,13 +119,10 @@ class Tokenizer(pl.LightningModule):
                 if skip is not None:
                     x = x + skip
                 skip = x
-
                 x = torch.cat([x, x_lang], dim=1)
         x = x + res
         x = torch.cat([x, x_lang], dim=1)
         x = x.permute(0, 2, 1)
-
-        x, _ = self._rnn(x)
 
         return self._output(x)
 
@@ -315,7 +307,6 @@ class Tokenizer(pl.LightningModule):
         optimizer = torch.optim.AdamW(self.parameters(), lr=1e-3, weight_decay=1e-4)
         return optimizer
 
-
     def _compute_early_stop(self, res):
         for lang in res:
             if res[lang]["sent"] > self._res[lang]["sent"]:
@@ -393,7 +384,7 @@ def _conll_eval(gold, pred):
             f.write('{0}\t{1}\t_\t_\t_\t_\t{2}\t_\t_\t_\n'.format(ii + 1, sent[ii], head))
         f.write('\n')
     f.close()
-    from _cube.misc.conll18_ud_eval_wrapper import conll_eval
+    from cube.misc.conll18_ud_eval_wrapper import conll_eval
     result = conll_eval('tmp_g.txt', 'tmp_p.txt')
     if result is None:
         return 0, 0
