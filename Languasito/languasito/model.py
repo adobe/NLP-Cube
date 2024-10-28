@@ -107,7 +107,9 @@ def _get_top_k(vector, word2vec, top_k=10):
     distances = {}
     for word in word2vec:
         tv = word2vec[word]
-        dist = ((tv - vector) ** 2).mean()
+        # dist = ((tv - vector) ** 2).mean()
+        dist = 1.0 - np.dot(tv, vector) / (np.linalg.norm(tv) * np.linalg.norm(vector))
+
         distances[word] = dist
 
     sorted_vals = [(k, v) for k, v in sorted(distances.items(), key=lambda item: item[1])]
@@ -137,6 +139,9 @@ if __name__ == '__main__':
         with torch.no_grad():
             vector = model(X).detach().cpu().numpy()[0]
             word2vec[word] = vector
+
+        if index == 2000:
+            break
 
     while True:
         word = input("Word: ")

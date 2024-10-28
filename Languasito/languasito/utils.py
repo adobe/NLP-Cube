@@ -62,6 +62,8 @@ class LanguasitoCollate:
         if 'target_word' in X[0] and X[0]['target_word'] is not None:
             y = [item['target_word'] for item in X]
             y_encoded, y_seq_lens = self._encode_words(y)
+            if y_seq_lens is None:
+                return []
         else:
             y_encoded = y_seq_lens = None
         return {

@@ -2,6 +2,7 @@ import sys
 import optparse
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
+from tokenizers.trainers import WordPieceTrainer
 from torch.utils.data import DataLoader
 import torch
 from tokenizers import Tokenizer
@@ -83,12 +84,14 @@ if __name__ == '__main__':
     train.load_file(params.train_file)
     dev = LanguasitoDataset()
     dev.load_file(params.dev_file)
-    wp = Tokenizer(WordPiece(unk_token="<oov>"))
+    wp = Tokenizer(WordPiece(unk_token="[UNK]"))
     iterator = CountIterator(train.word_freqs)
     sys.stdout.write(f'Computing wordpiece... for an iterator of {len(iterator)}\n')
     sys.stdout.flush()
-    wp.train_from_iterator(iterator, length=len(iterator))
-    wp.add_special_tokens(["[oov]"])
+    trainer = WordPieceTrainer(
+        special_tokens=['[UNK]']
+    )
+    wp.train_from_iterator(iterator, trainer=trainer, length=len(iterator))
 
     fname = f'{params.output_base}.wordpiece'
     sys.stdout.write(f'Storing {fname}... ')
