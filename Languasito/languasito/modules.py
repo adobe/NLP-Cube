@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 import numpy as np
-from languasito.utils import mask_concat
 
 
 class LinearNorm(pl.LightningModule):
@@ -40,17 +39,16 @@ class ConvNorm(pl.LightningModule):
 
 
 class WordGram(pl.LightningModule):
-    def __init__(self, num_chars: int, num_langs: int, num_filters=512, char_emb_size=256, case_emb_size=32,
+    def __init__(self, num_toks: int, num_langs: int, num_filters=512, char_emb_size=256, case_emb_size=32,
                  lang_emb_size=32, num_layers=3):
         super(WordGram, self).__init__()
         NUM_FILTERS = num_filters
         self._num_filters = NUM_FILTERS
         self._lang_emb = nn.Embedding(num_langs + 1, lang_emb_size)
-        self._tok_emb = nn.Embedding(num_chars + 1, char_emb_size)
-        self._case_emb = nn.Embedding(4, case_emb_size)
+        self._tok_emb = nn.Embedding(num_toks + 1, char_emb_size)
         self._num_layers = num_layers
         convolutions_char = []
-        cs_inp = char_emb_size + lang_emb_size + case_emb_size
+        cs_inp = char_emb_size  # + lang_emb_size + case_emb_size
         for _ in range(num_layers):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
@@ -60,18 +58,17 @@ class WordGram(pl.LightningModule):
                          dilation=1, w_init_gain='tanh'),
                 nn.BatchNorm1d(NUM_FILTERS))
             convolutions_char.append(conv_layer)
-            cs_inp = NUM_FILTERS // 2 + lang_emb_size
+            cs_inp = NUM_FILTERS // 2  # + lang_emb_size
         self._convolutions_char = nn.ModuleList(convolutions_char)
         self._pre_out = LinearNorm(NUM_FILTERS // 2, NUM_FILTERS // 2)
 
-    def forward(self, x_char, x_case, x_lang, x_mask, x_word_len):
-        x_char = self._tok_emb(x_char)
-        x_case = self._case_emb(x_case)
-        x_lang = self._lang_emb(x_lang)
+    def forward(self, x_tok, x_word_len):
+        x_tok = self._tok_emb(x_tok)
+        # x_lang = self._lang_emb(x_lang)
 
-        x = torch.cat([x_char, x_case], dim=-1)
-        x = x.permute(0, 2, 1)
-        x_lang = x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1).permute(0, 2, 1)
+        # x = torch.cat([x_char, x_case], dim=-1)
+        x = x_tok.permute(0, 2, 1)
+        # x_lang = x_lang.unsqueeze(1).repeat(1, x_case.shape[1], 1).permute(0, 2, 1)
         half = self._num_filters // 2
         count = 0
         res = None
@@ -84,7 +81,7 @@ class WordGram(pl.LightningModule):
             if skip is not None:
                 x = x + skip
 
-            x = torch.cat([x, x_lang], dim=1)
+            # x = torch.cat([x, x_lang], dim=1)
             conv_out = conv(x)
             tmp = torch.tanh(conv_out[:, :half, :]) * torch.sigmoid((conv_out[:, half:, :]))
             if res is None:
@@ -95,13 +92,8 @@ class WordGram(pl.LightningModule):
             x = torch.dropout(tmp, 0.1, drop)
         x = x + res
         x = x.permute(0, 2, 1)
-        x = x * x_mask.unsqueeze(2)
         pre = torch.sum(x, dim=1, dtype=torch.float)
         norm = pre / x_word_len.unsqueeze(1)
-        # embeds = self._pre_out(norm)
-        # norm = embeds.norm(p=2, dim=-1, keepdim=True)
-        # embeds_normalized = embeds.div(norm)
-        # return embeds_normalized
 
         return torch.tanh(self._pre_out(norm))
 
