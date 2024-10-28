@@ -32,41 +32,45 @@ class Languasito(pl.LightningModule):
         hidden = self._wg(X['x_ids'], X['x_seq_lens'])
         hidden = torch.nn.functional.normalize(hidden)
         if return_proj:
-            proj = torch.sigmoid(self._decoder(hidden))
+            proj = torch.softmax(self._decoder(hidden), dim=-1)
             return hidden, proj
         else:
             return hidden
 
-    def _get_targets(self, target_ids):
-        target = torch.zeros((len(target_ids), self._vocab_size), dtype=torch.float, device=self._get_device())
-        indices = []
-        for ii in range(len(target_ids)):
-            for t_id in target_ids[ii]:
-                indices.append([ii, t_id])
-
-        indices = torch.tensor(indices, device=self._get_device()).transpose(0, 1)
-        target[indices[0], indices[1]] = 1
-        return target
+    # def _get_targets(self, target_ids):
+    #     target = torch.zeros((len(target_ids), self._vocab_size), dtype=torch.float, device=self._get_device())
+    #     indices = []
+    #     for ii in range(len(target_ids)):
+    #         for t_id in target_ids[ii]:
+    #             indices.append([ii, t_id])
+    #
+    #     indices = torch.tensor(indices, device=self._get_device()).transpose(0, 1)
+    #     target[indices[0], indices[1]] = 1
+    #     return target
 
     def training_step(self, batch, batch_idx):
         if len(batch) == 0:
             return 0
         hidden, proj = self.forward(batch, return_proj=True)
-        targets = self._get_targets(batch['y_ids'])
-        loss = targets * torch.log(proj) + (1 - targets) * torch.log(1 - proj)
-        loss = loss.sum(dim=1) / batch['y_seq_lens']
-        self.log("loss", -loss.mean(), prog_bar=True)
-        return -loss.mean()
+        targets = batch['y_targets']
+        # normalize
+        targets = torch.nn.functional.normalize(targets)
+        loss = torch.nn.functional.kl_div(proj, targets, reduction='sum', log_target=False)
+        loss = loss / batch['y_seq_lens'].sum()
+        self.log("loss", -loss, prog_bar=True)
+        return -loss
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 0:
             return 0
         hidden, proj = self.forward(batch, return_proj=True)
-        targets = self._get_targets(batch['y_ids'])
-        loss = targets * torch.log(proj) + (1 - targets) * torch.log(1 - proj)
-        loss = loss.sum(dim=1) / batch['y_seq_lens']
-        self._outputs.append({'total_loss': -loss.mean().item()})
-        return -loss.mean()
+        targets = batch['y_targets']
+        # normalize
+        targets = torch.nn.functional.normalize(targets)
+        loss = torch.nn.functional.kl_div(proj, targets, reduction='sum', log_target=False)
+        loss = loss / batch['y_seq_lens'].sum()
+        self._outputs.append({'total_loss': -loss.item()})
+        return -loss
 
     def on_validation_epoch_end(self) -> None:
         outputs = self._outputs
@@ -108,11 +112,11 @@ def _get_top_k(vector, word2vec, top_k=10):
     for word in word2vec:
         tv = word2vec[word]
         # dist = ((tv - vector) ** 2).mean()
-        dist = 1.0 - np.dot(tv, vector) / (np.linalg.norm(tv) * np.linalg.norm(vector))
+        dist = np.dot(tv, vector) / (np.linalg.norm(tv) * np.linalg.norm(vector))
 
         distances[word] = dist
 
-    sorted_vals = [(k, v) for k, v in sorted(distances.items(), key=lambda item: item[1])]
+    sorted_vals = [(k, v) for k, v in sorted(distances.items(), key=lambda item: item[1], reverse=True)]
     return sorted_vals[:top_k]
 
 
@@ -140,7 +144,7 @@ if __name__ == '__main__':
             vector = model(X).detach().cpu().numpy()[0]
             word2vec[word] = vector
 
-        if index == 2000:
+        if index == 0:
             break
 
     while True:
