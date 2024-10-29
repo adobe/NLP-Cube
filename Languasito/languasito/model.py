@@ -15,62 +15,44 @@ from languasito.modules import WordGram, LinearNorm, CosineLoss, WordDecoder
 class Languasito(pl.LightningModule):
     def __init__(self, tokenizer: Tokenizer):
         super().__init__()
-        NUM_FILTERS = 512
-        RNN_SIZE = 256
-        CHAR_EMB_SIZE = 128
-        ATT_DIM = 64
-        NUM_HEADS = 8
         self._outputs = []
         self._res = {'b_loss': 9999}
         self._early_stop_meta_val = 0
         self._vocab_size = len(tokenizer.get_vocab())
 
         self._wg = WordGram(len(tokenizer.get_vocab()), num_langs=1, num_filters=512, num_layers=5)
-        self._decoder = nn.Linear(256, len(tokenizer.get_vocab()))
+        # self._decoder = nn.Linear(256, 500)
 
-    def forward(self, X, return_proj=False):
+    def forward(self, X):
         hidden = self._wg(X['x_ids'], X['x_seq_lens'])
+        # hidden = self._decoder(hidden)
         hidden = torch.nn.functional.normalize(hidden)
-        if return_proj:
-            proj = torch.softmax(self._decoder(hidden), dim=-1)
-            return hidden, proj
-        else:
-            return hidden
 
-    # def _get_targets(self, target_ids):
-    #     target = torch.zeros((len(target_ids), self._vocab_size), dtype=torch.float, device=self._get_device())
-    #     indices = []
-    #     for ii in range(len(target_ids)):
-    #         for t_id in target_ids[ii]:
-    #             indices.append([ii, t_id])
-    #
-    #     indices = torch.tensor(indices, device=self._get_device()).transpose(0, 1)
-    #     target[indices[0], indices[1]] = 1
-    #     return target
+        return hidden
 
     def training_step(self, batch, batch_idx):
         if len(batch) == 0:
             return 0
-        hidden, proj = self.forward(batch, return_proj=True)
-        targets = batch['y_targets']
+        hidden = self.forward(batch)
+        src_embeddings = hidden[batch['source_index']]
+        dst_embeddings = hidden[batch['destination_index']]
+        targets = batch['targets']
         # normalize
-        targets = torch.nn.functional.normalize(targets)
-        loss = torch.nn.functional.kl_div(proj, targets, reduction='sum', log_target=False)
-        loss = loss / batch['y_seq_lens'].sum()
-        self.log("loss", -loss, prog_bar=True)
-        return -loss
+        loss = torch.nn.functional.cosine_embedding_loss(src_embeddings, dst_embeddings, targets)
+        self.log("loss", loss, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 0:
             return 0
-        hidden, proj = self.forward(batch, return_proj=True)
-        targets = batch['y_targets']
+        hidden = self.forward(batch)
+        src_embeddings = hidden[batch['source_index']]
+        dst_embeddings = hidden[batch['destination_index']]
+        targets = batch['targets']
         # normalize
-        targets = torch.nn.functional.normalize(targets)
-        loss = torch.nn.functional.kl_div(proj, targets, reduction='sum', log_target=False)
-        loss = loss / batch['y_seq_lens'].sum()
-        self._outputs.append({'total_loss': -loss.item()})
-        return -loss
+        loss = torch.nn.functional.cosine_embedding_loss(src_embeddings, dst_embeddings, targets).item()
+        self._outputs.append({'total_loss': loss})
+        return loss
 
     def on_validation_epoch_end(self) -> None:
         outputs = self._outputs
@@ -86,7 +68,7 @@ class Languasito(pl.LightningModule):
         self.log('val/loss', loss)
 
     def configure_optimizers(self):
-        return torch.optim.AdamW(self.parameters())
+        return torch.optim.AdamW(self.parameters(), lr=1e-3)
 
     def _compute_early_stop(self, res):
         if res["val_loss"] < self._res['b_loss']:
@@ -137,22 +119,29 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     index = 0
-    for word in tqdm(dataset.word_freqs):
-        index += 1
-        X = collate.collate_fn([{'source_word': word, 'target_word': word}])
-        with torch.no_grad():
-            vector = model(X).detach().cpu().numpy()[0]
-            word2vec[word] = vector
+    BS = 1
+    batches = len(dataset.word_freqs) // BS
+    wl = [w for w in dataset.word_freqs]
+    if len(dataset.word_freqs) % BS != 0:
+        batches += 1
 
-        if index == 0:
-            break
+    for ii in tqdm(range(batches)):
+        start = ii * BS
+        stop = min(ii * BS + BS, len(wl))
+        mini_batch = wl[start:stop]
+        X = collate.collate_fn([{'source_word': word, 'positive_words': [], 'negative_words': []} for word
+                                in mini_batch])
+        with torch.no_grad():
+            vector = model(X).detach().cpu().numpy()
+            for jj in range(vector.shape[0]):
+                word2vec[mini_batch[jj]] = vector[jj]
 
     while True:
         word = input("Word: ")
         if word == "/quit":
             break
 
-        X = collate.collate_fn([{'source_word': word, 'target_word': word}])
+        X = collate.collate_fn([{'source_word': word, 'positive_words': [], 'negative_words': []}])
         with torch.no_grad():
             vector = model(X).detach().cpu().numpy()[0]
         tk = _get_top_k(vector, word2vec, 10)

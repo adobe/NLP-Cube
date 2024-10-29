@@ -51,38 +51,52 @@ class LanguasitoCollate:
                     x_encoded[ii, jj] = encoded_batch[ii].ids[jj]
         return x_encoded, np.array(seq_lens, dtype=np.longlong)
 
-    def _encode_targets(self, y_targets):
-        y_encoded = np.zeros((len(y_targets), len(self._tokenizer.get_vocab())), dtype=np.longlong)
-        y_seq_lens = np.zeros((len(y_targets)), dtype=np.longlong)
-        index = 0
-
-        for y_target in y_targets:
-            counts = [item[1] for item in y_target]
-            list_of_ids = self._tokenizer.encode_batch([item[0] for item in y_target])
-            ii = 0
-            for ids in list_of_ids:
-                ids = ids.ids
-                y_seq_lens[index] += len(ids)
-                for id in ids:
-                    y_encoded[index, id] += counts[ii]
-                ii += 1
-            index += 1
-        return y_encoded, y_seq_lens
-
     def collate_fn(self, X):
         x = [item['source_word'] for item in X]
+
+        source_word_list = [item['source_word'] for item in X]
+        positive_word_list = []
+        negative_word_list = []
+        for item in X:
+            for w in item['positive_words']:
+                positive_word_list.append(w)
+            for w in item['negative_words']:
+                negative_word_list.append(w)
+        x = source_word_list + positive_word_list + negative_word_list
         x_encoded, x_seq_lens = self._encode_words(x)
-        y_encoded = [0]
-        y_seq_lens = [0]
-        if 'target_words' in X[0]:
-            y_targets = [item['target_words'] for item in X]
-            y_encoded, y_seq_lens = self._encode_targets(y_targets)
+
+        pos_samples = len(X[0]['positive_words'])
+        neg_samples = len(X[0]['negative_words'])
+        src_w = np.zeros(
+            len(source_word_list) + len(source_word_list) * pos_samples + len(source_word_list) * neg_samples,
+            dtype=np.longlong)
+        dst_w = np.zeros(
+            len(source_word_list) + len(source_word_list) * pos_samples + len(source_word_list) * neg_samples,
+            dtype=np.longlong)
+        target = np.zeros(
+            len(source_word_list) + len(source_word_list) * pos_samples + len(source_word_list) * neg_samples,
+            dtype=np.longlong)
+        index = 0
+        for ii in range(len(source_word_list)):
+            for jj in range(pos_samples):
+                src_w[index] = ii
+                dst_w[index] = jj + len(source_word_list) + ii * pos_samples
+                target[index] = 1
+                index += 1
+
+        for ii in range(len(source_word_list)):
+            for jj in range(neg_samples):
+                src_w[index] = ii
+                dst_w[index] = jj + len(source_word_list) + len(source_word_list) * pos_samples + ii * neg_samples
+                target[index] = -1
+                index += 1
 
         return {
-            'x_ids': torch.tensor(x_encoded),
-            'x_seq_lens': torch.tensor(x_seq_lens),
-            'y_targets': torch.tensor(y_encoded, dtype=torch.float),
-            'y_seq_lens': torch.tensor(y_seq_lens)
+            'x_ids': torch.tensor(x_encoded, dtype=torch.long),
+            'x_seq_lens': torch.tensor(x_seq_lens, dtype=torch.long),
+            'source_index': torch.tensor(src_w, dtype=torch.long),
+            'destination_index': torch.tensor(dst_w, dtype=torch.long),
+            'targets': torch.tensor(target, dtype=torch.float)
         }
 
 
@@ -108,11 +122,14 @@ def mp_job(data):
 
 
 class LanguasitoDataset(Dataset):
-    def __init__(self, filename: str = None):
+    def __init__(self, filename: str = None, negative_samples=5, positive_samples=4):
         self._word2word = {}
         self._int2word = {}
         self._total_examples = 0
+        self._negative_samples = negative_samples
+        self._positive_samples = positive_samples
         self.word_freqs = defaultdict()
+        self._word_list = []
         if filename is not None:
             self.load_file(filename)
 
@@ -129,62 +146,35 @@ class LanguasitoDataset(Dataset):
             word = str(parts[0])
             self.word_freqs[word] = self.word_freqs.get(word, 0) + count
             self._total_examples += count
+
         for word in self._word2word:
             self._int2word[len(self._int2word)] = word
+            self._word_list.append(word)
 
     def __len__(self):
         return len(self._int2word)
 
     def __getitem__(self, item):
         word = self._int2word[item]
+        # sample 5 positive words
+        positive_words = []
+        words = self._word2word[word]
+        probs = np.array([w[1] for w in words], dtype=np.float64)
+        probs = probs / probs.sum()
+        words = [w[0] for w in words]
+        for _ in range(self._positive_samples):
+            positive_words.append(np.random.choice(words, p=probs))
+        negative_words = []
+        for _ in range(self._negative_samples):
+            # nw = np.random.choice(self._word_list)
+            nw = self._word_list[random.randint(0, len(self._word_list) - 1)]
+            if nw not in positive_words:
+                negative_words.append(nw)
+
         return {
             'source_word': word,
-            'target_words': self._word2word[word]
-        }
-
-
-class LanguasitoDatasetClassical(Dataset):
-    def __init__(self, filename: str = None):
-        self._examples = []
-        self._intervals = []
-        self._total_examples = 0
-        self.word_freqs = defaultdict()
-        if filename is not None:
-            self.load_file(filename)
-
-    def load_file(self, filename: str):
-        lines = open(filename).readlines()
-        for line in lines:
-            parts = line.split('\t')
-            self._examples.append((str(parts[0]), str(parts[1]), int(parts[2])))
-            if len(self._intervals) == 0:
-                self._intervals.append((0, int(parts[2])))
-            else:
-                self._intervals.append((self._intervals[-1][1], self._intervals[-1][1] + int(parts[2])))
-            word = str(parts[0])
-            count = int(parts[2])
-            self.word_freqs[word] = self.word_freqs.get(word, 0) + count
-            self._total_examples += count
-
-    def __len__(self):
-        return self._total_examples
-
-    def __getitem__(self, item):
-        # binary search
-        start = 0
-        end = len(self._examples) - 1
-        pivot = (start + end) // 2
-        answer = pivot
-        while start <= end:
-            pivot = (start + end) // 2
-            if self._intervals[pivot][0] <= item:
-                answer = pivot
-                start = pivot + 1
-            else:
-                end = pivot - 1
-        return {
-            'source_word': self._examples[answer][0],
-            'target_word': self._examples[answer][1]
+            'positive_words': positive_words,
+            'negative_words': negative_words
         }
 
 
