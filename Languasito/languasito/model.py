@@ -20,11 +20,16 @@ class Languasito(pl.LightningModule):
         self._early_stop_meta_val = 0
         self._vocab_size = len(tokenizer.get_vocab())
 
-        self._wg = WordGram(len(tokenizer.get_vocab()), num_langs=1, num_filters=512, num_layers=5)
+        self._we = nn.Embedding(len(tokenizer.get_vocab()), 512, padding_idx=0)
+
+        # self._wg = WordGram(len(tokenizer.get_vocab()), num_langs=1, num_filters=512, num_layers=4)
         # self._decoder = nn.Linear(256, 500)
 
     def forward(self, X):
-        hidden = self._wg(X['x_ids'], X['x_seq_lens'])
+        # hidden = self._wg(X['x_ids'], X['x_seq_lens'], X['x_masks'])
+        emb = self._we(X['x_ids'])
+        hidden = emb.sum(dim=1) / X['x_seq_lens'].unsqueeze(1)
+
         # hidden = self._decoder(hidden)
         hidden = torch.nn.functional.normalize(hidden)
 
@@ -37,6 +42,7 @@ class Languasito(pl.LightningModule):
         src_embeddings = hidden[batch['source_index']]
         dst_embeddings = hidden[batch['destination_index']]
         targets = batch['targets']
+
         # normalize
         loss = torch.nn.functional.cosine_embedding_loss(src_embeddings, dst_embeddings, targets)
         self.log("loss", loss, prog_bar=True)
@@ -72,9 +78,12 @@ class Languasito(pl.LightningModule):
 
     def _compute_early_stop(self, res):
         if res["val_loss"] < self._res['b_loss']:
-            self._early_stop_meta_val += 1
-            self._res['b_loss'] = res["val_loss"]
-            res['best_loss'] = True
+            if self._res['b_loss'] == 9999:
+                self._res['b_loss'] = 9998
+            else:
+                self._early_stop_meta_val += 1
+                self._res['b_loss'] = res["val_loss"]
+                res['best_loss'] = True
         return res
 
     def _get_device(self):
@@ -103,23 +112,23 @@ def _get_top_k(vector, word2vec, top_k=10):
 
 
 if __name__ == '__main__':
-    from tokenizers import Tokenizer
-    from languasito.utils import LanguasitoCollate, LanguasitoDataset
+    from languasito.utils import LanguasitoCollate, LanguasitoDataset, LanguasitoWordGramTokenizer
 
-    wp = Tokenizer.from_file('ro_wiki.wordpiece')
+    wp = LanguasitoWordGramTokenizer('en_wiki.wordpiece')
     collate = LanguasitoCollate(wp)
 
     model = Languasito(wp)
-    model.load('ro_wiki.last')
+    model.load('en_wiki.last')
     model.eval()
+    model.to('mps')
 
     # build lexion
-    dataset = LanguasitoDataset('../../docubert/ro_wiki.train')
+    dataset = LanguasitoDataset('../../docubert/en_wiki.train')
     word2vec = {}
     from tqdm import tqdm
 
     index = 0
-    BS = 1
+    BS = 512
     batches = len(dataset.word_freqs) // BS
     wl = [w for w in dataset.word_freqs]
     if len(dataset.word_freqs) % BS != 0:
@@ -131,6 +140,9 @@ if __name__ == '__main__':
         mini_batch = wl[start:stop]
         X = collate.collate_fn([{'source_word': word, 'positive_words': [], 'negative_words': []} for word
                                 in mini_batch])
+        for key in X:
+            if isinstance(X[key], torch.Tensor):
+                X[key] = X[key].to('mps')
         with torch.no_grad():
             vector = model(X).detach().cpu().numpy()
             for jj in range(vector.shape[0]):
@@ -142,8 +154,11 @@ if __name__ == '__main__':
             break
 
         X = collate.collate_fn([{'source_word': word, 'positive_words': [], 'negative_words': []}])
+        for key in X:
+            if isinstance(X[key], torch.Tensor):
+                X[key] = X[key].to('mps')
         with torch.no_grad():
             vector = model(X).detach().cpu().numpy()[0]
-        tk = _get_top_k(vector, word2vec, 10)
+        tk = _get_top_k(vector, word2vec, 20)
         for t in tk:
             print(f"\t{t}")

@@ -7,13 +7,14 @@ from torch.utils.data import DataLoader
 import torch
 from tokenizers import Tokenizer
 from tokenizers.models import WordPiece
+
 import os
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'true'
 
 sys.path.append('')
 
-from languasito.utils import LanguasitoDataset, LanguasitoCollate
+from languasito.utils import LanguasitoDataset, LanguasitoCollate, LanguasitoWordGramTokenizer
 from languasito.model import Languasito
 
 
@@ -84,14 +85,14 @@ if __name__ == '__main__':
     train.load_file(params.train_file)
     dev = LanguasitoDataset()
     dev.load_file(params.dev_file)
-    wp = Tokenizer(WordPiece(unk_token="[UNK]"))
+    # wp = Tokenizer(WordPiece(unk_token="[UNK]"))
+    wp = LanguasitoWordGramTokenizer()
+
     iterator = CountIterator(train.word_freqs)
-    sys.stdout.write(f'Computing wordpiece... for an iterator of {len(iterator)}\n')
+    sys.stdout.write(f'Computing wordgram... for an iterator of {len(iterator)}\n')
     sys.stdout.flush()
-    trainer = WordPieceTrainer(
-        special_tokens=['[UNK]']
-    )
-    wp.train_from_iterator(iterator, trainer=trainer, length=len(iterator))
+
+    wp.train_from_iterator(iterator, length=len(iterator))
 
     fname = f'{params.output_base}.wordpiece'
     sys.stdout.write(f'Storing {fname}... ')
@@ -125,6 +126,7 @@ if __name__ == '__main__':
         num_nodes=1,
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(params)],
+        max_epochs=9999999,
         val_check_interval=min(10000, len(train) // params.batch_size),
     )
 

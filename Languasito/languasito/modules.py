@@ -53,17 +53,18 @@ class WordGram(pl.LightningModule):
             conv_layer = nn.Sequential(
                 ConvNorm(cs_inp,
                          NUM_FILTERS,
-                         kernel_size=5, stride=1,
-                         padding=2,
-                         dilation=1, w_init_gain='tanh'),
-                nn.BatchNorm1d(NUM_FILTERS))
+                         kernel_size=1, stride=1,
+                         padding=0,
+                         bias=False,
+                         dilation=1, w_init_gain='tanh'))
             convolutions_char.append(conv_layer)
             cs_inp = NUM_FILTERS // 2  # + lang_emb_size
         self._convolutions_char = nn.ModuleList(convolutions_char)
         self._pre_out = LinearNorm(NUM_FILTERS // 2, NUM_FILTERS // 2)
 
-    def forward(self, x_tok, x_word_len):
+    def forward(self, x_tok, x_word_len, x_mask):
         x_tok = self._tok_emb(x_tok)
+        x_tok = x_tok * x_mask.unsqueeze(2)
         # x_lang = self._lang_emb(x_lang)
 
         # x = torch.cat([x_char, x_case], dim=-1)
@@ -92,6 +93,7 @@ class WordGram(pl.LightningModule):
             x = torch.dropout(tmp, 0.1, drop)
         x = x + res
         x = x.permute(0, 2, 1)
+        x = x * x_mask.unsqueeze(2)
         pre = torch.sum(x, dim=1, dtype=torch.float)
         norm = pre / x_word_len.unsqueeze(1)
 
