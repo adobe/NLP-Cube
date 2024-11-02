@@ -211,6 +211,7 @@ class LanguasitoDataset(Dataset):
                 self._word2word[src_word] = {'word_list': [], 'pos': 0}
             self._word2word[src_word]['word_list'].append((dst_word, count))
             word = str(parts[0])
+
             self.word_freqs[word] = self.word_freqs.get(word, 0) + count
             self._total_examples += count
 

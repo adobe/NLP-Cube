@@ -20,7 +20,7 @@ class Languasito(pl.LightningModule):
         self._early_stop_meta_val = 0
         self._vocab_size = len(tokenizer.get_vocab())
 
-        self._we = nn.Embedding(len(tokenizer.get_vocab()), 512, padding_idx=0)
+        self._we = nn.Embedding(len(tokenizer.get_vocab()), 256, padding_idx=0)
 
         # self._wg = WordGram(len(tokenizer.get_vocab()), num_langs=1, num_filters=512, num_layers=4)
         # self._decoder = nn.Linear(256, 500)
@@ -114,11 +114,11 @@ def _get_top_k(vector, word2vec, top_k=10):
 if __name__ == '__main__':
     from languasito.utils import LanguasitoCollate, LanguasitoDataset, LanguasitoWordGramTokenizer
 
-    wp = LanguasitoWordGramTokenizer('en_wiki.wordpiece')
+    wp = LanguasitoWordGramTokenizer('multi_wiki.wordpiece')
     collate = LanguasitoCollate(wp)
 
     model = Languasito(wp)
-    model.load('en_wiki.last')
+    model.load('multi_wiki.last')
     model.eval()
     model.to('mps')
 
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     index = 0
-    BS = 512
+    BS = 64
     batches = len(dataset.word_freqs) // BS
     wl = [w for w in dataset.word_freqs]
     if len(dataset.word_freqs) % BS != 0:

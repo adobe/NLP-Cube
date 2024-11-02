@@ -81,18 +81,23 @@ if __name__ == '__main__':
 
     (params, _) = parser.parse_args(sys.argv)
 
-    train = LanguasitoDataset()
+    train = LanguasitoDataset(positive_samples=4)
+
     train.load_file(params.train_file)
+
     dev = LanguasitoDataset()
     dev.load_file(params.dev_file)
     # wp = Tokenizer(WordPiece(unk_token="[UNK]"))
     wp = LanguasitoWordGramTokenizer()
+    if not params.resume:
+        iterator = CountIterator(train.word_freqs)
+        sys.stdout.write(f'Computing wordgram... for an iterator of {len(iterator)}\n')
+        sys.stdout.flush()
 
-    iterator = CountIterator(train.word_freqs)
-    sys.stdout.write(f'Computing wordgram... for an iterator of {len(iterator)}\n')
-    sys.stdout.flush()
-
-    wp.train_from_iterator(iterator, length=len(iterator))
+        wp.train_from_iterator(iterator, length=len(iterator), threshold=10)
+    else:
+        print(f"Loading {params.output_base}.wordpiece")
+        wp.load(f'{params.output_base}.wordpiece')
 
     fname = f'{params.output_base}.wordpiece'
     sys.stdout.write(f'Storing {fname}... ')
@@ -117,9 +122,8 @@ if __name__ == '__main__':
     )
 
     if params.resume:
-        checkpoint_path = '{0}.last'.format(params.output_base)
-    else:
-        checkpoint_path = None
+        print("resuming from previous checkpoint")
+        model.load('{0}.last'.format(params.output_base))
 
     trainer = pl.Trainer(
         accelerator="auto",
