@@ -22,6 +22,7 @@ def build_cooc(source_folder, destination_file):
                     tl_word = dst_dict[tl_index]
                     if len(en_word) > 1 and len(tl_word) > 1 and len(en_word) < 20 and len(tl_word) < 20:
                         f.write(f"{tl_word}\t{en_word}\t10\n")
+                        f.write(f"{en_word}\t{tl_word}\t10\n")
         except Exception as e:
             print(e)
 

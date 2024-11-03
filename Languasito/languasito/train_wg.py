@@ -131,7 +131,7 @@ if __name__ == '__main__':
         default_root_dir='data/',
         callbacks=[early_stopping_callback, PrintAndSaveCallback(params)],
         max_epochs=9999999,
-        val_check_interval=min(10000, len(train) // params.batch_size),
+        #val_check_interval=min(10000, len(train) // params.batch_size),
     )
 
     trainer.fit(model, train_loader, val_loader)

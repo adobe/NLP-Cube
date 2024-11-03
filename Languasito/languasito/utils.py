@@ -230,15 +230,21 @@ class LanguasitoDataset(Dataset):
         words = w2w['word_list']
 
         probs = np.array([w[1] for w in words], dtype=np.float64)
+        # soften the probs
+        probs = np.log(probs)
         probs = probs / probs.sum()
         words = [w[0] for w in words]
         all_pos = words
         for _ in range(self._positive_samples):
-            positive_words.append(words[w2w['pos']])
-            new_pos = w2w['pos'] + 1
-            w2w['pos'] = new_pos % len(words)
-
-            # positive_words.append(words[random.randint(0, len(words) - 1)])
+            if len(probs) < 30:
+                positive_words.append(words[w2w['pos']])
+                new_pos = w2w['pos'] + 1
+                w2w['pos'] = new_pos % len(words)
+            else:
+                new_choice = np.random.choice(words, p=probs)
+                while new_choice in positive_words:
+                    new_choice = np.random.choice(words, p=probs)
+                positive_words.append(new_choice)
 
         negative_words = []
         for _ in range(self._negative_samples):
